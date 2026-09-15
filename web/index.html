@@ -28,16 +28,10 @@
       margin-bottom: 12px;
       background: #1e293b;
     }
-    .badge-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 8px;
-    }
-    .dot-ok { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .badge-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
+    .dot-ok   { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
     .dot-warn { background: #f59e0b; }
-    .dot-err { background: #ef4444; }
-
+    .dot-err  { background: #ef4444; }
     .card {
       background: #161e2e;
       border: 1px solid #27354a;
@@ -46,13 +40,12 @@
       width: 100%;
       max-width: 380px;
       margin-bottom: 12px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.35);
     }
     .card-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
-      letter-spacing: 0.05em;
-      color: #94a3b8;
+      letter-spacing: 0.06em;
+      color: #64748b;
       margin-bottom: 10px;
       display: flex;
       justify-content: space-between;
@@ -61,14 +54,14 @@
     .row {
       display: flex;
       justify-content: space-between;
-      margin: 5px 0;
+      margin: 4px 0;
       font-size: 13px;
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     }
     .btn {
       width: 100%;
       max-width: 380px;
-      padding: 16px;
+      padding: 15px;
       font-size: 16px;
       font-weight: 700;
       border-radius: 14px;
@@ -77,31 +70,15 @@
       color: #0f172a;
       cursor: pointer;
       margin-bottom: 10px;
-      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
-      transition: transform 0.1s, background 0.2s, opacity 0.2s;
+      transition: transform 0.1s, opacity 0.2s;
     }
     .btn:active { transform: scale(0.98); }
     .btn-secondary {
       background: #1e293b;
       color: #38bdf8;
-      border: 1px solid #38bdf8;
-      box-shadow: none;
-      font-size: 14px;
-      padding: 12px;
-    }
-    .btn-secondary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-    .select-input {
-      background: #0f172a;
-      color: #f8fafc;
       border: 1px solid #334155;
-      padding: 6px 10px;
-      border-radius: 8px;
-      font-size: 13px;
-      outline: none;
-      width: 150px;
+      font-size: 14px;
+      padding: 11px;
     }
     .toggle-row {
       display: flex;
@@ -110,51 +87,37 @@
       margin: 8px 0;
       font-size: 13px;
     }
-    .toggle-switch {
-      position: relative;
-      display: inline-block;
-      width: 44px;
-      height: 24px;
-    }
+    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
     .toggle-switch input { opacity: 0; width: 0; height: 0; }
     .slider {
-      position: absolute;
-      cursor: pointer;
+      position: absolute; cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
-      background-color: #334155;
-      transition: .2s;
-      border-radius: 24px;
+      background: #334155; transition: .2s; border-radius: 24px;
     }
     .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: .2s;
-      border-radius: 50%;
+      position: absolute; content: "";
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background: white; transition: .2s; border-radius: 50%;
     }
-    input:checked + .slider { background-color: #38bdf8; }
+    input:checked + .slider { background: #38bdf8; }
     input:checked + .slider:before { transform: translateX(20px); }
-
     #log-box {
-      width: 100%;
-      max-width: 380px;
-      height: 90px;
-      background: #070a11;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 8px;
-      font-size: 11px;
-      font-family: monospace;
-      color: #94a3b8;
-      overflow-y: auto;
+      width: 100%; max-width: 380px; height: 80px;
+      background: #070a11; border: 1px solid #1e293b;
+      border-radius: 10px; padding: 8px;
+      font-size: 11px; font-family: monospace;
+      color: #94a3b8; overflow-y: auto;
     }
     .log-line { margin: 2px 0; }
-    .log-ok { color: #4ade80; }
+    .log-ok  { color: #4ade80; }
     .log-err { color: #f87171; }
+    #still-indicator {
+      width: 10px; height: 10px; border-radius: 50%;
+      display: inline-block; margin-left: 8px;
+      background: #f59e0b;
+    }
+    #still-indicator.still { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
   </style>
 </head>
 <body>
@@ -166,74 +129,53 @@
   </div>
 
   <button id="perm-btn" class="btn">Enable Sensors</button>
-  <button id="calib-btn" class="btn btn-secondary">🎯 Calibrate Gyro (Zero Drift)</button>
+  <button id="calib-btn" class="btn btn-secondary">🎯 Force Re-Calibrate (3s)</button>
 
   <!-- Telemetry Card -->
   <div class="card">
     <div class="card-title">
       <span>TELEMETRY</span>
-      <span id="v-rate" style="color: #4ade80; font-weight: bold; font-size: 13px;">0.0 Hz</span>
+      <span>
+        STILL<span id="still-indicator"></span>
+        &nbsp;&nbsp;
+        <span id="v-rate" style="color: #4ade80; font-weight: bold;">0.0 Hz</span>
+      </span>
     </div>
-    <div class="row"><span>Acc X:</span><span id="v-ax">0.00g</span></div>
-    <div class="row"><span>Acc Y:</span><span id="v-ay">0.00g</span></div>
-    <div class="row"><span>Acc Z:</span><span id="v-az" style="color: #38bdf8; font-weight: bold;">0.00g</span></div>
-    <div class="row" style="margin-top: 6px; border-top: 1px solid #27354a; padding-top: 6px;">
-      <span>Gyro Pitch (P):</span><span id="v-rotx">0.0°/s</span>
-    </div>
-    <div class="row"><span>Gyro Yaw (Y):</span><span id="v-rotz">0.0°/s</span></div>
-    <div class="row"><span>Gyro Roll (R):</span><span id="v-roty">0.0°/s</span></div>
-    <div class="row" style="margin-top: 6px; border-top: 1px solid #27354a; padding-top: 6px;">
-      <span>Orientation:</span><span id="v-orient">0° / 0° / 0°</span>
+    <div class="row"><span>Acc X / Y / Z:</span><span id="v-acc">0.00 / 0.00 / 0.00 g</span></div>
+    <div class="row"><span>Gyro raw P/R/Y:</span><span id="v-rot-raw">0.0 / 0.0 / 0.0°/s</span></div>
+    <div class="row"><span>Gyro corr P/R/Y:</span><span id="v-rot-cor" style="color:#38bdf8;">0.0 / 0.0 / 0.0°/s</span></div>
+    <div class="row"><span>Bias P/R/Y:</span><span id="v-bias" style="color:#94a3b8;font-size:12px;">0.000 / 0.000 / 0.000</span></div>
+    <div class="row" style="margin-top:6px;border-top:1px solid #27354a;padding-top:6px;">
+      <span>Accel variance (ZUPT):</span><span id="v-var" style="font-size:12px;">0.000000</span>
     </div>
   </div>
 
-  <!-- Settings & Tuning Card -->
+  <!-- Settings Card -->
   <div class="card">
-    <div class="card-title">SETTINGS & TUNING</div>
-
+    <div class="card-title">SETTINGS</div>
     <div class="toggle-row">
-      <span>Holding Mode:</span>
-      <select id="opt-orient" class="select-input">
-        <option value="portrait">📱 Portrait</option>
-        <option value="landscape-left">📱 Landscape (Left)</option>
-        <option value="landscape-right">📱 Landscape (Right)</option>
-      </select>
-    </div>
-
-    <div class="toggle-row">
-      <span>Anti-Drift Filter (Deadband):</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="chk-deadband" checked>
-        <span class="slider"></span>
-      </label>
-    </div>
-
-    <div class="toggle-row">
-      <span>Invert Accelerometer (iOS Fix):</span>
+      <span>iOS Accel Inversion:</span>
       <label class="toggle-switch">
         <input type="checkbox" id="chk-inv-acc">
         <span class="slider"></span>
       </label>
     </div>
-
     <div class="toggle-row">
-      <span>Invert Pitch (X-axis):</span>
+      <span>Invert Pitch:</span>
       <label class="toggle-switch">
         <input type="checkbox" id="chk-inv-pitch">
         <span class="slider"></span>
       </label>
     </div>
-
     <div class="toggle-row">
-      <span>Invert Roll (Y-axis):</span>
+      <span>Invert Roll:</span>
       <label class="toggle-switch">
         <input type="checkbox" id="chk-inv-roll">
         <span class="slider"></span>
       </label>
     </div>
-
     <div class="toggle-row">
-      <span>Invert Yaw (Z-axis):</span>
+      <span>Invert Yaw:</span>
       <label class="toggle-switch">
         <input type="checkbox" id="chk-inv-yaw">
         <span class="slider"></span>
@@ -244,6 +186,9 @@
   <div id="log-box"></div>
 
   <script>
+    // ─────────────────────────────────────────────
+    // 0. Logging helpers
+    // ─────────────────────────────────────────────
     const logBox = document.getElementById('log-box');
     function log(msg, type='') {
       const line = document.createElement('div');
@@ -252,337 +197,345 @@
       logBox.appendChild(line);
       logBox.scrollTop = logBox.scrollHeight;
     }
+    log('Loaded. isSecureContext=' + window.isSecureContext, window.isSecureContext ? 'ok' : 'err');
 
-    log('Loaded: isSecureContext=' + window.isSecureContext, window.isSecureContext ? 'ok' : 'err');
-
-    // 1. Device Platform & Settings Detection
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+    // ─────────────────────────────────────────────
+    // 1. Platform detection & settings
+    // ─────────────────────────────────────────────
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIOS) {
-      log('Detected iOS device (iPhone/iPad)', 'ok');
-    }
+    if (isIOS) log('iOS detected — default accel inversion ON', 'ok');
 
-    // Load persisted settings from localStorage
-    const savedConfig = JSON.parse(localStorage.getItem('gyrobridge_cfg') || '{}');
-    const chkDeadband = document.getElementById('chk-deadband');
-    const chkInvAcc = document.getElementById('chk-inv-acc');
+    const chkInvAcc   = document.getElementById('chk-inv-acc');
     const chkInvPitch = document.getElementById('chk-inv-pitch');
-    const chkInvRoll = document.getElementById('chk-inv-roll');
-    const chkInvYaw = document.getElementById('chk-inv-yaw');
-    const optOrient = document.getElementById('opt-orient');
+    const chkInvRoll  = document.getElementById('chk-inv-roll');
+    const chkInvYaw   = document.getElementById('chk-inv-yaw');
 
-    // Default Invert Accel to TRUE on iOS because WebKit accelerationIncludingGravity
-    // is negative gravity (-9.8 m/s² when flat face-up), whereas Cemuhook expects +1.0g.
-    chkInvAcc.checked = savedConfig.invAcc !== undefined ? savedConfig.invAcc : isIOS;
-    chkDeadband.checked = savedConfig.deadband !== undefined ? savedConfig.deadband : true;
-    chkInvPitch.checked = savedConfig.invPitch || false;
-    chkInvRoll.checked = savedConfig.invRoll || false;
-    chkInvYaw.checked = savedConfig.invYaw || false;
-    if (savedConfig.orient) optOrient.value = savedConfig.orient;
+    const saved = JSON.parse(localStorage.getItem('gb_cfg') || '{}');
+    chkInvAcc.checked   = saved.ia !== undefined ? saved.ia : isIOS;
+    chkInvPitch.checked = saved.ip || false;
+    chkInvRoll.checked  = saved.ir || false;
+    chkInvYaw.checked   = saved.iy || false;
 
     function saveSettings() {
-      const cfg = {
-        invAcc: chkInvAcc.checked,
-        deadband: chkDeadband.checked,
-        invPitch: chkInvPitch.checked,
-        invRoll: chkInvRoll.checked,
-        invYaw: chkInvYaw.checked,
-        orient: optOrient.value
-      };
-      localStorage.setItem('gyrobridge_cfg', JSON.stringify(cfg));
+      localStorage.setItem('gb_cfg', JSON.stringify({
+        ia: chkInvAcc.checked, ip: chkInvPitch.checked,
+        ir: chkInvRoll.checked, iy: chkInvYaw.checked
+      }));
     }
-    [chkDeadband, chkInvAcc, chkInvPitch, chkInvRoll, chkInvYaw, optOrient].forEach(el => {
-      el.addEventListener('change', saveSettings);
-    });
+    [chkInvAcc, chkInvPitch, chkInvRoll, chkInvYaw].forEach(e => e.addEventListener('change', saveSettings));
 
-    // 2. Gyro Calibration & Anti-Drift Deadband
-    let biasX = 0, biasY = 0, biasZ = 0;
-    const savedBias = JSON.parse(localStorage.getItem('gyrobridge_bias') || '{}');
-    if (savedBias.x !== undefined) {
-      biasX = savedBias.x;
-      biasY = savedBias.y;
-      biasZ = savedBias.z;
-      log(`Restored gyro bias: (${biasX.toFixed(3)}, ${biasY.toFixed(3)}, ${biasZ.toFixed(3)})`);
+    // ─────────────────────────────────────────────
+    // 2. ZUPT-based Gyro Bias Estimator
+    //
+    //  Core idea: Accelerometer variance over a short window
+    //  is a reliable "still detector" that is INDEPENDENT of
+    //  the gyro bias we're trying to estimate. When accel
+    //  variance < threshold → phone truly stationary →
+    //  rapidly update gyro bias → zero output.
+    //
+    //  Parameters:
+    //    ZUPT_WIN       – window size in samples (~133ms @ 60Hz)
+    //    ZUPT_VAR_THR   – variance threshold (g²) below = still
+    //    BIAS_ALPHA_STILL – EMA rate when still (fast convergence)
+    //    BIAS_ALPHA_MOVE  – EMA rate when moving (slow correction)
+    //    GYRO_KILL_THR  – if corrected |ω| < this → hard zero
+    // ─────────────────────────────────────────────
+
+    const ZUPT_WIN        = 10;       // samples
+    const ZUPT_VAR_THR    = 0.00015;  // g² — phone truly still
+    const BIAS_ALPHA_STILL = 0.20;   // 20% per sample → converges in ~15 samples (250ms)
+    const BIAS_ALPHA_MOVE  = 0.001;  // 0.1% — slow drift while moving
+    const GYRO_KILL_THR   = 0.30;    // °/s — hard zero gate after bias subtraction
+
+    // Gyro bias state (persist across page loads)
+    const savedBias = JSON.parse(localStorage.getItem('gb_bias') || '{"x":0,"y":0,"z":0}');
+    let biasX = savedBias.x, biasY = savedBias.y, biasZ = savedBias.z;
+    if (biasX !== 0 || biasY !== 0 || biasZ !== 0) {
+      log(`Restored bias: P=${biasX.toFixed(2)} R=${biasY.toFixed(2)} Y=${biasZ.toFixed(2)}`, 'ok');
     }
 
-    let isCalibrating = false;
-    let calibSamples = [];
+    // Accel sliding window for ZUPT
+    const accelWin = [];   // [{x,y,z}]
+    let stillDetected = false;
+    let accelVariance = 0;
+
+    function updateZUPT(ax, ay, az) {
+      accelWin.push({x: ax, y: ay, z: az});
+      if (accelWin.length > ZUPT_WIN) accelWin.shift();
+      if (accelWin.length < ZUPT_WIN) return;
+
+      // Compute mean
+      let mx = 0, my = 0, mz = 0;
+      for (const s of accelWin) { mx += s.x; my += s.y; mz += s.z; }
+      mx /= ZUPT_WIN; my /= ZUPT_WIN; mz /= ZUPT_WIN;
+
+      // Compute variance (sum of squared deviations per axis, then mean)
+      let v = 0;
+      for (const s of accelWin) {
+        const dx = s.x - mx, dy = s.y - my, dz = s.z - mz;
+        v += dx*dx + dy*dy + dz*dz;
+      }
+      accelVariance = v / ZUPT_WIN;
+      stillDetected = accelVariance < ZUPT_VAR_THR;
+    }
+
+    function applyBiasAndZUPT(rx, ry, rz) {
+      if (stillDetected) {
+        // Fast bias learning: track actual raw gyro output
+        biasX += (rx - biasX) * BIAS_ALPHA_STILL;
+        biasY += (ry - biasY) * BIAS_ALPHA_STILL;
+        biasZ += (rz - biasZ) * BIAS_ALPHA_STILL;
+        // Hard zero — no output while still
+        return [0, 0, 0];
+      }
+
+      // Subtract learned bias
+      let cx = rx - biasX;
+      let cy = ry - biasY;
+      let cz = rz - biasZ;
+
+      // Slow bias refinement while moving (thermal drift tracking)
+      biasX += (rx - biasX) * BIAS_ALPHA_MOVE;
+      biasY += (ry - biasY) * BIAS_ALPHA_MOVE;
+      biasZ += (rz - biasZ) * BIAS_ALPHA_MOVE;
+
+      // Per-axis hard zero gate (kills residual jitter on each axis independently)
+      if (Math.abs(cx) < GYRO_KILL_THR) cx = 0;
+      if (Math.abs(cy) < GYRO_KILL_THR) cy = 0;
+      if (Math.abs(cz) < GYRO_KILL_THR) cz = 0;
+
+      return [cx, cy, cz];
+    }
+
+    // Persist bias every 2s
+    setInterval(() => {
+      localStorage.setItem('gb_bias', JSON.stringify({x: biasX, y: biasY, z: biasZ}));
+    }, 2000);
+
+    // ─────────────────────────────────────────────
+    // 3. Manual Force Re-Calibrate
+    // ─────────────────────────────────────────────
+    let forceCalibMode = false;
+    let fcSamples = [];
     const calibBtn = document.getElementById('calib-btn');
 
     calibBtn.addEventListener('click', () => {
-      if (isCalibrating) return;
-      isCalibrating = true;
-      calibSamples = [];
-      calibBtn.textContent = 'Keep Phone Still on Table... (1s)';
+      if (forceCalibMode) return;
+      forceCalibMode = true;
+      fcSamples = [];
+      biasX = biasY = biasZ = 0; // reset bias so we read raw
+      calibBtn.textContent = '⏳ Place flat & still (3s)...';
       calibBtn.disabled = true;
 
       setTimeout(() => {
-        if (calibSamples.length >= 10) {
-          let sumX = 0, sumY = 0, sumZ = 0;
-          for (const s of calibSamples) {
-            sumX += s.x; sumY += s.y; sumZ += s.z;
-          }
-          biasX = sumX / calibSamples.length;
-          biasY = sumY / calibSamples.length;
-          biasZ = sumZ / calibSamples.length;
-          localStorage.setItem('gyrobridge_bias', JSON.stringify({ x: biasX, y: biasY, z: biasZ }));
-          log(`Calibrated! Bias: P=${biasX.toFixed(3)}, R=${biasY.toFixed(3)}, Y=${biasZ.toFixed(3)}°/s`, 'ok');
-          calibBtn.textContent = '🎯 Calibrated (Zero Drift) ✓';
+        if (fcSamples.length >= 30) {
+          let sx = 0, sy = 0, sz = 0;
+          for (const s of fcSamples) { sx += s.x; sy += s.y; sz += s.z; }
+          biasX = sx / fcSamples.length;
+          biasY = sy / fcSamples.length;
+          biasZ = sz / fcSamples.length;
+          localStorage.setItem('gb_bias', JSON.stringify({x: biasX, y: biasY, z: biasZ}));
+          log(`Bias set: P=${biasX.toFixed(3)} R=${biasY.toFixed(3)} Y=${biasZ.toFixed(3)}°/s`, 'ok');
+          calibBtn.textContent = '✅ Calibrated!';
         } else {
-          log('Not enough motion samples to calibrate. Enable sensors first!', 'err');
-          calibBtn.textContent = '🎯 Calibrate Gyro (Zero Drift)';
+          calibBtn.textContent = '⚠️ Need sensors active';
+          log('Enable sensors first, then calibrate', 'err');
         }
-        isCalibrating = false;
+        forceCalibMode = false;
         calibBtn.disabled = false;
-      }, 1000);
+      }, 3000);
     });
 
-    // 3. High-Performance WebSocket Connection (Binary 46B)
+    // ─────────────────────────────────────────────
+    // 4. WebSocket (Binary 46 bytes)
+    // ─────────────────────────────────────────────
     let ws = null;
     let wsReady = false;
     const badgeText = document.getElementById('badge-text');
-    const badgeDot = document.getElementById('badge-dot');
+    const badgeDot  = document.getElementById('badge-dot');
 
     const binBuffer = new ArrayBuffer(46);
-    const binView = new DataView(binBuffer);
+    const binView   = new DataView(binBuffer);
 
     function connectWSS() {
       const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const url = `${proto}//${location.host}/ws`;
-      log('Connecting to ' + url);
-
-      try {
-        ws = new WebSocket(url);
-        ws.binaryType = 'arraybuffer';
-
-        ws.onopen = () => {
-          wsReady = true;
-          badgeText.textContent = 'CONNECTED (WSS 46B)';
-          badgeDot.className = 'badge-dot dot-ok';
-          log('Binary WSS (46 bytes) connected!', 'ok');
-        };
-        ws.onerror = () => {
-          badgeText.textContent = 'WSS ERROR';
-          badgeDot.className = 'badge-dot dot-err';
-          log('WSS connection error', 'err');
-        };
-        ws.onclose = () => {
-          wsReady = false;
-          badgeText.textContent = 'DISCONNECTED';
-          badgeDot.className = 'badge-dot dot-warn';
-          log('WSS closed, reconnecting in 2s...');
-          setTimeout(connectWSS, 2000);
-        };
-      } catch (err) {
-        log('WS error: ' + err.message, 'err');
-      }
+      ws = new WebSocket(`${proto}//${location.host}/ws`);
+      ws.binaryType = 'arraybuffer';
+      ws.onopen = () => {
+        wsReady = true;
+        badgeText.textContent = 'CONNECTED';
+        badgeDot.className = 'badge-dot dot-ok';
+        log('WSS connected (46B binary)', 'ok');
+      };
+      ws.onerror = () => {
+        badgeText.textContent = 'WSS ERROR';
+        badgeDot.className = 'badge-dot dot-err';
+      };
+      ws.onclose = () => {
+        wsReady = false;
+        badgeText.textContent = 'DISCONNECTED';
+        badgeDot.className = 'badge-dot dot-warn';
+        setTimeout(connectWSS, 2000);
+      };
     }
     connectWSS();
 
-    // 4. Sensor capture & stream pipeline
-    let frameCount = 0;
-    let hzCounter = 0;
-    let lastHzTime = performance.now();
-    let lastMotionTime = 0;
+    // ─────────────────────────────────────────────
+    // 5. Sensor Pipeline
+    // ─────────────────────────────────────────────
+    const G_CONST    = 9.80665;
+    const halfDeg2Rad = Math.PI / 360;
 
-    const vRate = document.getElementById('v-rate');
-    const vAx = document.getElementById('v-ax');
-    const vAy = document.getElementById('v-ay');
-    const vAz = document.getElementById('v-az');
-    const vRotx = document.getElementById('v-rotx');
-    const vRoty = document.getElementById('v-roty');
-    const vRotz = document.getElementById('v-rotz');
-    const vOrient = document.getElementById('v-orient');
-
-    // Telemetry state
     let curAlpha = 0, curBeta = 0, curGamma = 0;
     let rotX = 0, rotY = 0, rotZ = 0;
     let qx = 0, qy = 0, qz = 0, qw = 1;
     let accX = 0, accY = 0, accZ = 0;
     let buttons = 0;
 
-    const halfDegToRad = Math.PI / 360;
-    const G_CONST = 9.80665;
-    const DEADBAND_DEG = 0.12; // Static stillness threshold in deg/s
+    let frameCount = 0;
+    let hzCnt = 0, lastHzTime = performance.now();
+    let lastMotionTime = 0;
 
-    // Decoupled 10 Hz DOM update loop to eliminate WebKit reflows
+    // DOM refs
+    const vRate    = document.getElementById('v-rate');
+    const vAcc     = document.getElementById('v-acc');
+    const vRotRaw  = document.getElementById('v-rot-raw');
+    const vRotCor  = document.getElementById('v-rot-cor');
+    const vBias    = document.getElementById('v-bias');
+    const vVar     = document.getElementById('v-var');
+    const stillInd = document.getElementById('still-indicator');
+
+    // 10 Hz DOM update — decoupled from sensor interrupt
     setInterval(() => {
-      vAx.textContent = accX.toFixed(2) + 'g';
-      vAy.textContent = accY.toFixed(2) + 'g';
-      vAz.textContent = accZ.toFixed(2) + 'g';
-      vRotx.textContent = rotX.toFixed(1) + '°/s';
-      vRoty.textContent = rotY.toFixed(1) + '°/s';
-      vRotz.textContent = rotZ.toFixed(1) + '°/s';
-      vOrient.textContent = `${curBeta.toFixed(0)}° / ${curGamma.toFixed(0)}° / ${curAlpha.toFixed(0)}°`;
+      vAcc.textContent    = `${accX.toFixed(2)} / ${accY.toFixed(2)} / ${accZ.toFixed(2)} g`;
+      vRotCor.textContent = `${rotX.toFixed(1)} / ${rotY.toFixed(1)} / ${rotZ.toFixed(1)}°/s`;
+      vBias.textContent   = `${biasX.toFixed(3)} / ${biasY.toFixed(3)} / ${biasZ.toFixed(3)}`;
+      vVar.textContent    = accelVariance.toFixed(6) + (stillDetected ? ' 🟢 STILL' : ' 🔴 MOVING');
+      stillInd.className  = stillDetected ? 'still' : '';
     }, 100);
 
     function onOrientation(e) {
       curAlpha = e.alpha || 0;
-      curBeta = e.beta || 0;
+      curBeta  = e.beta  || 0;
       curGamma = e.gamma || 0;
 
-      const _x = curBeta * halfDegToRad;
-      const _y = curGamma * halfDegToRad;
-      const _z = curAlpha * halfDegToRad;
-
+      const _x = curBeta  * halfDeg2Rad;
+      const _y = curGamma * halfDeg2Rad;
+      const _z = curAlpha * halfDeg2Rad;
       const cX = Math.cos(_x), sX = Math.sin(_x);
       const cY = Math.cos(_y), sY = Math.sin(_y);
       const cZ = Math.cos(_z), sZ = Math.sin(_z);
+      qx = sX*cY*cZ - cX*sY*sZ;
+      qy = cX*sY*cZ + sX*cY*sZ;
+      qz = cX*cY*sZ + sX*sY*cZ;
+      qw = cX*cY*cZ - sX*sY*sZ;
 
-      qx = sX * cY * cZ - cX * sY * sZ;
-      qy = cX * sY * cZ + sX * cY * sZ;
-      qz = cX * cY * sZ + sX * sY * cZ;
-      qw = cX * cY * cZ - sX * sY * sZ;
-
-      if (performance.now() - lastMotionTime > 200) {
-        queueSend();
-      }
+      if (performance.now() - lastMotionTime > 200) queueSend();
     }
 
     function onMotion(e) {
       lastMotionTime = performance.now();
 
-      // 1. Raw Gyroscope (°/s)
+      // --- Raw gyro read (°/s) ---
       let rx = 0, ry = 0, rz = 0;
       if (e.rotationRate) {
-        rx = e.rotationRate.beta || 0;  // Pitch (around X)
-        ry = e.rotationRate.gamma || 0; // Roll (around Y)
-        rz = e.rotationRate.alpha || 0; // Yaw (around Z)
+        rx = e.rotationRate.beta  || 0;  // Pitch around X
+        ry = e.rotationRate.gamma || 0;  // Roll around Y
+        rz = e.rotationRate.alpha || 0;  // Yaw around Z
       }
 
-      if (isCalibrating) {
-        calibSamples.push({ x: rx, y: ry, z: rz });
-        rotX = 0; rotY = 0; rotZ = 0;
-      } else {
-        // Subtract DC bias
-        let cx = rx - biasX;
-        let cy = ry - biasY;
-        let cz = rz - biasZ;
+      // Show raw for diagnostics (10Hz DOM update reads these)
+      vRotRaw.textContent = `${rx.toFixed(1)} / ${ry.toFixed(1)} / ${rz.toFixed(1)}°/s`;
 
-        // Anti-drift deadband & adaptive zero-velocity update
-        if (chkDeadband.checked) {
-          const speed = Math.hypot(cx, cy, cz);
-          if (speed < DEADBAND_DEG) {
-            // Adaptive bias absorption while stationary (thermal drift tracking)
-            biasX += (rx - biasX) * 0.01;
-            biasY += (ry - biasY) * 0.01;
-            biasZ += (rz - biasZ) * 0.01;
-            cx = 0; cy = 0; cz = 0;
-          }
-        }
-
-        rotX = cx;
-        rotY = cy;
-        rotZ = cz;
-      }
-
-      // 2. Accelerometer (g)
+      // --- Accel read ---
       const a = e.accelerationIncludingGravity || e.acceleration;
+      let rawAx = 0, rawAy = 0, rawAz = 0;
       if (a) {
-        const sign = chkInvAcc.checked ? -1 : 1;
-        accX = (a.x != null ? a.x / G_CONST : 0) * sign;
-        accY = (a.y != null ? a.y / G_CONST : 0) * sign;
-        accZ = (a.z != null ? a.z / G_CONST : 0) * sign;
+        rawAx = (a.x != null ? a.x / G_CONST : 0);
+        rawAy = (a.y != null ? a.y / G_CONST : 0);
+        rawAz = (a.z != null ? a.z / G_CONST : 0);
       }
 
-      // 3. Coordinate remapping for holding mode
-      const mode = optOrient.value;
-      if (mode === 'landscape-left') {
-        // Rotated 90 deg counter-clockwise (top of phone on left)
-        const tmpRotX = rotX;
-        rotX = rotY;
-        rotY = -tmpRotX;
+      // iOS inversion
+      const sign = chkInvAcc.checked ? -1 : 1;
+      accX = rawAx * sign;
+      accY = rawAy * sign;
+      accZ = rawAz * sign;
 
-        const tmpAccX = accX;
-        accX = accY;
-        accY = -tmpAccX;
-      } else if (mode === 'landscape-right') {
-        // Rotated 90 deg clockwise (top of phone on right)
-        const tmpRotX = rotX;
-        rotX = -rotY;
-        rotY = tmpRotX;
+      // --- ZUPT: detect stillness via accel variance ---
+      updateZUPT(accX, accY, accZ);
 
-        const tmpAccX = accX;
-        accX = -accY;
-        accY = tmpAccX;
+      // --- Force calibrate sampling ---
+      if (forceCalibMode) {
+        fcSamples.push({x: rx, y: ry, z: rz});
+        rotX = rotY = rotZ = 0;
+        queueSend();
+        return;
       }
 
-      // 4. User Inversion Toggles
-      if (chkInvPitch.checked) rotX = -rotX;
-      if (chkInvRoll.checked)  rotY = -rotY;
-      if (chkInvYaw.checked)   rotZ = -rotZ;
+      // --- Apply ZUPT bias correction ---
+      const [cx, cy, cz] = applyBiasAndZUPT(rx, ry, rz);
+
+      // --- User inversion toggles ---
+      rotX = chkInvPitch.checked ? -cx : cx;
+      rotY = chkInvRoll.checked  ? -cy : cy;
+      rotZ = chkInvYaw.checked   ? -cz : cz;
 
       queueSend();
     }
 
     function queueSend() {
-      if (!wsReady || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) {
-        return;
-      }
+      if (!wsReady || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) return;
 
-      const now32 = (Date.now() & 0xFFFFFFFF) >>> 0;
-      binView.setUint32(0, now32, true);
-      binView.setFloat32(4, rotX, true);
-      binView.setFloat32(8, rotY, true);
+      binView.setUint32(0,  (Date.now() & 0xFFFFFFFF) >>> 0, true);
+      binView.setFloat32(4,  rotX, true);
+      binView.setFloat32(8,  rotY, true);
       binView.setFloat32(12, rotZ, true);
-      binView.setFloat32(16, qx, true);
-      binView.setFloat32(20, qy, true);
-      binView.setFloat32(24, qz, true);
-      binView.setFloat32(28, qw, true);
+      binView.setFloat32(16, qx,   true);
+      binView.setFloat32(20, qy,   true);
+      binView.setFloat32(24, qz,   true);
+      binView.setFloat32(28, qw,   true);
       binView.setFloat32(32, accX, true);
       binView.setFloat32(36, accY, true);
       binView.setFloat32(40, accZ, true);
-      binView.setUint16(44, buttons, true);
-
+      binView.setUint16(44,  buttons, true);
       ws.send(binBuffer);
 
       frameCount++;
-      hzCounter++;
-
-      const pNow = performance.now();
-      const elapsed = pNow - lastHzTime;
+      hzCnt++;
+      const now = performance.now();
+      const elapsed = now - lastHzTime;
       if (elapsed >= 500) {
-        const hz = (hzCounter * 1000) / elapsed;
+        const hz = (hzCnt * 1000) / elapsed;
         vRate.textContent = hz.toFixed(1) + ' Hz';
-        vRate.style.color = hz >= 50 ? '#4ade80' : (hz >= 30 ? '#facc15' : '#f87171');
-        hzCounter = 0;
-        lastHzTime = pNow;
+        vRate.style.color = hz >= 50 ? '#4ade80' : hz >= 30 ? '#facc15' : '#f87171';
+        hzCnt = 0;
+        lastHzTime = now;
       }
     }
 
+    // ─────────────────────────────────────────────
+    // 6. Permissions
+    // ─────────────────────────────────────────────
     function attachListeners() {
-      log('Attaching device sensor listeners...');
       window.addEventListener('deviceorientation', onOrientation, true);
       window.addEventListener('devicemotion', onMotion, true);
-      log('Sensors active! Streaming at 60 Hz.', 'ok');
+      log('Sensors active. ZUPT bias learning started.', 'ok');
     }
 
     const permBtn = document.getElementById('perm-btn');
     permBtn.addEventListener('click', async () => {
-      log('Permission button clicked');
-
-      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      if (typeof DeviceMotionEvent !== 'undefined' &&
+          typeof DeviceMotionEvent.requestPermission === 'function') {
         try {
           const resp = await DeviceMotionEvent.requestPermission();
-          log('Motion permission: ' + resp, resp === 'granted' ? 'ok' : 'err');
           if (resp === 'granted') {
             attachListeners();
             permBtn.textContent = 'Sensors Active ✓';
             permBtn.style.background = '#22c55e';
           } else {
-            alert('Sensor permission denied: ' + resp);
-          }
-        } catch (err) {
-          log('Permission error: ' + err.message, 'err');
-          alert('Error: ' + err.message);
-        }
-      } else if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        try {
-          const resp = await DeviceOrientationEvent.requestPermission();
-          if (resp === 'granted') {
-            attachListeners();
-            permBtn.textContent = 'Sensors Active ✓';
-            permBtn.style.background = '#22c55e';
+            log('Motion permission denied: ' + resp, 'err');
           }
         } catch (err) {
           log('Permission error: ' + err.message, 'err');
@@ -594,7 +547,7 @@
       }
     });
 
-    // Auto-listen for Chrome/Android
+    // Auto-attach for Android/Chrome
     attachListeners();
   </script>
 </body>
