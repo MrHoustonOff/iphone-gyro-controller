@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"gyrobridge/internal/ca"
+	"gyrobridge/internal/dsu"
 	"gyrobridge/internal/pairing"
 	"gyrobridge/internal/server"
 	"gyrobridge/web"
@@ -55,14 +56,26 @@ func main() {
 	}
 	fmt.Println("[+] Local CA and Leaf certificate ready.")
 
+	dsuSrv := dsu.NewServer(dsu.DefaultPort)
+	if err := dsuSrv.Start(); err != nil {
+		fmt.Printf("[-] Warning: Failed to bind Cemuhook DSU port %d: %v\n", dsu.DefaultPort, err)
+	} else {
+		defer dsuSrv.Stop()
+		fmt.Printf("[+] Cemuhook DSU Server running on UDP port %d (Ready for Cemu / PadTest / Dolphin)\n", dsu.DefaultPort)
+	}
+
 	var lastLoggedPacket uint64
 	var srv *server.Server
 	srv = server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
+		// Forward frame directly to Cemuhook DSU clients
+		dsuSrv.SendMotion(frame)
+
 		nowCount, _, hz := srv.PacketStats()
 		if nowCount-lastLoggedPacket >= 15 {
 			lastLoggedPacket = nowCount
-			fmt.Printf("\r[RATE: %5.1f Hz | STREAM #%06d] Yaw: %6.1f° | Pitch: %6.1f° | Roll: %6.1f° | Acc: (%5.2f, %5.2f, %5.2f)",
-				hz, nowCount, frame.Alpha, frame.Beta, frame.Gamma, frame.AccX, frame.AccY, frame.AccZ)
+			dsuClients := dsuSrv.ActiveClients()
+			fmt.Printf("\r[DSU: %d clients | RATE: %5.1f Hz | #%06d] Rot: (%5.1f, %5.1f, %5.1f)°/s | Quat: (%4.2f, %4.2f, %4.2f, %4.2f) | Acc: (%4.2f, %4.2f, %4.2f)g",
+				dsuClients, hz, nowCount, frame.RotX, frame.RotY, frame.RotZ, frame.Qx, frame.Qy, frame.Qz, frame.Qw, frame.AccX, frame.AccY, frame.AccZ)
 		}
 	})
 

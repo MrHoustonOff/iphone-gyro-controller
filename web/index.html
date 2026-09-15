@@ -146,15 +146,21 @@
     const badgeText = document.getElementById('badge-text');
     const badgeDot = document.getElementById('badge-dot');
 
-    // Reusable 32-byte ArrayBuffer to eliminate memory allocation & GC
-    // Layout: [0..7]: uint64 timestamp (ms)
-    //         [8..11]: float32 alpha
-    //         [12..15]: float32 beta
-    //         [16..19]: float32 gamma
-    //         [20..23]: float32 ax
-    //         [24..27]: float32 ay
-    //         [28..31]: float32 az
-    const binBuffer = new ArrayBuffer(32);
+    // Reusable 46-byte ArrayBuffer to eliminate memory allocation & GC
+    // Layout:
+    // [0..3]:   uint32 timestamp (ms & 0xFFFFFFFF)
+    // [4..7]:   float32 rotX (°/s - pitch rate for DSU)
+    // [8..11]:  float32 rotY (°/s - roll rate for DSU)
+    // [12..15]: float32 rotZ (°/s - yaw rate for DSU)
+    // [16..19]: float32 qx (quaternion x)
+    // [20..23]: float32 qy (quaternion y)
+    // [24..27]: float32 qz (quaternion z)
+    // [28..31]: float32 qw (quaternion w)
+    // [32..35]: float32 accX (g for DSU)
+    // [36..39]: float32 accY (g for DSU)
+    // [40..43]: float32 accZ (g for DSU)
+    // [44..45]: uint16 buttons/flags bitmask
+    const binBuffer = new ArrayBuffer(46);
     const binView = new DataView(binBuffer);
 
     function connectWSS() {
@@ -168,9 +174,9 @@
 
         ws.onopen = () => {
           wsReady = true;
-          badgeText.textContent = 'CONNECTED (WSS BINARY)';
+          badgeText.textContent = 'CONNECTED (WSS 46B)';
           badgeDot.className = 'badge-dot dot-ok';
-          log('Binary WSS connected securely!', 'ok');
+          log('Binary WSS (46 bytes) connected!', 'ok');
         };
         ws.onerror = (e) => {
           badgeText.textContent = 'WSS ERROR';
@@ -204,30 +210,58 @@
     const vAy = document.getElementById('v-ay');
     const vAz = document.getElementById('v-az');
 
-    let curAlpha = 0, curBeta = 0, curGamma = 0;
-    let curAx = 0, curAy = 0, curAz = 0;
+    // Telemetry state
+    let rotX = 0, rotY = 0, rotZ = 0;
+    let qx = 0, qy = 0, qz = 0, qw = 1;
+    let accX = 0, accY = 0, accZ = 0;
+    let buttons = 0;
+    const degToRad = Math.PI / 180;
 
     function onOrientation(e) {
-      if (e.alpha != null) curAlpha = e.alpha;
-      if (e.beta != null) curBeta = e.beta;
-      if (e.gamma != null) curGamma = e.gamma;
+      const alpha = e.alpha || 0;
+      const beta = e.beta || 0;
+      const gamma = e.gamma || 0;
 
-      vAlpha.textContent = curAlpha.toFixed(1);
-      vBeta.textContent = curBeta.toFixed(1);
-      vGamma.textContent = curGamma.toFixed(1);
+      vAlpha.textContent = alpha.toFixed(1);
+      vBeta.textContent = beta.toFixed(1);
+      vGamma.textContent = gamma.toFixed(1);
+
+      // Convert W3C Tait-Bryan Z-X'-Y'' angles to unit Quaternion
+      const _x = beta * degToRad;
+      const _y = gamma * degToRad;
+      const _z = alpha * degToRad;
+
+      const cX = Math.cos(_x / 2), sX = Math.sin(_x / 2);
+      const cY = Math.cos(_y / 2), sY = Math.sin(_y / 2);
+      const cZ = Math.cos(_z / 2), sZ = Math.sin(_z / 2);
+
+      qx = sX * cY * cZ - cX * sY * sZ;
+      qy = cX * sY * cZ + sX * cY * sZ;
+      qz = cX * cY * sZ + sX * sY * cZ;
+      qw = cX * cY * cZ - sX * sY * sZ;
+
       queueSend();
     }
 
+    const G_CONST = 9.80665;
     function onMotion(e) {
+      // Rotation rate (°/s for Cemuhook DSU)
+      if (e.rotationRate) {
+        if (e.rotationRate.beta != null) rotX = e.rotationRate.beta;
+        if (e.rotationRate.gamma != null) rotY = e.rotationRate.gamma;
+        if (e.rotationRate.alpha != null) rotZ = e.rotationRate.alpha;
+      }
+
+      // Acceleration in g (1g = 9.80665 m/s² for Cemuhook DSU)
       const a = e.accelerationIncludingGravity || e.acceleration;
       if (a) {
-        if (a.x != null) curAx = a.x;
-        if (a.y != null) curAy = a.y;
-        if (a.z != null) curAz = a.z;
+        if (a.x != null) accX = a.x / G_CONST;
+        if (a.y != null) accY = a.y / G_CONST;
+        if (a.z != null) accZ = a.z / G_CONST;
 
-        vAx.textContent = curAx.toFixed(2);
-        vAy.textContent = curAy.toFixed(2);
-        vAz.textContent = curAz.toFixed(2);
+        vAx.textContent = accX.toFixed(2) + 'g';
+        vAy.textContent = accY.toFixed(2) + 'g';
+        vAz.textContent = accZ.toFixed(2) + 'g';
       }
       queueSend();
     }
@@ -238,14 +272,19 @@
         return;
       }
 
-      const now = Date.now();
-      binView.setBigUint64(0, BigInt(now), true);
-      binView.setFloat32(8, curAlpha, true);
-      binView.setFloat32(12, curBeta, true);
-      binView.setFloat32(16, curGamma, true);
-      binView.setFloat32(20, curAx, true);
-      binView.setFloat32(24, curAy, true);
-      binView.setFloat32(28, curAz, true);
+      const now32 = (Date.now() & 0xFFFFFFFF) >>> 0;
+      binView.setUint32(0, now32, true);
+      binView.setFloat32(4, rotX, true);
+      binView.setFloat32(8, rotY, true);
+      binView.setFloat32(12, rotZ, true);
+      binView.setFloat32(16, qx, true);
+      binView.setFloat32(20, qy, true);
+      binView.setFloat32(24, qz, true);
+      binView.setFloat32(28, qw, true);
+      binView.setFloat32(32, accX, true);
+      binView.setFloat32(36, accY, true);
+      binView.setFloat32(40, accZ, true);
+      binView.setUint16(44, buttons, true);
 
       ws.send(binBuffer);
 

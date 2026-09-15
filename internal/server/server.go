@@ -16,15 +16,24 @@ import (
 	"gyrobridge/internal/ca"
 )
 
-// MotionFrame represents telemetry received from mobile device sensors.
+// MotionFrame represents telemetry received from mobile device sensors (46-byte binary payload).
 type MotionFrame struct {
-	Timestamp int64   `json:"ts"`
-	Alpha     float64 `json:"alpha"`
-	Beta      float64 `json:"beta"`
-	Gamma     float64 `json:"gamma"`
-	AccX      float64 `json:"ax"`
-	AccY      float64 `json:"ay"`
-	AccZ      float64 `json:"az"`
+	Timestamp uint32  `json:"ts"`
+	// Angular velocity in °/s for Cemuhook DSU
+	RotX float32 `json:"rx"`
+	RotY float32 `json:"ry"`
+	RotZ float32 `json:"rz"`
+	// Unit Quaternion (X, Y, Z, W) for SLERP interpolation and 3D visualization without Gimbal Lock
+	Qx float32 `json:"qx"`
+	Qy float32 `json:"qy"`
+	Qz float32 `json:"qz"`
+	Qw float32 `json:"qw"`
+	// Acceleration in g (1g = 9.80665 m/s²) for Cemuhook DSU
+	AccX float32 `json:"ax"`
+	AccY float32 `json:"ay"`
+	AccZ float32 `json:"az"`
+	// Buttons and control flags bitmask
+	Buttons uint16 `json:"buttons"`
 }
 
 // Server encapsulates both HTTP (for certificate distribution) and HTTPS+WSS for gamepad traffic.
@@ -202,24 +211,37 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) parseFrame(msgType int, data []byte) (MotionFrame, bool) {
-	// Fast binary decoding (32 bytes: uint64 ts, 6x float32)
-	if msgType == websocket.BinaryMessage && len(data) >= 32 {
-		ts := int64(binary.LittleEndian.Uint64(data[0:8]))
-		alpha := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[8:12])))
-		beta := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[12:16])))
-		gamma := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[16:20])))
-		ax := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[20:24])))
-		ay := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[24:28])))
-		az := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[28:32])))
+	// Fast binary decoding (46 bytes: uint32 ts, 3x float32 rotRate, 4x float32 quat, 3x float32 accel, uint16 buttons)
+	if msgType == websocket.BinaryMessage && len(data) >= 46 {
+		ts := binary.LittleEndian.Uint32(data[0:4])
+		rx := math.Float32frombits(binary.LittleEndian.Uint32(data[4:8]))
+		ry := math.Float32frombits(binary.LittleEndian.Uint32(data[8:12]))
+		rz := math.Float32frombits(binary.LittleEndian.Uint32(data[12:16]))
+
+		qx := math.Float32frombits(binary.LittleEndian.Uint32(data[16:20]))
+		qy := math.Float32frombits(binary.LittleEndian.Uint32(data[20:24]))
+		qz := math.Float32frombits(binary.LittleEndian.Uint32(data[24:28]))
+		qw := math.Float32frombits(binary.LittleEndian.Uint32(data[28:32]))
+
+		ax := math.Float32frombits(binary.LittleEndian.Uint32(data[32:36]))
+		ay := math.Float32frombits(binary.LittleEndian.Uint32(data[36:40]))
+		az := math.Float32frombits(binary.LittleEndian.Uint32(data[40:44]))
+
+		buttons := binary.LittleEndian.Uint16(data[44:46])
 
 		return MotionFrame{
 			Timestamp: ts,
-			Alpha:     alpha,
-			Beta:      beta,
-			Gamma:     gamma,
+			RotX:      rx,
+			RotY:      ry,
+			RotZ:      rz,
+			Qx:        qx,
+			Qy:        qy,
+			Qz:        qz,
+			Qw:        qw,
 			AccX:      ax,
 			AccY:      ay,
 			AccZ:      az,
+			Buttons:   buttons,
 		}, true
 	}
 

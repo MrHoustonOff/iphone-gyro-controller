@@ -134,13 +134,18 @@ func TestServer_WebSocketTelemetry(t *testing.T) {
 	defer ws.Close()
 
 	testFrame := MotionFrame{
-		Timestamp: time.Now().UnixMilli(),
-		Alpha:     12.34,
-		Beta:      -45.67,
-		Gamma:     89.01,
+		Timestamp: uint32(time.Now().UnixMilli() & 0xFFFFFFFF),
+		RotX:      12.34,
+		RotY:      -45.67,
+		RotZ:      89.01,
+		Qx:        0.1,
+		Qy:        0.2,
+		Qz:        0.3,
+		Qw:        0.9,
 		AccX:      0.1,
-		AccY:      9.8,
+		AccY:      0.98,
 		AccZ:      0.2,
+		Buttons:   1,
 	}
 
 	data, _ := json.Marshal(testFrame)
@@ -150,24 +155,32 @@ func TestServer_WebSocketTelemetry(t *testing.T) {
 
 	select {
 	case received := <-frameChan:
-		if received.Alpha != testFrame.Alpha || received.Beta != testFrame.Beta {
+		if received.RotX != testFrame.RotX || received.RotY != testFrame.RotY {
 			t.Errorf("frame mismatch: got %+v, want %+v", received, testFrame)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("timed out waiting for motion frame")
 	}
 
-	// Test binary frame (32 bytes)
-	binBuf := make([]byte, 32)
+	// Test binary frame (46 bytes)
+	binBuf := make([]byte, 46)
 	// ts = 12345
-	binary.LittleEndian.PutUint64(binBuf[0:8], 12345)
-	// alpha = 45.5, beta = -10.5, gamma = 30.0
-	binary.LittleEndian.PutUint32(binBuf[8:12], math.Float32bits(45.5))
-	binary.LittleEndian.PutUint32(binBuf[12:16], math.Float32bits(-10.5))
-	binary.LittleEndian.PutUint32(binBuf[16:20], math.Float32bits(30.0))
-	binary.LittleEndian.PutUint32(binBuf[20:24], math.Float32bits(1.0))
-	binary.LittleEndian.PutUint32(binBuf[24:28], math.Float32bits(2.0))
-	binary.LittleEndian.PutUint32(binBuf[28:32], math.Float32bits(3.0))
+	binary.LittleEndian.PutUint32(binBuf[0:4], 12345)
+	// rotX = 45.5, rotY = -10.5, rotZ = 30.0
+	binary.LittleEndian.PutUint32(binBuf[4:8], math.Float32bits(45.5))
+	binary.LittleEndian.PutUint32(binBuf[8:12], math.Float32bits(-10.5))
+	binary.LittleEndian.PutUint32(binBuf[12:16], math.Float32bits(30.0))
+	// qx = 0.1, qy = 0.2, qz = 0.3, qw = 0.9
+	binary.LittleEndian.PutUint32(binBuf[16:20], math.Float32bits(0.1))
+	binary.LittleEndian.PutUint32(binBuf[20:24], math.Float32bits(0.2))
+	binary.LittleEndian.PutUint32(binBuf[24:28], math.Float32bits(0.3))
+	binary.LittleEndian.PutUint32(binBuf[28:32], math.Float32bits(0.9))
+	// accX = 0.05, accY = 0.98, accZ = 0.12
+	binary.LittleEndian.PutUint32(binBuf[32:36], math.Float32bits(0.05))
+	binary.LittleEndian.PutUint32(binBuf[36:40], math.Float32bits(0.98))
+	binary.LittleEndian.PutUint32(binBuf[40:44], math.Float32bits(0.12))
+	// buttons = 3
+	binary.LittleEndian.PutUint16(binBuf[44:46], 3)
 
 	if err := ws.WriteMessage(websocket.BinaryMessage, binBuf); err != nil {
 		t.Fatalf("failed to send binary message: %v", err)
@@ -175,7 +188,7 @@ func TestServer_WebSocketTelemetry(t *testing.T) {
 
 	select {
 	case received := <-frameChan:
-		if float32(received.Alpha) != 45.5 || float32(received.Beta) != -10.5 {
+		if received.RotX != 45.5 || received.RotY != -10.5 || received.Qw != 0.9 || received.Buttons != 3 {
 			t.Errorf("binary frame mismatch: got %+v", received)
 		}
 	case <-time.After(2 * time.Second):
