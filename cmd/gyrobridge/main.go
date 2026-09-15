@@ -321,15 +321,15 @@ func (sl *sessionLog) Close() {
 //
 //	MOVING: rot_mag > HIGH_DEG → pass gyro through unchanged.
 //
-// Calibrated values:
-//   - Isolated hand-tremor bursts observed: 2.1 – 5.6 °/s  →  LOW = 5.0
+// Calibrated values (updated from session 2 data):
+//   - Isolated hand-tremor bursts observed: 1.1 – 7.4 °/s  →  LOW = 3.0
 //   - Minimum intentional motion observed:  ~8 °/s          →  HIGH = 8.0
-//   - Frames to confirm still:              3 (~50ms @60Hz)  →  STILL_FRAMES = 3
+//   - Frames to confirm still:              2 (~33ms @60Hz)  →  STILL_FRAMES = 2
 //   - JS ZUPT warmup window size:           ~10 samples      →  WARMUP = 12
 const (
-	gyroLow         = 5.0 // °/s – below this, start counting toward STILL
+	gyroLow         = 3.0 // °/s – below this, start counting toward STILL
 	gyroHigh        = 8.0 // °/s – above this, exit STILL state
-	gyroStillFrames = 3   // consecutive low frames before declaring STILL
+	gyroStillFrames = 2   // consecutive low frames before declaring STILL
 	gyroWarmup      = 12  // startup frames to suppress (JS ZUPT not converged)
 )
 

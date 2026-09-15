@@ -464,6 +464,14 @@
       qz = cX*cY*sZ + sX*sY*cZ;
       qw = cX*cY*cZ - sX*sY*sZ;
 
+      // Quaternion hemisphere normalization:
+      // q and -q represent THE SAME rotation (double cover of SO(3)).
+      // However many AHRS filters (including PadTest's Madgwick) expect qw >= 0.
+      // When alpha ≈ 180° the formula above gives qw < 0 (88% of frames in session data),
+      // causing visual flips/jumps. Negating the whole quaternion is mathematically
+      // identical but keeps the representation in the upper hemisphere.
+      if (qw < 0) { qx = -qx; qy = -qy; qz = -qz; qw = -qw; }
+
       if (performance.now() - lastMotionTime > 200) queueSend();
     }
 
