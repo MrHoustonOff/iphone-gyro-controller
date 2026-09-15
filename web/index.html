@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GyroBridge Controller</title>
+  <style>
+    * { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f111a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 { margin: 8px 0; font-size: 24px; color: #38bdf8; text-align: center; }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      background: #1e293b;
+    }
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+    }
+    .dot-ok { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+    .dot-warn { background: #f59e0b; }
+    .dot-err { background: #ef4444; }
+
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 16px;
+      width: 100%;
+      max-width: 360px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .row {
+      display: flex;
+      justify-content: space-between;
+      margin: 6px 0;
+      font-size: 14px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+    .btn {
+      width: 100%;
+      max-width: 360px;
+      padding: 18px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 16px;
+      border: none;
+      background: #38bdf8;
+      color: #0f172a;
+      cursor: pointer;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);
+      transition: transform 0.1s, background 0.2s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-secondary {
+      background: #334155;
+      color: #f8fafc;
+      box-shadow: none;
+      font-size: 14px;
+      padding: 12px;
+    }
+    #log-box {
+      width: 100%;
+      max-width: 360px;
+      height: 120px;
+      background: #090d16;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 11px;
+      font-family: monospace;
+      color: #94a3b8;
+      overflow-y: auto;
+    }
+    .log-line { margin: 2px 0; }
+    .log-ok { color: #4ade80; }
+    .log-err { color: #f87171; }
+  </style>
+</head>
+<body>
+
+  <h1>GyroBridge</h1>
+  <div id="ws-badge" class="status-badge">
+    <span id="badge-dot" class="badge-dot dot-warn"></span>
+    <span id="badge-text">Connecting WSS...</span>
+  </div>
+
+  <button id="perm-btn" class="btn">Enable Sensors</button>
+
+  <div class="card">
+    <div style="font-weight: 700; margin-bottom: 8px; color: #94a3b8;">ORIENTATION</div>
+    <div class="row"><span>Alpha (Yaw):</span><span id="v-alpha">0.0</span></div>
+    <div class="row"><span>Beta (Pitch):</span><span id="v-beta">0.0</span></div>
+    <div class="row"><span>Gamma (Roll):</span><span id="v-gamma">0.0</span></div>
+  </div>
+
+  <div class="card">
+    <div style="font-weight: 700; margin-bottom: 8px; color: #94a3b8;">ACCELEROMETER</div>
+    <div class="row"><span>Acc X:</span><span id="v-ax">0.0</span></div>
+    <div class="row"><span>Acc Y:</span><span id="v-ay">0.0</span></div>
+    <div class="row"><span>Acc Z:</span><span id="v-az">0.0</span></div>
+    <div class="row" style="margin-top: 8px; border-top: 1px solid #334155; padding-top: 6px;">
+      <span>Sent Frames:</span><span id="v-frames">0</span>
+    </div>
+  </div>
+
+  <div id="log-box"></div>
+
+  <script>
+    const logBox = document.getElementById('log-box');
+    function log(msg, type='') {
+      const line = document.createElement('div');
+      line.className = 'log-line ' + (type ? 'log-' + type : '');
+      line.textContent = `[${new Date().toTimeString().split(' ')[0]}] ${msg}`;
+      logBox.appendChild(line);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    log('Loaded context: isSecureContext=' + window.isSecureContext, window.isSecureContext ? 'ok' : 'err');
+
+    // 1. WebSocket Connection
+    let ws = null;
+    let wsReady = false;
+    const badgeText = document.getElementById('badge-text');
+    const badgeDot = document.getElementById('badge-dot');
+
+    function connectWSS() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const url = `${proto}//${location.host}/ws`;
+      log('Connecting to ' + url);
+
+      try {
+        ws = new WebSocket(url);
+        ws.onopen = () => {
+          wsReady = true;
+          badgeText.textContent = 'CONNECTED (WSS)';
+          badgeDot.className = 'badge-dot dot-ok';
+          log('WSS connected securely!', 'ok');
+        };
+        ws.onerror = (e) => {
+          badgeText.textContent = 'WSS ERROR';
+          badgeDot.className = 'badge-dot dot-err';
+          log('WSS connection failed', 'err');
+        };
+        ws.onclose = () => {
+          wsReady = false;
+          badgeText.textContent = 'DISCONNECTED';
+          badgeDot.className = 'badge-dot dot-warn';
+          log('WSS closed, reconnecting in 2s...');
+          setTimeout(connectWSS, 2000);
+        };
+      } catch (err) {
+        log('WS error: ' + err.message, 'err');
+      }
+    }
+    connectWSS();
+
+    // 2. Sensor capture & stream
+    let frameCount = 0;
+    const vFrames = document.getElementById('v-frames');
+    const vAlpha = document.getElementById('v-alpha');
+    const vBeta = document.getElementById('v-beta');
+    const vGamma = document.getElementById('v-gamma');
+    const vAx = document.getElementById('v-ax');
+    const vAy = document.getElementById('v-ay');
+    const vAz = document.getElementById('v-az');
+
+    let telemetry = {
+      ts: 0,
+      alpha: 0, beta: 0, gamma: 0,
+      ax: 0, ay: 0, az: 0
+    };
+
+    function onOrientation(e) {
+      if (e.alpha != null) telemetry.alpha = e.alpha;
+      if (e.beta != null) telemetry.beta = e.beta;
+      if (e.gamma != null) telemetry.gamma = e.gamma;
+
+      vAlpha.textContent = telemetry.alpha.toFixed(1);
+      vBeta.textContent = telemetry.beta.toFixed(1);
+      vGamma.textContent = telemetry.gamma.toFixed(1);
+      queueSend();
+    }
+
+    function onMotion(e) {
+      const a = e.accelerationIncludingGravity || e.acceleration;
+      if (a) {
+        if (a.x != null) telemetry.ax = a.x;
+        if (a.y != null) telemetry.ay = a.y;
+        if (a.z != null) telemetry.az = a.z;
+
+        vAx.textContent = telemetry.ax.toFixed(2);
+        vAy.textContent = telemetry.ay.toFixed(2);
+        vAz.textContent = telemetry.az.toFixed(2);
+      }
+      queueSend();
+    }
+
+    let lastSend = 0;
+    function queueSend() {
+      const now = performance.now();
+      if (now - lastSend < 15) return; // ~60 Hz cap
+      lastSend = now;
+
+      if (wsReady && ws.readyState === WebSocket.OPEN) {
+        telemetry.ts = Date.now();
+        ws.send(JSON.stringify(telemetry));
+        frameCount++;
+        vFrames.textContent = frameCount;
+      }
+    }
+
+    function attachListeners() {
+      log('Attaching device sensor listeners...');
+      window.addEventListener('deviceorientation', onOrientation, true);
+      window.addEventListener('devicemotion', onMotion, true);
+      log('Sensors active! Move device to stream.', 'ok');
+    }
+
+    const permBtn = document.getElementById('perm-btn');
+    permBtn.addEventListener('click', async () => {
+      log('Permission button clicked');
+
+      // iOS 13+ DeviceMotionEvent permission check
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        try {
+          log('Requesting DeviceMotionEvent permission...');
+          const resp = await DeviceMotionEvent.requestPermission();
+          log('Motion permission: ' + resp, resp === 'granted' ? 'ok' : 'err');
+          if (resp === 'granted') {
+            attachListeners();
+            permBtn.textContent = 'Sensors Active ✓';
+            permBtn.style.background = '#22c55e';
+          } else {
+            alert('Sensor permission denied: ' + resp);
+          }
+        } catch (err) {
+          log('Permission error: ' + err.message, 'err');
+          alert('Error: ' + err.message);
+        }
+      } else if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const resp = await DeviceOrientationEvent.requestPermission();
+          log('Orientation permission: ' + resp, resp === 'granted' ? 'ok' : 'err');
+          if (resp === 'granted') {
+            attachListeners();
+          }
+        } catch (err) {
+          log('Permission error: ' + err.message, 'err');
+        }
+      } else {
+        log('Standard permission flow (Android/Chrome)');
+        attachListeners();
+        permBtn.textContent = 'Sensors Active ✓';
+        permBtn.style.background = '#22c55e';
+      }
+    });
+
+    // Auto-listen for Android Chrome
+    attachListeners();
+  </script>
+</body>
+</html>

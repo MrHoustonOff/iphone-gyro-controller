@@ -1,0 +1,25 @@
+# Binaries
+*.exe
+*.exe~
+bin/
+dist/
+
+# Generated TLS certificates and keys
+certs/
+ca_data/
+*.pem
+*.crt
+*.key
+
+# Temporary and log files
+*.log
+tmp/
+
+# Documentation as requested
+*.md
+
+# IDE & OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
