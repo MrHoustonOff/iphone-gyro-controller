@@ -200,6 +200,7 @@
     let frameCount = 0;
     let hzCounter = 0;
     let lastHzTime = performance.now();
+    let lastMotionTime = 0;
 
     const vRate = document.getElementById('v-rate');
     const vFrames = document.getElementById('v-frames');
@@ -211,40 +212,54 @@
     const vAz = document.getElementById('v-az');
 
     // Telemetry state
+    let curAlpha = 0, curBeta = 0, curGamma = 0;
     let rotX = 0, rotY = 0, rotZ = 0;
     let qx = 0, qy = 0, qz = 0, qw = 1;
     let accX = 0, accY = 0, accZ = 0;
     let buttons = 0;
-    const degToRad = Math.PI / 180;
+
+    const halfDegToRad = Math.PI / 360; // (Math.PI / 180) / 2
+    const G_CONST = 9.80665;
+
+    // Decoupled 10 Hz DOM update loop to eliminate WebKit layout reflows in high-frequency sensor interrupt
+    setInterval(() => {
+      vAlpha.textContent = curAlpha.toFixed(1);
+      vBeta.textContent = curBeta.toFixed(1);
+      vGamma.textContent = curGamma.toFixed(1);
+      vAx.textContent = accX.toFixed(2) + 'g';
+      vAy.textContent = accY.toFixed(2) + 'g';
+      vAz.textContent = accZ.toFixed(2) + 'g';
+      vFrames.textContent = frameCount;
+    }, 100);
 
     function onOrientation(e) {
-      const alpha = e.alpha || 0;
-      const beta = e.beta || 0;
-      const gamma = e.gamma || 0;
-
-      vAlpha.textContent = alpha.toFixed(1);
-      vBeta.textContent = beta.toFixed(1);
-      vGamma.textContent = gamma.toFixed(1);
+      curAlpha = e.alpha || 0;
+      curBeta = e.beta || 0;
+      curGamma = e.gamma || 0;
 
       // Convert W3C Tait-Bryan Z-X'-Y'' angles to unit Quaternion
-      const _x = beta * degToRad;
-      const _y = gamma * degToRad;
-      const _z = alpha * degToRad;
+      const _x = curBeta * halfDegToRad;
+      const _y = curGamma * halfDegToRad;
+      const _z = curAlpha * halfDegToRad;
 
-      const cX = Math.cos(_x / 2), sX = Math.sin(_x / 2);
-      const cY = Math.cos(_y / 2), sY = Math.sin(_y / 2);
-      const cZ = Math.cos(_z / 2), sZ = Math.sin(_z / 2);
+      const cX = Math.cos(_x), sX = Math.sin(_x);
+      const cY = Math.cos(_y), sY = Math.sin(_y);
+      const cZ = Math.cos(_z), sZ = Math.sin(_z);
 
       qx = sX * cY * cZ - cX * sY * sZ;
       qy = cX * sY * cZ + sX * cY * sZ;
       qz = cX * cY * sZ + sX * sY * cZ;
       qw = cX * cY * cZ - sX * sY * sZ;
 
-      queueSend();
+      // If devicemotion is not actively firing (> 200ms), fallback to orientation-driven send
+      if (performance.now() - lastMotionTime > 200) {
+        queueSend();
+      }
     }
 
-    const G_CONST = 9.80665;
     function onMotion(e) {
+      lastMotionTime = performance.now();
+
       // Rotation rate (°/s for Cemuhook DSU)
       if (e.rotationRate) {
         if (e.rotationRate.beta != null) rotX = e.rotationRate.beta;
@@ -258,11 +273,9 @@
         if (a.x != null) accX = a.x / G_CONST;
         if (a.y != null) accY = a.y / G_CONST;
         if (a.z != null) accZ = a.z / G_CONST;
-
-        vAx.textContent = accX.toFixed(2) + 'g';
-        vAy.textContent = accY.toFixed(2) + 'g';
-        vAz.textContent = accZ.toFixed(2) + 'g';
       }
+
+      // devicemotion is the primary clock trigger for transmission
       queueSend();
     }
 
@@ -290,7 +303,6 @@
 
       frameCount++;
       hzCounter++;
-      vFrames.textContent = frameCount;
 
       // Frequency calculation every 500ms
       const pNow = performance.now();

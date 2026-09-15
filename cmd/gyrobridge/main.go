@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"gyrobridge/internal/ca"
 	"gyrobridge/internal/dsu"
@@ -64,20 +65,31 @@ func main() {
 		fmt.Printf("[+] Cemuhook DSU Server running on UDP port %d (Ready for Cemu / PadTest / Dolphin)\n", dsu.DefaultPort)
 	}
 
-	var lastLoggedPacket uint64
-	var srv *server.Server
-	srv = server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
-		// Forward frame directly to Cemuhook DSU clients
+	srv := server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
+		// Pure fast-path: zero allocations, forward frame directly to Cemuhook DSU clients
 		dsuSrv.SendMotion(frame)
-
-		nowCount, _, hz := srv.PacketStats()
-		if nowCount-lastLoggedPacket >= 15 {
-			lastLoggedPacket = nowCount
-			dsuClients := dsuSrv.ActiveClients()
-			fmt.Printf("\r[DSU: %d clients | RATE: %5.1f Hz | #%06d] Rot: (%5.1f, %5.1f, %5.1f)°/s | Quat: (%4.2f, %4.2f, %4.2f, %4.2f) | Acc: (%4.2f, %4.2f, %4.2f)g",
-				dsuClients, hz, nowCount, frame.RotX, frame.RotY, frame.RotZ, frame.Qx, frame.Qy, frame.Qz, frame.Qw, frame.AccX, frame.AccY, frame.AccZ)
-		}
 	})
+
+	stopHUD := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(250 * time.Millisecond) // 4 Hz decoupled HUD refresh
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-stopHUD:
+				return
+			case <-ticker.C:
+				count, clients, hz := srv.PacketStats()
+				if count > 0 {
+					frame := dsuSrv.LastMotionFrame()
+					dsuClients := dsuSrv.ActiveClients()
+					fmt.Printf("\r[DSU: %d clients | WSS: %d | RATE: %5.1f Hz | #%06d] Rot: (%5.1f, %5.1f, %5.1f)°/s | Quat: (%4.2f, %4.2f, %4.2f, %4.2f) | Acc: (%4.2f, %4.2f, %4.2f)g",
+						dsuClients, clients, hz, count, frame.RotX, frame.RotY, frame.RotZ, frame.Qx, frame.Qy, frame.Qz, frame.Qw, frame.AccX, frame.AccY, frame.AccZ)
+				}
+			}
+		}
+	}()
 
 	if err := srv.Start(); err != nil {
 		fmt.Printf("[-] Failed to start server: %v\n", err)
@@ -118,6 +130,7 @@ func main() {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	<-sigChan
 
+	close(stopHUD)
 	fmt.Println("\n[*] Shutting down GyroBridge...")
 }
 

@@ -8,7 +8,6 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -38,20 +37,18 @@ type MotionFrame struct {
 
 // Server encapsulates both HTTP (for certificate distribution) and HTTPS+WSS for gamepad traffic.
 type Server struct {
-	caManager       *ca.CertificateManager
-	httpPort        int
-	httpsPort       int
-	webContent      []byte
-	httpServer      *http.Server
-	httpsServer     *http.Server
-	upgrader        websocket.Upgrader
-	onFrame         func(frame MotionFrame)
-	packetCount     uint64
-	packetsInWindow uint64
-	lastHzTime      time.Time
-	currentHz       float64
-	activeClient    atomic.Int32
-	hzMu            sync.RWMutex
+	caManager     *ca.CertificateManager
+	httpPort      int
+	httpsPort     int
+	webContent    []byte
+	httpServer    *http.Server
+	httpsServer   *http.Server
+	upgrader      websocket.Upgrader
+	onFrame       func(frame MotionFrame)
+	packetCount   atomic.Uint64
+	currentHzBits atomic.Uint64
+	activeClient  atomic.Int32
+	stopChan      chan struct{}
 }
 
 // NewServer initializes HTTP and HTTPS server instances.
@@ -62,7 +59,10 @@ func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []
 		httpsPort:  httpsPort,
 		webContent: webHTML,
 		onFrame:    onFrame,
+		stopChan:   make(chan struct{}),
 		upgrader: websocket.Upgrader{
+			ReadBufferSize:  1024,
+			WriteBufferSize: 1024,
 			CheckOrigin: func(r *http.Request) bool {
 				return true // allow LAN connections
 			},
@@ -120,17 +120,48 @@ func (s *Server) Start() error {
 
 	go s.httpServer.Serve(httpListener)
 	go s.httpsServer.Serve(httpsListener)
+	go s.rateMonitorLoop()
 
 	return nil
 }
 
 // Stop gracefully shuts down both servers.
 func (s *Server) Stop() {
+	select {
+	case <-s.stopChan:
+	default:
+		close(s.stopChan)
+	}
 	if s.httpServer != nil {
 		s.httpServer.Close()
 	}
 	if s.httpsServer != nil {
 		s.httpsServer.Close()
+	}
+}
+
+func (s *Server) rateMonitorLoop() {
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	var lastPackets uint64
+	lastTime := time.Now()
+
+	for {
+		select {
+		case <-s.stopChan:
+			return
+		case now := <-ticker.C:
+			curr := s.packetCount.Load()
+			diff := curr - lastPackets
+			elapsed := now.Sub(lastTime).Seconds()
+			if elapsed > 0 {
+				hz := float64(diff) / elapsed
+				s.currentHzBits.Store(math.Float64bits(hz))
+			}
+			lastPackets = curr
+			lastTime = now
+		}
 	}
 }
 
@@ -184,26 +215,8 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		total := atomic.AddUint64(&s.packetCount, 1)
+		s.packetCount.Add(1)
 
-		// Frequency calculation window (every 500ms)
-		s.hzMu.Lock()
-		s.packetsInWindow++
-		now := time.Now()
-		elapsed := now.Sub(s.lastHzTime)
-		if elapsed >= 500*time.Millisecond {
-			if s.lastHzTime.IsZero() {
-				s.lastHzTime = now
-				s.packetsInWindow = 0
-			} else {
-				s.currentHz = float64(s.packetsInWindow) / elapsed.Seconds()
-				s.packetsInWindow = 0
-				s.lastHzTime = now
-			}
-		}
-		s.hzMu.Unlock()
-
-		_ = total
 		if s.onFrame != nil {
 			s.onFrame(frame)
 		}
@@ -256,10 +269,8 @@ func (s *Server) parseFrame(msgType int, data []byte) (MotionFrame, bool) {
 
 // PacketStats returns total received packets, current active connections, and current polling rate in Hz.
 func (s *Server) PacketStats() (uint64, int32, float64) {
-	total := atomic.LoadUint64(&s.packetCount)
+	total := s.packetCount.Load()
 	clients := s.activeClient.Load()
-	s.hzMu.RLock()
-	hz := s.currentHz
-	s.hzMu.RUnlock()
+	hz := math.Float64frombits(s.currentHzBits.Load())
 	return total, clients, hz
 }

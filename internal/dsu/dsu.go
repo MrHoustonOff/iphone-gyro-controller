@@ -37,6 +37,13 @@ type ClientSub struct {
 	LastSeen time.Time
 }
 
+var padPacketPool = sync.Pool{
+	New: func() interface{} {
+		b := make([]byte, 100)
+		return &b
+	},
+}
+
 // Server implements Cemuhook DSU motion protocol over UDP.
 type Server struct {
 	port          int
@@ -48,13 +55,17 @@ type Server struct {
 	clientsMu sync.RWMutex
 	clients   map[string]*ClientSub
 
+	lastFrameMu sync.RWMutex
+	lastFrame   server.MotionFrame
+
 	stopChan chan struct{}
 	running  atomic.Bool
 }
 
 // NewServer creates a new Cemuhook DSU server.
+// If port < 0, it defaults to 26760. If port == 0, OS allocates a dynamic port.
 func NewServer(port int) *Server {
-	if port <= 0 {
+	if port < 0 {
 		port = DefaultPort
 	}
 
@@ -103,34 +114,38 @@ func (s *Server) SendMotion(frame server.MotionFrame) {
 		return
 	}
 
-	s.clientsMu.RLock()
-	hasClients := len(s.clients) > 0
-	s.clientsMu.RUnlock()
-
-	if !hasClients {
-		return
-	}
-
-	packetNum := atomic.AddUint32(&s.packetCounter, 1)
-	pkt := s.buildPadDataPacket(packetNum, frame)
+	s.lastFrameMu.Lock()
+	s.lastFrame = frame
+	s.lastFrameMu.Unlock()
 
 	s.clientsMu.RLock()
 	defer s.clientsMu.RUnlock()
 
+	if len(s.clients) == 0 {
+		return
+	}
+
+	packetNum := atomic.AddUint32(&s.packetCounter, 1)
+
+	// Acquire pooled buffer (Zero heap allocations in the hot path!)
+	bufPtr := padPacketPool.Get().(*[]byte)
+	pkt := *bufPtr
+	s.fillPadDataPacket(pkt, packetNum, frame)
+
 	for _, client := range s.clients {
 		_, _ = s.conn.WriteToUDP(pkt, client.Addr)
 	}
+
+	padPacketPool.Put(bufPtr)
 }
 
-func (s *Server) buildPadDataPacket(packetNum uint32, frame server.MotionFrame) []byte {
+func (s *Server) fillPadDataPacket(buf []byte, packetNum uint32, frame server.MotionFrame) {
 	// Total size: 100 bytes (20 bytes header + 80 bytes payload)
-	buf := make([]byte, 100)
-
 	// --- 1. Header (20 bytes) ---
 	copy(buf[0:4], MagicServer)
 	binary.LittleEndian.PutUint16(buf[4:6], ProtocolVer)
 	binary.LittleEndian.PutUint16(buf[6:8], 80+4) // length: payload (80) + msgType (4)
-	// buf[8:12] CRC32 initialized to 0
+	binary.LittleEndian.PutUint32(buf[8:12], 0)   // CRC32 initialized to 0
 	binary.LittleEndian.PutUint32(buf[12:16], s.serverID)
 	binary.LittleEndian.PutUint32(buf[16:20], MsgTypePadData)
 
@@ -171,8 +186,20 @@ func (s *Server) buildPadDataPacket(packetNum uint32, frame server.MotionFrame) 
 	// --- 3. Compute IEEE 802.3 CRC32 over entire 100 bytes ---
 	crc := crc32.ChecksumIEEE(buf)
 	binary.LittleEndian.PutUint32(buf[8:12], crc)
+}
 
+// BuildPadDataPacket builds and returns a newly allocated 100-byte packet (useful for tests).
+func (s *Server) BuildPadDataPacket(packetNum uint32, frame server.MotionFrame) []byte {
+	buf := make([]byte, 100)
+	s.fillPadDataPacket(buf, packetNum, frame)
 	return buf
+}
+
+// LastMotionFrame returns the latest received telemetry frame.
+func (s *Server) LastMotionFrame() server.MotionFrame {
+	s.lastFrameMu.RLock()
+	defer s.lastFrameMu.RUnlock()
+	return s.lastFrame
 }
 
 func (s *Server) listenLoop() {
@@ -191,8 +218,8 @@ func (s *Server) listenLoop() {
 			continue
 		}
 
-		// Verify Magic Header
-		if string(buf[0:4]) != MagicClient {
+		// Fast 32-bit integer magic header check ("DSUC" = 0x44535543)
+		if binary.BigEndian.Uint32(buf[0:4]) != 0x44535543 {
 			continue
 		}
 

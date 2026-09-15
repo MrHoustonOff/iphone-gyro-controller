@@ -24,7 +24,7 @@ func TestDSU_PadDataPacketLayoutAndCRC32(t *testing.T) {
 		AccZ:      0.12,
 	}
 
-	packet := dsuSrv.buildPadDataPacket(1, testFrame)
+	packet := dsuSrv.BuildPadDataPacket(1, testFrame)
 
 	// 1. Total length must be exactly 100 bytes
 	if len(packet) != 100 {
@@ -145,3 +145,58 @@ func TestDSU_ClientHandshakeAndStreaming(t *testing.T) {
 		t.Error("received PadData CRC32 failed verification")
 	}
 }
+
+func BenchmarkFillPadDataPacket(b *testing.B) {
+	srv := NewServer(0)
+	frame := server.MotionFrame{
+		Timestamp: 123456,
+		RotX:      15.5,
+		RotY:      -30.2,
+		RotZ:      45.0,
+		AccX:      0.05,
+		AccY:      0.98,
+		AccZ:      0.12,
+	}
+	buf := make([]byte, 100)
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		srv.fillPadDataPacket(buf, uint32(i), frame)
+	}
+}
+
+func BenchmarkSendMotion(b *testing.B) {
+	srv := NewServer(0)
+	if err := srv.Start(); err != nil {
+		b.Fatalf("failed to start server: %v", err)
+	}
+	defer srv.Stop()
+
+	// Register a dummy client so SendMotion actually executes write
+	dummyAddr, _ := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	srv.clientsMu.Lock()
+	srv.clients["127.0.0.1:0"] = &ClientSub{
+		Addr:     dummyAddr,
+		LastSeen: time.Now(),
+	}
+	srv.clientsMu.Unlock()
+
+	frame := server.MotionFrame{
+		Timestamp: 123456,
+		RotX:      15.5,
+		RotY:      -30.2,
+		RotZ:      45.0,
+		AccX:      0.05,
+		AccY:      0.98,
+		AccZ:      0.12,
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		srv.SendMotion(frame)
+	}
+}
+
