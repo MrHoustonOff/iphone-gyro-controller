@@ -40,13 +40,17 @@ type Broadcaster struct {
 	clients  map[*websocket.Conn]struct{}
 	upgrader websocket.Upgrader
 	htmlPage []byte
+	frameCh  chan Frame
+	stopCh   chan struct{}
 }
 
 // New creates a Broadcaster that serves the given HTML page at /vis.
 func New(htmlPage []byte) *Broadcaster {
-	return &Broadcaster{
+	b := &Broadcaster{
 		clients:  make(map[*websocket.Conn]struct{}),
 		htmlPage: htmlPage,
+		frameCh:  make(chan Frame, 2),
+		stopCh:   make(chan struct{}),
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  256,
 			WriteBufferSize: 4096,
@@ -55,6 +59,28 @@ func New(htmlPage []byte) *Broadcaster {
 			},
 		},
 	}
+	go b.worker()
+	return b
+}
+
+// Stop cleanly shuts down the broadcaster worker and active viewer connections.
+func (b *Broadcaster) Stop() {
+	if b == nil {
+		return
+	}
+	select {
+	case <-b.stopCh:
+		return
+	default:
+		close(b.stopCh)
+	}
+
+	b.mu.Lock()
+	for conn := range b.clients {
+		_ = conn.Close()
+	}
+	b.clients = make(map[*websocket.Conn]struct{})
+	b.mu.Unlock()
 }
 
 // Register wires the broadcaster into the given HTTP mux at the given base path.
@@ -66,18 +92,43 @@ func New(htmlPage []byte) *Broadcaster {
 // Designed to be called on the Server's HTTPMux (plain HTTP, no cert) so the
 // PC browser can open it without certificate hassle.
 func (b *Broadcaster) Register(mux *http.ServeMux, base string) {
+	if b == nil {
+		return
+	}
 	mux.HandleFunc(base, b.serveHTML)
 	mux.HandleFunc(base+"/ws", b.serveWS)
 }
 
-// Publish encodes frame and writes it to every connected viewer.
-// Drop policy: any viewer that can't accept a write within one frame budget (16ms)
-// is disconnected — the browser can reconnect; real-time beats reliability here.
+// Publish queues frame for asynchronous broadcast.
+// Non-blocking: if the broadcaster worker is busy, the frame is dropped immediately,
+// ensuring the sensor/gamepad hot path is NEVER stalled by the 3D visualizer.
 func (b *Broadcaster) Publish(f Frame) {
+	if b == nil {
+		return
+	}
+	select {
+	case b.frameCh <- f:
+	default:
+		// Worker is busy broadcasting: drop frame to preserve sensor throughput
+	}
+}
+
+func (b *Broadcaster) worker() {
+	for {
+		select {
+		case <-b.stopCh:
+			return
+		case f := <-b.frameCh:
+			b.broadcast(f)
+		}
+	}
+}
+
+func (b *Broadcaster) broadcast(f Frame) {
 	b.mu.RLock()
 	if len(b.clients) == 0 {
 		b.mu.RUnlock()
-		return // fast path when nobody is watching
+		return
 	}
 	clients := make([]*websocket.Conn, 0, len(b.clients))
 	for conn := range b.clients {

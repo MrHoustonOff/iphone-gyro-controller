@@ -1,0 +1,10 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "GyroBridge",
+  "outputfilename": "GyroBridge-GUI",
+  "frontend:dir": "./frontend/src",
+  "wailsjsdir": "./frontend/src",
+  "author": {
+    "name": "MrHouston"
+  }
+}

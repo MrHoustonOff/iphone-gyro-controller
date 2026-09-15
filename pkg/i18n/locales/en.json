@@ -1,0 +1,64 @@
+{
+  "app": {
+    "subtitle": "Motion Gamepad Bridge",
+    "theme_toggle": "Toggle theme",
+    "title": "Gyro Bridge"
+  },
+  "controls": {
+    "pause": "PAUSE",
+    "resume": "RESUME"
+  },
+  "nav": {
+    "live_debug": "Live Debug →",
+    "setup": "Initial Setup"
+  },
+  "qr": {
+    "copied": "Copied!",
+    "copy": "Copy",
+    "lan_ip": "Local IP",
+    "scan_hint": "Scan with phone camera to connect:",
+    "url": "Connection URL"
+  },
+  "setup": {
+    "android_desc": "Direct connection without certificate installation",
+    "android_hint": "No certificate installation needed on Android. Scan the QR code, and if your browser warns about the local self-signed certificate, simply tap `Advanced` → `Proceed to site (unsafe)` or confirm trust.",
+    "android_title": "Android",
+    "btn_back": "← Back",
+    "btn_close": "Close",
+    "btn_finish": "Finish",
+    "btn_next": "Next →",
+    "disclosure_body_1": "**What am I installing?** A small security certificate, generated right on your own PC — nothing about it ever leaves your local network. It just tells your phone \"trust this one connection\" so it can talk to your computer over Wi-Fi. It can't see or touch anything else — not your other apps, not other websites, nothing. The app doesn't send any data anywhere, ever — no analytics, no logs, no phoning home. And since it's all open-source, you don't have to take our word for it: you (or your AI coding assistant) can go read the exact code that generates this certificate right here: [`internal/ca`](https://github.com/MrHoustonOff/iphone-gyro-controller/tree/main/internal/ca).",
+    "disclosure_body_2": "**Why is this even necessary?** Safari (WebKit) simply refuses to share gyroscope/motion data or keep a live WebSocket connection open unless the page is loaded over a secure, encrypted connection (HTTPS/WSS) — that's an Apple privacy rule, and no app can get around it. Since there's no way to get a \"real,\" publicly-trusted certificate for a private local address, self-signing one and asking your phone to trust it is the only way to satisfy that rule without ever going through the internet.",
+    "disclosure_body_3": "**The trade-off:** you get a fully private, direct, offline connection where none of your data ever leaves your Wi-Fi — but in exchange, you have to do this one manual \"trust\" step yourself, since there's no public authority that can vouch for a certificate that only exists on your home network.",
+    "disclosure_title": "What am I installing and why?",
+    "ios_desc": "One-time local profile setup for Safari",
+    "ios_step1_text": "Open the link (or scan the QR code) **on your phone**, then tap `Allow`.",
+    "ios_step1_title": "Step 1. Download Profile",
+    "ios_step2_badge": "`Settings` → `Profile Downloaded`",
+    "ios_step2_text": "Go to `Settings`. A banner reading `Profile Downloaded` will appear at the top of the screen — tap it.",
+    "ios_step2_title": "Step 2. Open Profile",
+    "ios_step3_badge": "Top-right corner → `Install`",
+    "ios_step3_text": "Tap `Install` in the top-right corner.",
+    "ios_step3_title": "Step 3. Install Profile",
+    "ios_step4_badge": "Confirmation → `Install`",
+    "ios_step4_text": "Tap `Install` again to confirm.",
+    "ios_step4_title": "Step 4. Confirm",
+    "ios_step5_badge": "`Settings` → `General` → `About` → `Certificate Trust Settings`",
+    "ios_step5_text": "Return to the main `Settings` screen. Go to `General` → `About`, then scroll all the way down to `Certificate Trust Settings` and tap it.",
+    "ios_step5_title": "Step 5. Trust Settings",
+    "ios_step6_badge": "`GyroBridge Root CA` → Toggle ON",
+    "ios_step6_text": "You'll see your certificate listed. Toggle it on, then tap `Continue`.",
+    "ios_step6_title": "Step 6. Trust Certificate",
+    "ios_title": "iOS (iPhone / iPad)",
+    "select_platform": "Select your device platform:",
+    "step_x_of_y": "Step {x} of {y}",
+    "title": "Initial Setup"
+  },
+  "status": {
+    "connected_time": "Connected",
+    "device_connected": "Controller connected",
+    "offline": "offline",
+    "online": "online",
+    "paused": "paused"
+  }
+}

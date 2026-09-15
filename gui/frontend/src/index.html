@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-i18n="app.title">Gyro Bridge</title>
+  <link rel="stylesheet" href="main.css">
+</head>
+<body>
+
+  <!-- Apple Style Header Bar -->
+  <header class="app-header">
+    <div class="brand-title">
+      <span data-i18n="app.title">Gyro Bridge</span>
+    </div>
+
+    <div class="header-controls">
+      <!-- Apple Theme Switcher Button -->
+      <button type="button" class="btn-icon" id="btn-theme-toggle" data-i18n-title="app.theme_toggle" title="Переключить тему">
+        <!-- Sun icon (visible in dark mode) -->
+        <svg id="icon-theme-sun" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2"></path>
+          <path d="M12 20v2"></path>
+          <path d="m4.93 4.93 1.41 1.41"></path>
+          <path d="m17.66 17.66 1.41 1.41"></path>
+          <path d="M2 12h2"></path>
+          <path d="M20 12h2"></path>
+          <path d="m6.34 17.66-1.41 1.41"></path>
+          <path d="m19.07 4.93-1.41 1.41"></path>
+        </svg>
+        <!-- Moon icon (visible in light mode) -->
+        <svg id="icon-theme-moon" viewBox="0 0 24 24" style="display: none;">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+      </button>
+
+      <!-- Apple Segmented Language Control -->
+      <div class="segmented-control" role="group" aria-label="Language">
+        <button type="button" class="segmented-btn active" id="btn-lang-ru">RU</button>
+        <button type="button" class="segmented-btn" id="btn-lang-en">EN</button>
+      </div>
+
+      <!-- Apple Status Capsule -->
+      <div class="status-capsule offline" id="badge-status">
+        <span class="status-dot"></span>
+        <span class="status-text" id="status-text" data-i18n="status.offline">offline</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Area (Modular Inset Grouped Card) -->
+  <main class="app-main">
+    <div class="modular-container">
+      <div class="apple-card">
+
+        <!-- State 1: Offline Module (Phone NOT connected) -->
+        <div class="offline-module" id="view-offline">
+          <div class="card-caption" data-i18n="qr.scan_hint">Отсканируйте камерой телефона для подключения:</div>
+
+          <div class="qr-frame">
+            <img id="img-qr" class="qr-image" src="" alt="Connection QR">
+          </div>
+
+          <div class="url-chip" id="chip-url" title="Click to copy">
+            <svg class="url-icon" viewBox="0 0 24 24">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            <span id="link-url-text" class="url-text">...</span>
+            <span id="url-copy-badge" class="copy-badge" data-i18n="qr.copy">Копировать</span>
+          </div>
+
+          <button type="button" class="btn-apple-secondary" id="btn-master-setup" data-i18n="nav.setup">Запустить настройку</button>
+        </div>
+
+        <!-- State 2 & 3: Online / Paused Module (Phone connected) -->
+        <div class="online-module" id="view-online" style="display: none;">
+          <div class="device-subcard">
+            <div class="device-headline">
+              <div class="device-icon-wrap online" id="device-icon-wrap">
+                <svg class="device-icon" viewBox="0 0 24 24">
+                  <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+                  <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                </svg>
+              </div>
+              <span id="device-name" class="device-name">Controller</span>
+              <span id="device-status-badge" class="device-status-badge online" data-i18n="status.online">online</span>
+            </div>
+
+            <div class="telemetry-row">
+              <span class="metric-pill" id="device-hz">60 Hz</span>
+              <span class="metric-pill" id="device-ping">3 ms</span>
+            </div>
+
+            <!-- Live Gyroscope Euler Angles Strip + Micro Level Widget -->
+            <div class="live-angles-row" id="live-angles-row">
+              <div class="gyro-micro-widget" title="Искусственный горизонт и компас">
+                <svg class="gyro-reticle" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="14" class="reticle-ring"></circle>
+                  <circle cx="16" cy="16" r="3" class="reticle-center"></circle>
+                  <line x1="16" y1="2" x2="16" y2="5" class="reticle-tick"></line>
+                  <line x1="16" y1="27" x2="16" y2="30" class="reticle-tick"></line>
+                  <line x1="2" y1="16" x2="5" y2="16" class="reticle-tick"></line>
+                  <line x1="27" y1="16" x2="30" y2="16" class="reticle-tick"></line>
+                  <circle id="gyro-bubble" cx="16" cy="16" r="3.2" class="gyro-bubble"></circle>
+                  <line id="gyro-yaw-pointer" x1="16" y1="2" x2="16" y2="5" class="yaw-pointer"></line>
+                </svg>
+              </div>
+
+              <div class="angles-cluster">
+                <div class="angle-chip" title="Pitch (наклон вперед/назад)">
+                  <span class="angle-tag">P</span>
+                  <span id="val-pitch" class="angle-num">+0.0°</span>
+                </div>
+                <div class="angle-chip" title="Roll (крен влево/вправо)">
+                  <span class="angle-tag">R</span>
+                  <span id="val-roll" class="angle-num">+0.0°</span>
+                </div>
+                <div class="angle-chip" title="Yaw (поворот)">
+                  <span class="angle-tag">Y</span>
+                  <span id="val-yaw" class="angle-num">+0.0°</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="device-duration-wrap">
+              <span data-i18n="status.connected_time">Подключен</span>
+              <span id="device-time" class="device-duration-val">00:00:00</span>
+            </div>
+          </div>
+
+          <button type="button" class="btn-apple-primary" id="btn-pause-resume" data-i18n="controls.pause">ПАУЗА</button>
+        </div>
+
+        <!-- State 4: Initial Setup Wizard Module -->
+        <div class="setup-module" id="view-setup" style="display: none;">
+          
+          <!-- Screen 0: Platform Selection -->
+          <div class="setup-screen" id="setup-screen-select">
+            <h2 class="setup-headline" data-i18n="setup.title">Начальная настройка</h2>
+            <p class="setup-subhead" data-i18n="setup.select_platform">Выберите платформу вашего устройства:</p>
+
+            <div class="platform-cards">
+              <button type="button" class="platform-card" id="btn-platform-ios">
+                <div class="platform-icon-wrap ios">
+                  <svg class="platform-svg" viewBox="0 0 24 24">
+                    <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                  </svg>
+                </div>
+                <div class="platform-info">
+                  <span class="platform-name" data-i18n="setup.ios_title">iOS (iPhone / iPad)</span>
+                  <span class="platform-desc" data-i18n="setup.ios_desc">Установка локального профиля для Safari</span>
+                </div>
+                <span class="platform-arrow">→</span>
+              </button>
+
+              <button type="button" class="platform-card" id="btn-platform-android">
+                <div class="platform-icon-wrap android">
+                  <svg class="platform-svg" viewBox="0 0 24 24">
+                    <path d="M4 10h16v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8z"></path>
+                    <path d="M7 10V6a5 5 0 0 1 10 0v4"></path>
+                    <circle cx="9" cy="7" r="1"></circle>
+                    <circle cx="15" cy="7" r="1"></circle>
+                    <line x1="8" y1="3" x2="6.5" y2="1"></line>
+                    <line x1="16" y1="3" x2="17.5" y2="1"></line>
+                  </svg>
+                </div>
+                <div class="platform-info">
+                  <span class="platform-name" data-i18n="setup.android_title">Android</span>
+                  <span class="platform-desc" data-i18n="setup.android_desc">Прямое подключение без сертификата</span>
+                </div>
+                <span class="platform-arrow">→</span>
+              </button>
+            </div>
+
+            <button type="button" class="btn-apple-secondary setup-close-btn" id="btn-setup-close" data-i18n="setup.btn_close">Закрыть</button>
+          </div>
+
+          <!-- Screen 1: Android Guide -->
+          <div class="setup-screen" id="setup-screen-android" style="display: none;">
+            <h2 class="setup-headline" data-i18n="setup.android_title">Android</h2>
+
+            <div class="android-split">
+              <div class="android-info-col">
+                <div class="setup-notice-card">
+                  <p class="setup-notice-text" data-i18n="setup.android_hint"></p>
+                </div>
+
+                <div class="wizard-nav-row">
+                  <button type="button" class="btn-apple-secondary" id="btn-android-back" data-i18n="setup.btn_back">← Назад</button>
+                  <button type="button" class="btn-apple-primary" id="btn-android-finish" data-i18n="setup.btn_finish">Завершить</button>
+                </div>
+              </div>
+
+              <div class="android-qr-col">
+                <div class="qr-frame">
+                  <img id="img-qr-android" class="qr-image" src="" alt="Android Connection QR">
+                </div>
+
+                <div class="url-chip" id="chip-url-android" title="Click to copy">
+                  <svg class="url-icon" viewBox="0 0 24 24">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                  </svg>
+                  <span id="link-url-android-text" class="url-text">...</span>
+                  <span id="url-copy-badge-android" class="copy-badge" data-i18n="qr.copy">Копировать</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screen 2: iOS Step-by-Step Wizard -->
+          <div class="setup-screen" id="setup-screen-ios" style="display: none;">
+            <div class="wizard-header">
+              <span class="wizard-badge" id="ios-step-counter">Шаг 1 из 6</span>
+              <h2 class="setup-headline" id="ios-step-title">Шаг 1. Загрузка профиля</h2>
+            </div>
+
+            <!-- Dynamic step container -->
+            <div class="wizard-step-body">
+
+              <!-- Step 1 Content -->
+              <div class="ios-step-pane" id="ios-step-pane-1">
+                <div class="ios-step-split">
+                  <div class="ios-step-info-col">
+                    <p class="ios-step-lead" data-i18n="setup.ios_step1_text"></p>
+
+                    <div class="step-1-qr-card">
+                      <div class="qr-frame">
+                        <img id="img-qr-setup" class="qr-image" src="" alt="Setup Profile QR">
+                      </div>
+
+                      <div class="url-chip" id="chip-url-setup" title="Click to copy">
+                        <svg class="url-icon" viewBox="0 0 24 24">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                        </svg>
+                        <span id="link-url-setup-text" class="url-text">...</span>
+                        <span id="url-copy-badge-setup" class="copy-badge" data-i18n="qr.copy">Копировать</span>
+                      </div>
+                    </div>
+
+                    <!-- Apple Accordion / Disclosure ("Что я вообще устанавливаю и зачем?") -->
+                    <details class="apple-disclosure">
+                      <summary class="disclosure-title">
+                        <span data-i18n="setup.disclosure_title">Что я вообще устанавливаю и зачем?</span>
+                        <svg class="disclosure-chevron" viewBox="0 0 24 24">
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </summary>
+                      <div class="disclosure-body">
+                        <p data-i18n="setup.disclosure_body_1"></p>
+                        <p data-i18n="setup.disclosure_body_2"></p>
+                        <p data-i18n="setup.disclosure_body_3"></p>
+                      </div>
+                    </details>
+                  </div>
+
+                  <div class="ios-step-image-col">
+                    <div class="step-screenshot-wrap">
+                      <img src="assets/images/ios-steps/1.webp" alt="Step 1 Safari Download" class="step-screenshot-img">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 2 Content -->
+              <div class="ios-step-pane" id="ios-step-pane-2" style="display: none;">
+                <div class="ios-step-split">
+                  <div class="ios-step-info-col">
+                    <p class="ios-step-lead" data-i18n="setup.ios_step2_text"></p>
+                    <div class="mockup-capsule">
+                      <span class="mockup-tag">iOS Settings</span>
+                      <span class="mockup-path" data-i18n="setup.ios_step2_badge">Настройки → Профиль загружен</span>
+                    </div>
+                  </div>
+                  <div class="ios-step-image-col">
+                    <div class="step-screenshot-wrap">
+                      <img src="assets/images/ios-steps/2.webp" alt="Step 2 Settings Profile Downloaded" class="step-screenshot-img">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 3 Content -->
+              <div class="ios-step-pane" id="ios-step-pane-3" style="display: none;">
+                <div class="ios-step-split">
+                  <div class="ios-step-info-col">
+                    <p class="ios-step-lead" data-i18n="setup.ios_step3_text"></p>
+                    <div class="mockup-capsule">
+                      <span class="mockup-tag">Action</span>
+                      <span class="mockup-path" data-i18n="setup.ios_step3_badge">Правый верхний угол → Установить</span>
+                    </div>
+                  </div>
+                  <div class="ios-step-image-col">
+                    <div class="step-screenshot-wrap">
+                      <img src="assets/images/ios-steps/3.webp" alt="Step 3 Install Profile" class="step-screenshot-img">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 4 Content -->
+              <div class="ios-step-pane" id="ios-step-pane-4" style="display: none;">
+                <div class="ios-step-split">
+                  <div class="ios-step-info-col">
+                    <p class="ios-step-lead" data-i18n="setup.ios_step4_text"></p>
+                    <div class="mockup-capsule">
+                      <span class="mockup-tag">Confirm</span>
+                      <span class="mockup-path" data-i18n="setup.ios_step4_badge">Подтверждение → Установить</span>
+                    </div>
+                  </div>
+                  <div class="ios-step-image-col">
+                    <div class="step-screenshot-wrap">
+                      <img src="assets/images/ios-steps/4.webp" alt="Step 4 Confirm Installation" class="step-screenshot-img">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 5 Content -->
+              <div class="ios-step-pane" id="ios-step-pane-5" style="display: none;">
+                <div class="ios-step-split">
+                  <div class="ios-step-info-col">
+                    <p class="ios-step-lead" data-i18n="setup.ios_step5_text"></p>
+                    <div class="mockup-capsule">
+                      <span class="mockup-tag">iOS Settings</span>
+                      <span class="mockup-path" data-i18n="setup.ios_step5_badge">Настройки → Основные → Об этом устройстве → Доверие сертификатам</span>
+                    </div>
+                  </div>
+                  <div class="ios-step-image-col">
+                    <div class="step-screenshot-wrap">
+                      <img src="assets/images/ios-steps/5.webp" alt="Step 5 Certificate Trust Settings" class="step-screenshot-img">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Step 6 Content -->
+              <div class="ios-step-pane" id="ios-step-pane-6" style="display: none;">
+                <div class="ios-step-split">
+                  <div class="ios-step-info-col">
+                    <p class="ios-step-lead" data-i18n="setup.ios_step6_text"></p>
+                    <div class="mockup-capsule success">
+                      <span class="mockup-tag">Trust</span>
+                      <span class="mockup-path" data-i18n="setup.ios_step6_badge">GyroBridge Root CA → Включить</span>
+                    </div>
+                  </div>
+                  <div class="ios-step-image-col">
+                    <div class="step-screenshot-wrap">
+                      <img src="assets/images/ios-steps/6.webp" alt="Step 6 Enable Trust" class="step-screenshot-img">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- iOS Wizard Bottom Navigation Bar -->
+            <div class="wizard-nav-row">
+              <button type="button" class="btn-apple-secondary" id="btn-ios-back" data-i18n="setup.btn_back">← Назад</button>
+              <div class="wizard-dots">
+                <span class="wizard-dot active" data-step="1"></span>
+                <span class="wizard-dot" data-step="2"></span>
+                <span class="wizard-dot" data-step="3"></span>
+                <span class="wizard-dot" data-step="4"></span>
+                <span class="wizard-dot" data-step="5"></span>
+                <span class="wizard-dot" data-step="6"></span>
+              </div>
+              <button type="button" class="btn-apple-primary" id="btn-ios-next" data-i18n="setup.btn_next">Далее →</button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Apple Style Footer Bar -->
+  <footer class="app-footer">
+    <span class="footer-link" id="link-live-debug" data-i18n="nav.live_debug" style="display: none;">Live Debug →</span>
+  </footer>
+
+  <!-- Subtle Notification Toast -->
+  <div id="toast" class="toast-msg"></div>
+
+  <script>
+  'use strict';
+
+  // ── High-Fidelity Markdown Parser & Sanitizer ───────────────────────────────
+  function renderMarkdown(str) {
+    if (!str) return '';
+    // 1. Escape HTML special characters for security
+    let s = String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // 2. Markdown Links: [text](https://url)
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" class="md-link" target="_blank" rel="noopener noreferrer">$1</a>');
+
+    // 3. Inline Monospace Code: `code`
+    s = s.replace(/`([^`]+)`/g, '<code class="md-code">$1</code>');
+
+    // 4. Bold: **text**
+    s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+    // 5. Italic: *text*
+    s = s.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    return s;
+  }
+
+  // Open markdown links in external browser instead of inside Wails webview
+  document.addEventListener('click', (e) => {
+    const link = e.target.closest('a.md-link');
+    if (link && link.href) {
+      e.preventDefault();
+      if (window.runtime && window.runtime.BrowserOpenURL) {
+        window.runtime.BrowserOpenURL(link.href);
+      } else {
+        window.open(link.href, '_blank');
+      }
+    }
+  });
+
+  // ── Apple Theme Manager ─────────────────────────────────────────────────────
+  const ThemeManager = {
+    theme: localStorage.getItem('gb_theme') || 'dark',
+
+    init() {
+      this.apply(this.theme);
+      document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
+        this.toggle();
+      });
+    },
+
+    toggle() {
+      this.theme = (this.theme === 'dark') ? 'light' : 'dark';
+      localStorage.setItem('gb_theme', this.theme);
+      this.apply(this.theme);
+    },
+
+    apply(theme) {
+      document.documentElement.setAttribute('data-theme', theme);
+      const sunIcon = document.getElementById('icon-theme-sun');
+      const moonIcon = document.getElementById('icon-theme-moon');
+
+      if (theme === 'dark') {
+        if (sunIcon) sunIcon.style.display = 'block';
+        if (moonIcon) moonIcon.style.display = 'none';
+      } else {
+        if (sunIcon) sunIcon.style.display = 'none';
+        if (moonIcon) moonIcon.style.display = 'block';
+      }
+    }
+  };
+
+  // ── Modular I18n Engine ─────────────────────────────────────────────────────
+  const I18n = {
+    currentLang: localStorage.getItem('gb_lang') || 'ru',
+    dictionary: {},
+
+    t(key) {
+      if (!key) return '';
+      const parts = key.split('.');
+      let cur = this.dictionary;
+      for (const p of parts) {
+        if (cur && typeof cur === 'object' && p in cur) {
+          cur = cur[p];
+        } else {
+          return key;
+        }
+      }
+      return typeof cur === 'string' ? cur : key;
+    },
+
+    applyDOM() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const val = this.t(key);
+        if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
+          el.value = val;
+        } else {
+          el.innerHTML = renderMarkdown(val);
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        const key = el.getAttribute('data-i18n-title');
+        el.title = this.t(key);
+      });
+
+      const titleKey = document.querySelector('title')?.getAttribute('data-i18n');
+      if (titleKey) {
+        document.title = this.t(titleKey);
+      }
+
+      document.documentElement.lang = this.currentLang;
+
+      // Update segmented control buttons
+      document.getElementById('btn-lang-ru')?.classList.toggle('active', this.currentLang === 'ru');
+      document.getElementById('btn-lang-en')?.classList.toggle('active', this.currentLang === 'en');
+    },
+
+    async setLanguage(lang) {
+      try {
+        let jsonStr = '';
+        if (window.go && window.go.main && window.go.main.App) {
+          jsonStr = await window.go.main.App.GetTranslations(lang);
+        }
+        this.dictionary = JSON.parse(jsonStr || '{}');
+        this.currentLang = lang;
+        localStorage.setItem('gb_lang', lang);
+        this.applyDOM();
+        if (typeof SetupWizard !== 'undefined') {
+          SetupWizard.updateI18n();
+        }
+        if (AppState.lastState) {
+          AppState.render(AppState.lastState);
+        }
+      } catch (err) {
+        console.error('Failed to set language:', err);
+      }
+    },
+
+    async init() {
+      document.getElementById('btn-lang-ru')?.addEventListener('click', () => this.setLanguage('ru'));
+      document.getElementById('btn-lang-en')?.addEventListener('click', () => this.setLanguage('en'));
+      await this.setLanguage(this.currentLang);
+    }
+  };
+
+  // ── Toast Utility ───────────────────────────────────────────────────────────
+  function showToast(text) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    toast.textContent = text;
+    toast.classList.add('visible');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+      toast.classList.remove('visible');
+    }, 2000);
+  }
+
+  // ── Universal Copy Chip Helper ──────────────────────────────────────────────
+  function setupCopyChip(chipId, badgeId, getUrlFn) {
+    const chip = document.getElementById(chipId);
+    const badge = document.getElementById(badgeId);
+    if (!chip || !badge) return;
+
+    chip.addEventListener('click', async () => {
+      const url = getUrlFn();
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        const prevKey = badge.getAttribute('data-i18n') || 'qr.copy';
+        badge.textContent = I18n.t('qr.copied');
+        badge.classList.add('copied');
+        clearTimeout(badge._timer);
+        badge._timer = setTimeout(() => {
+          badge.textContent = I18n.t(prevKey);
+          badge.classList.remove('copied');
+        }, 1600);
+      } catch (e) {
+        console.error('Clipboard copy failed:', e);
+      }
+    });
+  }
+
+  // ── Initial Setup Wizard Manager ───────────────────────────────────────────
+  const SetupWizard = {
+    isOpen: false,
+    currentScreen: 'select', // 'select' | 'android' | 'ios'
+    iosStep: 1,
+
+    init() {
+      // Platform select buttons
+      document.getElementById('btn-platform-ios')?.addEventListener('click', () => {
+        this.showScreen('ios');
+      });
+      document.getElementById('btn-platform-android')?.addEventListener('click', () => {
+        this.showScreen('android');
+      });
+
+      // Close button on select screen
+      document.getElementById('btn-setup-close')?.addEventListener('click', () => {
+        this.close();
+      });
+
+      // Android screen navigation
+      document.getElementById('btn-android-back')?.addEventListener('click', () => {
+        this.showScreen('select');
+      });
+      document.getElementById('btn-android-finish')?.addEventListener('click', () => {
+        this.close();
+      });
+
+      // iOS screen navigation
+      document.getElementById('btn-ios-back')?.addEventListener('click', () => {
+        if (this.iosStep > 1) {
+          this.setIosStep(this.iosStep - 1);
+        } else {
+          this.showScreen('select');
+        }
+      });
+
+      document.getElementById('btn-ios-next')?.addEventListener('click', () => {
+        if (this.iosStep < 6) {
+          this.setIosStep(this.iosStep + 1);
+        } else {
+          this.close();
+        }
+      });
+
+      // Step dots click navigation
+      document.querySelectorAll('.wizard-dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+          const targetStep = parseInt(dot.getAttribute('data-step'), 10);
+          if (targetStep >= 1 && targetStep <= 6) {
+            this.setIosStep(targetStep);
+          }
+        });
+      });
+
+      // Bind copy chips for Android and iOS screens
+      setupCopyChip('chip-url-android', 'url-copy-badge-android', () => AppState.lastState?.gamepadUrl || '');
+      setupCopyChip('chip-url-setup', 'url-copy-badge-setup', () => AppState.lastState?.setupUrl || '');
+    },
+
+    open() {
+      this.isOpen = true;
+      const container = document.querySelector('.modular-container');
+      if (container) {
+        container.classList.add('setup-mode');
+        container.classList.remove('setup-mode-wide');
+      }
+      const viewOffline = document.getElementById('view-offline');
+      const viewOnline = document.getElementById('view-online');
+      const viewSetup = document.getElementById('view-setup');
+
+      if (viewOffline) viewOffline.style.display = 'none';
+      if (viewOnline) viewOnline.style.display = 'none';
+      if (viewSetup) viewSetup.style.display = 'flex';
+
+      this.showScreen('select');
+    },
+
+    close() {
+      this.isOpen = false;
+      const container = document.querySelector('.modular-container');
+      if (container) {
+        container.classList.remove('setup-mode');
+        container.classList.remove('setup-mode-wide');
+      }
+      const viewSetup = document.getElementById('view-setup');
+      if (viewSetup) viewSetup.style.display = 'none';
+
+      if (AppState.lastState) {
+        AppState._lastIsOffline = null;
+        AppState.render(AppState.lastState);
+      }
+    },
+
+    showScreen(screen) {
+      this.currentScreen = screen;
+      const selectScreen = document.getElementById('setup-screen-select');
+      const androidScreen = document.getElementById('setup-screen-android');
+      const iosScreen = document.getElementById('setup-screen-ios');
+
+      if (selectScreen) selectScreen.style.display = (screen === 'select') ? 'flex' : 'none';
+      if (androidScreen) androidScreen.style.display = (screen === 'android') ? 'flex' : 'none';
+      if (iosScreen) iosScreen.style.display = (screen === 'ios') ? 'flex' : 'none';
+
+      const container = document.querySelector('.modular-container');
+      if (container) {
+        container.classList.add('setup-mode');
+        if (screen === 'select') {
+          container.classList.remove('setup-mode-wide');
+        } else {
+          container.classList.add('setup-mode-wide');
+        }
+      }
+
+      if (screen === 'ios') {
+        this.setIosStep(this.iosStep || 1);
+      }
+    },
+
+    setIosStep(step) {
+      this.iosStep = Math.max(1, Math.min(6, step));
+
+      // Update step counter text: e.g. "Шаг 1 из 6" / "Step 1 of 6"
+      const counterEl = document.getElementById('ios-step-counter');
+      if (counterEl) {
+        const tpl = I18n.t('setup.step_x_of_y') || 'Шаг {x} из {y}';
+        counterEl.innerHTML = renderMarkdown(tpl.replace('{x}', this.iosStep).replace('{y}', '6'));
+      }
+
+      // Update step title: "setup.ios_stepX_title"
+      const titleEl = document.getElementById('ios-step-title');
+      if (titleEl) {
+        titleEl.innerHTML = renderMarkdown(I18n.t(`setup.ios_step${this.iosStep}_title`));
+      }
+
+      // Toggle panes
+      for (let i = 1; i <= 6; i++) {
+        const pane = document.getElementById(`ios-step-pane-${i}`);
+        if (pane) {
+          pane.style.display = (i === this.iosStep) ? 'flex' : 'none';
+        }
+      }
+
+      // Toggle dots
+      document.querySelectorAll('.wizard-dot').forEach(dot => {
+        const s = parseInt(dot.getAttribute('data-step'), 10);
+        dot.classList.toggle('active', s === this.iosStep);
+      });
+
+      // Update next/finish button label
+      const btnNext = document.getElementById('btn-ios-next');
+      if (btnNext) {
+        if (this.iosStep === 6) {
+          btnNext.setAttribute('data-i18n', 'setup.btn_finish');
+          btnNext.innerHTML = renderMarkdown(I18n.t('setup.btn_finish'));
+        } else {
+          btnNext.setAttribute('data-i18n', 'setup.btn_next');
+          btnNext.innerHTML = renderMarkdown(I18n.t('setup.btn_next'));
+        }
+      }
+    },
+
+    updateI18n() {
+      if (this.currentScreen === 'ios') {
+        this.setIosStep(this.iosStep);
+      }
+    }
+  };
+
+  // ── App State & UI Manager ──────────────────────────────────────────────────
+  const AppState = {
+    initialized: false,
+    _lastStatus: '',
+    _lastIsOffline: null,
+    _lastQrCode: '',
+    lastState: null,
+    currentUrl: '',
+
+    render(state) {
+      this.lastState = state;
+      if (!state) return;
+
+      const viewOffline = document.getElementById('view-offline');
+      const viewOnline = document.getElementById('view-online');
+      const badgeStatus = document.getElementById('badge-status');
+      const statusText = document.getElementById('status-text');
+      const btnPause = document.getElementById('btn-pause-resume');
+      const linkLiveDebug = document.getElementById('link-live-debug');
+
+      // Status capsule: only mutate DOM when status actually changes
+      if (this._lastStatus !== state.status) {
+        this._lastStatus = state.status;
+        badgeStatus.className = `status-capsule ${state.status}`;
+        statusText.setAttribute('data-i18n', `status.${state.status}`);
+        statusText.innerHTML = renderMarkdown(I18n.t(`status.${state.status}`));
+      }
+
+      // If controller just connected while setup was open, auto-close setup to show controller!
+      if (state.status !== 'offline' && SetupWizard.isOpen) {
+        SetupWizard.close();
+      }
+
+      // Populate QR codes and URLs for Android and iOS Setup screens
+      const imgQrAndroid = document.getElementById('img-qr-android');
+      if (state.qrCode && imgQrAndroid && imgQrAndroid.src !== state.qrCode) {
+        imgQrAndroid.src = state.qrCode;
+      }
+      const linkUrlAndroidText = document.getElementById('link-url-android-text');
+      if (linkUrlAndroidText && state.gamepadUrl) {
+        linkUrlAndroidText.textContent = state.gamepadUrl;
+      }
+
+      const imgQrSetup = document.getElementById('img-qr-setup');
+      if (state.setupQrCode && imgQrSetup && imgQrSetup.src !== state.setupQrCode) {
+        imgQrSetup.src = state.setupQrCode;
+      }
+      const linkUrlSetupText = document.getElementById('link-url-setup-text');
+      if (linkUrlSetupText && state.setupUrl) {
+        linkUrlSetupText.textContent = state.setupUrl;
+      }
+
+      const isOffline = (state.status === 'offline');
+      if (this._lastIsOffline !== isOffline) {
+        this._lastIsOffline = isOffline;
+        if (isOffline) {
+          if (!SetupWizard.isOpen) {
+            viewOffline.style.display = 'flex';
+          }
+          viewOnline.style.display = 'none';
+          if (linkLiveDebug) linkLiveDebug.style.display = 'none';
+        } else {
+          viewOffline.style.display = 'none';
+          viewOnline.style.display = 'flex';
+          if (linkLiveDebug) linkLiveDebug.style.display = 'inline-flex';
+        }
+      }
+
+      if (isOffline) {
+        const imgQr = document.getElementById('img-qr');
+        if (state.qrCode && this._lastQrCode !== state.qrCode) {
+          this._lastQrCode = state.qrCode;
+          if (imgQr) imgQr.src = state.qrCode;
+        }
+
+        if (this.currentUrl !== (state.gamepadUrl || '')) {
+          this.currentUrl = state.gamepadUrl || '';
+          const linkUrlText = document.getElementById('link-url-text');
+          if (linkUrlText) linkUrlText.textContent = this.currentUrl || '...';
+        }
+      } else {
+        // State 2 & 3: Online or Paused
+        viewOffline.style.display = 'none';
+        viewOnline.style.display = 'flex';
+        if (linkLiveDebug) linkLiveDebug.style.display = 'inline-flex';
+
+        const deviceIconWrap = document.getElementById('device-icon-wrap');
+        const deviceStatusBadge = document.getElementById('device-status-badge');
+
+        document.getElementById('device-name').textContent = state.deviceName || 'Controller';
+        document.getElementById('device-hz').textContent = `${Math.round(state.hz || 60)} Hz`;
+        document.getElementById('device-ping').textContent = `${state.pingMs || 3} ms`;
+        document.getElementById('device-time').textContent = state.connectedTime || '00:00:00';
+
+        // Format live Euler angles (P, R, Y) with 1 decimal place and +/- sign
+        const p = Number(state.pitch) || 0;
+        const r = Number(state.roll) || 0;
+        const y = Number(state.yaw) || 0;
+
+        const fmtAngle = (deg) => {
+          const sign = deg >= 0 ? '+' : '';
+          return `${sign}${deg.toFixed(1)}°`;
+        };
+        const elPitch = document.getElementById('val-pitch');
+        const elRoll  = document.getElementById('val-roll');
+        const elYaw   = document.getElementById('val-yaw');
+        if (elPitch) elPitch.textContent = fmtAngle(p);
+        if (elRoll)  elRoll.textContent  = fmtAngle(r);
+        if (elYaw)   elYaw.textContent   = fmtAngle(y);
+
+        // Update Micro Gyroscope Level Widget (Bubble & Compass pointer)
+        const bubble = document.getElementById('gyro-bubble');
+        const yawPointer = document.getElementById('gyro-yaw-pointer');
+        if (bubble && yawPointer) {
+          const maxR = 8.5;
+          // Inverted per user calibration: tilt forward -> bubble forward; tilt backward -> bubble backward
+          const offsetY = Math.max(-maxR, Math.min(maxR, p * 0.22));
+
+          // Tilt right (r > 0) -> bubble right (+X in SVG)
+          // Tilt left (r < 0) -> bubble left (-X in SVG)
+          const offsetX = Math.max(-maxR, Math.min(maxR, r * 0.22));
+
+          bubble.style.transform = `translate(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px)`;
+
+          // Snap to glowing green level state if within 4.0 degrees
+          const isLevel = Math.abs(p) <= 4.0 && Math.abs(r) <= 4.0;
+          bubble.classList.toggle('level', isLevel);
+
+          // Rotate compass pointer around center (16, 16) with Yaw
+          yawPointer.style.transform = `rotate(${y.toFixed(1)}deg)`;
+        }
+
+        if (state.isPaused) {
+          if (deviceIconWrap) deviceIconWrap.className = 'device-icon-wrap paused';
+          if (deviceStatusBadge) {
+            deviceStatusBadge.className = 'device-status-badge paused';
+            deviceStatusBadge.setAttribute('data-i18n', 'status.paused');
+            deviceStatusBadge.innerHTML = renderMarkdown(I18n.t('status.paused'));
+          }
+          btnPause.setAttribute('data-i18n', 'controls.resume');
+          btnPause.innerHTML = renderMarkdown(I18n.t('controls.resume'));
+          btnPause.classList.add('paused');
+        } else {
+          if (deviceIconWrap) deviceIconWrap.className = 'device-icon-wrap online';
+          if (deviceStatusBadge) {
+            if (state.hz === 0 && Math.abs(p) < 0.001 && Math.abs(r) < 0.001 && Math.abs(y) < 0.001) {
+              deviceStatusBadge.className = 'device-status-badge waiting';
+              deviceStatusBadge.innerHTML = renderMarkdown(I18n.currentLang === 'ru' ? 'ожидание датчиков...' : 'waiting for sensors...');
+            } else {
+              deviceStatusBadge.className = 'device-status-badge online';
+              deviceStatusBadge.setAttribute('data-i18n', 'status.online');
+              deviceStatusBadge.innerHTML = renderMarkdown(I18n.t('status.online'));
+            }
+          }
+          btnPause.setAttribute('data-i18n', 'controls.pause');
+          btnPause.innerHTML = renderMarkdown(I18n.t('controls.pause'));
+          btnPause.classList.remove('paused');
+        }
+      }
+    },
+
+    async init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
+      // Initialize Setup Wizard
+      SetupWizard.init();
+
+      // Pause button action with debounce guard
+      let pauseBusy = false;
+      document.getElementById('btn-pause-resume')?.addEventListener('click', async () => {
+        if (pauseBusy) return;
+        pauseBusy = true;
+        try {
+          if (window.go && window.go.main && window.go.main.App) {
+            const newState = await window.go.main.App.TogglePause();
+            this.render(newState);
+          }
+        } catch (err) {
+          console.error('TogglePause error:', err);
+        } finally {
+          setTimeout(() => { pauseBusy = false; }, 250);
+        }
+      });
+
+      // Master setup button
+      document.getElementById('btn-master-setup')?.addEventListener('click', () => {
+        SetupWizard.open();
+      });
+
+      // Default offline QR copy chip
+      setupCopyChip('chip-url', 'url-copy-badge', () => this.currentUrl);
+
+      // Live debug placeholder
+      document.getElementById('link-live-debug')?.addEventListener('click', () => {
+        showToast(I18n.currentLang === 'ru' ? 'Live Debug в разработке' : 'Live Debug coming soon');
+      });
+
+      // Listen for real-time state changes from Wails backend
+      if (window.runtime && window.runtime.EventsOn) {
+        window.runtime.EventsOn('state:change', (state) => {
+          this.render(state);
+        });
+      }
+
+      // Initial state load
+      if (window.go && window.go.main && window.go.main.App) {
+        const state = await window.go.main.App.GetState();
+        this.render(state);
+      }
+    }
+  };
+
+  // ── Bootstrap ───────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', () => {
+    ThemeManager.init();
+
+    let ready = false;
+    let pollWails = null;
+    let fallbackTimer = null;
+
+    const startApp = () => {
+      if (ready) return;
+      ready = true;
+      if (pollWails) clearInterval(pollWails);
+      if (fallbackTimer) clearTimeout(fallbackTimer);
+      I18n.init();
+      AppState.init();
+    };
+
+    pollWails = setInterval(() => {
+      if (window.go && window.go.main && window.go.main.App) {
+        startApp();
+      }
+    }, 40);
+
+    fallbackTimer = setTimeout(startApp, 1500);
+  });
+  </script>
+</body>
+</html>

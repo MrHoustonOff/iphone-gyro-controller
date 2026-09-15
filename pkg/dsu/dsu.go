@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"gyrobridge/internal/server"
+	"gyrobridge/pkg/server"
 )
 
 const (
@@ -60,6 +60,10 @@ type Server struct {
 
 	stopChan chan struct{}
 	running  atomic.Bool
+
+	// Lifecycle event hooks for clean, non-spammy logging
+	OnClientConnect    func(addr *net.UDPAddr)
+	OnClientDisconnect func(addr *net.UDPAddr)
 }
 
 // NewServer creates a new Cemuhook DSU server.
@@ -114,15 +118,10 @@ func (s *Server) SendMotion(frame server.MotionFrame) {
 		return
 	}
 
-	s.lastFrameMu.Lock()
-	s.lastFrame = frame
-	s.lastFrameMu.Unlock()
-
 	s.clientsMu.RLock()
-	defer s.clientsMu.RUnlock()
-
 	if len(s.clients) == 0 {
-		return
+		s.clientsMu.RUnlock()
+		return // Fast path: zero emulators subscribed, zero allocations, zero packet work!
 	}
 
 	packetNum := atomic.AddUint32(&s.packetCounter, 1)
@@ -135,8 +134,13 @@ func (s *Server) SendMotion(frame server.MotionFrame) {
 	for _, client := range s.clients {
 		_, _ = s.conn.WriteToUDP(pkt, client.Addr)
 	}
+	s.clientsMu.RUnlock()
 
 	padPacketPool.Put(bufPtr)
+
+	s.lastFrameMu.Lock()
+	s.lastFrame = frame
+	s.lastFrameMu.Unlock()
 }
 
 func (s *Server) fillPadDataPacket(buf []byte, packetNum uint32, frame server.MotionFrame) {
@@ -294,9 +298,18 @@ func (s *Server) touchClient(addr *net.UDPAddr) {
 	s.clientsMu.Lock()
 	defer s.clientsMu.Unlock()
 
-	s.clients[key] = &ClientSub{
-		Addr:     addr,
-		LastSeen: time.Now(),
+	client, exists := s.clients[key]
+	if !exists {
+		s.clients[key] = &ClientSub{
+			Addr:     addr,
+			LastSeen: time.Now(),
+		}
+		if s.OnClientConnect != nil {
+			connectCb := s.OnClientConnect
+			go connectCb(addr)
+		}
+	} else {
+		client.LastSeen = time.Now()
 	}
 }
 
@@ -314,7 +327,12 @@ func (s *Server) cleanupLoop() {
 			for key, client := range s.clients {
 				// Timeout after 5 seconds of inactivity from emulator
 				if now.Sub(client.LastSeen) > 5*time.Second {
+					expiredAddr := client.Addr
 					delete(s.clients, key)
+					if s.OnClientDisconnect != nil {
+						disconnectCb := s.OnClientDisconnect
+						go disconnectCb(expiredAddr)
+					}
 				}
 			}
 			s.clientsMu.Unlock()

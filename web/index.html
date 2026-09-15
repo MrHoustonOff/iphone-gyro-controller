@@ -74,9 +74,12 @@
       transition: all 0.2s ease;
       touch-action: manipulation;
       text-align: center;
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
+      will-change: transform, filter;
     }
     .btn:active {
-      transform: scale(0.97);
+      transform: scale(0.97) translateZ(0);
     }
 
     /* Button 1: Permissions */
@@ -90,6 +93,18 @@
       color: #34d399;
       border-color: rgba(16, 185, 129, 0.4);
     }
+    .btn-perm.needs-permission {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(37, 99, 235, 0.35));
+      color: #38bdf8;
+      border-color: #38bdf8;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+      animation: pulse-blue 1.8s infinite ease-in-out;
+      cursor: pointer;
+    }
+    @keyframes pulse-blue {
+      0%, 100% { filter: brightness(1); transform: scale(1) translateZ(0); }
+      50% { filter: brightness(1.2); transform: scale(1.02) translateZ(0); }
+    }
 
     /* Button 2: Stream Status / Toggle */
     .btn-stream {
@@ -101,7 +116,7 @@
     .btn-stream.active {
       background: linear-gradient(135deg, #10b981, #059669);
       color: #ffffff;
-      box-shadow: 0 0 24px rgba(16, 185, 129, 0.5);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
       border-color: #34d399;
       animation: pulse-green 2s infinite ease-in-out;
     }
@@ -109,17 +124,24 @@
     .btn-stream.reconnecting {
       background: linear-gradient(135deg, #f59e0b, #d97706);
       color: #ffffff;
-      box-shadow: 0 0 24px rgba(245, 158, 11, 0.5);
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
       border-color: #fbbf24;
       animation: pulse-orange 1.5s infinite ease-in-out;
     }
+    /* Paused - Glowing Amber */
+    .btn-stream.paused {
+      background: linear-gradient(135deg, #d97706, #b45309);
+      color: #ffffff;
+      box-shadow: 0 0 20px rgba(217, 119, 6, 0.5);
+      border-color: #f59e0b;
+    }
     @keyframes pulse-green {
-      0%, 100% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.4); }
-      50% { box-shadow: 0 0 28px rgba(16, 185, 129, 0.7); }
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.18); }
     }
     @keyframes pulse-orange {
-      0%, 100% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.4); }
-      50% { box-shadow: 0 0 28px rgba(245, 158, 11, 0.7); }
+      0%, 100% { filter: brightness(1); }
+      50% { filter: brightness(1.18); }
     }
 
     /* Button 3: Auto-Calibration */
@@ -133,8 +155,11 @@
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(4, 7, 15, 0.9);
+      background: rgba(4, 7, 15, 0.95);
+      -webkit-backdrop-filter: blur(12px);
       backdrop-filter: blur(12px);
+      -webkit-transform: translateZ(0);
+      transform: translateZ(0);
       z-index: 100;
       display: flex;
       align-items: center;
@@ -193,19 +218,19 @@
 
   <!-- 1. Permission Request Button -->
   <button id="btn-perm" class="btn btn-perm">
-    <span>🛡️</span>
-    <span id="txt-perm">Запрос разрешения</span>
+    <span style="font-size: 18px; line-height: 1;">⌖</span>
+    <span id="txt-perm">ВКЛЮЧИТЬ ДАТЧИКИ</span>
   </button>
 
   <!-- 2. Auto-Calibration Button -->
   <button id="btn-calib" class="btn btn-calib">
-    <span>🎯</span>
+    <span style="font-size: 18px; line-height: 1;">⟲</span>
     <span>Автокалибровка</span>
   </button>
 
   <!-- 3. Transmission Start / Status Button -->
   <button id="btn-stream" class="btn btn-stream reconnecting">
-    <span id="icon-stream">⏳</span>
+    <span id="icon-stream" style="font-size: 16px; line-height: 1;">●</span>
     <span id="txt-stream">ПОДКЛЮЧЕНИЕ...</span>
   </button>
 </div>
@@ -213,7 +238,7 @@
 <!-- Auto-Calibration Modal -->
 <div class="modal-backdrop" id="modal-calib">
   <div class="modal-card">
-    <div style="font-size: 32px;">📱</div>
+    <div style="font-size: 28px; font-weight: 700;">⌖</div>
     <div class="modal-instruction" id="modal-msg">
       Положите телефон <strong>экраном вверх</strong> и <strong>вперед к камере</strong>
     </div>
@@ -268,7 +293,7 @@ const btnCloseModal = document.getElementById('btn-close-modal');
 const calibProgress = document.getElementById('calib-progress');
 const modalMsg      = document.getElementById('modal-msg');
 
-let isStreamingEnabled = true;
+let isPaused = false;
 let isConnected = false;
 let isSamplingCalib = false;
 
@@ -340,18 +365,18 @@ const binBuffer = new ArrayBuffer(46);
 const binView   = new DataView(binBuffer);
 
 function updateStreamButtonUI() {
-  if (!isStreamingEnabled) {
-    btnStream.className = 'btn btn-stream';
-    txtStream.textContent = 'СТАРТ ПЕРЕДАЧИ';
-    iconStream.textContent = '▶️';
-  } else if (isConnected) {
-    btnStream.className = 'btn btn-stream active';
-    txtStream.textContent = 'ПЕРЕДАЧА АКТИВНА';
-    iconStream.textContent = '🟢';
-  } else {
+  if (!isConnected) {
     btnStream.className = 'btn btn-stream reconnecting';
     txtStream.textContent = 'ПЕРЕПОДКЛЮЧЕНИЕ...';
-    iconStream.textContent = '⏳';
+    iconStream.textContent = '●';
+  } else if (isPaused) {
+    btnStream.className = 'btn btn-stream paused';
+    txtStream.textContent = 'ПАУЗА (ВОЗОБНОВИТЬ)';
+    iconStream.textContent = '⏸';
+  } else {
+    btnStream.className = 'btn btn-stream active';
+    txtStream.textContent = 'ПЕРЕДАЧА АКТИВНА';
+    iconStream.textContent = '●';
   }
 }
 
@@ -363,6 +388,49 @@ function connectWSS() {
   ws.onopen = () => {
     isConnected = true;
     updateStreamButtonUI();
+  };
+
+  ws.onmessage = async (e) => {
+    let text = '';
+    if (e.data instanceof ArrayBuffer) {
+      if (e.data.byteLength === 2) {
+        const bytes = new Uint8Array(e.data);
+        if (bytes[0] === 0x50) { // 'P'
+          isPaused = (bytes[1] === 1);
+          updateStreamButtonUI();
+          return;
+        }
+      }
+      text = new TextDecoder().decode(e.data);
+    } else if (e.data instanceof Blob) {
+      if (e.data.size === 2) {
+        const buf = await e.data.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        if (bytes[0] === 0x50) {
+          isPaused = (bytes[1] === 1);
+          updateStreamButtonUI();
+          return;
+        }
+      }
+      text = await e.data.text();
+    } else if (typeof e.data === 'string') {
+      text = e.data;
+    }
+
+    if (!text) return;
+    if (text === 'PING') {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try { ws.send('PONG'); } catch (err) {}
+      }
+      return;
+    }
+    try {
+      const msg = JSON.parse(text);
+      if (msg.type === 'pause') {
+        isPaused = !!msg.isPaused;
+        updateStreamButtonUI();
+      }
+    } catch (err) {}
   };
 
   ws.onclose = () => {
@@ -378,9 +446,57 @@ function connectWSS() {
 }
 connectWSS();
 
-btnStream.addEventListener('click', () => {
-  isStreamingEnabled = !isStreamingEnabled;
+// Client idle heartbeat: keep connection alive even when phone is still on table
+setInterval(() => {
+  if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
+    if (performance.now() - lastMotionTime > 1500) {
+      sendFrame();
+    }
+  }
+}, 1000);
+
+// Background failsafe poll: sync pause state with PC every 400ms
+setInterval(async () => {
+  try {
+    const res = await fetch('/api/pause?t=' + Date.now(), { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (typeof data.isPaused === 'boolean' && data.isPaused !== isPaused) {
+        isPaused = data.isPaused;
+        updateStreamButtonUI();
+      }
+    }
+  } catch (e) {}
+}, 400);
+
+btnStream.addEventListener('click', async () => {
+  if (!isConnected) {
+    connectWSS();
+    return;
+  }
+  if (!sensorsActive && needsPermission) {
+    requestSensors();
+  }
+  isPaused = !isPaused;
   updateStreamButtonUI();
+
+  // 1. Dual WebSocket transmission: Binary 2-byte + JSON text
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    try {
+      const binCtrl = new Uint8Array([0x50, isPaused ? 1 : 0]);
+      ws.send(binCtrl.buffer);
+      ws.send(JSON.stringify({ type: 'pause', isPaused: isPaused }));
+    } catch (err) {}
+  }
+
+  // 2. HTTP POST fallback for 100% redundancy
+  try {
+    fetch('/api/pause', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isPaused: isPaused })
+    }).catch(() => {});
+  } catch (err) {}
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -392,6 +508,9 @@ let dsuAccX = 0, dsuAccY = 0, dsuAccZ = 0;
 let lastMotionTime = 0;
 
 function onOrientation(e) {
+  if (e.alpha !== null || e.beta !== null || e.gamma !== null) {
+    onFirstSensorData();
+  }
   curAlpha = e.alpha || 0;
   curBeta  = e.beta  || 0;
   curGamma = e.gamma || 0;
@@ -424,6 +543,7 @@ function onOrientation(e) {
 
 function onMotion(e) {
   lastMotionTime = performance.now();
+  onFirstSensorData();
 
   let rx = 0, ry = 0, rz = 0;
   if (e.rotationRate) {
@@ -470,7 +590,7 @@ function onMotion(e) {
 }
 
 function sendFrame() {
-  if (!isStreamingEnabled || !isConnected || !ws || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) return;
+  if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) return;
 
   binView.setUint32(0,  (Date.now() & 0xFFFFFFFF) >>> 0, true);
   binView.setFloat32(4,  dsuPitch, true); // Pitch (RotX) -> offset 68
@@ -483,7 +603,7 @@ function sendFrame() {
   binView.setFloat32(32, dsuAccX,  true);
   binView.setFloat32(36, dsuAccY,  true);
   binView.setFloat32(40, dsuAccZ,  true);
-  binView.setUint16(44,  0,        true);
+  binView.setUint16(44,  isPaused ? 1 : 0, true);
   ws.send(binBuffer);
 }
 
@@ -532,7 +652,7 @@ btnStartCalib.addEventListener('click', () => {
       }
 
       zeroYawOffset = curAlpha; // Tare heading
-      modalMsg.innerHTML = '<span style="color:#10b981;">✅ Калибровка завершена!</span>';
+      modalMsg.innerHTML = '<span style="color:#10b981;">✓ Калибровка завершена!</span>';
       setTimeout(() => {
         modalCalib.classList.remove('open');
       }, 600);
@@ -543,19 +663,21 @@ btnStartCalib.addEventListener('click', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. Permission Request Button & Sensor Initialization
 // ─────────────────────────────────────────────────────────────────────────────
-function initSensors() {
-  window.addEventListener('deviceorientation', onOrientation, true);
-  window.addEventListener('devicemotion', onMotion, true);
-  btnPerm.classList.add('granted');
-  txtPerm.textContent = 'Датчики включены ✓';
-  if ('wakeLock' in navigator) {
-    navigator.wakeLock.request('screen').catch(() => {});
+const needsPermission = typeof DeviceMotionEvent !== 'undefined' &&
+                        typeof DeviceMotionEvent.requestPermission === 'function';
+let sensorsActive = false;
+
+function onFirstSensorData() {
+  if (!sensorsActive) {
+    sensorsActive = true;
+    btnPerm.classList.remove('needs-permission');
+    btnPerm.classList.add('granted');
+    txtPerm.textContent = 'Датчики работают ✓';
   }
 }
 
-btnPerm.addEventListener('click', async () => {
-  if (typeof DeviceMotionEvent !== 'undefined' &&
-      typeof DeviceMotionEvent.requestPermission === 'function') {
+async function requestSensors() {
+  if (needsPermission) {
     try {
       const resp = await DeviceMotionEvent.requestPermission();
       if (resp === 'granted') {
@@ -569,10 +691,26 @@ btnPerm.addEventListener('click', async () => {
   } else {
     initSensors();
   }
+}
+
+function initSensors() {
+  window.addEventListener('deviceorientation', onOrientation, true);
+  window.addEventListener('devicemotion', onMotion, true);
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').catch(() => {});
+  }
+}
+
+btnPerm.addEventListener('click', () => {
+  requestSensors();
 });
 
-// Auto-start for Android
-initSensors();
+if (needsPermission) {
+  btnPerm.classList.add('needs-permission');
+  txtPerm.textContent = 'ВКЛЮЧИТЬ ДАТЧИКИ (НАЖМИТЕ)';
+} else {
+  initSensors();
+}
 
 </script>
 </body>

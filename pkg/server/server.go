@@ -8,11 +8,12 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/gorilla/websocket"
-	"gyrobridge/internal/ca"
+	"gyrobridge/pkg/ca"
 )
 
 // MotionFrame represents telemetry received from mobile device sensors (46-byte binary payload).
@@ -54,6 +55,15 @@ type Server struct {
 	// modules (e.g. the 3D visualizer) can register additional routes before Start().
 	HTTPMux  *http.ServeMux
 	HTTPSMux *http.ServeMux
+
+	// Lifecycle event hooks for clean, non-spammy logging
+	OnClientConnect    func(remoteAddr string)
+	OnClientDisconnect func(remoteAddr string)
+	OnClientPause      func(isPaused bool)
+	GetIsPaused        func() bool
+
+	clientMu    sync.Mutex
+	clientConns map[*websocket.Conn]*sync.Mutex
 }
 
 // NewServer initializes HTTP and HTTPS server instances.
@@ -62,14 +72,15 @@ func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []
 	httpsMux := http.NewServeMux()
 
 	s := &Server{
-		caManager:  caMgr,
-		httpPort:   httpPort,
-		httpsPort:  httpsPort,
-		webContent: webHTML,
-		onFrame:    onFrame,
-		stopChan:   make(chan struct{}),
-		HTTPMux:    httpMux,
-		HTTPSMux:   httpsMux,
+		caManager:   caMgr,
+		httpPort:    httpPort,
+		httpsPort:   httpsPort,
+		webContent:  webHTML,
+		onFrame:     onFrame,
+		stopChan:    make(chan struct{}),
+		HTTPMux:     httpMux,
+		HTTPSMux:    httpsMux,
+		clientConns: make(map[*websocket.Conn]*sync.Mutex),
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -82,9 +93,11 @@ func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []
 	// Register core routes
 	httpMux.HandleFunc("/ca.mobileconfig", s.handleMobileConfig)
 	httpMux.HandleFunc("/ca.crt", s.handleRawCACert)
+	httpMux.HandleFunc("/api/pause", s.handleAPIPause)
 
 	httpsMux.HandleFunc("/ca.mobileconfig", s.handleMobileConfig)
 	httpsMux.HandleFunc("/ca.crt", s.handleRawCACert)
+	httpsMux.HandleFunc("/api/pause", s.handleAPIPause)
 	httpsMux.HandleFunc("/ws", s.handleWebSocket)
 	httpsMux.HandleFunc("/", s.handleWebClient)
 
@@ -196,12 +209,15 @@ func (s *Server) handleRawCACert(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleWebClient(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
 	w.WriteHeader(http.StatusOK)
 	w.Write(s.webContent)
 }
 
 const (
-	wsReadDeadline = 10 * time.Second // connection dies if no client frame in this window
+	wsReadDeadline = 30 * time.Second // connection dies if no client frame in this window
 	wsPingInterval = 2 * time.Second  // server→client keepalive ping interval
 	wsPingText     = "PING"           // client listens for this and resets its own watchdog
 )
@@ -213,13 +229,54 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	s.activeClient.Add(1)
-	defer s.activeClient.Add(-1)
+	// Optimize underlying TCP connection for ultra-low latency & keepalive
+	if tcpConn, ok := conn.UnderlyingConn().(*net.TCPConn); ok {
+		_ = tcpConn.SetNoDelay(true)
+		_ = tcpConn.SetKeepAlive(true)
+		_ = tcpConn.SetKeepAlivePeriod(10 * time.Second)
+	}
 
-	// Arm read deadline — refreshed on every incoming frame.
-	// If the phone goes silent (network drop, Safari backgrounded, etc.)
-	// this will unblock ReadMessage and cleanly close the connection,
-	// triggering the client's onclose→reconnect path.
+	remoteAddr := r.RemoteAddr
+	s.activeClient.Add(1)
+	if s.OnClientConnect != nil {
+		s.OnClientConnect(remoteAddr)
+	}
+
+	writeMu := &sync.Mutex{}
+	s.clientMu.Lock()
+	s.clientConns[conn] = writeMu
+	s.clientMu.Unlock()
+
+	defer func() {
+		s.clientMu.Lock()
+		delete(s.clientConns, conn)
+		s.clientMu.Unlock()
+
+		s.activeClient.Add(-1)
+		if s.OnClientDisconnect != nil {
+			s.OnClientDisconnect(remoteAddr)
+		}
+	}()
+
+	// Send current pause state immediately upon connection (dual binary + text)
+	if s.GetIsPaused != nil {
+		isPaused := s.GetIsPaused()
+		initMsg, _ := json.Marshal(map[string]interface{}{
+			"type":     "pause",
+			"isPaused": isPaused,
+		})
+		var pByte byte = 0
+		if isPaused {
+			pByte = 1
+		}
+		writeMu.Lock()
+		conn.SetWriteDeadline(time.Now().Add(2 * time.Second))
+		_ = conn.WriteMessage(websocket.BinaryMessage, []byte{0x50, pByte})
+		_ = conn.WriteMessage(websocket.TextMessage, initMsg)
+		writeMu.Unlock()
+	}
+
+	// Arm initial read deadline
 	conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
 
 	// Server→client keepalive goroutine.
@@ -235,8 +292,11 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			case <-done:
 				return
 			case <-t.C:
+				writeMu.Lock()
 				conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-				if err := conn.WriteMessage(websocket.TextMessage, []byte(wsPingText)); err != nil {
+				err := conn.WriteMessage(websocket.TextMessage, []byte(wsPingText))
+				writeMu.Unlock()
+				if err != nil {
 					return // connection dead, exit silently; defer conn.Close() handles cleanup
 				}
 			}
@@ -244,13 +304,48 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	// Read telemetry frames (binary or JSON)
+	lastDeadlineRenew := time.Now()
 	for {
 		msgType, message, err := conn.ReadMessage()
 		if err != nil {
 			break
 		}
-		// Fresh lease: client is alive, extend deadline
-		conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+
+		// Refresh read deadline periodically (every 2s) instead of every frame
+		// Eliminates ~100 redundant timer/syscalls per second while streaming!
+		now := time.Now()
+		if now.Sub(lastDeadlineRenew) >= 2*time.Second {
+			_ = conn.SetReadDeadline(now.Add(wsReadDeadline))
+			lastDeadlineRenew = now
+		}
+
+		// Check for client keepalive PONG
+		if msgType == websocket.TextMessage && string(message) == "PONG" {
+			_ = conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+			continue
+		}
+
+		// Check for binary control messages (e.g. 2-byte [0x50, 0x01/0x00])
+		if msgType == websocket.BinaryMessage && len(message) == 2 && message[0] == 0x50 {
+			if s.OnClientPause != nil {
+				s.OnClientPause(message[1] == 1)
+			}
+			continue
+		}
+
+		// Check for text control messages (e.g. phone clicked pause/resume)
+		if msgType == websocket.TextMessage {
+			var ctrl struct {
+				Type     string `json:"type"`
+				IsPaused bool   `json:"isPaused"`
+			}
+			if err := json.Unmarshal(message, &ctrl); err == nil && ctrl.Type == "pause" {
+				if s.OnClientPause != nil {
+					s.OnClientPause(ctrl.IsPaused)
+				}
+				continue
+			}
+		}
 
 		frame, ok := s.parseFrame(msgType, message)
 		if !ok {
@@ -315,4 +410,93 @@ func (s *Server) PacketStats() (uint64, int32, float64) {
 	clients := s.activeClient.Load()
 	hz := math.Float64frombits(s.currentHzBits.Load())
 	return total, clients, hz
+}
+
+// BroadcastPause sends a pause state notification to all currently connected WebSocket clients.
+func (s *Server) BroadcastPause(isPaused bool) {
+	s.clientMu.Lock()
+	defer s.clientMu.Unlock()
+
+	msg, _ := json.Marshal(map[string]interface{}{
+		"type":     "pause",
+		"isPaused": isPaused,
+	})
+
+	var pByte byte = 0
+	if isPaused {
+		pByte = 1
+	}
+	binMsg := []byte{0x50, pByte}
+
+	for conn, mu := range s.clientConns {
+		mu.Lock()
+		conn.SetWriteDeadline(time.Now().Add(1 * time.Second))
+		_ = conn.WriteMessage(websocket.BinaryMessage, binMsg)
+		_ = conn.WriteMessage(websocket.TextMessage, msg)
+		mu.Unlock()
+	}
+}
+
+// QuaternionToEuler converts Cemuhook SO(3) unit quaternion (Qx=Pitch, Qy=Yaw, Qz=-Roll, Qw=W)
+// to intuitive Euler angles (Pitch, Roll, Yaw) in degrees:
+// - Pitch > 0: phone tilted forward (nose down); Pitch < 0: phone tilted backward (nose up)
+// - Roll  > 0: phone tilted right; Roll < 0: phone tilted left
+// - Yaw: rotation around vertical Y axis (compass heading / spin on table)
+func QuaternionToEuler(qx, qy, qz, qw float32) (pitch, roll, yaw float64) {
+	// Pitch (rotation around X axis: forward/backward tilt)
+	sinp := 2 * (float64(qw)*float64(qx) - float64(qy)*float64(qz))
+	if math.Abs(sinp) >= 1 {
+		pitch = math.Copysign(90.0, sinp)
+	} else {
+		pitch = math.Asin(sinp) * 180 / math.Pi
+	}
+
+	// Roll (rotation around Z axis: left/right tilt; positive = tilt right)
+	sinr := 2 * (float64(qw)*float64(qz) + float64(qx)*float64(qy))
+	cosr := 1 - 2*(float64(qz)*float64(qz) + float64(qx)*float64(qx))
+	roll = -math.Atan2(sinr, cosr) * 180 / math.Pi
+
+	// Yaw (rotation around Y axis: spin on table; positive = turning right)
+	siny := 2 * (float64(qw)*float64(qy) + float64(qx)*float64(qz))
+	cosy := 1 - 2*(float64(qx)*float64(qx) + float64(qy)*float64(qy))
+	yaw = -math.Atan2(siny, cosy) * 180 / math.Pi
+
+	return pitch, roll, yaw
+}
+
+// handleAPIPause provides a REST endpoint for checking and toggling pause state.
+// Acts as a failsafe layer alongside WebSockets for mobile browsers.
+func (s *Server) handleAPIPause(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	if r.Method == http.MethodOptions {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		var body struct {
+			IsPaused bool `json:"isPaused"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err == nil {
+			if s.OnClientPause != nil {
+				s.OnClientPause(body.IsPaused)
+			}
+			s.BroadcastPause(body.IsPaused)
+		}
+	}
+
+	isPaused := false
+	if s.GetIsPaused != nil {
+		isPaused = s.GetIsPaused()
+	}
+
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"isPaused": isPaused,
+	})
 }
