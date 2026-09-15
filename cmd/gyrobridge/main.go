@@ -87,8 +87,24 @@ func main() {
 		fmt.Printf("[+] Cemuhook DSU Server running on UDP port %d (Ready for Cemu / PadTest / Dolphin)\n", dsu.DefaultPort)
 	}
 
+	// Server-side gyro hysteresis filter.
+	// Fixes two root causes found from session data analysis:
+	//   1. Startup burst: first ~10 frames carry raw MEMS bias before JS ZUPT converges → zeroed.
+	//   2. Isolated tremor bursts: 4-5.6°/s spikes between ZUPT zero-frames → zeroed by hysteresis.
+	//
+	// State machine:
+	//   STILL  → rot_mag < LOW for ≥ N_FRAMES consecutive frames, OR startup warmup
+	//   MOVING → rot_mag > HIGH (only transition out of STILL)
+	//
+	// Tuned from session.csv:
+	//   Isolated bursts: 2-5.6°/s → killed by LOW=5.0
+	//   Minimum real motion observed: ~8-10°/s → HIGH=8.0 allows clean exit
+	gf := &gyroHysteresis{}
+
 	srv := server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
-		// Pure fast-path: zero allocations, forward frame directly to Cemuhook DSU clients
+		// Apply server-side hysteresis (zero-copy, pure arithmetic, no alloc)
+		gf.apply(&frame)
+		// Forward to Cemuhook DSU clients
 		dsuSrv.SendMotion(frame)
 		// Session logging (no-op when --log not set)
 		if sessionLogger != nil {
@@ -292,4 +308,77 @@ func (sl *sessionLog) Close() {
 	sl.bw.Flush()
 	sl.f.Close()
 	fmt.Printf("\n[+] Session log saved: %d frames → %s\n", sl.frames, sl.f.Name())
+}
+
+// ── Server-side Gyro Hysteresis Filter ─────────────────────────────────────
+//
+// Two-state machine tuned from real session data (session.csv):
+//
+//	STILL:  rot_mag < LOW_DEG for ≥ STILL_FRAMES consecutive → gyro zeroed.
+//	        Once in STILL, stays STILL until rot_mag > HIGH_DEG.
+//	        During first WARMUP_FRAMES frames, also forces STILL (JS ZUPT window
+//	        hasn't converged yet so raw MEMS bias would leak through).
+//
+//	MOVING: rot_mag > HIGH_DEG → pass gyro through unchanged.
+//
+// Calibrated values:
+//   - Isolated hand-tremor bursts observed: 2.1 – 5.6 °/s  →  LOW = 5.0
+//   - Minimum intentional motion observed:  ~8 °/s          →  HIGH = 8.0
+//   - Frames to confirm still:              3 (~50ms @60Hz)  →  STILL_FRAMES = 3
+//   - JS ZUPT warmup window size:           ~10 samples      →  WARMUP = 12
+const (
+	gyroLow         = 5.0 // °/s – below this, start counting toward STILL
+	gyroHigh        = 8.0 // °/s – above this, exit STILL state
+	gyroStillFrames = 3   // consecutive low frames before declaring STILL
+	gyroWarmup      = 12  // startup frames to suppress (JS ZUPT not converged)
+)
+
+type gyroHysteresis struct {
+	isStill    bool
+	lowCount   int
+	frameCount int
+}
+
+func (g *gyroHysteresis) apply(f *server.MotionFrame) {
+	g.frameCount++
+
+	// Force STILL during startup warmup (before JS ZUPT window is full)
+	if g.frameCount <= gyroWarmup {
+		f.RotX = 0
+		f.RotY = 0
+		f.RotZ = 0
+		return
+	}
+
+	rotMag := math.Sqrt(float64(f.RotX*f.RotX + f.RotY*f.RotY + f.RotZ*f.RotZ))
+
+	if g.isStill {
+		if rotMag > gyroHigh {
+			// Definitive motion: exit STILL immediately
+			g.isStill = false
+			g.lowCount = 0
+			// Let this frame through unchanged
+		} else {
+			// Stay STILL: suppress gyro (accel still passes — it's needed by AHRS)
+			f.RotX = 0
+			f.RotY = 0
+			f.RotZ = 0
+		}
+	} else {
+		// MOVING state
+		if rotMag < gyroLow {
+			g.lowCount++
+			if g.lowCount >= gyroStillFrames {
+				g.isStill = true
+				f.RotX = 0
+				f.RotY = 0
+				f.RotZ = 0
+			}
+			// Frames below LOW but not yet declared STILL still pass through
+			// (they're part of real deceleration — only suppress after N frames)
+		} else {
+			// Clearly moving: reset counter
+			g.lowCount = 0
+		}
+	}
 }
