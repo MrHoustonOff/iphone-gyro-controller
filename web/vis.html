@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GyroBridge Monitor</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #060a12;
+      color: #e2e8f0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top bar ── */
+    #topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: rgba(15,20,35,0.95);
+      border-bottom: 1px solid #1e293b;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+    #title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.04em;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #1e293b;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+    .dot-ok   { background: #22c55e; box-shadow: 0 0 8px #22c55e88; }
+    .dot-warn { background: #f59e0b; }
+    .dot-err  { background: #ef4444; }
+
+    /* ── Three.js canvas wrapper ── */
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    canvas { display: block; }
+
+    /* ── Axis labels in 3D canvas ── */
+    .axis-label {
+      position: absolute;
+      font-size: 13px;
+      font-weight: 700;
+      pointer-events: none;
+      text-shadow: 0 0 6px #000, 0 0 12px #000;
+      display: none;
+    }
+
+    /* ── Bottom telemetry bar ── */
+    #telebar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1px;
+      background: #0f172a;
+      border-top: 1px solid #1e293b;
+      flex-shrink: 0;
+    }
+    .tele-cell {
+      padding: 10px 16px;
+      background: #0b1120;
+    }
+    .tele-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .tele-val {
+      font-size: 13px;
+      font-family: ui-monospace, monospace;
+      color: #cbd5e1;
+      white-space: nowrap;
+    }
+    .tele-val.highlight { color: #38bdf8; }
+    .tele-val.green     { color: #4ade80; }
+    .tele-val.red       { color: #f87171; }
+
+    /* ── No-signal overlay ── */
+    #overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(6,10,18,0.85);
+      font-size: 16px;
+      color: #64748b;
+      gap: 12px;
+      pointer-events: none;
+    }
+    #overlay.hidden { display: none; }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid #1e293b;
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div id="topbar">
+  <span id="title">GyroBridge · 3D Monitor</span>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <div class="badge" id="badge-ws">
+      <span class="dot dot-warn" id="dot-ws"></span>
+      <span id="txt-ws">Connecting…</span>
+    </div>
+    <div class="badge" id="badge-rate">
+      <span style="color:#4ade80;font-variant-numeric:tabular-nums;" id="txt-hz">0.0 Hz</span>
+    </div>
+    <div class="badge" id="badge-still">
+      <span id="txt-still">—</span>
+    </div>
+  </div>
+</div>
+
+<!-- Three.js canvas -->
+<div id="canvas-wrap">
+  <div id="overlay">
+    <div class="spinner"></div>
+    <span id="overlay-msg">Waiting for phone connection…</span>
+  </div>
+</div>
+
+<!-- Telemetry bar -->
+<div id="telebar">
+  <div class="tele-cell">
+    <div class="tele-label">QUATERNION  W / X / Y / Z</div>
+    <div class="tele-val highlight" id="v-quat">1.000 / 0.000 / 0.000 / 0.000</div>
+  </div>
+  <div class="tele-cell">
+    <div class="tele-label">GYRO  P / R / Y  (°/s)</div>
+    <div class="tele-val" id="v-gyro">0.0 / 0.0 / 0.0</div>
+  </div>
+  <div class="tele-cell">
+    <div class="tele-label">ACCEL  X / Y / Z  (g)</div>
+    <div class="tele-val" id="v-acc">0.00 / 0.00 / 0.00</div>
+  </div>
+  <div class="tele-cell">
+    <div class="tele-label">STATUS</div>
+    <div class="tele-val" id="v-status">—</div>
+  </div>
+</div>
+
+<!-- Three.js from CDN (r134 — stable, no import maps needed) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
+<script>
+'use strict';
+
+// ────────────────────────────────────────────────────────────────────────────
+// 1. Three.js scene setup
+// ────────────────────────────────────────────────────────────────────────────
+const wrap = document.getElementById('canvas-wrap');
+
+const scene    = new THREE.Scene();
+scene.background = new THREE.Color(0x060a12);
+
+const camera   = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
+camera.position.set(2.8, 2.0, 3.5);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
+wrap.appendChild(renderer.domElement);
+
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  renderer.setSize(w, h);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── Lighting ──
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+dirLight.position.set(4, 6, 5);
+scene.add(dirLight);
+const fillLight = new THREE.DirectionalLight(0x8ab4f8, 0.3);
+fillLight.position.set(-4, -2, -3);
+scene.add(fillLight);
+
+// ── Cube ──
+// Six faces in DSU axis colors:
+//   +X (right)  = red      -X = dark red
+//   +Y (up)     = green    -Y = dark green
+//   +Z (front)  = blue     -Z = dark blue
+const geo = new THREE.BoxGeometry(1.6, 1.6, 1.6);
+const mats = [
+  new THREE.MeshLambertMaterial({ color: 0xe53e3e }),  // +X right
+  new THREE.MeshLambertMaterial({ color: 0x822727 }),  // -X
+  new THREE.MeshLambertMaterial({ color: 0x38a169 }),  // +Y top
+  new THREE.MeshLambertMaterial({ color: 0x276749 }),  // -Y bottom
+  new THREE.MeshLambertMaterial({ color: 0x3182ce }),  // +Z front
+  new THREE.MeshLambertMaterial({ color: 0x2a4a8a }),  // -Z back
+];
+const cube = new THREE.Mesh(geo, mats);
+scene.add(cube);
+
+// Wireframe overlay for crisp edges
+const edges = new THREE.EdgesGeometry(geo);
+const lineMat = new THREE.LineBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true });
+cube.add(new THREE.LineSegments(edges, lineMat));
+
+// ── World-space axis arrows (fixed in scene) ──
+scene.add(new THREE.AxesHelper(2.4));
+
+// Small grid floor
+const grid = new THREE.GridHelper(6, 12, 0x1e293b, 0x1e293b);
+grid.position.y = -1.8;
+scene.add(grid);
+
+// ────────────────────────────────────────────────────────────────────────────
+// 2. Quaternion state
+//    We receive (qx, qy, qz, qw) from the phone.
+//    Three.js uses (x, y, z, w) order in set() — same convention.
+//    Apply directly; no SLERP so cube is a pure raw-data debug view.
+// ────────────────────────────────────────────────────────────────────────────
+const targetQ = new THREE.Quaternion(0, 0, 0, 1);
+
+// ── Render loop ──
+function animate() {
+  requestAnimationFrame(animate);
+  cube.quaternion.copy(targetQ);
+  renderer.render(scene, camera);
+}
+animate();
+
+// ────────────────────────────────────────────────────────────────────────────
+// 3. WebSocket to GyroBridge server
+//    Connects to ws://localhost:<port>/vis/ws
+//    Server pushes JSON frames at ~60 Hz.
+// ────────────────────────────────────────────────────────────────────────────
+const overlay    = document.getElementById('overlay');
+const overlayMsg = document.getElementById('overlay-msg');
+const dotWs      = document.getElementById('dot-ws');
+const txtWs      = document.getElementById('txt-ws');
+const txtHz      = document.getElementById('txt-hz');
+const txtStill   = document.getElementById('txt-still');
+const vQuat      = document.getElementById('v-quat');
+const vGyro      = document.getElementById('v-gyro');
+const vAcc       = document.getElementById('v-acc');
+const vStatus    = document.getElementById('v-status');
+
+let ws = null;
+let hzCnt = 0;
+let lastHzTime = performance.now();
+let lastFrameTime = 0;
+let totalFrames = 0;
+
+function setStatus(state, text) {
+  dotWs.className = 'dot dot-' + state;
+  txtWs.textContent = text;
+}
+
+function connect() {
+  const url = `ws://${location.host}/vis/ws`;
+  ws = new WebSocket(url);
+
+  ws.onopen = () => {
+    setStatus('ok', 'CONNECTED');
+    overlay.classList.add('hidden');
+  };
+
+  ws.onmessage = (e) => {
+    let d;
+    try { d = JSON.parse(e.data); } catch { return; }
+
+    // Apply quaternion to cube
+    targetQ.set(d.qx, d.qy, d.qz, d.qw);
+
+    // Hz counter
+    totalFrames++;
+    hzCnt++;
+    const now = performance.now();
+    if (now - lastHzTime >= 500) {
+      const hz = (hzCnt * 1000) / (now - lastHzTime);
+      txtHz.textContent = hz.toFixed(1) + ' Hz';
+      txtHz.style.color = hz >= 50 ? '#4ade80' : hz >= 30 ? '#facc15' : '#f87171';
+      hzCnt = 0;
+      lastHzTime = now;
+    }
+    lastFrameTime = now;
+
+    // Telemetry (updated at 10 Hz from DOM interval below)
+    window._lastFrame = d;
+  };
+
+  ws.onclose = () => {
+    setStatus('warn', 'DISCONNECTED');
+    overlay.classList.remove('hidden');
+    overlayMsg.textContent = 'Connection lost — reconnecting…';
+    setTimeout(connect, 2000);
+  };
+
+  ws.onerror = () => {
+    setStatus('err', 'ERROR');
+  };
+}
+
+connect();
+
+// ── DOM telemetry update at 10 Hz (decoupled from WebSocket) ──
+setInterval(() => {
+  const d = window._lastFrame;
+  if (!d) return;
+
+  vQuat.textContent =
+    `${d.qw.toFixed(3)} / ${d.qx.toFixed(3)} / ${d.qy.toFixed(3)} / ${d.qz.toFixed(3)}`;
+
+  const rotMag = Math.sqrt(d.rx*d.rx + d.ry*d.ry + d.rz*d.rz);
+  const isStill = rotMag < 0.5;
+  vGyro.textContent =
+    `${d.rx.toFixed(1)} / ${d.ry.toFixed(1)} / ${d.rz.toFixed(1)}`;
+  vGyro.className = 'tele-val' + (isStill ? ' green' : '');
+
+  vAcc.textContent =
+    `${d.ax.toFixed(3)} / ${d.ay.toFixed(3)} / ${d.az.toFixed(3)}`;
+
+  // Still / Moving indicator
+  const age = performance.now() - lastFrameTime;
+  if (age > 2000) {
+    txtStill.textContent = '⚠ NO DATA';
+    txtStill.style.color = '#f87171';
+    vStatus.textContent  = 'No phone data';
+    vStatus.className    = 'tele-val red';
+  } else if (isStill) {
+    txtStill.textContent = '🟢 STILL';
+    txtStill.style.color = '#4ade80';
+    vStatus.textContent  = `#${totalFrames}`;
+    vStatus.className    = 'tele-val green';
+  } else {
+    txtStill.textContent = '🔴 MOVING';
+    txtStill.style.color = '#f87171';
+    vStatus.textContent  = `${rotMag.toFixed(1)}°/s`;
+    vStatus.className    = 'tele-val red';
+  }
+}, 100);
+</script>
+
+</body>
+</html>

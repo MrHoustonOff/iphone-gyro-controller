@@ -7,8 +7,10 @@ import (
 	"math"
 	"net"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"sync"
 	"syscall"
 	"time"
@@ -17,6 +19,7 @@ import (
 	"gyrobridge/internal/dsu"
 	"gyrobridge/internal/pairing"
 	"gyrobridge/internal/server"
+	"gyrobridge/internal/vis"
 	"gyrobridge/web"
 )
 
@@ -101,16 +104,30 @@ func main() {
 	//   Minimum real motion observed: ~8-10°/s → HIGH=8.0 allows clean exit
 	gf := &gyroHysteresis{}
 
+	// ── 3D Visualizer ───────────────────────────────────────────────────────────
+	// Broadcaster fans motion frames to PC browser viewers at /vis.
+	// Registered on the plain-HTTP mux so the PC browser needs no certificate.
+	visBc := vis.New(web.VisHTML)
+	// Register before srv.Start() is called
 	srv := server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
 		// Apply server-side hysteresis (zero-copy, pure arithmetic, no alloc)
 		gf.apply(&frame)
 		// Forward to Cemuhook DSU clients
 		dsuSrv.SendMotion(frame)
+		// Broadcast to 3D visualizer viewers (no-op when nobody is watching)
+		visBc.Publish(vis.Frame{
+			Qx: frame.Qx, Qy: frame.Qy, Qz: frame.Qz, Qw: frame.Qw,
+			Rx: frame.RotX, Ry: frame.RotY, Rz: frame.RotZ,
+			Ax: frame.AccX, Ay: frame.AccY, Az: frame.AccZ,
+		})
 		// Session logging (no-op when --log not set)
 		if sessionLogger != nil {
 			sessionLogger.Write(frame)
 		}
 	})
+
+	// Register vis routes on the HTTP mux (plain HTTP → no cert on localhost)
+	visBc.Register(srv.HTTPMux, "/vis")
 
 	stopHUD := make(chan struct{})
 	go func() {
@@ -126,8 +143,9 @@ func main() {
 				if count > 0 {
 					frame := dsuSrv.LastMotionFrame()
 					dsuClients := dsuSrv.ActiveClients()
-					fmt.Printf("\r[DSU: %d clients | WSS: %d | RATE: %5.1f Hz | #%06d] Rot: (%5.1f, %5.1f, %5.1f)°/s | Quat: (%4.2f, %4.2f, %4.2f, %4.2f) | Acc: (%4.2f, %4.2f, %4.2f)g",
-						dsuClients, clients, hz, count, frame.RotX, frame.RotY, frame.RotZ, frame.Qx, frame.Qy, frame.Qz, frame.Qw, frame.AccX, frame.AccY, frame.AccZ)
+					viewers := visBc.ViewerCount()
+					fmt.Printf("\r[DSU: %d | WSS: %d | VIS: %d | RATE: %5.1f Hz | #%06d] Rot: (%5.1f, %5.1f, %5.1f)°/s | Quat: (%4.2f, %4.2f, %4.2f, %4.2f) | Acc: (%4.2f, %4.2f, %4.2f)g",
+						dsuClients, clients, viewers, hz, count, frame.RotX, frame.RotY, frame.RotZ, frame.Qx, frame.Qy, frame.Qz, frame.Qw, frame.AccX, frame.AccY, frame.AccZ)
 				}
 			}
 		}
@@ -166,6 +184,14 @@ func main() {
 	pairing.PrintTerminalQR("QR #1: iOS Setup Profile", setupURL)
 	pairing.PrintTerminalQR("QR #2: Controller Gamepad", appURL)
 
+	// ── Auto-open 3D visualizer in PC browser ────────────────────────────────
+	visURL := fmt.Sprintf("http://localhost:%d/vis", HTTPPort)
+	fmt.Printf("[+] 3D Monitor → %s\n", visURL)
+	go func() {
+		time.Sleep(800 * time.Millisecond) // let servers fully bind first
+		openBrowser(visURL)
+	}()
+
 	fmt.Println("[*] Listening for controller telemetry... (Press Ctrl+C to stop)")
 
 	sigChan := make(chan os.Signal, 1)
@@ -174,6 +200,21 @@ func main() {
 
 	close(stopHUD)
 	fmt.Println("\n[*] Shutting down GyroBridge...")
+}
+
+// openBrowser opens the given URL in the system default browser.
+// Non-blocking: failure is silently ignored (browser open is best-effort).
+func openBrowser(url string) {
+	var cmd *exec.Cmd
+	switch runtime.GOOS {
+	case "windows":
+		cmd = exec.Command("cmd", "/c", "start", url)
+	case "darwin":
+		cmd = exec.Command("open", url)
+	default: // linux, bsd, ...
+		cmd = exec.Command("xdg-open", url)
+	}
+	_ = cmd.Start() // fire-and-forget
 }
 
 func isPrivateLAN(ip net.IP) bool {

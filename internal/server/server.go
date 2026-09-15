@@ -37,22 +37,30 @@ type MotionFrame struct {
 
 // Server encapsulates both HTTP (for certificate distribution) and HTTPS+WSS for gamepad traffic.
 type Server struct {
-	caManager     *ca.CertificateManager
-	httpPort      int
-	httpsPort     int
-	webContent    []byte
-	httpServer    *http.Server
-	httpsServer   *http.Server
-	upgrader      websocket.Upgrader
-	onFrame       func(frame MotionFrame)
+	caManager   *ca.CertificateManager
+	httpPort    int
+	httpsPort   int
+	webContent  []byte
+	httpServer  *http.Server
+	httpsServer *http.Server
+	upgrader    websocket.Upgrader
+	onFrame     func(frame MotionFrame)
 	packetCount   atomic.Uint64
 	currentHzBits atomic.Uint64
 	activeClient  atomic.Int32
 	stopChan      chan struct{}
+
+	// HTTPMux and HTTPSMux are created at construction time so that external
+	// modules (e.g. the 3D visualizer) can register additional routes before Start().
+	HTTPMux  *http.ServeMux
+	HTTPSMux *http.ServeMux
 }
 
 // NewServer initializes HTTP and HTTPS server instances.
 func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []byte, onFrame func(MotionFrame)) *Server {
+	httpMux  := http.NewServeMux()
+	httpsMux := http.NewServeMux()
+
 	s := &Server{
 		caManager:  caMgr,
 		httpPort:   httpPort,
@@ -60,6 +68,8 @@ func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []
 		webContent: webHTML,
 		onFrame:    onFrame,
 		stopChan:   make(chan struct{}),
+		HTTPMux:    httpMux,
+		HTTPSMux:   httpsMux,
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -69,41 +79,38 @@ func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []
 		},
 	}
 
-	return s
-}
-
-// Start launches both servers.
-func (s *Server) Start() error {
-	// 1. Plain HTTP server for iOS .mobileconfig and raw CA distribution
-	httpMux := http.NewServeMux()
+	// Register core routes
 	httpMux.HandleFunc("/ca.mobileconfig", s.handleMobileConfig)
 	httpMux.HandleFunc("/ca.crt", s.handleRawCACert)
-	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		// Redirect root HTTP requests to HTTPS
-		target := fmt.Sprintf("https://%s:%d%s", r.URL.Hostname(), s.httpsPort, r.URL.RequestURI())
-		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
-	})
 
-	s.httpServer = &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.httpPort),
-		Handler: httpMux,
-	}
-
-	// 2. HTTPS + WSS server for secure web client and sensor streaming
-	httpsMux := http.NewServeMux()
 	httpsMux.HandleFunc("/ca.mobileconfig", s.handleMobileConfig)
 	httpsMux.HandleFunc("/ca.crt", s.handleRawCACert)
 	httpsMux.HandleFunc("/ws", s.handleWebSocket)
 	httpsMux.HandleFunc("/", s.handleWebClient)
 
+	// HTTP root catch-all: redirect to HTTPS (registered last so specific routes win)
+	httpMux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		target := fmt.Sprintf("https://%s:%d%s", r.URL.Hostname(), s.httpsPort, r.URL.RequestURI())
+		http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+	})
+
+	return s
+}
+
+// Start launches both servers. All routes must be registered before calling Start.
+func (s *Server) Start() error {
 	tlsConfig := &tls.Config{
 		Certificates: []tls.Certificate{*s.caManager.LeafCert},
 		MinVersion:   tls.VersionTLS12,
 	}
 
+	s.httpServer = &http.Server{
+		Addr:    fmt.Sprintf(":%d", s.httpPort),
+		Handler: s.HTTPMux,
+	}
 	s.httpsServer = &http.Server{
 		Addr:      fmt.Sprintf(":%d", s.httpsPort),
-		Handler:   httpsMux,
+		Handler:   s.HTTPSMux,
 		TLSConfig: tlsConfig,
 	}
 
