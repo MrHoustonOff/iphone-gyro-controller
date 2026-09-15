@@ -193,6 +193,12 @@ func (s *Server) handleWebClient(w http.ResponseWriter, r *http.Request) {
 	w.Write(s.webContent)
 }
 
+const (
+	wsReadDeadline = 10 * time.Second // connection dies if no client frame in this window
+	wsPingInterval = 2 * time.Second  // server→client keepalive ping interval
+	wsPingText     = "PING"           // client listens for this and resets its own watchdog
+)
+
 func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -203,12 +209,41 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	s.activeClient.Add(1)
 	defer s.activeClient.Add(-1)
 
+	// Arm read deadline — refreshed on every incoming frame.
+	// If the phone goes silent (network drop, Safari backgrounded, etc.)
+	// this will unblock ReadMessage and cleanly close the connection,
+	// triggering the client's onclose→reconnect path.
+	conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
+
+	// Server→client keepalive goroutine.
+	// Sends "PING" text frames so the client can detect server-side silence
+	// independent of the OS TCP keepalive timer (~2 min default).
+	done := make(chan struct{})
+	defer close(done)
+	go func() {
+		t := time.NewTicker(wsPingInterval)
+		defer t.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-t.C:
+				conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+				if err := conn.WriteMessage(websocket.TextMessage, []byte(wsPingText)); err != nil {
+					return // connection dead, exit silently; defer conn.Close() handles cleanup
+				}
+			}
+		}
+	}()
+
 	// Read telemetry frames (binary or JSON)
 	for {
 		msgType, message, err := conn.ReadMessage()
 		if err != nil {
 			break
 		}
+		// Fresh lease: client is alive, extend deadline
+		conn.SetReadDeadline(time.Now().Add(wsReadDeadline))
 
 		frame, ok := s.parseFrame(msgType, message)
 		if !ok {

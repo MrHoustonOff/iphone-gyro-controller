@@ -358,15 +358,31 @@
     const binBuffer = new ArrayBuffer(46);
     const binView   = new DataView(binBuffer);
 
+    // ── Server keepalive tracking ──────────────────
+    // Server sends "PING" text every 2s. If we don't
+    // receive one for 5s we force-close and reconnect.
+    let lastPingMs = performance.now();
+    const PING_TIMEOUT_MS = 5000;
+
     function connectWSS() {
       const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
       ws = new WebSocket(`${proto}//${location.host}/ws`);
       ws.binaryType = 'arraybuffer';
       ws.onopen = () => {
         wsReady = true;
+        lastPingMs = performance.now(); // reset watchdog on fresh connect
         badgeText.textContent = 'CONNECTED';
         badgeDot.className = 'badge-dot dot-ok';
         log('WSS connected (46B binary)', 'ok');
+      };
+      ws.onmessage = (e) => {
+        // Server sends periodic "PING" text to confirm the connection is alive
+        if (typeof e.data === 'string' && e.data === 'PING') {
+          lastPingMs = performance.now();
+          // Show last-ping age in badge to give clear visibility
+          badgeText.textContent = 'CONNECTED ✓';
+          badgeDot.className = 'badge-dot dot-ok';
+        }
       };
       ws.onerror = () => {
         badgeText.textContent = 'WSS ERROR';
@@ -374,12 +390,29 @@
       };
       ws.onclose = () => {
         wsReady = false;
-        badgeText.textContent = 'DISCONNECTED';
+        badgeText.textContent = 'DISCONNECTED — reconnecting…';
         badgeDot.className = 'badge-dot dot-warn';
         setTimeout(connectWSS, 2000);
       };
     }
     connectWSS();
+
+    // ── Ping watchdog ──────────────────────────────
+    // Runs every second. If connected but no PING received
+    // for PING_TIMEOUT_MS, force-close so onclose→reconnect fires.
+    setInterval(() => {
+      if (!wsReady) return;
+      const age = performance.now() - lastPingMs;
+      if (age > PING_TIMEOUT_MS) {
+        log('⚠️ No server ping for ' + Math.round(age/1000) + 's — reconnecting', 'err');
+        wsReady = false;
+        ws.close(); // triggers onclose → setTimeout(connectWSS, 2000)
+      } else if (age > 2500) {
+        // Getting slow — warn in badge but don't disconnect yet
+        badgeText.textContent = 'CONNECTED — ping ' + Math.round(age/100)/10 + 's ago';
+        badgeDot.className = 'badge-dot dot-warn';
+      }
+    }, 1000);
 
     // ─────────────────────────────────────────────
     // 5. Sensor Pipeline
