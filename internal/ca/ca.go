@@ -189,8 +189,8 @@ func (cm *CertificateManager) generateLeafCert(hostIPs []net.IP, hostnames []str
 			CommonName:   "gamepad.local",
 		},
 		NotBefore:             now,
-		NotAfter:              now.Add(825 * 24 * time.Hour), // 825 days (Apple max leaf lifetime)
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		NotAfter:              now.Add(365 * 24 * time.Hour), // 365 days (strictly <= 398 days per Apple TLS policy)
+		KeyUsage:              x509.KeyUsageDigitalSignature, // ECDSA requires only digitalSignature
 		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		BasicConstraintsValid: true,
 		IsCA:                  false,

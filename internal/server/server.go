@@ -2,12 +2,15 @@ package server
 
 import (
 	"crypto/tls"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"math"
 	"net"
 	"net/http"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"gyrobridge/internal/ca"
@@ -26,17 +29,20 @@ type MotionFrame struct {
 
 // Server encapsulates both HTTP (for certificate distribution) and HTTPS+WSS for gamepad traffic.
 type Server struct {
-	caManager    *ca.CertificateManager
-	httpPort     int
-	httpsPort    int
-	webContent   []byte
-	httpServer   *http.Server
-	httpsServer  *http.Server
-	upgrader     websocket.Upgrader
-	onFrame      func(frame MotionFrame)
-	packetCount  uint64
-	activeClient atomic.Int32
-	mu           sync.RWMutex
+	caManager       *ca.CertificateManager
+	httpPort        int
+	httpsPort       int
+	webContent      []byte
+	httpServer      *http.Server
+	httpsServer     *http.Server
+	upgrader        websocket.Upgrader
+	onFrame         func(frame MotionFrame)
+	packetCount     uint64
+	packetsInWindow uint64
+	lastHzTime      time.Time
+	currentHz       float64
+	activeClient    atomic.Int32
+	hzMu            sync.RWMutex
 }
 
 // NewServer initializes HTTP and HTTPS server instances.
@@ -157,24 +163,81 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	s.activeClient.Add(1)
 	defer s.activeClient.Add(-1)
 
-	// Read telemetry frames
+	// Read telemetry frames (binary or JSON)
 	for {
-		_, message, err := conn.ReadMessage()
+		msgType, message, err := conn.ReadMessage()
 		if err != nil {
 			break
 		}
 
-		var frame MotionFrame
-		if err := json.Unmarshal(message, &frame); err == nil {
-			atomic.AddUint64(&s.packetCount, 1)
-			if s.onFrame != nil {
-				s.onFrame(frame)
+		frame, ok := s.parseFrame(msgType, message)
+		if !ok {
+			continue
+		}
+
+		total := atomic.AddUint64(&s.packetCount, 1)
+
+		// Frequency calculation window (every 500ms)
+		s.hzMu.Lock()
+		s.packetsInWindow++
+		now := time.Now()
+		elapsed := now.Sub(s.lastHzTime)
+		if elapsed >= 500*time.Millisecond {
+			if s.lastHzTime.IsZero() {
+				s.lastHzTime = now
+				s.packetsInWindow = 0
+			} else {
+				s.currentHz = float64(s.packetsInWindow) / elapsed.Seconds()
+				s.packetsInWindow = 0
+				s.lastHzTime = now
 			}
+		}
+		s.hzMu.Unlock()
+
+		_ = total
+		if s.onFrame != nil {
+			s.onFrame(frame)
 		}
 	}
 }
 
-// PacketStats returns total received packets and current active connections.
-func (s *Server) PacketStats() (uint64, int32) {
-	return atomic.LoadUint64(&s.packetCount), s.activeClient.Load()
+func (s *Server) parseFrame(msgType int, data []byte) (MotionFrame, bool) {
+	// Fast binary decoding (32 bytes: uint64 ts, 6x float32)
+	if msgType == websocket.BinaryMessage && len(data) >= 32 {
+		ts := int64(binary.LittleEndian.Uint64(data[0:8]))
+		alpha := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[8:12])))
+		beta := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[12:16])))
+		gamma := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[16:20])))
+		ax := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[20:24])))
+		ay := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[24:28])))
+		az := float64(math.Float32frombits(binary.LittleEndian.Uint32(data[28:32])))
+
+		return MotionFrame{
+			Timestamp: ts,
+			Alpha:     alpha,
+			Beta:      beta,
+			Gamma:     gamma,
+			AccX:      ax,
+			AccY:      ay,
+			AccZ:      az,
+		}, true
+	}
+
+	// JSON fallback
+	var frame MotionFrame
+	if err := json.Unmarshal(data, &frame); err == nil {
+		return frame, true
+	}
+
+	return frame, false
+}
+
+// PacketStats returns total received packets, current active connections, and current polling rate in Hz.
+func (s *Server) PacketStats() (uint64, int32, float64) {
+	total := atomic.LoadUint64(&s.packetCount)
+	clients := s.activeClient.Load()
+	s.hzMu.RLock()
+	hz := s.currentHz
+	s.hzMu.RUnlock()
+	return total, clients, hz
 }

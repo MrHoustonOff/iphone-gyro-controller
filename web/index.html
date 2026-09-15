@@ -119,7 +119,10 @@
     <div class="row"><span>Acc Y:</span><span id="v-ay">0.0</span></div>
     <div class="row"><span>Acc Z:</span><span id="v-az">0.0</span></div>
     <div class="row" style="margin-top: 8px; border-top: 1px solid #334155; padding-top: 6px;">
-      <span>Sent Frames:</span><span id="v-frames">0</span>
+      <span>Polling Rate:</span><span id="v-rate" style="color: #4ade80; font-weight: bold;">0.0 Hz</span>
+    </div>
+    <div class="row">
+      <span>Frames Sent:</span><span id="v-frames">0</span>
     </div>
   </div>
 
@@ -137,11 +140,22 @@
 
     log('Loaded context: isSecureContext=' + window.isSecureContext, window.isSecureContext ? 'ok' : 'err');
 
-    // 1. WebSocket Connection
+    // 1. High-Performance WebSocket Connection (Binary)
     let ws = null;
     let wsReady = false;
     const badgeText = document.getElementById('badge-text');
     const badgeDot = document.getElementById('badge-dot');
+
+    // Reusable 32-byte ArrayBuffer to eliminate memory allocation & GC
+    // Layout: [0..7]: uint64 timestamp (ms)
+    //         [8..11]: float32 alpha
+    //         [12..15]: float32 beta
+    //         [16..19]: float32 gamma
+    //         [20..23]: float32 ax
+    //         [24..27]: float32 ay
+    //         [28..31]: float32 az
+    const binBuffer = new ArrayBuffer(32);
+    const binView = new DataView(binBuffer);
 
     function connectWSS() {
       const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -150,11 +164,13 @@
 
       try {
         ws = new WebSocket(url);
+        ws.binaryType = 'arraybuffer';
+
         ws.onopen = () => {
           wsReady = true;
-          badgeText.textContent = 'CONNECTED (WSS)';
+          badgeText.textContent = 'CONNECTED (WSS BINARY)';
           badgeDot.className = 'badge-dot dot-ok';
-          log('WSS connected securely!', 'ok');
+          log('Binary WSS connected securely!', 'ok');
         };
         ws.onerror = (e) => {
           badgeText.textContent = 'WSS ERROR';
@@ -174,8 +190,12 @@
     }
     connectWSS();
 
-    // 2. Sensor capture & stream
+    // 2. Sensor capture & zero-copy stream
     let frameCount = 0;
+    let hzCounter = 0;
+    let lastHzTime = performance.now();
+
+    const vRate = document.getElementById('v-rate');
     const vFrames = document.getElementById('v-frames');
     const vAlpha = document.getElementById('v-alpha');
     const vBeta = document.getElementById('v-beta');
@@ -184,48 +204,64 @@
     const vAy = document.getElementById('v-ay');
     const vAz = document.getElementById('v-az');
 
-    let telemetry = {
-      ts: 0,
-      alpha: 0, beta: 0, gamma: 0,
-      ax: 0, ay: 0, az: 0
-    };
+    let curAlpha = 0, curBeta = 0, curGamma = 0;
+    let curAx = 0, curAy = 0, curAz = 0;
 
     function onOrientation(e) {
-      if (e.alpha != null) telemetry.alpha = e.alpha;
-      if (e.beta != null) telemetry.beta = e.beta;
-      if (e.gamma != null) telemetry.gamma = e.gamma;
+      if (e.alpha != null) curAlpha = e.alpha;
+      if (e.beta != null) curBeta = e.beta;
+      if (e.gamma != null) curGamma = e.gamma;
 
-      vAlpha.textContent = telemetry.alpha.toFixed(1);
-      vBeta.textContent = telemetry.beta.toFixed(1);
-      vGamma.textContent = telemetry.gamma.toFixed(1);
+      vAlpha.textContent = curAlpha.toFixed(1);
+      vBeta.textContent = curBeta.toFixed(1);
+      vGamma.textContent = curGamma.toFixed(1);
       queueSend();
     }
 
     function onMotion(e) {
       const a = e.accelerationIncludingGravity || e.acceleration;
       if (a) {
-        if (a.x != null) telemetry.ax = a.x;
-        if (a.y != null) telemetry.ay = a.y;
-        if (a.z != null) telemetry.az = a.z;
+        if (a.x != null) curAx = a.x;
+        if (a.y != null) curAy = a.y;
+        if (a.z != null) curAz = a.z;
 
-        vAx.textContent = telemetry.ax.toFixed(2);
-        vAy.textContent = telemetry.ay.toFixed(2);
-        vAz.textContent = telemetry.az.toFixed(2);
+        vAx.textContent = curAx.toFixed(2);
+        vAy.textContent = curAy.toFixed(2);
+        vAz.textContent = curAz.toFixed(2);
       }
       queueSend();
     }
 
-    let lastSend = 0;
     function queueSend() {
-      const now = performance.now();
-      if (now - lastSend < 15) return; // ~60 Hz cap
-      lastSend = now;
+      // Avoid TCP buffer backlog: send only if socket buffer is drained
+      if (!wsReady || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) {
+        return;
+      }
 
-      if (wsReady && ws.readyState === WebSocket.OPEN) {
-        telemetry.ts = Date.now();
-        ws.send(JSON.stringify(telemetry));
-        frameCount++;
-        vFrames.textContent = frameCount;
+      const now = Date.now();
+      binView.setBigUint64(0, BigInt(now), true);
+      binView.setFloat32(8, curAlpha, true);
+      binView.setFloat32(12, curBeta, true);
+      binView.setFloat32(16, curGamma, true);
+      binView.setFloat32(20, curAx, true);
+      binView.setFloat32(24, curAy, true);
+      binView.setFloat32(28, curAz, true);
+
+      ws.send(binBuffer);
+
+      frameCount++;
+      hzCounter++;
+      vFrames.textContent = frameCount;
+
+      // Frequency calculation every 500ms
+      const pNow = performance.now();
+      const elapsed = pNow - lastHzTime;
+      if (elapsed >= 500) {
+        const hz = (hzCounter * 1000) / elapsed;
+        vRate.textContent = hz.toFixed(1) + ' Hz';
+        vRate.style.color = hz >= 50 ? '#4ade80' : (hz >= 30 ? '#facc15' : '#f87171');
+        hzCounter = 0;
+        lastHzTime = pNow;
       }
     }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net"
 	"os"
@@ -24,13 +25,20 @@ func main() {
 	fmt.Println("             GyroBridge - Motion Gamepad (Go)             ")
 	fmt.Println("==========================================================")
 
+	ipFlag := flag.String("ip", "", "Override LAN IP address (e.g. -ip 192.168.31.82)")
+	flag.Parse()
+
 	localIPs := getLocalIPv4s()
-	primaryIP := getPrimaryIP()
-	if primaryIP == "" && len(localIPs) > 0 {
-		primaryIP = localIPs[0].String()
-	}
+	primaryIP := *ipFlag
 	if primaryIP == "" {
-		primaryIP = "127.0.0.1"
+		primaryIP = getPrimaryIP(localIPs)
+	}
+
+	fmt.Printf("[*] Detected LAN IP: %s\n", primaryIP)
+	for _, ip := range localIPs {
+		if ip.String() != primaryIP {
+			fmt.Printf("    (Also available LAN: %s)\n", ip)
+		}
 	}
 
 	appData := os.Getenv("APPDATA")
@@ -50,12 +58,11 @@ func main() {
 	var lastLoggedPacket uint64
 	var srv *server.Server
 	srv = server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
-		// Throttled live telemetry display
-		nowCount, _ := srv.PacketStats()
-		if nowCount-lastLoggedPacket >= 60 {
+		nowCount, _, hz := srv.PacketStats()
+		if nowCount-lastLoggedPacket >= 15 {
 			lastLoggedPacket = nowCount
-			fmt.Printf("\r[STREAM #%06d] Yaw: %6.1f° | Pitch: %6.1f° | Roll: %6.1f° | Acc: (%5.2f, %5.2f, %5.2f)",
-				nowCount, frame.Alpha, frame.Beta, frame.Gamma, frame.AccX, frame.AccY, frame.AccZ)
+			fmt.Printf("\r[RATE: %5.1f Hz | STREAM #%06d] Yaw: %6.1f° | Pitch: %6.1f° | Roll: %6.1f° | Acc: (%5.2f, %5.2f, %5.2f)",
+				hz, nowCount, frame.Alpha, frame.Beta, frame.Gamma, frame.AccX, frame.AccY, frame.AccZ)
 		}
 	})
 
@@ -101,6 +108,26 @@ func main() {
 	fmt.Println("\n[*] Shutting down GyroBridge...")
 }
 
+func isPrivateLAN(ip net.IP) bool {
+	ip4 := ip.To4()
+	if ip4 == nil || ip.IsLoopback() {
+		return false
+	}
+	// 192.168.0.0/16 (typical home Wi-Fi)
+	if ip4[0] == 192 && ip4[1] == 168 {
+		return true
+	}
+	// 10.0.0.0/8
+	if ip4[0] == 10 {
+		return true
+	}
+	// 172.16.0.0 - 172.31.255.255
+	if ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31 {
+		return true
+	}
+	return false
+}
+
 func getLocalIPv4s() []net.IP {
 	var ips []net.IP
 	ifaces, err := net.Interfaces()
@@ -123,7 +150,7 @@ func getLocalIPv4s() []net.IP {
 			case *net.IPAddr:
 				ip = v.IP
 			}
-			if ip != nil && ip.To4() != nil && !ip.IsLoopback() {
+			if ip != nil && isPrivateLAN(ip) {
 				ips = append(ips, ip)
 			}
 		}
@@ -131,12 +158,16 @@ func getLocalIPv4s() []net.IP {
 	return ips
 }
 
-func getPrimaryIP() string {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
-	if err != nil {
-		return ""
+func getPrimaryIP(lanIPs []net.IP) string {
+	// Prioritize standard 192.168.x.x home Wi-Fi subnet
+	for _, ip := range lanIPs {
+		ip4 := ip.To4()
+		if ip4 != nil && ip4[0] == 192 && ip4[1] == 168 {
+			return ip.String()
+		}
 	}
-	defer conn.Close()
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
-	return localAddr.IP.String()
+	if len(lanIPs) > 0 {
+		return lanIPs[0].String()
+	}
+	return "127.0.0.1"
 }

@@ -3,8 +3,10 @@ package server
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/binary"
 	"encoding/json"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -155,8 +157,36 @@ func TestServer_WebSocketTelemetry(t *testing.T) {
 		t.Fatal("timed out waiting for motion frame")
 	}
 
-	pkts, _ := srv.PacketStats()
-	if pkts != 1 {
-		t.Errorf("expected 1 packet, got %d", pkts)
+	// Test binary frame (32 bytes)
+	binBuf := make([]byte, 32)
+	// ts = 12345
+	binary.LittleEndian.PutUint64(binBuf[0:8], 12345)
+	// alpha = 45.5, beta = -10.5, gamma = 30.0
+	binary.LittleEndian.PutUint32(binBuf[8:12], math.Float32bits(45.5))
+	binary.LittleEndian.PutUint32(binBuf[12:16], math.Float32bits(-10.5))
+	binary.LittleEndian.PutUint32(binBuf[16:20], math.Float32bits(30.0))
+	binary.LittleEndian.PutUint32(binBuf[20:24], math.Float32bits(1.0))
+	binary.LittleEndian.PutUint32(binBuf[24:28], math.Float32bits(2.0))
+	binary.LittleEndian.PutUint32(binBuf[28:32], math.Float32bits(3.0))
+
+	if err := ws.WriteMessage(websocket.BinaryMessage, binBuf); err != nil {
+		t.Fatalf("failed to send binary message: %v", err)
+	}
+
+	select {
+	case received := <-frameChan:
+		if float32(received.Alpha) != 45.5 || float32(received.Beta) != -10.5 {
+			t.Errorf("binary frame mismatch: got %+v", received)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for binary motion frame")
+	}
+
+	pkts, clients, _ := srv.PacketStats()
+	if pkts != 2 {
+		t.Errorf("expected 2 packets, got %d", pkts)
+	}
+	if clients != 1 {
+		t.Errorf("expected 1 active client, got %d", clients)
 	}
 }
