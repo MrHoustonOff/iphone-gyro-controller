@@ -13,6 +13,7 @@ ca_data/
 
 # Temporary and log files
 *.log
+*.csv
 tmp/
 
 # Documentation as requested

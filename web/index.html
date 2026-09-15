@@ -1,595 +1,579 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GyroBridge Controller</title>
+  <title>GyroBridge</title>
   <style>
-    * { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-select: none; }
-    body {
+    :root {
+      --bg: #070b14;
+      --primary: #38bdf8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f1f5f9;
+      --card-bg: rgba(18, 26, 44, 0.9);
+      --border: rgba(56, 189, 248, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
       margin: 0;
-      padding: 16px 12px 30px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0b0f19;
-      color: #e2e8f0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 20%, #111e38 0%, var(--bg) 75%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      padding: env(safe-area-inset-top, 20px) 20px env(safe-area-inset-bottom, 24px);
     }
-    h1 { margin: 4px 0 8px; font-size: 22px; color: #38bdf8; text-align: center; }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 5px 12px;
-      border-radius: 9999px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 12px;
-      background: #1e293b;
-    }
-    .badge-dot { width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; }
-    .dot-ok   { background: #22c55e; box-shadow: 0 0 8px #22c55e; }
-    .dot-warn { background: #f59e0b; }
-    .dot-err  { background: #ef4444; }
-    .card {
-      background: #161e2e;
-      border: 1px solid #27354a;
-      border-radius: 14px;
-      padding: 14px;
+
+    .app-wrap {
       width: 100%;
-      max-width: 380px;
-      margin-bottom: 12px;
-    }
-    .card-title {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: #64748b;
-      margin-bottom: 10px;
+      max-width: 360px;
       display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
+      gap: 20px;
     }
-    .row {
-      display: flex;
-      justify-content: space-between;
-      margin: 4px 0;
-      font-size: 13px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    .header-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #ffffff 30%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      margin-bottom: 10px;
     }
+
+    /* ── The 3 Primary Buttons ── */
     .btn {
       width: 100%;
-      max-width: 380px;
-      padding: 15px;
+      min-height: 64px;
+      padding: 16px 20px;
+      font-size: 16px;
+      font-weight: 800;
+      border-radius: 16px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+      text-align: center;
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    /* Button 1: Permissions */
+    .btn-perm {
+      background: rgba(30, 41, 59, 0.7);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    .btn-perm.granted {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.4);
+    }
+
+    /* Button 2: Stream Status / Toggle */
+    .btn-stream {
+      background: rgba(30, 41, 59, 0.8);
+      color: #94a3b8;
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+    /* Streaming OK - Glowing Active Green */
+    .btn-stream.active {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.5);
+      border-color: #34d399;
+      animation: pulse-green 2s infinite ease-in-out;
+    }
+    /* Reconnecting / Connecting - Glowing Orange */
+    .btn-stream.reconnecting {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #ffffff;
+      box-shadow: 0 0 24px rgba(245, 158, 11, 0.5);
+      border-color: #fbbf24;
+      animation: pulse-orange 1.5s infinite ease-in-out;
+    }
+    @keyframes pulse-green {
+      0%, 100% { box-shadow: 0 0 16px rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 28px rgba(16, 185, 129, 0.7); }
+    }
+    @keyframes pulse-orange {
+      0%, 100% { box-shadow: 0 0 16px rgba(245, 158, 11, 0.4); }
+      50% { box-shadow: 0 0 28px rgba(245, 158, 11, 0.7); }
+    }
+
+    /* Button 3: Auto-Calibration */
+    .btn-calib {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      color: #ffffff;
+      box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4);
+    }
+
+    /* ── Minimal Auto-Calibration Modal ── */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 15, 0.9);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      width: 100%;
+      max-width: 340px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+    }
+    .modal-instruction {
       font-size: 16px;
       font-weight: 700;
-      border-radius: 14px;
-      border: none;
-      background: #38bdf8;
-      color: #0f172a;
-      cursor: pointer;
-      margin-bottom: 10px;
-      transition: transform 0.1s, opacity 0.2s;
+      line-height: 1.5;
+      color: #e2e8f0;
     }
-    .btn:active { transform: scale(0.98); }
-    .btn-secondary {
+    .modal-instruction strong {
+      color: var(--primary);
+    }
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
       background: #1e293b;
-      color: #38bdf8;
-      border: 1px solid #334155;
-      font-size: 14px;
-      padding: 11px;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 4px;
     }
-    .toggle-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 8px 0;
-      font-size: 13px;
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #10b981);
+      transition: width 0.05s linear;
     }
-    .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-      position: absolute; cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #334155; transition: .2s; border-radius: 24px;
-    }
-    .slider:before {
-      position: absolute; content: "";
-      height: 18px; width: 18px;
-      left: 3px; bottom: 3px;
-      background: white; transition: .2s; border-radius: 50%;
-    }
-    input:checked + .slider { background: #38bdf8; }
-    input:checked + .slider:before { transform: translateX(20px); }
-    #log-box {
-      width: 100%; max-width: 380px; height: 80px;
-      background: #070a11; border: 1px solid #1e293b;
-      border-radius: 10px; padding: 8px;
-      font-size: 11px; font-family: monospace;
-      color: #94a3b8; overflow-y: auto;
-    }
-    .log-line { margin: 2px 0; }
-    .log-ok  { color: #4ade80; }
-    .log-err { color: #f87171; }
-    #still-indicator {
-      width: 10px; height: 10px; border-radius: 50%;
-      display: inline-block; margin-left: 8px;
-      background: #f59e0b;
-    }
-    #still-indicator.still { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
   </style>
 </head>
 <body>
 
-  <h1>GyroBridge Controller</h1>
-  <div id="ws-badge" class="status-badge">
-    <span id="badge-dot" class="badge-dot dot-warn"></span>
-    <span id="badge-text">Connecting WSS...</span>
+<div class="app-wrap">
+  <h1 class="header-title">GyroBridge</h1>
+
+  <!-- 1. Permission Request Button -->
+  <button id="btn-perm" class="btn btn-perm">
+    <span>🛡️</span>
+    <span id="txt-perm">Запрос разрешения</span>
+  </button>
+
+  <!-- 2. Auto-Calibration Button -->
+  <button id="btn-calib" class="btn btn-calib">
+    <span>🎯</span>
+    <span>Автокалибровка</span>
+  </button>
+
+  <!-- 3. Transmission Start / Status Button -->
+  <button id="btn-stream" class="btn btn-stream reconnecting">
+    <span id="icon-stream">⏳</span>
+    <span id="txt-stream">ПОДКЛЮЧЕНИЕ...</span>
+  </button>
+</div>
+
+<!-- Auto-Calibration Modal -->
+<div class="modal-backdrop" id="modal-calib">
+  <div class="modal-card">
+    <div style="font-size: 32px;">📱</div>
+    <div class="modal-instruction" id="modal-msg">
+      Положите телефон <strong>экраном вверх</strong> и <strong>вперед к камере</strong>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="calib-progress"></div>
+    </div>
+
+    <button id="btn-start-calib" class="btn btn-calib" style="min-height:50px; margin-top:8px;">
+      Зафиксировать (2 сек)
+    </button>
+    <button id="btn-close-modal" class="btn btn-perm" style="min-height:44px; padding:10px;">
+      Отмена
+    </button>
   </div>
+</div>
 
-  <button id="perm-btn" class="btn">Enable Sensors</button>
-  <button id="calib-btn" class="btn btn-secondary">🎯 Force Re-Calibrate (3s)</button>
+<script>
+'use strict';
 
-  <!-- Telemetry Card -->
-  <div class="card">
-    <div class="card-title">
-      <span>TELEMETRY</span>
-      <span>
-        STILL<span id="still-indicator"></span>
-        &nbsp;&nbsp;
-        <span id="v-rate" style="color: #4ade80; font-weight: bold;">0.0 Hz</span>
-      </span>
-    </div>
-    <div class="row"><span>Acc X / Y / Z:</span><span id="v-acc">0.00 / 0.00 / 0.00 g</span></div>
-    <div class="row"><span>Gyro raw P/R/Y:</span><span id="v-rot-raw">0.0 / 0.0 / 0.0°/s</span></div>
-    <div class="row"><span>Gyro corr P/R/Y:</span><span id="v-rot-cor" style="color:#38bdf8;">0.0 / 0.0 / 0.0°/s</span></div>
-    <div class="row"><span>Bias P/R/Y:</span><span id="v-bias" style="color:#94a3b8;font-size:12px;">0.000 / 0.000 / 0.000</span></div>
-    <div class="row" style="margin-top:6px;border-top:1px solid #27354a;padding-top:6px;">
-      <span>Accel variance (ZUPT):</span><span id="v-var" style="font-size:12px;">0.000000</span>
-    </div>
-  </div>
+// ─────────────────────────────────────────────────────────────────────────────
+// Fixed Preset: "Горизонтально: экраном вверх, перед к камере"
+// ─────────────────────────────────────────────────────────────────────────────
+// Phone coordinates when flat on table, screen UP:
+// - Phone X: Right edge
+// - Phone Y: Top edge (forward towards camera/monitor)
+// - Phone Z: Screen normal (pointing UP to ceiling)
+//
+// Target Gamepad coordinates:
+// - Pitch (X, Red)   = +Phone X (rotation around X)
+// - Yaw   (Y, Green) = +Phone Z (vertical axis / spinning on table)
+// - Roll  (Z, Blue)  = -Phone Y (tilting sideways, right-handed SO(3), det = +1)
+// - Accel:
+//   - Accel X = +Phone X
+//   - Accel Y = +Phone Z (+1.0g along UP, controller lies flat!)
+//   - Accel Z = -Phone Y
+// ─────────────────────────────────────────────────────────────────────────────
 
-  <!-- Settings Card -->
-  <div class="card">
-    <div class="card-title">SETTINGS</div>
-    <div class="toggle-row">
-      <span>iOS Accel Inversion:</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="chk-inv-acc">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row">
-      <span>Invert Pitch:</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="chk-inv-pitch">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row">
-      <span>Invert Roll:</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="chk-inv-roll">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="toggle-row">
-      <span>Invert Yaw:</span>
-      <label class="toggle-switch">
-        <input type="checkbox" id="chk-inv-yaw">
-        <span class="slider"></span>
-      </label>
-    </div>
-  </div>
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
-  <div id="log-box"></div>
+const btnPerm       = document.getElementById('btn-perm');
+const txtPerm       = document.getElementById('txt-perm');
+const btnCalib      = document.getElementById('btn-calib');
+const btnStream     = document.getElementById('btn-stream');
+const txtStream     = document.getElementById('txt-stream');
+const iconStream    = document.getElementById('icon-stream');
 
-  <script>
-    // ─────────────────────────────────────────────
-    // 0. Logging helpers
-    // ─────────────────────────────────────────────
-    const logBox = document.getElementById('log-box');
-    function log(msg, type='') {
-      const line = document.createElement('div');
-      line.className = 'log-line ' + (type ? 'log-' + type : '');
-      line.textContent = `[${new Date().toTimeString().split(' ')[0]}] ${msg}`;
-      logBox.appendChild(line);
-      logBox.scrollTop = logBox.scrollHeight;
-    }
-    log('Loaded. isSecureContext=' + window.isSecureContext, window.isSecureContext ? 'ok' : 'err');
+const modalCalib    = document.getElementById('modal-calib');
+const btnStartCalib = document.getElementById('btn-start-calib');
+const btnCloseModal = document.getElementById('btn-close-modal');
+const calibProgress = document.getElementById('calib-progress');
+const modalMsg      = document.getElementById('modal-msg');
 
-    // ─────────────────────────────────────────────
-    // 1. Platform detection & settings
-    // ─────────────────────────────────────────────
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    if (isIOS) log('iOS detected — default accel inversion ON', 'ok');
+let isStreamingEnabled = true;
+let isConnected = false;
+let isSamplingCalib = false;
 
-    const chkInvAcc   = document.getElementById('chk-inv-acc');
-    const chkInvPitch = document.getElementById('chk-inv-pitch');
-    const chkInvRoll  = document.getElementById('chk-inv-roll');
-    const chkInvYaw   = document.getElementById('chk-inv-yaw');
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Gyro Bias & ZUPT (Zero-Velocity Update)
+// ─────────────────────────────────────────────────────────────────────────────
+const G_CONST = 9.80665;
+const DEG2RAD_HALF = Math.PI / 360;
 
-    const saved = JSON.parse(localStorage.getItem('gb_cfg') || '{}');
-    chkInvAcc.checked   = saved.ia !== undefined ? saved.ia : isIOS;
-    chkInvPitch.checked = saved.ip || false;
-    chkInvRoll.checked  = saved.ir || false;
-    chkInvYaw.checked   = saved.iy || false;
+const savedBias = JSON.parse(localStorage.getItem('gb_bias_up') || '{"x":0,"y":0,"z":0}');
+let biasX = savedBias.x, biasY = savedBias.y, biasZ = savedBias.z;
 
-    function saveSettings() {
-      localStorage.setItem('gb_cfg', JSON.stringify({
-        ia: chkInvAcc.checked, ip: chkInvPitch.checked,
-        ir: chkInvRoll.checked, iy: chkInvYaw.checked
-      }));
-    }
-    [chkInvAcc, chkInvPitch, chkInvRoll, chkInvYaw].forEach(e => e.addEventListener('change', saveSettings));
+let zeroYawOffset = 0;
+let rawGyr = { x: 0, y: 0, z: 0 };
+let rawAcc = { x: 0, y: 0, z: 0 };
 
-    // ─────────────────────────────────────────────
-    // 2. ZUPT-based Gyro Bias Estimator
-    //
-    //  Core idea: Accelerometer variance over a short window
-    //  is a reliable "still detector" that is INDEPENDENT of
-    //  the gyro bias we're trying to estimate. When accel
-    //  variance < threshold → phone truly stationary →
-    //  rapidly update gyro bias → zero output.
-    //
-    //  Parameters:
-    //    ZUPT_WIN       – window size in samples (~133ms @ 60Hz)
-    //    ZUPT_VAR_THR   – variance threshold (g²) below = still
-    //    BIAS_ALPHA_STILL – EMA rate when still (fast convergence)
-    //    BIAS_ALPHA_MOVE  – EMA rate when moving (slow correction)
-    //    GYRO_KILL_THR  – if corrected |ω| < this → hard zero
-    // ─────────────────────────────────────────────
+let curAlpha = 0, curBeta = 0, curGamma = 0;
+let calibAccSamples = [];
+let calibGyrSamples = [];
 
-    const ZUPT_WIN        = 10;       // samples
-    const ZUPT_VAR_THR    = 0.00015;  // g² — phone truly still
-    const BIAS_ALPHA_STILL = 0.20;   // 20% per sample → converges in ~15 samples (250ms)
-    const BIAS_ALPHA_MOVE  = 0.001;  // 0.1% — slow drift while moving
-    const GYRO_KILL_THR   = 0.30;    // °/s — hard zero gate after bias subtraction
+const accelWin = [];
+let stillDetected = false;
 
-    // Gyro bias state (persist across page loads)
-    const savedBias = JSON.parse(localStorage.getItem('gb_bias') || '{"x":0,"y":0,"z":0}');
-    let biasX = savedBias.x, biasY = savedBias.y, biasZ = savedBias.z;
-    if (biasX !== 0 || biasY !== 0 || biasZ !== 0) {
-      log(`Restored bias: P=${biasX.toFixed(2)} R=${biasY.toFixed(2)} Y=${biasZ.toFixed(2)}`, 'ok');
-    }
+function updateZUPT(ax, ay, az) {
+  accelWin.push({ x: ax, y: ay, z: az });
+  if (accelWin.length > 10) accelWin.shift();
+  if (accelWin.length < 10) return;
 
-    // Accel sliding window for ZUPT
-    const accelWin = [];   // [{x,y,z}]
-    let stillDetected = false;
-    let accelVariance = 0;
+  let mx = 0, my = 0, mz = 0;
+  for (const s of accelWin) { mx += s.x; my += s.y; mz += s.z; }
+  mx /= 10; my /= 10; mz /= 10;
 
-    function updateZUPT(ax, ay, az) {
-      accelWin.push({x: ax, y: ay, z: az});
-      if (accelWin.length > ZUPT_WIN) accelWin.shift();
-      if (accelWin.length < ZUPT_WIN) return;
+  let v = 0;
+  for (const s of accelWin) {
+    const dx = s.x - mx, dy = s.y - my, dz = s.z - mz;
+    v += dx*dx + dy*dy + dz*dz;
+  }
+  stillDetected = (v / 10) < 0.00018;
+}
 
-      // Compute mean
-      let mx = 0, my = 0, mz = 0;
-      for (const s of accelWin) { mx += s.x; my += s.y; mz += s.z; }
-      mx /= ZUPT_WIN; my /= ZUPT_WIN; mz /= ZUPT_WIN;
+function applyBias(rx, ry, rz) {
+  if (stillDetected) {
+    biasX += (rx - biasX) * 0.20;
+    biasY += (ry - biasY) * 0.20;
+    biasZ += (rz - biasZ) * 0.20;
+    return [0, 0, 0];
+  }
 
-      // Compute variance (sum of squared deviations per axis, then mean)
-      let v = 0;
-      for (const s of accelWin) {
-        const dx = s.x - mx, dy = s.y - my, dz = s.z - mz;
-        v += dx*dx + dy*dy + dz*dz;
+  let cx = rx - biasX;
+  let cy = ry - biasY;
+  let cz = rz - biasZ;
+
+  biasX += (rx - biasX) * 0.001;
+  biasY += (ry - biasY) * 0.001;
+  biasZ += (rz - biasZ) * 0.001;
+
+  if (Math.abs(cx) < 0.25) cx = 0;
+  if (Math.abs(cy) < 0.25) cy = 0;
+  if (Math.abs(cz) < 0.25) cz = 0;
+
+  return [cx, cy, cz];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. WebSocket & Button 2 (Transmission Status / Toggle)
+// ─────────────────────────────────────────────────────────────────────────────
+let ws = null;
+const binBuffer = new ArrayBuffer(46);
+const binView   = new DataView(binBuffer);
+
+function updateStreamButtonUI() {
+  if (!isStreamingEnabled) {
+    btnStream.className = 'btn btn-stream';
+    txtStream.textContent = 'СТАРТ ПЕРЕДАЧИ';
+    iconStream.textContent = '▶️';
+  } else if (isConnected) {
+    btnStream.className = 'btn btn-stream active';
+    txtStream.textContent = 'ПЕРЕДАЧА АКТИВНА';
+    iconStream.textContent = '🟢';
+  } else {
+    btnStream.className = 'btn btn-stream reconnecting';
+    txtStream.textContent = 'ПЕРЕПОДКЛЮЧЕНИЕ...';
+    iconStream.textContent = '⏳';
+  }
+}
+
+function connectWSS() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws`);
+  ws.binaryType = 'arraybuffer';
+
+  ws.onopen = () => {
+    isConnected = true;
+    updateStreamButtonUI();
+  };
+
+  ws.onclose = () => {
+    isConnected = false;
+    updateStreamButtonUI();
+    setTimeout(connectWSS, 2000);
+  };
+
+  ws.onerror = () => {
+    isConnected = false;
+    updateStreamButtonUI();
+  };
+}
+connectWSS();
+
+btnStream.addEventListener('click', () => {
+  isStreamingEnabled = !isStreamingEnabled;
+  updateStreamButtonUI();
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Sensor Streaming (Strict Horizontal Screen-Up SO(3) Frame)
+// ─────────────────────────────────────────────────────────────────────────────
+let outQx = 0, outQy = 0, outQz = 0, outQw = 1;
+let dsuPitch = 0, dsuYaw = 0, dsuRoll = 0;
+let dsuAccX = 0, dsuAccY = 0, dsuAccZ = 0;
+let lastMotionTime = 0;
+
+function onOrientation(e) {
+  curAlpha = e.alpha || 0;
+  curBeta  = e.beta  || 0;
+  curGamma = e.gamma || 0;
+
+  const a = ((curAlpha - zeroYawOffset + 360) % 360) * DEG2RAD_HALF;
+  const b = curBeta  * DEG2RAD_HALF;
+  const c = curGamma * DEG2RAD_HALF;
+
+  const cA = Math.cos(a), sA = Math.sin(a);
+  const cB = Math.cos(b), sB = Math.sin(b);
+  const cC = Math.cos(c), sC = Math.sin(c);
+
+  const qw = cA * cB * cC + sA * sB * sC;
+  const qx = cA * sB * cC + sA * cB * sC;
+  const qy = -sA * sB * cC + cA * cB * sC;
+  const qz = sA * cB * cC - cA * sB * sC;
+
+  // SO(3) mapping for screen up: Pitch = +X, Yaw = +Z, Roll = -Y
+  outQx = qx;
+  outQy = qz;
+  outQz = -qy;
+  outQw = qw;
+
+  if (outQw < 0) {
+    outQx = -outQx; outQy = -outQy; outQz = -outQz; outQw = -outQw;
+  }
+
+  if (performance.now() - lastMotionTime > 200) sendFrame();
+}
+
+function onMotion(e) {
+  lastMotionTime = performance.now();
+
+  let rx = 0, ry = 0, rz = 0;
+  if (e.rotationRate) {
+    rx = e.rotationRate.beta  || 0;
+    ry = e.rotationRate.gamma || 0;
+    rz = e.rotationRate.alpha || 0;
+  }
+  rawGyr = { x: rx, y: ry, z: rz };
+
+  const a = e.accelerationIncludingGravity || e.acceleration;
+  let ax = 0, ay = 0, az = 0;
+  if (a) {
+    ax = (a.x != null ? a.x / G_CONST : 0);
+    ay = (a.y != null ? a.y / G_CONST : 0);
+    az = (a.z != null ? a.z / G_CONST : 0);
+  }
+  const accSign = isIOS ? -1 : 1;
+  rawAcc = { x: ax * accSign, y: ay * accSign, z: az * accSign };
+
+  updateZUPT(rawAcc.x, rawAcc.y, rawAcc.z);
+
+  if (isSamplingCalib) {
+    calibAccSamples.push({ ...rawAcc });
+    calibGyrSamples.push({ ...rawGyr });
+    return;
+  }
+
+  const [cx, cy, cz] = applyBias(rx, ry, rz);
+
+  // Screen Up mapping:
+  // Pitch = +X (nose up/down)
+  // Yaw   = +Z (spinning on table)
+  // Roll  = -Y (tilting sideways)
+  dsuPitch = cx;
+  dsuYaw   = cz;
+  dsuRoll  = -cy;
+
+  // Accel: normal force along Z points UP (into Y in DSU!)
+  dsuAccX = rawAcc.x;
+  dsuAccY = rawAcc.z;
+  dsuAccZ = -rawAcc.y;
+
+  sendFrame();
+}
+
+function sendFrame() {
+  if (!isStreamingEnabled || !isConnected || !ws || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) return;
+
+  binView.setUint32(0,  (Date.now() & 0xFFFFFFFF) >>> 0, true);
+  binView.setFloat32(4,  dsuPitch, true); // Pitch (RotX) -> offset 68
+  binView.setFloat32(8,  dsuYaw,   true); // Yaw   (RotY) -> offset 72
+  binView.setFloat32(12, dsuRoll,  true); // Roll  (RotZ) -> offset 76
+  binView.setFloat32(16, outQx,    true);
+  binView.setFloat32(20, outQy,    true);
+  binView.setFloat32(24, outQz,    true);
+  binView.setFloat32(28, outQw,    true);
+  binView.setFloat32(32, dsuAccX,  true);
+  binView.setFloat32(36, dsuAccY,  true);
+  binView.setFloat32(40, dsuAccZ,  true);
+  binView.setUint16(44,  0,        true);
+  ws.send(binBuffer);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Auto-Calibration (Prompt: Screen UP, Forward to Camera)
+// ─────────────────────────────────────────────────────────────────────────────
+btnCalib.addEventListener('click', () => {
+  modalCalib.classList.add('open');
+  calibProgress.style.width = '0%';
+  btnStartCalib.disabled = false;
+  btnStartCalib.textContent = 'Зафиксировать (2 сек)';
+  modalMsg.innerHTML = 'Положите телефон <strong>экраном вверх</strong> и <strong>вперед к камере</strong>';
+});
+
+btnCloseModal.addEventListener('click', () => {
+  isSamplingCalib = false;
+  modalCalib.classList.remove('open');
+});
+
+btnStartCalib.addEventListener('click', () => {
+  isSamplingCalib = true;
+  calibAccSamples = [];
+  calibGyrSamples = [];
+  btnStartCalib.disabled = true;
+  btnStartCalib.textContent = 'Идет калибровка...';
+
+  const startTime = performance.now();
+  const DURATION = 2000;
+
+  const timer = setInterval(() => {
+    const elapsed = performance.now() - startTime;
+    const p = Math.min(1, elapsed / DURATION);
+    calibProgress.style.width = (p * 100).toFixed(0) + '%';
+
+    if (p >= 1) {
+      clearInterval(timer);
+      isSamplingCalib = false;
+
+      if (calibGyrSamples.length > 10) {
+        let gx = 0, gy = 0, gz = 0;
+        for (const s of calibGyrSamples) { gx += s.x; gy += s.y; gz += s.z; }
+        biasX = gx / calibGyrSamples.length;
+        biasY = gy / calibGyrSamples.length;
+        biasZ = gz / calibGyrSamples.length;
+        localStorage.setItem('gb_bias_up', JSON.stringify({ x: biasX, y: biasY, z: biasZ }));
       }
-      accelVariance = v / ZUPT_WIN;
-      stillDetected = accelVariance < ZUPT_VAR_THR;
-    }
 
-    function applyBiasAndZUPT(rx, ry, rz) {
-      if (stillDetected) {
-        // Fast bias learning: track actual raw gyro output
-        biasX += (rx - biasX) * BIAS_ALPHA_STILL;
-        biasY += (ry - biasY) * BIAS_ALPHA_STILL;
-        biasZ += (rz - biasZ) * BIAS_ALPHA_STILL;
-        // Hard zero — no output while still
-        return [0, 0, 0];
-      }
-
-      // Subtract learned bias
-      let cx = rx - biasX;
-      let cy = ry - biasY;
-      let cz = rz - biasZ;
-
-      // Slow bias refinement while moving (thermal drift tracking)
-      biasX += (rx - biasX) * BIAS_ALPHA_MOVE;
-      biasY += (ry - biasY) * BIAS_ALPHA_MOVE;
-      biasZ += (rz - biasZ) * BIAS_ALPHA_MOVE;
-
-      // Per-axis hard zero gate (kills residual jitter on each axis independently)
-      if (Math.abs(cx) < GYRO_KILL_THR) cx = 0;
-      if (Math.abs(cy) < GYRO_KILL_THR) cy = 0;
-      if (Math.abs(cz) < GYRO_KILL_THR) cz = 0;
-
-      return [cx, cy, cz];
-    }
-
-    // Persist bias every 2s
-    setInterval(() => {
-      localStorage.setItem('gb_bias', JSON.stringify({x: biasX, y: biasY, z: biasZ}));
-    }, 2000);
-
-    // ─────────────────────────────────────────────
-    // 3. Manual Force Re-Calibrate
-    // ─────────────────────────────────────────────
-    let forceCalibMode = false;
-    let fcSamples = [];
-    const calibBtn = document.getElementById('calib-btn');
-
-    calibBtn.addEventListener('click', () => {
-      if (forceCalibMode) return;
-      forceCalibMode = true;
-      fcSamples = [];
-      biasX = biasY = biasZ = 0; // reset bias so we read raw
-      calibBtn.textContent = '⏳ Place flat & still (3s)...';
-      calibBtn.disabled = true;
-
+      zeroYawOffset = curAlpha; // Tare heading
+      modalMsg.innerHTML = '<span style="color:#10b981;">✅ Калибровка завершена!</span>';
       setTimeout(() => {
-        if (fcSamples.length >= 30) {
-          let sx = 0, sy = 0, sz = 0;
-          for (const s of fcSamples) { sx += s.x; sy += s.y; sz += s.z; }
-          biasX = sx / fcSamples.length;
-          biasY = sy / fcSamples.length;
-          biasZ = sz / fcSamples.length;
-          localStorage.setItem('gb_bias', JSON.stringify({x: biasX, y: biasY, z: biasZ}));
-          log(`Bias set: P=${biasX.toFixed(3)} R=${biasY.toFixed(3)} Y=${biasZ.toFixed(3)}°/s`, 'ok');
-          calibBtn.textContent = '✅ Calibrated!';
-        } else {
-          calibBtn.textContent = '⚠️ Need sensors active';
-          log('Enable sensors first, then calibrate', 'err');
-        }
-        forceCalibMode = false;
-        calibBtn.disabled = false;
-      }, 3000);
-    });
-
-    // ─────────────────────────────────────────────
-    // 4. WebSocket (Binary 46 bytes)
-    // ─────────────────────────────────────────────
-    let ws = null;
-    let wsReady = false;
-    const badgeText = document.getElementById('badge-text');
-    const badgeDot  = document.getElementById('badge-dot');
-
-    const binBuffer = new ArrayBuffer(46);
-    const binView   = new DataView(binBuffer);
-
-    // ── Server keepalive tracking ──────────────────
-    // Server sends "PING" text every 2s. If we don't
-    // receive one for 5s we force-close and reconnect.
-    let lastPingMs = performance.now();
-    const PING_TIMEOUT_MS = 5000;
-
-    function connectWSS() {
-      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-      ws = new WebSocket(`${proto}//${location.host}/ws`);
-      ws.binaryType = 'arraybuffer';
-      ws.onopen = () => {
-        wsReady = true;
-        lastPingMs = performance.now(); // reset watchdog on fresh connect
-        badgeText.textContent = 'CONNECTED';
-        badgeDot.className = 'badge-dot dot-ok';
-        log('WSS connected (46B binary)', 'ok');
-      };
-      ws.onmessage = (e) => {
-        // Server sends periodic "PING" text to confirm the connection is alive
-        if (typeof e.data === 'string' && e.data === 'PING') {
-          lastPingMs = performance.now();
-          // Show last-ping age in badge to give clear visibility
-          badgeText.textContent = 'CONNECTED ✓';
-          badgeDot.className = 'badge-dot dot-ok';
-        }
-      };
-      ws.onerror = () => {
-        badgeText.textContent = 'WSS ERROR';
-        badgeDot.className = 'badge-dot dot-err';
-      };
-      ws.onclose = () => {
-        wsReady = false;
-        badgeText.textContent = 'DISCONNECTED — reconnecting…';
-        badgeDot.className = 'badge-dot dot-warn';
-        setTimeout(connectWSS, 2000);
-      };
+        modalCalib.classList.remove('open');
+      }, 600);
     }
-    connectWSS();
+  }, 50);
+});
 
-    // ── Ping watchdog ──────────────────────────────
-    // Runs every second. If connected but no PING received
-    // for PING_TIMEOUT_MS, force-close so onclose→reconnect fires.
-    setInterval(() => {
-      if (!wsReady) return;
-      const age = performance.now() - lastPingMs;
-      if (age > PING_TIMEOUT_MS) {
-        log('⚠️ No server ping for ' + Math.round(age/1000) + 's — reconnecting', 'err');
-        wsReady = false;
-        ws.close(); // triggers onclose → setTimeout(connectWSS, 2000)
-      } else if (age > 2500) {
-        // Getting slow — warn in badge but don't disconnect yet
-        badgeText.textContent = 'CONNECTED — ping ' + Math.round(age/100)/10 + 's ago';
-        badgeDot.className = 'badge-dot dot-warn';
-      }
-    }, 1000);
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. Permission Request Button & Sensor Initialization
+// ─────────────────────────────────────────────────────────────────────────────
+function initSensors() {
+  window.addEventListener('deviceorientation', onOrientation, true);
+  window.addEventListener('devicemotion', onMotion, true);
+  btnPerm.classList.add('granted');
+  txtPerm.textContent = 'Датчики включены ✓';
+  if ('wakeLock' in navigator) {
+    navigator.wakeLock.request('screen').catch(() => {});
+  }
+}
 
-    // ─────────────────────────────────────────────
-    // 5. Sensor Pipeline
-    // ─────────────────────────────────────────────
-    const G_CONST    = 9.80665;
-    const halfDeg2Rad = Math.PI / 360;
-
-    let curAlpha = 0, curBeta = 0, curGamma = 0;
-    let rotX = 0, rotY = 0, rotZ = 0;
-    let qx = 0, qy = 0, qz = 0, qw = 1;
-    let accX = 0, accY = 0, accZ = 0;
-    let buttons = 0;
-
-    let frameCount = 0;
-    let hzCnt = 0, lastHzTime = performance.now();
-    let lastMotionTime = 0;
-
-    // DOM refs
-    const vRate    = document.getElementById('v-rate');
-    const vAcc     = document.getElementById('v-acc');
-    const vRotRaw  = document.getElementById('v-rot-raw');
-    const vRotCor  = document.getElementById('v-rot-cor');
-    const vBias    = document.getElementById('v-bias');
-    const vVar     = document.getElementById('v-var');
-    const stillInd = document.getElementById('still-indicator');
-
-    // 10 Hz DOM update — decoupled from sensor interrupt
-    setInterval(() => {
-      vAcc.textContent    = `${accX.toFixed(2)} / ${accY.toFixed(2)} / ${accZ.toFixed(2)} g`;
-      vRotCor.textContent = `${rotX.toFixed(1)} / ${rotY.toFixed(1)} / ${rotZ.toFixed(1)}°/s`;
-      vBias.textContent   = `${biasX.toFixed(3)} / ${biasY.toFixed(3)} / ${biasZ.toFixed(3)}`;
-      vVar.textContent    = accelVariance.toFixed(6) + (stillDetected ? ' 🟢 STILL' : ' 🔴 MOVING');
-      stillInd.className  = stillDetected ? 'still' : '';
-    }, 100);
-
-    function onOrientation(e) {
-      curAlpha = e.alpha || 0;
-      curBeta  = e.beta  || 0;
-      curGamma = e.gamma || 0;
-
-      const _x = curBeta  * halfDeg2Rad;
-      const _y = curGamma * halfDeg2Rad;
-      const _z = curAlpha * halfDeg2Rad;
-      const cX = Math.cos(_x), sX = Math.sin(_x);
-      const cY = Math.cos(_y), sY = Math.sin(_y);
-      const cZ = Math.cos(_z), sZ = Math.sin(_z);
-      qx = sX*cY*cZ - cX*sY*sZ;
-      qy = cX*sY*cZ + sX*cY*sZ;
-      qz = cX*cY*sZ + sX*sY*cZ;
-      qw = cX*cY*cZ - sX*sY*sZ;
-
-      // Quaternion hemisphere normalization:
-      // q and -q represent THE SAME rotation (double cover of SO(3)).
-      // However many AHRS filters (including PadTest's Madgwick) expect qw >= 0.
-      // When alpha ≈ 180° the formula above gives qw < 0 (88% of frames in session data),
-      // causing visual flips/jumps. Negating the whole quaternion is mathematically
-      // identical but keeps the representation in the upper hemisphere.
-      if (qw < 0) { qx = -qx; qy = -qy; qz = -qz; qw = -qw; }
-
-      if (performance.now() - lastMotionTime > 200) queueSend();
-    }
-
-    function onMotion(e) {
-      lastMotionTime = performance.now();
-
-      // --- Raw gyro read (°/s) ---
-      let rx = 0, ry = 0, rz = 0;
-      if (e.rotationRate) {
-        rx = e.rotationRate.beta  || 0;  // Pitch around X
-        ry = e.rotationRate.gamma || 0;  // Roll around Y
-        rz = e.rotationRate.alpha || 0;  // Yaw around Z
-      }
-
-      // Show raw for diagnostics (10Hz DOM update reads these)
-      vRotRaw.textContent = `${rx.toFixed(1)} / ${ry.toFixed(1)} / ${rz.toFixed(1)}°/s`;
-
-      // --- Accel read ---
-      const a = e.accelerationIncludingGravity || e.acceleration;
-      let rawAx = 0, rawAy = 0, rawAz = 0;
-      if (a) {
-        rawAx = (a.x != null ? a.x / G_CONST : 0);
-        rawAy = (a.y != null ? a.y / G_CONST : 0);
-        rawAz = (a.z != null ? a.z / G_CONST : 0);
-      }
-
-      // iOS inversion
-      const sign = chkInvAcc.checked ? -1 : 1;
-      accX = rawAx * sign;
-      accY = rawAy * sign;
-      accZ = rawAz * sign;
-
-      // --- ZUPT: detect stillness via accel variance ---
-      updateZUPT(accX, accY, accZ);
-
-      // --- Force calibrate sampling ---
-      if (forceCalibMode) {
-        fcSamples.push({x: rx, y: ry, z: rz});
-        rotX = rotY = rotZ = 0;
-        queueSend();
-        return;
-      }
-
-      // --- Apply ZUPT bias correction ---
-      const [cx, cy, cz] = applyBiasAndZUPT(rx, ry, rz);
-
-      // --- User inversion toggles ---
-      rotX = chkInvPitch.checked ? -cx : cx;
-      rotY = chkInvRoll.checked  ? -cy : cy;
-      rotZ = chkInvYaw.checked   ? -cz : cz;
-
-      queueSend();
-    }
-
-    function queueSend() {
-      if (!wsReady || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) return;
-
-      binView.setUint32(0,  (Date.now() & 0xFFFFFFFF) >>> 0, true);
-      binView.setFloat32(4,  rotX, true);
-      binView.setFloat32(8,  rotY, true);
-      binView.setFloat32(12, rotZ, true);
-      binView.setFloat32(16, qx,   true);
-      binView.setFloat32(20, qy,   true);
-      binView.setFloat32(24, qz,   true);
-      binView.setFloat32(28, qw,   true);
-      binView.setFloat32(32, accX, true);
-      binView.setFloat32(36, accY, true);
-      binView.setFloat32(40, accZ, true);
-      binView.setUint16(44,  buttons, true);
-      ws.send(binBuffer);
-
-      frameCount++;
-      hzCnt++;
-      const now = performance.now();
-      const elapsed = now - lastHzTime;
-      if (elapsed >= 500) {
-        const hz = (hzCnt * 1000) / elapsed;
-        vRate.textContent = hz.toFixed(1) + ' Hz';
-        vRate.style.color = hz >= 50 ? '#4ade80' : hz >= 30 ? '#facc15' : '#f87171';
-        hzCnt = 0;
-        lastHzTime = now;
-      }
-    }
-
-    // ─────────────────────────────────────────────
-    // 6. Permissions
-    // ─────────────────────────────────────────────
-    function attachListeners() {
-      window.addEventListener('deviceorientation', onOrientation, true);
-      window.addEventListener('devicemotion', onMotion, true);
-      log('Sensors active. ZUPT bias learning started.', 'ok');
-    }
-
-    const permBtn = document.getElementById('perm-btn');
-    permBtn.addEventListener('click', async () => {
-      if (typeof DeviceMotionEvent !== 'undefined' &&
-          typeof DeviceMotionEvent.requestPermission === 'function') {
-        try {
-          const resp = await DeviceMotionEvent.requestPermission();
-          if (resp === 'granted') {
-            attachListeners();
-            permBtn.textContent = 'Sensors Active ✓';
-            permBtn.style.background = '#22c55e';
-          } else {
-            log('Motion permission denied: ' + resp, 'err');
-          }
-        } catch (err) {
-          log('Permission error: ' + err.message, 'err');
-        }
+btnPerm.addEventListener('click', async () => {
+  if (typeof DeviceMotionEvent !== 'undefined' &&
+      typeof DeviceMotionEvent.requestPermission === 'function') {
+    try {
+      const resp = await DeviceMotionEvent.requestPermission();
+      if (resp === 'granted') {
+        initSensors();
       } else {
-        attachListeners();
-        permBtn.textContent = 'Sensors Active ✓';
-        permBtn.style.background = '#22c55e';
+        txtPerm.textContent = 'Доступ запрещен';
       }
-    });
+    } catch (err) {
+      txtPerm.textContent = 'Ошибка доступа';
+    }
+  } else {
+    initSensors();
+  }
+});
 
-    // Auto-attach for Android/Chrome
-    attachListeners();
-  </script>
+// Auto-start for Android
+initSensors();
+
+</script>
 </body>
 </html>

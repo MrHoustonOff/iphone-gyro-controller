@@ -176,10 +176,10 @@ func (s *Server) fillPadDataPacket(buf []byte, packetNum uint32, frame server.Mo
 	binary.LittleEndian.PutUint32(p[60:64], float32ToBits(frame.AccY))
 	binary.LittleEndian.PutUint32(p[64:68], float32ToBits(frame.AccZ))
 
-	// Gyroscope in °/s: Pitch, Yaw, Roll (offsets 68..80)
+	// Gyroscope in °/s: Pitch (X), Yaw (Y), Roll (Z) (offsets 68..80)
 	binary.LittleEndian.PutUint32(p[68:72], float32ToBits(frame.RotX))
-	binary.LittleEndian.PutUint32(p[72:76], float32ToBits(frame.RotZ))
-	binary.LittleEndian.PutUint32(p[76:80], float32ToBits(frame.RotY))
+	binary.LittleEndian.PutUint32(p[72:76], float32ToBits(frame.RotY))
+	binary.LittleEndian.PutUint32(p[76:80], float32ToBits(frame.RotZ))
 
 	// --- 3. Compute IEEE 802.3 CRC32 over entire 100 bytes ---
 	crc := crc32.ChecksumIEEE(buf)

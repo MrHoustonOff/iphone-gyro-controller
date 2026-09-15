@@ -1,14 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GyroBridge Monitor</title>
+  <title>GyroBridge 3D Monitor</title>
   <style>
+    :root {
+      --bg: #060a13;
+      --card-bg: rgba(15, 23, 42, 0.85);
+      --border: rgba(56, 189, 248, 0.2);
+      --primary: #38bdf8;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f1f5f9;
+      --text-dim: #94a3b8;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #060a12;
-      color: #e2e8f0;
+      background: var(--bg);
+      color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
       overflow: hidden;
       height: 100vh;
@@ -16,77 +28,144 @@
       flex-direction: column;
     }
 
-    /* ── Top bar ── */
+    /* ── Top Bar ── */
     #topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 20px;
-      background: rgba(15,20,35,0.95);
-      border-bottom: 1px solid #1e293b;
+      padding: 12px 24px;
+      background: rgba(11, 18, 33, 0.95);
+      border-bottom: 1px solid var(--border);
       z-index: 10;
-      flex-shrink: 0;
+      backdrop-filter: blur(12px);
     }
-    #title {
-      font-size: 15px;
-      font-weight: 700;
-      color: #38bdf8;
-      letter-spacing: 0.04em;
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+    .brand-title span {
+      color: var(--primary);
+    }
+    .badge-group {
+      display: flex;
+      gap: 10px;
+      align-items: center;
     }
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 7px;
-      padding: 4px 12px;
+      padding: 5px 12px;
       border-radius: 9999px;
       font-size: 12px;
-      font-weight: 600;
-      background: #1e293b;
+      font-weight: 700;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
-    .dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-    }
-    .dot-ok   { background: #22c55e; box-shadow: 0 0 8px #22c55e88; }
-    .dot-warn { background: #f59e0b; }
-    .dot-err  { background: #ef4444; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .dot-ok   { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .dot-warn { background: var(--warning); }
+    .dot-err  { background: var(--danger); }
 
-    /* ── Three.js canvas wrapper ── */
+    .btn-top {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid var(--border);
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-top:hover {
+      background: var(--primary);
+      color: #060a13;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    /* ── Canvas Wrapper ── */
     #canvas-wrap {
       flex: 1;
       position: relative;
       overflow: hidden;
+      cursor: grab;
+    }
+    #canvas-wrap:active {
+      cursor: grabbing;
     }
     canvas { display: block; }
 
-    /* ── Axis labels in 3D canvas ── */
-    .axis-label {
+    /* ── Floating Orientation HUD ── */
+    #hud-overlay {
       position: absolute;
-      font-size: 13px;
-      font-weight: 700;
+      top: 16px;
+      left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       pointer-events: none;
-      text-shadow: 0 0 6px #000, 0 0 12px #000;
-      display: none;
+      z-index: 5;
     }
+    .hud-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(8px);
+      border-radius: 10px;
+      padding: 8px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .hud-title {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--primary);
+    }
+    .hud-val {
+      font-size: 13px;
+      font-family: ui-monospace, monospace;
+      font-weight: 700;
+      color: #fff;
+    }
+    .hud-legend {
+      display: flex;
+      gap: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .leg-x { color: #f87171; }
+    .leg-y { color: #4ade80; }
+    .leg-z { color: #38bdf8; }
 
-    /* ── Bottom telemetry bar ── */
+    /* ── Bottom Telemetry Bar ── */
     #telebar {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 1px;
       background: #0f172a;
-      border-top: 1px solid #1e293b;
+      border-top: 1px solid var(--border);
       flex-shrink: 0;
     }
     .tele-cell {
-      padding: 10px 16px;
-      background: #0b1120;
+      padding: 10px 18px;
+      background: #090e1c;
     }
     .tele-label {
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      color: #64748b;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
       margin-bottom: 4px;
     }
     .tele-val {
@@ -94,12 +173,13 @@
       font-family: ui-monospace, monospace;
       color: #cbd5e1;
       white-space: nowrap;
+      font-weight: 600;
     }
-    .tele-val.highlight { color: #38bdf8; }
-    .tele-val.green     { color: #4ade80; }
-    .tele-val.red       { color: #f87171; }
+    .tele-val.highlight { color: var(--primary); font-weight: 700; }
+    .tele-val.green     { color: var(--success); }
+    .tele-val.red       { color: var(--danger); }
 
-    /* ── No-signal overlay ── */
+    /* ── Overlay ── */
     #overlay {
       position: absolute;
       inset: 0;
@@ -107,17 +187,18 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: rgba(6,10,18,0.85);
-      font-size: 16px;
-      color: #64748b;
+      background: rgba(6, 10, 18, 0.85);
+      font-size: 15px;
+      color: var(--text-dim);
       gap: 12px;
       pointer-events: none;
+      z-index: 20;
     }
     #overlay.hidden { display: none; }
     .spinner {
-      width: 32px; height: 32px;
-      border: 3px solid #1e293b;
-      border-top-color: #38bdf8;
+      width: 34px; height: 34px;
+      border: 3px solid rgba(56, 189, 248, 0.2);
+      border-top-color: var(--primary);
       border-radius: 50%;
       animation: spin 1s linear infinite;
     }
@@ -128,14 +209,18 @@
 
 <!-- Top bar -->
 <div id="topbar">
-  <span id="title">GyroBridge · 3D Monitor</span>
-  <div style="display:flex;gap:10px;align-items:center;">
+  <div class="brand-wrap">
+    <h1 class="brand-title">GyroBridge <span>3D Monitor</span></h1>
+  </div>
+  <div class="badge-group">
+    <button class="btn-top" id="btn-toggle-model">📱 Сменить модель (Геймпад / Телефон)</button>
+    <button class="btn-top" id="btn-reset-cam">🎯 Сброс камеры</button>
     <div class="badge" id="badge-ws">
       <span class="dot dot-warn" id="dot-ws"></span>
-      <span id="txt-ws">Connecting…</span>
+      <span id="txt-ws">Подключение...</span>
     </div>
     <div class="badge" id="badge-rate">
-      <span style="color:#4ade80;font-variant-numeric:tabular-nums;" id="txt-hz">0.0 Hz</span>
+      <span style="color:var(--success);font-variant-numeric:tabular-nums;" id="txt-hz">0.0 Hz</span>
     </div>
     <div class="badge" id="badge-still">
       <span id="txt-still">—</span>
@@ -143,54 +228,71 @@
   </div>
 </div>
 
-<!-- Three.js canvas -->
+<!-- Three.js Canvas -->
 <div id="canvas-wrap">
   <div id="overlay">
     <div class="spinner"></div>
-    <span id="overlay-msg">Waiting for phone connection…</span>
+    <span id="overlay-msg">Ожидание подключения смартфона...</span>
+  </div>
+
+  <div id="hud-overlay">
+    <div class="hud-card">
+      <span class="hud-title">УГЛЫ ЭЙЛЕРА (EULER)</span>
+      <span class="hud-val" id="hud-angles">P: 0.0° | R: 0.0° | Y: 0.0°</span>
+      <div class="hud-legend">
+        <span class="leg-x">■ Pitch (X, Красный)</span>
+        <span class="leg-y">■ Yaw (Y, Зеленый)</span>
+        <span class="leg-z">■ Roll (Z, Синий)</span>
+      </div>
+    </div>
+    <div class="hud-card" style="font-size:10px; color:#64748b;">
+      <span>💡 Зажмите ЛКМ для вращения камеры</span>
+    </div>
   </div>
 </div>
 
 <!-- Telemetry bar -->
 <div id="telebar">
   <div class="tele-cell">
-    <div class="tele-label">QUATERNION  W / X / Y / Z</div>
+    <div class="tele-label">КВАТЕРНИОН (W / X / Y / Z)</div>
     <div class="tele-val highlight" id="v-quat">1.000 / 0.000 / 0.000 / 0.000</div>
   </div>
   <div class="tele-cell">
-    <div class="tele-label">GYRO  P / R / Y  (°/s)</div>
+    <div class="tele-label">ГИРОСКОП DSU (P / R / Y °/s)</div>
     <div class="tele-val" id="v-gyro">0.0 / 0.0 / 0.0</div>
   </div>
   <div class="tele-cell">
-    <div class="tele-label">ACCEL  X / Y / Z  (g)</div>
+    <div class="tele-label">АКСЕЛЕРОМЕТР (X / Y / Z g)</div>
     <div class="tele-val" id="v-acc">0.00 / 0.00 / 0.00</div>
   </div>
   <div class="tele-cell">
-    <div class="tele-label">STATUS</div>
+    <div class="tele-label">СТАТУС ПОТОКА</div>
     <div class="tele-val" id="v-status">—</div>
   </div>
 </div>
 
-<!-- Three.js from CDN (r134 — stable, no import maps needed) -->
+<!-- Three.js from CDN -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 
 <script>
 'use strict';
 
-// ────────────────────────────────────────────────────────────────────────────
-// 1. Three.js scene setup
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// 1. Three.js Scene & Camera Setup
+// ─────────────────────────────────────────────────────────────────────────────
 const wrap = document.getElementById('canvas-wrap');
 
-const scene    = new THREE.Scene();
-scene.background = new THREE.Color(0x060a12);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060a13);
 
-const camera   = new THREE.PerspectiveCamera(45, 1, 0.1, 200);
-camera.position.set(2.8, 2.0, 3.5);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+const DEFAULT_CAM_POS = new THREE.Vector3(2.5, 2.0, 3.2);
+camera.position.copy(DEFAULT_CAM_POS);
 camera.lookAt(0, 0, 0);
 
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
 wrap.appendChild(renderer.domElement);
 
 function resize() {
@@ -203,65 +305,194 @@ resize();
 window.addEventListener('resize', resize);
 
 // ── Lighting ──
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
-dirLight.position.set(4, 6, 5);
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+dirLight.position.set(5, 8, 6);
 scene.add(dirLight);
-const fillLight = new THREE.DirectionalLight(0x8ab4f8, 0.3);
-fillLight.position.set(-4, -2, -3);
-scene.add(fillLight);
 
-// ── Cube ──
-// Six faces in DSU axis colors:
-//   +X (right)  = red      -X = dark red
-//   +Y (up)     = green    -Y = dark green
-//   +Z (front)  = blue     -Z = dark blue
-const geo = new THREE.BoxGeometry(1.6, 1.6, 1.6);
-const mats = [
-  new THREE.MeshLambertMaterial({ color: 0xe53e3e }),  // +X right
-  new THREE.MeshLambertMaterial({ color: 0x822727 }),  // -X
-  new THREE.MeshLambertMaterial({ color: 0x38a169 }),  // +Y top
-  new THREE.MeshLambertMaterial({ color: 0x276749 }),  // -Y bottom
-  new THREE.MeshLambertMaterial({ color: 0x3182ce }),  // +Z front
-  new THREE.MeshLambertMaterial({ color: 0x2a4a8a }),  // -Z back
-];
-const cube = new THREE.Mesh(geo, mats);
-scene.add(cube);
+const blueFill = new THREE.DirectionalLight(0x38bdf8, 0.4);
+blueFill.position.set(-5, -2, -4);
+scene.add(blueFill);
 
-// Wireframe overlay for crisp edges
-const edges = new THREE.EdgesGeometry(geo);
-const lineMat = new THREE.LineBasicMaterial({ color: 0x000000, opacity: 0.5, transparent: true });
-cube.add(new THREE.LineSegments(edges, lineMat));
-
-// ── World-space axis arrows (fixed in scene) ──
-scene.add(new THREE.AxesHelper(2.4));
-
-// Small grid floor
-const grid = new THREE.GridHelper(6, 12, 0x1e293b, 0x1e293b);
-grid.position.y = -1.8;
+// Grid Floor
+const grid = new THREE.GridHelper(8, 16, 0x1e293b, 0x0f172a);
+grid.position.y = -1.6;
 scene.add(grid);
 
-// ────────────────────────────────────────────────────────────────────────────
-// 2. Quaternion state
-//    We receive (qx, qy, qz, qw) from the phone.
-//    Three.js uses (x, y, z, w) order in set() — same convention.
-//    Apply directly; no SLERP so cube is a pure raw-data debug view.
-// ────────────────────────────────────────────────────────────────────────────
-const targetQ = new THREE.Quaternion(0, 0, 0, 1);
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. High-Tech 3D Controller & Smartphone Models
+// ─────────────────────────────────────────────────────────────────────────────
+const mainGroup = new THREE.Group();
+scene.add(mainGroup);
 
-// ── Render loop ──
+// Model 1: Stylized DualShock / Gamepad
+const gamepadGroup = new THREE.Group();
+
+// Main Chassis
+const chassisMat = new THREE.MeshStandardMaterial({
+  color: 0x1e293b,
+  roughness: 0.35,
+  metalness: 0.2
+});
+const chassisGeo = new THREE.BoxGeometry(2.0, 0.5, 1.2);
+const chassis = new THREE.Mesh(chassisGeo, chassisMat);
+gamepadGroup.add(chassis);
+
+// Left Grip
+const gripGeo = new THREE.CylinderGeometry(0.3, 0.2, 1.2, 16);
+const leftGrip = new THREE.Mesh(gripGeo, chassisMat);
+leftGrip.position.set(-1.0, -0.2, 0.5);
+leftGrip.rotation.z = Math.PI / 6;
+leftGrip.rotation.x = Math.PI / 8;
+gamepadGroup.add(leftGrip);
+
+// Right Grip
+const rightGrip = new THREE.Mesh(gripGeo, chassisMat);
+rightGrip.position.set(1.0, -0.2, 0.5);
+rightGrip.rotation.z = -Math.PI / 6;
+rightGrip.rotation.x = Math.PI / 8;
+gamepadGroup.add(rightGrip);
+
+// LED Lightbar on front
+const ledMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+const ledGeo = new THREE.BoxGeometry(1.2, 0.12, 0.08);
+const led = new THREE.Mesh(ledGeo, ledMat);
+led.position.set(0, 0.18, -0.6);
+gamepadGroup.add(led);
+
+// Touchpad
+const touchMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+const touchGeo = new THREE.BoxGeometry(0.8, 0.05, 0.5);
+const touch = new THREE.Mesh(touchGeo, touchMat);
+touch.position.set(0, 0.26, -0.1);
+gamepadGroup.add(touch);
+
+// Thumbstick nubs
+const stickMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.7 });
+const stickGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.2, 16);
+
+const leftStick = new THREE.Mesh(stickGeo, stickMat);
+leftStick.position.set(-0.35, 0.3, 0.2);
+gamepadGroup.add(leftStick);
+
+const rightStick = new THREE.Mesh(stickGeo, stickMat);
+rightStick.position.set(0.35, 0.3, 0.2);
+gamepadGroup.add(rightStick);
+
+mainGroup.add(gamepadGroup);
+
+// Model 2: Smartphone
+const phoneGroup = new THREE.Group();
+const phoneBodyGeo = new THREE.BoxGeometry(1.4, 0.12, 2.6);
+const phoneBodyMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.6 });
+const phoneBody = new THREE.Mesh(phoneBodyGeo, phoneBodyMat);
+phoneGroup.add(phoneBody);
+
+// Screen
+const screenGeo = new THREE.BoxGeometry(1.3, 0.02, 2.45);
+const screenMat = new THREE.MeshBasicMaterial({ color: 0x1e3a8a });
+const phoneScreen = new THREE.Mesh(screenGeo, screenMat);
+phoneScreen.position.y = 0.065;
+phoneGroup.add(phoneScreen);
+
+phoneGroup.visible = false;
+mainGroup.add(phoneGroup);
+
+// Glowing Axes lines
+const axisGroup = new THREE.Group();
+
+// X Axis (Pitch - Red)
+const arrowX = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 1.6, 0xf87171, 0.3, 0.15);
+axisGroup.add(arrowX);
+
+// Y Axis (Yaw / Vertical - Green)
+const arrowY = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 1.6, 0x4ade80, 0.3, 0.15);
+axisGroup.add(arrowY);
+
+// Z Axis (Roll / Forward - Blue)
+const arrowZ = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), 1.6, 0x38bdf8, 0.3, 0.15);
+axisGroup.add(arrowZ);
+
+mainGroup.add(axisGroup);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Mouse Orbit Camera Drag
+// ─────────────────────────────────────────────────────────────────────────────
+let isDragging = false;
+let prevMouseX = 0, prevMouseY = 0;
+let camSpherical = { radius: 4.8, theta: Math.PI / 4, phi: Math.PI / 3 };
+
+function updateCamera() {
+  camera.position.x = camSpherical.radius * Math.sin(camSpherical.phi) * Math.sin(camSpherical.theta);
+  camera.position.y = camSpherical.radius * Math.cos(camSpherical.phi);
+  camera.position.z = camSpherical.radius * Math.sin(camSpherical.phi) * Math.cos(camSpherical.theta);
+  camera.lookAt(0, 0, 0);
+}
+updateCamera();
+
+wrap.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  prevMouseX = e.clientX;
+  prevMouseY = e.clientY;
+});
+window.addEventListener('mouseup', () => { isDragging = false; });
+window.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const dx = e.clientX - prevMouseX;
+  const dy = e.clientY - prevMouseY;
+  prevMouseX = e.clientX;
+  prevMouseY = e.clientY;
+
+  camSpherical.theta -= dx * 0.008;
+  camSpherical.phi   = Math.max(0.1, Math.min(Math.PI - 0.1, camSpherical.phi - dy * 0.008));
+  updateCamera();
+});
+
+// Mouse wheel zoom
+wrap.addEventListener('wheel', (e) => {
+  camSpherical.radius = Math.max(2.0, Math.min(10.0, camSpherical.radius + e.deltaY * 0.004));
+  updateCamera();
+});
+
+document.getElementById('btn-reset-cam').addEventListener('click', () => {
+  camSpherical = { radius: 4.8, theta: Math.PI / 4, phi: Math.PI / 3 };
+  updateCamera();
+});
+
+let isGamepadModel = true;
+document.getElementById('btn-toggle-model').addEventListener('click', () => {
+  isGamepadModel = !isGamepadModel;
+  gamepadGroup.visible = isGamepadModel;
+  phoneGroup.visible   = !isGamepadModel;
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Quaternion & Animation Loop
+// ─────────────────────────────────────────────────────────────────────────────
+const targetQ = new THREE.Quaternion(0, 0, 0, 1);
+const euler = new THREE.Euler();
+const hudAngles = document.getElementById('hud-angles');
+
 function animate() {
   requestAnimationFrame(animate);
-  cube.quaternion.copy(targetQ);
+
+  // Apply quaternion smoothly to 3D object
+  mainGroup.quaternion.slerp(targetQ, 0.4);
+
+  // Extract Euler angles for HUD
+  euler.setFromQuaternion(mainGroup.quaternion, 'YXZ');
+  const degP = (euler.x * 180 / Math.PI).toFixed(1);
+  const degY = (euler.y * 180 / Math.PI).toFixed(1);
+  const degR = (euler.z * 180 / Math.PI).toFixed(1);
+  hudAngles.textContent = `Pitch(X): ${degP}° | Yaw(Y): ${degY}° | Roll(Z): ${degR}°`;
+
   renderer.render(scene, camera);
 }
 animate();
 
-// ────────────────────────────────────────────────────────────────────────────
-// 3. WebSocket to GyroBridge server
-//    Connects to ws://localhost:<port>/vis/ws
-//    Server pushes JSON frames at ~60 Hz.
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. WebSocket Telemetry Ingest
+// ─────────────────────────────────────────────────────────────────────────────
 const overlay    = document.getElementById('overlay');
 const overlayMsg = document.getElementById('overlay-msg');
 const dotWs      = document.getElementById('dot-ws');
@@ -289,7 +520,7 @@ function connect() {
   ws = new WebSocket(url);
 
   ws.onopen = () => {
-    setStatus('ok', 'CONNECTED');
+    setStatus('ok', 'ПОДКЛЮЧЕНО');
     overlay.classList.add('hidden');
   };
 
@@ -297,41 +528,39 @@ function connect() {
     let d;
     try { d = JSON.parse(e.data); } catch { return; }
 
-    // Apply quaternion to cube
+    // Set quaternion directly (x, y, z, w)
     targetQ.set(d.qx, d.qy, d.qz, d.qw);
 
-    // Hz counter
+    // Hz measurement
     totalFrames++;
     hzCnt++;
     const now = performance.now();
     if (now - lastHzTime >= 500) {
       const hz = (hzCnt * 1000) / (now - lastHzTime);
       txtHz.textContent = hz.toFixed(1) + ' Hz';
-      txtHz.style.color = hz >= 50 ? '#4ade80' : hz >= 30 ? '#facc15' : '#f87171';
+      txtHz.style.color = hz >= 50 ? 'var(--success)' : hz >= 30 ? 'var(--warning)' : 'var(--danger)';
       hzCnt = 0;
       lastHzTime = now;
     }
     lastFrameTime = now;
 
-    // Telemetry (updated at 10 Hz from DOM interval below)
     window._lastFrame = d;
   };
 
   ws.onclose = () => {
-    setStatus('warn', 'DISCONNECTED');
+    setStatus('warn', 'ОТКЛЮЧЕНО');
     overlay.classList.remove('hidden');
-    overlayMsg.textContent = 'Connection lost — reconnecting…';
+    overlayMsg.textContent = 'Связь потеряна — повторное подключение...';
     setTimeout(connect, 2000);
   };
 
   ws.onerror = () => {
-    setStatus('err', 'ERROR');
+    setStatus('err', 'ОШИБКА');
   };
 }
-
 connect();
 
-// ── DOM telemetry update at 10 Hz (decoupled from WebSocket) ──
+// 10 Hz DOM update
 setInterval(() => {
   const d = window._lastFrame;
   if (!d) return;
@@ -341,30 +570,28 @@ setInterval(() => {
 
   const rotMag = Math.sqrt(d.rx*d.rx + d.ry*d.ry + d.rz*d.rz);
   const isStill = rotMag < 0.5;
-  vGyro.textContent =
-    `${d.rx.toFixed(1)} / ${d.ry.toFixed(1)} / ${d.rz.toFixed(1)}`;
+
+  vGyro.textContent = `${d.rx.toFixed(1)} / ${d.ry.toFixed(1)} / ${d.rz.toFixed(1)}`;
   vGyro.className = 'tele-val' + (isStill ? ' green' : '');
 
-  vAcc.textContent =
-    `${d.ax.toFixed(3)} / ${d.ay.toFixed(3)} / ${d.az.toFixed(3)}`;
+  vAcc.textContent = `${d.ax.toFixed(3)} / ${d.ay.toFixed(3)} / ${d.az.toFixed(3)}`;
 
-  // Still / Moving indicator
   const age = performance.now() - lastFrameTime;
   if (age > 2000) {
-    txtStill.textContent = '⚠ NO DATA';
-    txtStill.style.color = '#f87171';
-    vStatus.textContent  = 'No phone data';
-    vStatus.className    = 'tele-val red';
+    txtStill.textContent = '⚠ НЕТ ДАННЫХ';
+    txtStill.style.color = 'var(--danger)';
+    vStatus.textContent = 'Ожидание телефона';
+    vStatus.className = 'tele-val red';
   } else if (isStill) {
-    txtStill.textContent = '🟢 STILL';
-    txtStill.style.color = '#4ade80';
-    vStatus.textContent  = `#${totalFrames}`;
-    vStatus.className    = 'tele-val green';
+    txtStill.textContent = '🟢 ПОКОЙ';
+    txtStill.style.color = 'var(--success)';
+    vStatus.textContent = `#${totalFrames}`;
+    vStatus.className = 'tele-val green';
   } else {
-    txtStill.textContent = '🔴 MOVING';
-    txtStill.style.color = '#f87171';
-    vStatus.textContent  = `${rotMag.toFixed(1)}°/s`;
-    vStatus.className    = 'tele-val red';
+    txtStill.textContent = '🔴 ДВИЖЕНИЕ';
+    txtStill.style.color = 'var(--danger)';
+    vStatus.textContent = `${rotMag.toFixed(1)} °/s`;
+    vStatus.className = 'tele-val red';
   }
 }, 100);
 </script>
