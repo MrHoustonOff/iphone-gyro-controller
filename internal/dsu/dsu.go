@@ -167,21 +167,19 @@ func (s *Server) fillPadDataPacket(buf []byte, packetNum uint32, frame server.Mo
 	p[22] = 128 // Right Stick X
 	p[23] = 128 // Right Stick Y
 
-	// Timestamp in microseconds
+	// Timestamp in microseconds (offset 48..56)
 	micros := uint64(time.Now().UnixNano() / 1000)
-	binary.LittleEndian.PutUint64(p[47:55], micros)
+	binary.LittleEndian.PutUint64(p[48:56], micros)
 
-	// Accelerometer in g: AccX, AccY, AccZ
-	// Coordinate mapping: DSU expects X (right), Y (out), Z (up)
-	binary.LittleEndian.PutUint32(p[55:59], float32ToBits(frame.AccX))
-	binary.LittleEndian.PutUint32(p[59:63], float32ToBits(frame.AccY))
-	binary.LittleEndian.PutUint32(p[63:67], float32ToBits(frame.AccZ))
+	// Accelerometer in g: AccX, AccY, AccZ (offsets 56..68)
+	binary.LittleEndian.PutUint32(p[56:60], float32ToBits(frame.AccX))
+	binary.LittleEndian.PutUint32(p[60:64], float32ToBits(frame.AccY))
+	binary.LittleEndian.PutUint32(p[64:68], float32ToBits(frame.AccZ))
 
-	// Gyroscope in °/s: Pitch, Yaw, Roll
-	// Coordinate mapping: Pitch (around X), Yaw (around Z), Roll (around Y)
-	binary.LittleEndian.PutUint32(p[67:71], float32ToBits(frame.RotX))
-	binary.LittleEndian.PutUint32(p[71:75], float32ToBits(frame.RotZ))
-	binary.LittleEndian.PutUint32(p[75:79], float32ToBits(frame.RotY))
+	// Gyroscope in °/s: Pitch, Yaw, Roll (offsets 68..80)
+	binary.LittleEndian.PutUint32(p[68:72], float32ToBits(frame.RotX))
+	binary.LittleEndian.PutUint32(p[72:76], float32ToBits(frame.RotZ))
+	binary.LittleEndian.PutUint32(p[76:80], float32ToBits(frame.RotY))
 
 	// --- 3. Compute IEEE 802.3 CRC32 over entire 100 bytes ---
 	crc := crc32.ChecksumIEEE(buf)

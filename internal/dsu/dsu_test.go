@@ -60,14 +60,14 @@ func TestDSU_PadDataPacketLayoutAndCRC32(t *testing.T) {
 
 	// 6. Verify data payload fields
 	p := packet[20:]
-	// Accel X (offset 55..59)
-	accX := math.Float32frombits(binary.LittleEndian.Uint32(p[55:59]))
+	// Accel X (offset 56..60)
+	accX := math.Float32frombits(binary.LittleEndian.Uint32(p[56:60]))
 	if accX != 0.05 {
 		t.Errorf("accX mismatch: got %f, want 0.05", accX)
 	}
 
-	// Gyro Pitch/RotX (offset 67..71)
-	gyroX := math.Float32frombits(binary.LittleEndian.Uint32(p[67:71]))
+	// Gyro Pitch/RotX (offset 68..72)
+	gyroX := math.Float32frombits(binary.LittleEndian.Uint32(p[68:72]))
 	if gyroX != 15.5 {
 		t.Errorf("gyroX mismatch: got %f, want 15.5", gyroX)
 	}
