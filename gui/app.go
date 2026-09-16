@@ -63,6 +63,18 @@ type AppState struct {
 	ActiveSlot    int       `json:"activeSlot"` // -1 = none (identity matrix)
 }
 
+// CaptureResult represents the computed result of a calibration gesture
+type CaptureResult struct {
+	Success     bool    `json:"success"`
+	AxisIdx     int     `json:"axisIdx"`     // 0=X, 1=Y, 2=Z
+	Sign        float64 `json:"sign"`        // +1.0 or -1.0
+	AxisName    string  `json:"axisName"`    // "+X", "-Y", etc.
+	Confidence  float64 `json:"confidence"`  // 0.0 to 1.0
+	SampleCount int     `json:"sampleCount"`
+	PeakSpeed   float64 `json:"peakSpeed"`   // peak speed in °/s
+	ErrorMsg    string  `json:"errorMsg"`
+}
+
 // App struct manages desktop backend and GyroBridge services
 type App struct {
 	ctx         context.Context
@@ -91,13 +103,17 @@ type App struct {
 	setupQRPNG  string
 	toggleMu    sync.Mutex
 	lastToggle  time.Time
+	// Calibration capture buffer (buffered directly at 60 Hz from WebSocket)
+	isCapturing   atomic.Bool
+	captureMu     sync.Mutex
+	captureBuffer [][3]float64
 	// Profile system
-	profilesMu  sync.RWMutex
-	profiles    [4]Profile // exactly 4 slots, always
-	activeSlot  int        // -1 = identity/none
-	profilesDir string
+	profilesMu   sync.RWMutex
+	profiles     [4]Profile // exactly 4 slots, always
+	activeSlot   int        // -1 = identity/none
+	profilesDir  string
 	// Active calibration matrix (applied to frames before DSU forwarding)
-	matrixMu    sync.RWMutex
+	matrixMu     sync.RWMutex
 	activeMatrix [3][3]float64 // identity by default
 }
 
@@ -270,6 +286,13 @@ func (a *App) startup(ctx context.Context) {
 		a.curAccY.Store(math.Float64bits(float64(frame.AccY)))
 		a.curAccZ.Store(math.Float64bits(float64(frame.AccZ)))
 
+		// If calibration gesture recording is active, capture every 60 Hz frame
+		if a.isCapturing.Load() {
+			a.captureMu.Lock()
+			a.captureBuffer = append(a.captureBuffer, [3]float64{float64(frame.RotX), float64(frame.RotY), float64(frame.RotZ)})
+			a.captureMu.Unlock()
+		}
+
 		// Apply calibration matrix to the frame before forwarding to DSU
 		a.matrixMu.RLock()
 		mat := a.activeMatrix
@@ -356,9 +379,9 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.srv = srv
 
-	// Smooth live telemetry ticker (10 Hz) when client is active
+	// Smooth live telemetry ticker (20 Hz = 50ms) when client is active
 	go func() {
-		ticker := time.NewTicker(100 * time.Millisecond)
+		ticker := time.NewTicker(50 * time.Millisecond)
 		defer ticker.Stop()
 		for range ticker.C {
 			if a.hasClient.Load() {
@@ -543,6 +566,132 @@ func (a *App) SetActiveProfile(slot int) string {
 	a.saveProfiles()
 	a.emitStateChange()
 	return "ok"
+}
+
+// StartCapture begins buffering raw 60 Hz gyro frames for calibration
+func (a *App) StartCapture() {
+	a.captureMu.Lock()
+	a.captureBuffer = make([][3]float64, 0, 200)
+	a.captureMu.Unlock()
+	a.isCapturing.Store(true)
+}
+
+// StopCapture stops buffering and analyzes the captured gyro frames
+func (a *App) StopCapture() CaptureResult {
+	a.isCapturing.Store(false)
+	a.captureMu.Lock()
+	samples := a.captureBuffer
+	a.captureBuffer = nil
+	a.captureMu.Unlock()
+
+	if len(samples) < 5 {
+		return CaptureResult{
+			Success:  false,
+			ErrorMsg: "Слишком мало данных. Убедитесь, что телефон подключен.",
+		}
+	}
+
+	var peakSpeed float64
+	var activeSamples [][3]float64
+	for _, s := range samples {
+		speed := math.Sqrt(s[0]*s[0] + s[1]*s[1] + s[2]*s[2])
+		if speed > peakSpeed {
+			peakSpeed = speed
+		}
+		if speed >= 10.0 { // movement threshold in °/s
+			activeSamples = append(activeSamples, [3]float64{s[0] / speed, s[1] / speed, s[2] / speed})
+		}
+	}
+
+	if len(activeSamples) < 5 || peakSpeed < 18.0 {
+		return CaptureResult{
+			Success:     false,
+			SampleCount: len(samples),
+			PeakSpeed:   peakSpeed,
+			ErrorMsg:    "Движение слишком слабое. Наклоните телефон энергичнее.",
+		}
+	}
+
+	// Compute mean normalized direction
+	var mean [3]float64
+	for _, v := range activeSamples {
+		mean[0] += v[0]
+		mean[1] += v[1]
+		mean[2] += v[2]
+	}
+	meanMag := math.Sqrt(mean[0]*mean[0] + mean[1]*mean[1] + mean[2]*mean[2])
+	if meanMag < 0.001 {
+		return CaptureResult{
+			Success:     false,
+			SampleCount: len(samples),
+			PeakSpeed:   peakSpeed,
+			ErrorMsg:    "Движение взаимно компенсировалось. Наклоняйте только в одну сторону.",
+		}
+	}
+	d := [3]float64{mean[0] / meanMag, mean[1] / meanMag, mean[2] / meanMag}
+
+	// 6 candidate axes
+	candidates := [][3]float64{
+		{1, 0, 0}, {-1, 0, 0},
+		{0, 1, 0}, {0, -1, 0},
+		{0, 0, 1}, {0, 0, -1},
+	}
+
+	bestScore := -2.0
+	secondScore := -2.0
+	bestCand := candidates[0]
+
+	for _, c := range candidates {
+		dot := d[0]*c[0] + d[1]*c[1] + d[2]*c[2]
+		if dot > bestScore {
+			secondScore = bestScore
+			bestScore = dot
+			bestCand = c
+		} else if dot > secondScore {
+			secondScore = dot
+		}
+	}
+
+	confidence := bestScore - secondScore
+	axisIdx := 0
+	sign := 1.0
+	for i := 0; i < 3; i++ {
+		if bestCand[i] != 0 {
+			axisIdx = i
+			sign = bestCand[i]
+			break
+		}
+	}
+
+	axisNames := []string{"X", "Y", "Z"}
+	signStr := "+"
+	if sign < 0 {
+		signStr = "-"
+	}
+	name := signStr + axisNames[axisIdx]
+
+	if confidence < 0.20 {
+		return CaptureResult{
+			Success:     false,
+			AxisIdx:     axisIdx,
+			Sign:        sign,
+			AxisName:    name,
+			Confidence:  confidence,
+			SampleCount: len(activeSamples),
+			PeakSpeed:   peakSpeed,
+			ErrorMsg:    "Движение неоднозначно (наклон по диагонали). Наклоните строго по одной оси.",
+		}
+	}
+
+	return CaptureResult{
+		Success:     true,
+		AxisIdx:     axisIdx,
+		Sign:        sign,
+		AxisName:    name,
+		Confidence:  confidence,
+		SampleCount: len(activeSamples),
+		PeakSpeed:   peakSpeed,
+	}
 }
 
 // GetLanguages returns available languages

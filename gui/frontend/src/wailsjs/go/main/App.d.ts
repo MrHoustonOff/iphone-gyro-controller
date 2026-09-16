@@ -14,6 +14,10 @@ export function SaveProfile(arg1:number,arg2:string,arg3:any):Promise<string>;
 
 export function SetActiveProfile(arg1:number):Promise<string>;
 
+export function StartCapture():Promise<void>;
+
+export function StopCapture():Promise<main.CaptureResult>;
+
 export function TogglePause():Promise<main.AppState>;
 
 export function ValidateSync():Promise<Array<string>>;

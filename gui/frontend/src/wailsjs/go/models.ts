@@ -90,6 +90,32 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class CaptureResult {
+	    success: boolean;
+	    axisIdx: number;
+	    sign: number;
+	    axisName: string;
+	    confidence: number;
+	    sampleCount: number;
+	    peakSpeed: number;
+	    errorMsg: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new CaptureResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.axisIdx = source["axisIdx"];
+	        this.sign = source["sign"];
+	        this.axisName = source["axisName"];
+	        this.confidence = source["confidence"];
+	        this.sampleCount = source["sampleCount"];
+	        this.peakSpeed = source["peakSpeed"];
+	        this.errorMsg = source["errorMsg"];
+	    }
+	}
 
 }
 

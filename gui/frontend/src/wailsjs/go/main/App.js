@@ -26,6 +26,14 @@ export function SetActiveProfile(arg1) {
   return window['go']['main']['App']['SetActiveProfile'](arg1);
 }
 
+export function StartCapture() {
+  return window['go']['main']['App']['StartCapture']();
+}
+
+export function StopCapture() {
+  return window['go']['main']['App']['StopCapture']();
+}
+
 export function TogglePause() {
   return window['go']['main']['App']['TogglePause']();
 }
