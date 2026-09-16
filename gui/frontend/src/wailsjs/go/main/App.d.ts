@@ -4,9 +4,15 @@ import {main} from '../models';
 
 export function GetLanguages():Promise<Array<string>>;
 
+export function GetProfiles():Promise<Array<main.Profile>>;
+
 export function GetState():Promise<main.AppState>;
 
 export function GetTranslations(arg1:string):Promise<string>;
+
+export function SaveProfile(arg1:number,arg2:string,arg3:any):Promise<string>;
+
+export function SetActiveProfile(arg1:number):Promise<string>;
 
 export function TogglePause():Promise<main.AppState>;
 

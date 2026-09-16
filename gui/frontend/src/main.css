@@ -1419,3 +1419,587 @@ em {
     justify-content: center;
   }
 }
+
+/* ── Profile Slots (Online View) ──────────────────────────────────────────── */
+.profile-slots-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.profile-slots-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.profile-slot-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 6px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: background var(--transition-fast), border-color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  position: relative;
+  min-height: 52px;
+}
+
+.profile-slot-btn:hover {
+  background: var(--surface-elevated);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.profile-slot-btn.active {
+  background: rgba(48, 209, 88, 0.10);
+  border-color: rgba(48, 209, 88, 0.35);
+}
+
+[data-theme="light"] .profile-slot-btn.active {
+  background: rgba(52, 199, 89, 0.10);
+  border-color: rgba(52, 199, 89, 0.4);
+}
+
+.profile-slot-num {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.profile-slot-name {
+  font-size: clamp(10px, 1.1vw, 12px);
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
+  line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+}
+
+.profile-slot-btn.active .profile-slot-name {
+  color: var(--text);
+}
+
+.profile-slot-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--dot-online);
+}
+
+.btn-calibrate {
+  align-self: flex-end;
+  padding: 8px 20px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: clamp(12px, 1.2vw, 13px);
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast);
+}
+
+.btn-calibrate:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: rgba(255,255,255,0.2);
+}
+
+/* ── Calibration Wizard Modal ─────────────────────────────────────────────── */
+.cal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: calOverlayIn 0.2s ease;
+}
+
+@keyframes calOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.cal-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
+  width: min(920px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--text-tertiary) transparent;
+  display: flex;
+  flex-direction: column;
+  animation: calModalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes calModalIn {
+  from { opacity: 0; transform: scale(0.94) translateY(16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.cal-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cal-title {
+  font-size: clamp(17px, 2vw, 20px);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.cal-subtitle {
+  font-size: clamp(12px, 1.3vw, 14px);
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.cal-close-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition-fast);
+}
+
+.cal-close-btn:hover { background: var(--surface-elevated); }
+
+.cal-close-btn svg {
+  width: 14px;
+  height: 14px;
+  stroke: var(--text-secondary);
+  stroke-width: 2;
+  fill: none;
+}
+
+.cal-screen {
+  padding: 20px 24px 24px;
+}
+
+.cal-screen-hint {
+  font-size: clamp(13px, 1.4vw, 15px);
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+/* Slot list (screen A) */
+.cal-slot-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cal-slot-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  gap: 12px;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.cal-slot-card.active {
+  border-color: rgba(48, 209, 88, 0.4);
+  background: rgba(48, 209, 88, 0.06);
+}
+
+[data-theme="light"] .cal-slot-card.active {
+  border-color: rgba(52, 199, 89, 0.4);
+  background: rgba(52, 199, 89, 0.06);
+}
+
+.cal-slot-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.cal-slot-card-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.cal-slot-card-name {
+  font-size: clamp(13px, 1.4vw, 15px);
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cal-slot-card-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Calibration capture layout (screen B) */
+.cal-capture-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  min-height: 340px;
+}
+
+.cal-capture-left {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 3-step axis progress pips */
+.cal-axis-progress {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cal-axis-pip {
+  width: 28px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-elevated);
+  transition: background var(--transition-fast), transform var(--transition-fast);
+}
+
+.cal-axis-pip.active {
+  background: #007AFF;
+  transform: scaleX(1.15);
+}
+
+.cal-axis-pip.done {
+  background: var(--dot-online);
+}
+
+.cal-step-title {
+  font-size: clamp(15px, 1.8vw, 18px);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+.cal-step-hint {
+  font-size: clamp(12px, 1.3vw, 14px);
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Live axis bars */
+.cal-live-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.cal-axis-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-axis-label {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-tertiary);
+  width: 14px;
+  flex-shrink: 0;
+}
+
+.cal-axis-bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: var(--surface-elevated);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.cal-axis-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--text-tertiary);
+  border-radius: var(--radius-pill);
+  transition: width 0.06s linear, background 0.12s ease;
+}
+
+.cal-axis-bar.dominant {
+  background: #007AFF;
+}
+
+.cal-axis-value {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  width: 40px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.cal-confidence-msg {
+  font-size: clamp(12px, 1.3vw, 13px);
+  color: var(--dot-paused);
+  font-weight: 500;
+  min-height: 18px;
+  line-height: 1.4;
+}
+
+/* Hold-to-capture button */
+.btn-capture {
+  padding: 14px 20px;
+  background: #007AFF;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: clamp(13px, 1.4vw, 15px);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background var(--transition-fast), transform 0.1s ease,
+              box-shadow var(--transition-fast);
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3);
+}
+
+.btn-capture:hover { background: #0071e3; }
+
+.btn-capture.capturing {
+  background: #30D158;
+  box-shadow: 0 4px 16px rgba(48, 209, 88, 0.35);
+  animation: capturePulse 0.8s ease-in-out infinite;
+}
+
+@keyframes capturePulse {
+  0%, 100% { box-shadow: 0 4px 16px rgba(48, 209, 88, 0.35); }
+  50%       { box-shadow: 0 4px 28px rgba(48, 209, 88, 0.6); }
+}
+
+/* 3D panel */
+.cal-3d-panel {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  position: relative;
+  min-height: 280px;
+  background: radial-gradient(ellipse at 50% 40%, #1a1a24 0%, #0a0a12 100%);
+}
+
+[data-theme="light"] .cal-3d-panel {
+  background: radial-gradient(ellipse at 50% 40%, #f0f0f5 0%, #e0e0e8 100%);
+}
+
+.cal-3d-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Confirm screen */
+.cal-confirm-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Manual mapping grid (screen D) */
+.cal-manual-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.cal-manual-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cal-manual-label {
+  font-size: clamp(12px, 1.3vw, 13px);
+  color: var(--text-secondary);
+  font-weight: 500;
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.cal-axis-select {
+  padding: 6px 10px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: clamp(12px, 1.3vw, 13px);
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none;
+  min-width: 64px;
+}
+
+.cal-invert-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  font-size: clamp(11px, 1.2vw, 12px);
+  color: var(--text-secondary);
+  user-select: none;
+}
+
+.cal-invert-label input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: #007AFF;
+}
+
+.cal-manual-error {
+  font-size: clamp(12px, 1.3vw, 13px);
+  color: var(--dot-offline);
+  font-weight: 500;
+  padding: 8px 12px;
+  background: rgba(255, 69, 58, 0.08);
+  border: 1px solid rgba(255, 69, 58, 0.2);
+  border-radius: var(--radius-sm);
+  line-height: 1.4;
+}
+
+/* Save form (screen E) */
+.cal-save-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 20px 0;
+}
+
+.cal-name-input {
+  padding: 12px 16px;
+  background: var(--surface-hover);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: clamp(14px, 1.5vw, 16px);
+  width: 100%;
+  outline: none;
+  transition: border-color var(--transition-fast);
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.cal-name-input:focus {
+  border-color: #007AFF;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.cal-name-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* Nav rows inside calibration */
+.cal-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+/* Small button variant for calibration */
+.cal-btn-sm {
+  padding: 8px 16px;
+  font-size: clamp(12px, 1.3vw, 13px);
+}
+
+/* Mobile — stack capture layout */
+@media (max-width: 640px) {
+  .cal-capture-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .cal-3d-panel {
+    min-height: 200px;
+    order: -1;
+  }
+
+  .profile-slots-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cal-modal {
+    width: 96vw;
+    max-height: 92vh;
+  }
+
+  .cal-header {
+    padding: 14px 16px 12px;
+  }
+
+  .cal-screen {
+    padding: 14px 16px 16px;
+  }
+}

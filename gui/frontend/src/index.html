@@ -131,6 +131,14 @@
           </div>
 
           <button type="button" class="btn-apple-primary" id="btn-pause-resume" data-i18n="controls.pause">ПАУЗА</button>
+
+          <!-- Profile Slots Row -->
+          <div class="profile-slots-section">
+            <div class="profile-slots-row" id="profile-slots-row">
+              <!-- 4 slots rendered by JS -->
+            </div>
+            <button type="button" class="btn-calibrate" id="btn-open-calibration" data-i18n="calibration.btn_calibrate">Калибровать</button>
+          </div>
         </div>
 
         <!-- State 4: Initial Setup Wizard Module -->
@@ -387,6 +395,176 @@
 
   <!-- Subtle Notification Toast -->
   <div id="toast" class="toast-msg"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Calibration Wizard Modal Overlay                                       -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="cal-overlay" class="cal-overlay" style="display:none;" aria-modal="true" role="dialog">
+    <div class="cal-modal">
+
+      <!-- Modal Header -->
+      <div class="cal-header">
+        <div class="cal-header-left">
+          <span class="cal-title" id="cal-modal-title" data-i18n="calibration.title">Калибровка осей</span>
+          <span class="cal-subtitle" id="cal-modal-subtitle" data-i18n="calibration.subtitle">Настройка осей</span>
+        </div>
+        <button type="button" class="cal-close-btn" id="cal-close-btn" aria-label="Close">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- ── Screen A: slot selection ──────────────────────────────────── -->
+      <div class="cal-screen" id="cal-screen-slots">
+        <p class="cal-screen-hint" id="cal-slots-hint">Выберите слот для записи:</p>
+        <div class="cal-slot-list" id="cal-slot-list">
+          <!-- 4 slot cards rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ── Screen B: gesture capture (3 axes) ───────────────────────── -->
+      <div class="cal-screen" id="cal-screen-capture" style="display:none;">
+        <div class="cal-capture-layout">
+          <!-- Left: instructions + capture button -->
+          <div class="cal-capture-left">
+            <div class="cal-axis-progress" id="cal-axis-progress">
+              <div class="cal-axis-pip active" data-axis="0"></div>
+              <div class="cal-axis-pip" data-axis="1"></div>
+              <div class="cal-axis-pip" data-axis="2"></div>
+            </div>
+            <h3 class="cal-step-title" id="cal-step-title">Наклоните вперед</h3>
+            <p class="cal-step-hint" data-i18n="calibration.step_hint">Удерживайте кнопку пока наклоняете</p>
+
+            <!-- Live axis indicator bar (show dominant detected axis during hold) -->
+            <div class="cal-live-indicator" id="cal-live-indicator">
+              <div class="cal-axis-bar-row">
+                <span class="cal-axis-label">X</span>
+                <div class="cal-axis-bar-wrap"><div class="cal-axis-bar" id="cal-bar-x"></div></div>
+                <span class="cal-axis-value" id="cal-val-x">0.0</span>
+              </div>
+              <div class="cal-axis-bar-row">
+                <span class="cal-axis-label">Y</span>
+                <div class="cal-axis-bar-wrap"><div class="cal-axis-bar" id="cal-bar-y"></div></div>
+                <span class="cal-axis-value" id="cal-val-y">0.0</span>
+              </div>
+              <div class="cal-axis-bar-row">
+                <span class="cal-axis-label">Z</span>
+                <div class="cal-axis-bar-wrap"><div class="cal-axis-bar" id="cal-bar-z"></div></div>
+                <span class="cal-axis-value" id="cal-val-z">0.0</span>
+              </div>
+            </div>
+
+            <div class="cal-confidence-msg" id="cal-confidence-msg"></div>
+
+            <!-- Hold-to-capture button -->
+            <button type="button" class="btn-capture" id="btn-capture"
+              data-i18n="calibration.capture_btn_hold">Удерживайте для захвата</button>
+          </div>
+
+          <!-- Right: Three.js 3D scene (phone tilting toward monitor) -->
+          <div class="cal-3d-panel" id="cal-3d-panel">
+            <canvas id="cal-3d-canvas" class="cal-3d-canvas"></canvas>
+          </div>
+        </div>
+
+        <div class="cal-nav-row">
+          <button type="button" class="btn-apple-secondary cal-btn-sm" id="cal-capture-back" data-i18n="calibration.btn_back">← Назад</button>
+        </div>
+      </div>
+
+      <!-- ── Screen C: 3D confirmation ─────────────────────────────────── -->
+      <div class="cal-screen" id="cal-screen-confirm" style="display:none;">
+        <div class="cal-capture-layout">
+          <div class="cal-capture-left">
+            <h3 class="cal-step-title" data-i18n="calibration.confirm_title">Проверьте результат</h3>
+            <p class="cal-step-hint" data-i18n="calibration.confirm_hint">Наклоняйте телефон — модель должна двигаться соответственно. Всё верно?</p>
+            <div class="cal-confirm-btns">
+              <button type="button" class="btn-apple-primary" id="btn-confirm-yes" data-i18n="calibration.confirm_yes">Да, сохранить</button>
+              <button type="button" class="btn-apple-secondary" id="btn-confirm-no" data-i18n="calibration.confirm_no">Нет, настроить вручную</button>
+            </div>
+          </div>
+          <div class="cal-3d-panel" id="cal-3d-panel-confirm">
+            <canvas id="cal-3d-canvas-confirm" class="cal-3d-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Screen D: manual axis mapping ────────────────────────────── -->
+      <div class="cal-screen" id="cal-screen-manual" style="display:none;">
+        <div class="cal-capture-layout">
+          <div class="cal-capture-left">
+            <h3 class="cal-step-title" data-i18n="calibration.manual_title">Ручная настройка</h3>
+            <p class="cal-step-hint" data-i18n="calibration.manual_hint">Выберите соответствие осей и проверьте на модели справа</p>
+
+            <div class="cal-manual-grid">
+              <!-- Pitch / Forward -->
+              <div class="cal-manual-row">
+                <span class="cal-manual-label" data-i18n="calibration.manual_axis_forward">Вперед / Pitch</span>
+                <select class="cal-axis-select" id="man-pitch-axis">
+                  <option value="0">X</option>
+                  <option value="1">Y</option>
+                  <option value="2">Z</option>
+                </select>
+                <label class="cal-invert-label">
+                  <input type="checkbox" id="man-pitch-inv">
+                  <span data-i18n="calibration.manual_inverted">Инверт.</span>
+                </label>
+              </div>
+              <!-- Roll / Right -->
+              <div class="cal-manual-row">
+                <span class="cal-manual-label" data-i18n="calibration.manual_axis_right">Вправо / Roll</span>
+                <select class="cal-axis-select" id="man-roll-axis">
+                  <option value="0">X</option>
+                  <option value="1">Y</option>
+                  <option value="2" selected>Z</option>
+                </select>
+                <label class="cal-invert-label">
+                  <input type="checkbox" id="man-roll-inv">
+                  <span data-i18n="calibration.manual_inverted">Инверт.</span>
+                </label>
+              </div>
+              <!-- Yaw / Up -->
+              <div class="cal-manual-row">
+                <span class="cal-manual-label" data-i18n="calibration.manual_axis_up">Вверх / Yaw</span>
+                <select class="cal-axis-select" id="man-yaw-axis">
+                  <option value="0">X</option>
+                  <option value="1" selected>Y</option>
+                  <option value="2">Z</option>
+                </select>
+                <label class="cal-invert-label">
+                  <input type="checkbox" id="man-yaw-inv">
+                  <span data-i18n="calibration.manual_inverted">Инверт.</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="cal-manual-error" id="cal-manual-error" style="display:none;" data-i18n="calibration.manual_invalid"></div>
+
+            <div class="cal-nav-row">
+              <button type="button" class="btn-apple-secondary cal-btn-sm" id="cal-manual-back" data-i18n="calibration.btn_back">← Назад</button>
+              <button type="button" class="btn-apple-primary cal-btn-sm" id="cal-manual-next" data-i18n="calibration.btn_next">Далее →</button>
+            </div>
+          </div>
+          <div class="cal-3d-panel" id="cal-3d-panel-manual">
+            <canvas id="cal-3d-canvas-manual" class="cal-3d-canvas"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Screen E: save profile ────────────────────────────────────── -->
+      <div class="cal-screen" id="cal-screen-save" style="display:none;">
+        <div class="cal-save-form">
+          <h3 class="cal-step-title">Сохранить профиль в слот <span id="cal-save-slot-label">1</span></h3>
+          <input type="text" class="cal-name-input" id="cal-name-input"
+            placeholder="Название профиля" maxlength="40">
+          <div class="cal-nav-row">
+            <button type="button" class="btn-apple-secondary cal-btn-sm" id="cal-save-back" data-i18n="calibration.btn_back">← Назад</button>
+            <button type="button" class="btn-apple-primary" id="btn-do-save" data-i18n="calibration.btn_save">Сохранить</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .cal-modal -->
+  </div><!-- #cal-overlay -->
 
   <script>
   'use strict';
@@ -741,6 +919,677 @@
     }
   };
 
+  // ── Profile Manager ─────────────────────────────────────────────────────────
+  const ProfileManager = {
+    profiles: [null, null, null, null], // each: {slot, name, matrix, active} or null
+    activeSlot: -1,
+
+    /** Sync from AppState.lastState */
+    sync(state) {
+      if (!state || !state.profiles) return;
+      this.profiles = state.profiles;
+      this.activeSlot = state.activeSlot ?? -1;
+      this.renderSlots();
+    },
+
+    /** Render the 4 slot pills inside view-online */
+    renderSlots() {
+      const row = document.getElementById('profile-slots-row');
+      if (!row) return;
+      row.innerHTML = '';
+
+      this.profiles.forEach((p, i) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'profile-slot-btn' + (p && p.active ? ' active' : '');
+        btn.title = p && p.name ? p.name : (I18n.t('calibration.slot_empty') || 'Empty');
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'profile-slot-name';
+        nameSpan.textContent = p && p.name ? p.name : (I18n.t('calibration.slot_empty') || 'Empty');
+
+        const numSpan = document.createElement('span');
+        numSpan.className = 'profile-slot-num';
+        numSpan.textContent = String(i + 1);
+
+        btn.appendChild(numSpan);
+        btn.appendChild(nameSpan);
+
+        if (p && p.active) {
+          const dot = document.createElement('span');
+          dot.className = 'profile-slot-dot';
+          btn.appendChild(dot);
+        }
+
+        btn.addEventListener('click', () => {
+          if (p && p.name) {
+            // Activate this slot
+            CalibrationWizard.activateSlot(i);
+          } else {
+            // Empty — open calibration to this slot
+            CalibrationWizard.openToSlot(i);
+          }
+        });
+
+        row.appendChild(btn);
+      });
+    }
+  };
+
+  // ── Three.js 3D Gyro Scene (Phone-toward-monitor) ───────────────────────────
+  // Loaded from CDN via import map; gracefully absent if offline
+  const Scene3D = {
+    scenes: {}, // keyed by canvas id
+
+    async mount(canvasId) {
+      if (this.scenes[canvasId]) return this.scenes[canvasId];
+      try {
+        const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js');
+        const { RoundedBoxGeometry } = await import('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/geometries/RoundedBoxGeometry.js');
+        const { RoomEnvironment } = await import('https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/environments/RoomEnvironment.js');
+
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return null;
+
+        const isDark = () => document.documentElement.getAttribute('data-theme') !== 'light';
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.0;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+        const scene = new THREE.Scene();
+
+        // IBL environment (RoomEnvironment = product-photo studio)
+        const pmrem = new THREE.PMREMGenerator(renderer);
+        pmrem.compileEquirectangularShader();
+        const envTexture = pmrem.fromScene(new RoomEnvironment()).texture;
+        scene.environment = envTexture;
+
+        // Camera: narrow FOV telephoto, slight downward tilt
+        const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+        camera.position.set(0, 0.6, 4.5);
+        camera.lookAt(0, 0, 0);
+
+        // Phone body (rounded rectangular prism — "bar of soap")
+        const phoneGeo = new RoundedBoxGeometry(0.9, 1.8, 0.12, 4, 0.06);
+        const phoneMat = new THREE.MeshPhysicalMaterial({
+          color: isDark() ? 0x2a2a30 : 0xd4d4d8,
+          roughness: isDark() ? 0.3 : 0.4,
+          metalness: 0.1,
+          clearcoat: isDark() ? 0.8 : 0.5,
+          clearcoatRoughness: 0.15,
+        });
+        const phoneMesh = new THREE.Mesh(phoneGeo, phoneMat);
+
+        // Asymmetric dot (so roll is visually readable)
+        const dotGeo = new THREE.SphereGeometry(0.045, 16, 16);
+        const dotMat = new THREE.MeshPhysicalMaterial({ color: isDark() ? 0x60a0ff : 0x3b82f6, roughness: 0.2, metalness: 0.3 });
+        const dot = new THREE.Mesh(dotGeo, dotMat);
+        dot.position.set(0.3, 0.7, 0.07);
+        phoneMesh.add(dot);
+
+        // Group to apply gyro rotation
+        const phoneGroup = new THREE.Group();
+        phoneGroup.add(phoneMesh);
+        scene.add(phoneGroup);
+
+        // Monitor shape (simple flat screen frame) — positioned behind and above
+        const monGeo = new RoundedBoxGeometry(2.4, 1.5, 0.05, 4, 0.04);
+        const monMat = new THREE.MeshPhysicalMaterial({
+          color: isDark() ? 0x18181b : 0xf4f4f5,
+          roughness: 0.5,
+          metalness: 0.05,
+          clearcoat: 0.2,
+        });
+        const monMesh = new THREE.Mesh(monGeo, monMat);
+        monMesh.position.set(0, 1.2, -1.2);
+        monMesh.rotation.x = -0.2;
+        scene.add(monMesh);
+
+        // Monitor screen surface
+        const screenGeo = new THREE.PlaneGeometry(2.1, 1.22);
+        const screenMat = new THREE.MeshStandardMaterial({ color: 0x0a0a14, roughness: 0.9 });
+        const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+        screenMesh.position.set(0, 1.2, -1.16);
+        screenMesh.rotation.x = -0.2;
+        scene.add(screenMesh);
+
+        // Rim light for dark mode (traces silhouette)
+        const rimLight = new THREE.DirectionalLight(0x6080ff, isDark() ? 1.2 : 0);
+        rimLight.position.set(-2, 1, -3);
+        scene.add(rimLight);
+
+        // Subtle fill light
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(1, 2, 2);
+        scene.add(fillLight);
+
+        // Background gradient handled via CSS on .cal-3d-panel
+
+        let animId = null;
+        let currentQuat = new THREE.Quaternion();
+        let targetQuat = new THREE.Quaternion();
+        let useMatrix = null; // [3][3] calibration matrix override
+
+        function applyCalMatrix(mat, quat) {
+          if (!mat) return quat;
+          // Convert quaternion to Euler, apply matrix, back to quaternion
+          const e = new THREE.Euler().setFromQuaternion(quat, 'XYZ');
+          const v = new THREE.Vector3(e.x, e.y, e.z);
+          const rv = new THREE.Vector3(
+            mat[0][0]*v.x + mat[0][1]*v.y + mat[0][2]*v.z,
+            mat[1][0]*v.x + mat[1][1]*v.y + mat[1][2]*v.z,
+            mat[2][0]*v.x + mat[2][1]*v.y + mat[2][2]*v.z
+          );
+          return new THREE.Quaternion().setFromEuler(new THREE.Euler(rv.x, rv.y, rv.z, 'XYZ'));
+        }
+
+        function resize() {
+          const w = canvas.parentElement.clientWidth;
+          const h = canvas.parentElement.clientHeight;
+          renderer.setSize(w, h, false);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+        }
+
+        const resizeObs = new ResizeObserver(resize);
+        resizeObs.observe(canvas.parentElement);
+        resize();
+
+        function render() {
+          animId = requestAnimationFrame(render);
+          currentQuat.slerp(targetQuat, 0.12);
+          const displayQuat = applyCalMatrix(useMatrix, currentQuat);
+          phoneGroup.quaternion.copy(displayQuat);
+
+          // Update theme-sensitive materials
+          const dark = isDark();
+          phoneMat.color.set(dark ? 0x2a2a30 : 0xd4d4d8);
+          phoneMat.roughness = dark ? 0.3 : 0.4;
+          phoneMat.clearcoat = dark ? 0.8 : 0.5;
+          rimLight.intensity = dark ? 1.2 : 0;
+          monMat.color.set(dark ? 0x18181b : 0xf4f4f5);
+
+          renderer.render(scene, camera);
+        }
+        render();
+
+        const instance = {
+          THREE,
+          scene,
+          camera,
+          renderer,
+          phoneGroup,
+          targetQuat,
+          resizeObs,
+          get animId() { return animId; },
+          setMatrix(mat) { useMatrix = mat; },
+          updateFromState(state) {
+            // Feed live quaternion from app state (Euler → Quaternion via Three)
+            if (!state) return;
+            const p = (state.pitch || 0) * Math.PI / 180;
+            const r = (state.roll || 0) * Math.PI / 180;
+            const y = (state.yaw || 0) * Math.PI / 180;
+            targetQuat.setFromEuler(new THREE.Euler(p, y, r, 'YXZ'));
+          },
+          updateFromRaw(rx, ry, rz) {
+            // Accumulate raw rotation rate for live display during gesture capture
+            // (simple integrated display, not authoritative)
+            const dt = 0.016;
+            const eq = new THREE.Euler(
+              rx * Math.PI / 180 * dt,
+              ry * Math.PI / 180 * dt,
+              rz * Math.PI / 180 * dt, 'XYZ'
+            );
+            const dq = new THREE.Quaternion().setFromEuler(eq);
+            targetQuat.multiplyQuaternions(targetQuat, dq).normalize();
+          },
+          destroy() {
+            if (animId) cancelAnimationFrame(animId);
+            resizeObs.disconnect();
+            renderer.dispose();
+          }
+        };
+
+        this.scenes[canvasId] = instance;
+        return instance;
+      } catch (e) {
+        console.warn('Three.js not available:', e);
+        return null;
+      }
+    },
+
+    get(canvasId) {
+      return this.scenes[canvasId] || null;
+    },
+
+    destroy(canvasId) {
+      if (this.scenes[canvasId]) {
+        this.scenes[canvasId].destroy();
+        delete this.scenes[canvasId];
+      }
+    }
+  };
+
+  // ── Calibration Wizard ──────────────────────────────────────────────────────
+  const CalibrationWizard = {
+    targetSlot: 0,
+    currentScreen: 'slots', // 'slots'|'capture'|'confirm'|'manual'|'save'
+    captureAxis: 0,         // 0=forward, 1=right, 2=up
+    capturedAxes: [],       // [{axis, sign}, {axis, sign}, {axis, sign}]
+    builtMatrix: null,
+    gyroBuffer: [],
+    isCapturing: false,
+    captureInterval: null,
+    _stateUnsub: null,
+
+    AXIS_STEP_KEYS: ['calibration.step1_title', 'calibration.step2_title', 'calibration.step3_title'],
+
+    open() {
+      const overlay = document.getElementById('cal-overlay');
+      if (overlay) overlay.style.display = 'flex';
+      this.showScreen('slots');
+    },
+
+    openToSlot(slot) {
+      this.targetSlot = slot;
+      const overlay = document.getElementById('cal-overlay');
+      if (overlay) overlay.style.display = 'flex';
+      this.startCapture(slot);
+    },
+
+    activateSlot(slot) {
+      if (window.go?.main?.App) {
+        window.go.main.App.SetActiveProfile(slot);
+      }
+    },
+
+    close() {
+      const overlay = document.getElementById('cal-overlay');
+      if (overlay) overlay.style.display = 'none';
+      this.stopCapturing();
+      // Destroy all 3D scenes to free memory
+      ['cal-3d-canvas', 'cal-3d-canvas-confirm', 'cal-3d-canvas-manual'].forEach(id => Scene3D.destroy(id));
+      this.currentScreen = 'slots';
+    },
+
+    showScreen(screen) {
+      this.currentScreen = screen;
+      const ids = ['cal-screen-slots', 'cal-screen-capture', 'cal-screen-confirm', 'cal-screen-manual', 'cal-screen-save'];
+      const map = { slots: 'cal-screen-slots', capture: 'cal-screen-capture', confirm: 'cal-screen-confirm', manual: 'cal-screen-manual', save: 'cal-screen-save' };
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = (id === map[screen]) ? 'block' : 'none';
+      });
+
+      if (screen === 'confirm') this._mountConfirmScene();
+      if (screen === 'manual') { this._mountManualScene(); this._buildManualMatrix(); }
+    },
+
+    renderSlotList() {
+      const list = document.getElementById('cal-slot-list');
+      if (!list) return;
+      list.innerHTML = '';
+      const profiles = ProfileManager.profiles;
+
+      for (let i = 0; i < 4; i++) {
+        const p = profiles[i];
+        const card = document.createElement('div');
+        card.className = 'cal-slot-card' + (p && p.active ? ' active' : '');
+
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'cal-slot-card-info';
+
+        const numEl = document.createElement('span');
+        numEl.className = 'cal-slot-card-num';
+        numEl.textContent = `Слот ${i + 1}`;
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'cal-slot-card-name';
+        nameEl.textContent = p && p.name ? p.name : (I18n.t('calibration.slot_empty') || 'Пустой слот');
+
+        infoDiv.appendChild(numEl);
+        infoDiv.appendChild(nameEl);
+        card.appendChild(infoDiv);
+
+        const actions = document.createElement('div');
+        actions.className = 'cal-slot-card-actions';
+
+        if (p && p.name) {
+          if (!p.active) {
+            const actBtn = document.createElement('button');
+            actBtn.type = 'button';
+            actBtn.className = 'btn-apple-secondary cal-btn-sm';
+            actBtn.textContent = I18n.t('calibration.btn_set_active') || 'Активировать';
+            actBtn.addEventListener('click', () => this.activateSlot(i));
+            actions.appendChild(actBtn);
+          }
+          const reBtn = document.createElement('button');
+          reBtn.type = 'button';
+          reBtn.className = 'btn-apple-primary cal-btn-sm';
+          reBtn.textContent = I18n.t('calibration.btn_recalibrate') || 'Перекалибровать';
+          reBtn.addEventListener('click', () => this.startCapture(i));
+          actions.appendChild(reBtn);
+        } else {
+          const calBtn = document.createElement('button');
+          calBtn.type = 'button';
+          calBtn.className = 'btn-apple-primary cal-btn-sm';
+          calBtn.textContent = I18n.t('calibration.btn_calibrate') || 'Калибровать';
+          calBtn.addEventListener('click', () => this.startCapture(i));
+          actions.appendChild(calBtn);
+        }
+
+        card.appendChild(actions);
+        list.appendChild(card);
+      }
+    },
+
+    startCapture(slot) {
+      this.targetSlot = slot;
+      this.captureAxis = 0;
+      this.capturedAxes = [];
+      this.gyroBuffer = [];
+      this.showScreen('capture');
+      this._updateCaptureStep();
+      // Mount 3D scene
+      Scene3D.mount('cal-3d-canvas');
+    },
+
+    _updateCaptureStep() {
+      // Update pip indicators
+      document.querySelectorAll('.cal-axis-pip').forEach((pip, i) => {
+        pip.classList.remove('active', 'done');
+        if (i < this.captureAxis) pip.classList.add('done');
+        if (i === this.captureAxis) pip.classList.add('active');
+      });
+
+      // Update title
+      const titleEl = document.getElementById('cal-step-title');
+      if (titleEl) {
+        const key = this.AXIS_STEP_KEYS[this.captureAxis] || '';
+        titleEl.innerHTML = renderMarkdown(I18n.t(key));
+      }
+
+      const msgEl = document.getElementById('cal-confidence-msg');
+      if (msgEl) msgEl.textContent = '';
+
+      const btnCap = document.getElementById('btn-capture');
+      if (btnCap) {
+        btnCap.textContent = I18n.t('calibration.capture_btn_hold') || 'Удерживайте для захвата';
+        btnCap.classList.remove('capturing');
+      }
+    },
+
+    _startHold() {
+      if (this.isCapturing) return;
+      this.isCapturing = true;
+      this.gyroBuffer = [];
+
+      const btnCap = document.getElementById('btn-capture');
+      if (btnCap) {
+        btnCap.textContent = I18n.t('calibration.capture_btn_capturing') || 'Захват...';
+        btnCap.classList.add('capturing');
+      }
+
+      // Collect gyro samples from state updates
+      this._captureHandler = (state) => {
+        if (!state || !this.isCapturing) return;
+        const rx = state.rawRotX || 0;
+        const ry = state.rawRotY || 0;
+        const rz = state.rawRotZ || 0;
+        const mag = Math.sqrt(rx*rx + ry*ry + rz*rz);
+        if (mag > 5) { // only record when actually moving (>5°/s)
+          this.gyroBuffer.push([rx, ry, rz]);
+        }
+        // Live bar update
+        this._updateLiveBars(rx, ry, rz);
+        // Feed scene
+        const scene = Scene3D.get('cal-3d-canvas');
+        if (scene) scene.updateFromState(state);
+      };
+      AppState._calCaptureCb = this._captureHandler;
+    },
+
+    _stopHold() {
+      if (!this.isCapturing) return;
+      this.isCapturing = false;
+      AppState._calCaptureCb = null;
+
+      const btnCap = document.getElementById('btn-capture');
+      if (btnCap) {
+        btnCap.textContent = I18n.t('calibration.capture_btn_hold') || 'Удерживайте для захвата';
+        btnCap.classList.remove('capturing');
+      }
+
+      if (this.gyroBuffer.length < 5) {
+        const msgEl = document.getElementById('cal-confidence-msg');
+        if (msgEl) msgEl.textContent = I18n.t('calibration.capture_confidence_low') || 'Слишком мало данных';
+        return;
+      }
+
+      const result = this._computeDominantAxis(this.gyroBuffer);
+      const msgEl = document.getElementById('cal-confidence-msg');
+
+      if (result.confidence < 0.3) {
+        if (msgEl) msgEl.textContent = I18n.t('calibration.capture_confidence_low') || 'Слишком размыто — наклоните резче';
+        return;
+      }
+
+      if (msgEl) msgEl.textContent = `${I18n.t('calibration.capture_confidence_ok') || 'Ось распознана'}: ${result.sign > 0 ? '+' : '-'}${['X','Y','Z'][result.axisIdx]}`;
+
+      this.capturedAxes[this.captureAxis] = result;
+      this.captureAxis++;
+
+      if (this.captureAxis >= 3) {
+        // All 3 axes captured — build matrix
+        const mat = this._buildMatrix();
+        if (mat) {
+          this.builtMatrix = mat;
+          this.showScreen('confirm');
+        } else {
+          // Degenerate mapping — reset
+          this.captureAxis = 0;
+          this.capturedAxes = [];
+          this._updateCaptureStep();
+        }
+      } else {
+        this._updateCaptureStep();
+      }
+    },
+
+    stopCapturing() {
+      this.isCapturing = false;
+      AppState._calCaptureCb = null;
+    },
+
+    _updateLiveBars(rx, ry, rz) {
+      const maxVal = 300;
+      const abs = Math.abs;
+      const axes = [['x', rx], ['y', ry], ['z', rz]];
+      axes.forEach(([ax, val]) => {
+        const bar = document.getElementById(`cal-bar-${ax}`);
+        const valEl = document.getElementById(`cal-val-${ax}`);
+        if (bar) {
+          const pct = Math.min(100, abs(val) / maxVal * 100);
+          bar.style.width = pct + '%';
+          bar.classList.toggle('dominant', abs(val) === Math.max(abs(rx), abs(ry), abs(rz)));
+        }
+        if (valEl) valEl.textContent = val.toFixed(1);
+      });
+    },
+
+    // PCA: compute dominant direction from a buffer of [x,y,z] vectors
+    _computeDominantAxis(buffer) {
+      // Normalize each vector
+      const normalized = buffer.map(([x, y, z]) => {
+        const mag = Math.sqrt(x*x + y*y + z*z) || 1;
+        return [x/mag, y/mag, z/mag];
+      });
+
+      // Mean direction (simple approach — works fine in practice)
+      const mean = [0, 0, 0];
+      normalized.forEach(v => { mean[0] += v[0]; mean[1] += v[1]; mean[2] += v[2]; });
+      const meanMag = Math.sqrt(mean[0]**2 + mean[1]**2 + mean[2]**2) || 1;
+      const d = [mean[0]/meanMag, mean[1]/meanMag, mean[2]/meanMag];
+
+      // Snap to nearest of 6 unit vectors
+      const candidates = [
+        [1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]
+      ];
+      let bestScore = -Infinity, secondScore = -Infinity;
+      let bestCand = candidates[0];
+      candidates.forEach(c => {
+        const dot = d[0]*c[0] + d[1]*c[1] + d[2]*c[2];
+        if (dot > bestScore) { secondScore = bestScore; bestScore = dot; bestCand = c; }
+        else if (dot > secondScore) { secondScore = dot; }
+      });
+
+      const axisIdx = bestCand.findIndex(v => v !== 0);
+      const sign = bestCand[axisIdx];
+      const confidence = bestScore - secondScore;
+
+      return { axisIdx, sign, confidence };
+    },
+
+    _buildMatrix() {
+      // capturedAxes: index 0=forward(pitch), 1=right(roll), 2=up(yaw)
+      // Each entry: { axisIdx (0=X,1=Y,2=Z of raw phone), sign (+1/-1) }
+      // Validate: no two target axes may share same raw axis
+      if (this.capturedAxes.length < 3) return null;
+
+      const used = new Set();
+      for (const ca of this.capturedAxes) {
+        if (used.has(ca.axisIdx)) return null; // duplicate
+        used.add(ca.axisIdx);
+      }
+
+      // Row i = which raw axis maps to game axis i
+      // matrix[row][col] where row=target, col=raw
+      const mat = [[0,0,0],[0,0,0],[0,0,0]];
+      this.capturedAxes.forEach((ca, targetIdx) => {
+        mat[targetIdx][ca.axisIdx] = ca.sign;
+      });
+
+      // Validate determinant = +1
+      const det = this._det3(mat);
+      if (Math.abs(det - 1) > 0.01) return null;
+
+      return mat;
+    },
+
+    _det3(m) {
+      return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
+           - m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0])
+           + m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0]);
+    },
+
+    async _mountConfirmScene() {
+      const s = await Scene3D.mount('cal-3d-canvas-confirm');
+      if (s && this.builtMatrix) s.setMatrix(this.builtMatrix);
+    },
+
+    async _mountManualScene() {
+      await Scene3D.mount('cal-3d-canvas-manual');
+    },
+
+    _buildManualMatrix() {
+      const pitchAxis = parseInt(document.getElementById('man-pitch-axis')?.value || '0');
+      const rollAxis  = parseInt(document.getElementById('man-roll-axis')?.value || '2');
+      const yawAxis   = parseInt(document.getElementById('man-yaw-axis')?.value || '1');
+      const pitchInv  = document.getElementById('man-pitch-inv')?.checked ? -1 : 1;
+      const rollInv   = document.getElementById('man-roll-inv')?.checked  ? -1 : 1;
+      const yawInv    = document.getElementById('man-yaw-inv')?.checked   ? -1 : 1;
+
+      const mat = [[0,0,0],[0,0,0],[0,0,0]];
+      mat[0][pitchAxis] = pitchInv;
+      mat[1][rollAxis]  = rollInv;
+      mat[2][yawAxis]   = yawInv;
+
+      const det = this._det3(mat);
+      const errEl = document.getElementById('cal-manual-error');
+      const nextBtn = document.getElementById('cal-manual-next');
+      const valid = Math.abs(Math.abs(det) - 1) < 0.01 && Math.abs(det - 1) < 0.01;
+
+      if (errEl) errEl.style.display = valid ? 'none' : 'block';
+      if (nextBtn) nextBtn.disabled = !valid;
+
+      if (valid) {
+        this.builtMatrix = mat;
+        const s = Scene3D.get('cal-3d-canvas-manual');
+        if (s) s.setMatrix(mat);
+      }
+
+      return valid ? mat : null;
+    },
+
+    async save() {
+      const slot = this.targetSlot;
+      const name = document.getElementById('cal-name-input')?.value.trim()
+        || `${I18n.t('calibration.slot_empty') || 'Профиль'} ${slot + 1}`;
+      const mat = this.builtMatrix;
+      if (!mat || slot < 0) return;
+
+      if (window.go?.main?.App) {
+        const result = await window.go.main.App.SaveProfile(slot, name, mat);
+        if (result === 'ok') {
+          // Also activate it
+          await window.go.main.App.SetActiveProfile(slot);
+          this.close();
+          showToast(I18n.currentLang === 'ru' ? `Профиль "${name}" сохранён` : `Profile "${name}" saved`);
+        } else {
+          showToast(result);
+        }
+      }
+    },
+
+    init() {
+      // Close button
+      document.getElementById('cal-close-btn')?.addEventListener('click', () => this.close());
+
+      // Open calibration from online view
+      document.getElementById('btn-open-calibration')?.addEventListener('click', () => {
+        this.open();
+        this.renderSlotList();
+      });
+
+      // Capture button: hold to capture
+      const btnCap = document.getElementById('btn-capture');
+      if (btnCap) {
+        btnCap.addEventListener('mousedown', () => this._startHold());
+        btnCap.addEventListener('touchstart', (e) => { e.preventDefault(); this._startHold(); }, { passive: false });
+        btnCap.addEventListener('mouseup', () => this._stopHold());
+        btnCap.addEventListener('touchend', () => this._stopHold());
+        btnCap.addEventListener('mouseleave', () => { if (this.isCapturing) this._stopHold(); });
+      }
+
+      // Capture back
+      document.getElementById('cal-capture-back')?.addEventListener('click', () => {
+        this.stopCapturing();
+        this.showScreen('slots');
+        this.renderSlotList();
+      });
+
+      // Confirm yes/no
+      document.getElementById('btn-confirm-yes')?.addEventListener('click', () => this.showScreen('save'));
+      document.getElementById('btn-confirm-no')?.addEventListener('click', () => this.showScreen('manual'));
+
+      // Manual controls: live update on every change
+      ['man-pitch-axis','man-roll-axis','man-yaw-axis','man-pitch-inv','man-roll-inv','man-yaw-inv'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', () => this._buildManualMatrix());
+      });
+      document.getElementById('cal-manual-back')?.addEventListener('click', () => this.showScreen('capture'));
+      document.getElementById('cal-manual-next')?.addEventListener('click', () => {
+        if (this.builtMatrix) this.showScreen('save');
+      });
+
+      // Save screen
+      document.getElementById('cal-save-back')?.addEventListener('click', () => this.showScreen('confirm'));
+      document.getElementById('btn-do-save')?.addEventListener('click', () => this.save());
+    }
+  };
+
   // ── App State & UI Manager ──────────────────────────────────────────────────
   const AppState = {
     initialized: false,
@@ -749,6 +1598,7 @@
     _lastQrCode: '',
     lastState: null,
     currentUrl: '',
+    _calCaptureCb: null,
 
     render(state) {
       this.lastState = state;
@@ -900,6 +1750,20 @@
           btnPause.classList.remove('paused');
         }
       }
+
+      // Sync profile slots display
+      ProfileManager.sync(state);
+
+      // Feed calibration wizard if actively capturing
+      if (this._calCaptureCb) {
+        this._calCaptureCb(state);
+      }
+
+      // Feed Three.js confirm/manual scenes with live orientation
+      const confirmScene = Scene3D.get('cal-3d-canvas-confirm');
+      if (confirmScene) confirmScene.updateFromState(state);
+      const manualScene = Scene3D.get('cal-3d-canvas-manual');
+      if (manualScene) manualScene.updateFromState(state);
     },
 
     async init() {
@@ -908,6 +1772,9 @@
 
       // Initialize Setup Wizard
       SetupWizard.init();
+
+      // Initialize Calibration Wizard
+      CalibrationWizard.init();
 
       // Pause button action with debounce guard
       let pauseBusy = false;

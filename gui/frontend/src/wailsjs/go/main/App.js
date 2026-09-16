@@ -6,12 +6,24 @@ export function GetLanguages() {
   return window['go']['main']['App']['GetLanguages']();
 }
 
+export function GetProfiles() {
+  return window['go']['main']['App']['GetProfiles']();
+}
+
 export function GetState() {
   return window['go']['main']['App']['GetState']();
 }
 
 export function GetTranslations(arg1) {
   return window['go']['main']['App']['GetTranslations'](arg1);
+}
+
+export function SaveProfile(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveProfile'](arg1, arg2, arg3);
+}
+
+export function SetActiveProfile(arg1) {
+  return window['go']['main']['App']['SetActiveProfile'](arg1);
 }
 
 export function TogglePause() {
