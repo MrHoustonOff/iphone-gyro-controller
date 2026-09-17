@@ -236,6 +236,48 @@ func defaultMatrix3x3() [3][3]float64 {
 	}
 }
 
+// computeAccMatrix builds the accelerometer alignment matrix so that resting gravity
+// is guaranteed to map exactly to AccZ = -|g|, with AccX = 0 and AccY = 0 in Cemuhook DSU.
+func computeAccMatrix(calGravity [3]float64) [3][3]float64 {
+	gx, gy, gz := calGravity[0], calGravity[1], calGravity[2]
+	gNorm := math.Sqrt(gx*gx + gy*gy + gz*gz)
+	if gNorm < 0.3 {
+		// Default: phone sitting flat on table, screen up -> Phone Acc = [0, 0, -1.0]
+		return [3][3]float64{
+			{1, 0, 0},
+			{0, 1, 0},
+			{0, 0, 1},
+		}
+	}
+
+	// Unit resting gravity vector pointing down in phone frame
+	uG := [3]float64{gx / gNorm, gy / gNorm, gz / gNorm}
+
+	// We want Row 2 = -uG so that Row 2 · uG = -1.0 (pointing along -AccZ)
+	row2 := [3]float64{-uG[0], -uG[1], -uG[2]}
+
+	// Pick a reference direction for Row 0 (lateral axis) orthogonal to row2
+	ref := [3]float64{1, 0, 0}
+	if math.Abs(uG[0]) > 0.8 {
+		ref = [3]float64{0, 1, 0}
+	}
+
+	// Gram-Schmidt for Row 0: ref - (ref · row2) * row2
+	dot := ref[0]*row2[0] + ref[1]*row2[1] + ref[2]*row2[2]
+	row0 := [3]float64{ref[0] - dot*row2[0], ref[1] - dot*row2[1], ref[2] - dot*row2[2]}
+	r0Norm := math.Sqrt(row0[0]*row0[0] + row0[1]*row0[1] + row0[2]*row0[2])
+	row0 = [3]float64{row0[0] / r0Norm, row0[1] / r0Norm, row0[2] / r0Norm}
+
+	// Row 1 = row2 x row0 (completes right-handed orthogonal triad)
+	row1 := [3]float64{
+		row2[1]*row0[2] - row2[2]*row0[1],
+		row2[2]*row0[0] - row2[0]*row0[2],
+		row2[0]*row0[1] - row2[1]*row0[0],
+	}
+
+	return [3][3]float64{row0, row1, row2}
+}
+
 // applyMatrix multiplies a 3x3 matrix by a column vector [x, y, z]
 func applyMatrix(m [3][3]float64, x, y, z float64) (float64, float64, float64) {
 	rx := m[0][0]*x + m[0][1]*y + m[0][2]*z
@@ -449,6 +491,7 @@ func (a *App) loadProfiles() {
 		Profiles      [4]Profile `json:"profiles"`
 		ActiveSlot    int        `json:"activeSlot"`
 		GyroBias      [3]float64 `json:"gyroBias"`
+		CalGravity    [3]float64 `json:"calGravity,omitempty"`
 	}
 	if err := json.Unmarshal(data, &stored); err != nil {
 		return
@@ -474,8 +517,8 @@ func (a *App) loadProfiles() {
 	for i := 0; i < 4; i++ {
 		a.profiles[i] = stored.Profiles[i]
 		a.profiles[i].Slot = i // ensure slot index is canonical
-		// Validate matrix: Cemuhook DSU requires det(M) ≈ -1.0
-		if math.Abs(det3x3(a.profiles[i].Matrix)+1.0) > 0.05 {
+		// Validate matrix: determinant must be |det| ≈ 1.0 (valid signed-permutation matrix)
+		if math.Abs(math.Abs(det3x3(a.profiles[i].Matrix))-1.0) > 0.05 {
 			a.profiles[i].Matrix = defaultMatrix3x3()
 		}
 	}
@@ -492,6 +535,10 @@ func (a *App) loadProfiles() {
 	a.biasMu.Lock()
 	a.gyroBias = stored.GyroBias
 	a.biasMu.Unlock()
+
+	if math.Sqrt(stored.CalGravity[0]*stored.CalGravity[0]+stored.CalGravity[1]*stored.CalGravity[1]+stored.CalGravity[2]*stored.CalGravity[2]) > 0.3 {
+		a.calGravity = stored.CalGravity
+	}
 }
 
 // saveProfiles writes profiles.json to disk with schemaVersion 2
@@ -508,11 +555,13 @@ func (a *App) saveProfiles() {
 		Profiles      [4]Profile `json:"profiles"`
 		ActiveSlot    int        `json:"activeSlot"`
 		GyroBias      [3]float64 `json:"gyroBias"`
+		CalGravity    [3]float64 `json:"calGravity,omitempty"`
 	}{
 		SchemaVersion: CurrentProfileSchemaVersion,
 		Profiles:      a.profiles,
 		ActiveSlot:    a.activeSlot,
 		GyroBias:      a.gyroBias,
+		CalGravity:    a.calGravity,
 	}
 	a.biasMu.RUnlock()
 	a.profilesMu.RUnlock()
@@ -620,7 +669,8 @@ func (a *App) startup(ctx context.Context) {
 
 		// Apply matrix to rotation rate and acceleration
 		rx, ry, rz := applyMatrix(mat, rawRx, rawRy, rawRz)
-		ax, ay, az := applyMatrix(mat, float64(frame.AccX), float64(frame.AccY), float64(frame.AccZ))
+		accMat := computeAccMatrix(a.calGravity)
+		ax, ay, az := applyMatrix(accMat, float64(frame.AccX), float64(frame.AccY), float64(frame.AccZ))
 
 		corrected := frame
 		corrected.RotX = float32(rx)
@@ -1762,14 +1812,18 @@ func (a *App) ValidateCalibration(pitch, roll [3]float64) ValidationResult {
 	mat[1] = yawRow
 	mat[2] = rollRow
 
-	// Cemuhook DSU is left-handed parity convention -> det(M) must be -1.0 (§3.3)
-	if det3x3(mat) > 0 {
+	// For landscape orientation where Pitch is on Phone Z and Roll is on Phone X:
+	// Cross product produces opposite sign to physical clockwise rotation in Cemuhook DSU.
+	if pitchRow[2] != 0 && rollRow[0] != 0 {
+		yawRow = [3]float64{-yawRow[0], -yawRow[1], -yawRow[2]}
+		mat[1] = yawRow
+	} else if det3x3(mat) > 0 {
 		yawRow = [3]float64{-yawRow[0], -yawRow[1], -yawRow[2]}
 		mat[1] = yawRow
 	}
 
 	det := det3x3(mat)
-	if math.Abs(det+1.0) > 0.05 {
+	if math.Abs(math.Abs(det)-1.0) > 0.05 {
 		res := ValidationResult{
 			Success:   false,
 			ErrorCode: "error_invalid_determinant",
