@@ -212,6 +212,10 @@ func runLiveDebug() {
 		Bind: []interface{}{
 			debugApp,
 		},
+		EnableDefaultContextMenu: true,
+		Debug: options.Debug{
+			OpenInspectorOnStartup: false,
+		},
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,

@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="live_debug.title">3D Live Debug</title>
   <link rel="stylesheet" href="main.css">
-  <script src="/wails/ipc.js"></script>
-  <script src="/wails/runtime.js"></script>
   <style>
     /* ── Authentic Apple HIG Desktop Window Layout ───────────────────────────── */
     body {
@@ -1257,7 +1255,7 @@
       </div>
       <div class="status-capsule offline" id="status-capsule">
         <span class="status-dot" id="status-dot"></span>
-        <span id="fps-counter" class="status-text">нет связи</span>
+        <span id="fps-counter" class="status-text" data-i18n="live_debug.status_offline">нет связи</span>
       </div>
     </div>
 
@@ -1282,7 +1280,7 @@
           <path d="m19.07 4.93-1.41 1.41"></path>
         </svg>
         <svg id="icon-theme-moon" viewBox="0 0 24 24" style="display: none;">
-          <path d="M12 3a6 6 0 0 0 9 9 9 0 1 1-9-9Z"></path>
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
         </svg>
       </button>
     </div>
@@ -1846,7 +1844,39 @@
         }
       };
 
+      // ── Core Application State ──
       let currentLang = localStorage.getItem('gb_lang') || 'ru';
+      let currentTheme = localStorage.getItem('gb_theme') || 'dark';
+      let isPhoneConnected = false;
+      let isRecording = false;
+      let recordStartTime = 0;
+      let recordTimerInterval = null;
+      let recordedLines = [];
+      let savedFilePath = '';
+      let lastTelemetryData = null;
+      let lastRecordedElapsedMs = 0;
+      let lastFrameTime = 0;
+
+      // ── DOM Elements ──
+      const canvas = document.getElementById('livedebug-canvas');
+      const viewportWrap = document.getElementById('viewport-wrap');
+      const noPhoneOverlay = document.getElementById('no-phone-overlay');
+      const quadOverlay = document.getElementById('quad-overlay');
+      const orbitBar = document.getElementById('orbit-controls-bar');
+      const ecoOverlay = document.getElementById('eco-overlay');
+      const ecoToggle = document.getElementById('eco-toggle');
+      const fpsCounter = document.getElementById('fps-counter');
+      const statusDot = document.getElementById('status-dot');
+      const statusCapsule = document.getElementById('status-capsule');
+      const btnRecenter = document.getElementById('btn-recenter');
+      const btnModelGamepad = document.getElementById('btn-model-gamepad');
+      const btnModelCube = document.getElementById('btn-model-cube');
+      const btnResetCam = document.getElementById('btn-reset-cam');
+
+      // Camera Mode Buttons
+      const btnCamStatic = document.getElementById('btn-cam-static');
+      const btnCamQuad = document.getElementById('btn-cam-quad');
+      const btnCamOrbit = document.getElementById('btn-cam-orbit');
 
       function applyLang(lang) {
         currentLang = lang;
@@ -1880,13 +1910,13 @@
           fpsCounter.textContent = dict["live_debug.status_offline"] || "offline";
         }
 
-        if (lastTelemetryData) {
-          updateTelemetryStats(lastTelemetryData);
+        if (lastTelemetryData && typeof updateTelemetryStats === 'function') {
+          try { updateTelemetryStats(lastTelemetryData); } catch (e) {}
         }
 
         const modal = document.getElementById('stats-save-modal');
-        if (modal && modal.style.display !== 'none' && lastRecordedElapsedMs) {
-          openSaveModal(lastRecordedElapsedMs);
+        if (modal && modal.style.display !== 'none' && lastRecordedElapsedMs && typeof openSaveModal === 'function') {
+          try { openSaveModal(lastRecordedElapsedMs); } catch (e) {}
         }
       }
 
@@ -1899,8 +1929,6 @@
       document.getElementById('lang-en')?.addEventListener('click', () => setLangAndSync('en'));
 
       // ── Theme Manager ──
-      let currentTheme = localStorage.getItem('gb_theme') || 'dark';
-
       function applyTheme(theme, broadcast = false) {
         currentTheme = theme;
         document.documentElement.setAttribute('data-theme', theme);
@@ -1930,27 +1958,6 @@
       document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
         applyTheme(currentTheme === 'dark' ? 'light' : 'dark', true);
       });
-
-      // ── DOM Elements ──
-      const canvas = document.getElementById('livedebug-canvas');
-      const viewportWrap = document.getElementById('viewport-wrap');
-      const noPhoneOverlay = document.getElementById('no-phone-overlay');
-      const quadOverlay = document.getElementById('quad-overlay');
-      const orbitBar = document.getElementById('orbit-controls-bar');
-      const ecoOverlay = document.getElementById('eco-overlay');
-      const ecoToggle = document.getElementById('eco-toggle');
-      const fpsCounter = document.getElementById('fps-counter');
-      const statusDot = document.getElementById('status-dot');
-      const statusCapsule = document.getElementById('status-capsule');
-      const btnRecenter = document.getElementById('btn-recenter');
-      const btnModelGamepad = document.getElementById('btn-model-gamepad');
-      const btnModelCube = document.getElementById('btn-model-cube');
-      const btnResetCam = document.getElementById('btn-reset-cam');
-
-      // Camera Mode Buttons
-      const btnCamStatic = document.getElementById('btn-cam-static');
-      const btnCamQuad = document.getElementById('btn-cam-quad');
-      const btnCamOrbit = document.getElementById('btn-cam-orbit');
 
       // ── Three.js Studio Scene ──
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -2370,10 +2377,10 @@
       let animId = null;
       let isRendering = false;
       let isFocused = true;
-      let isPhoneConnected = false;
+      isPhoneConnected = false;
       let frameCount = 0;
       let lastFpsTime = performance.now();
-      let lastFrameTime = 0;
+      lastFrameTime = 0;
 
       function renderFrame() {
         if (!isRendering) return;
@@ -2683,8 +2690,11 @@
         if (left + ttWidth > window.innerWidth - 12) left = window.innerWidth - ttWidth - 12;
 
         let top = rect.top - 10 - tooltipEl.offsetHeight;
-        if (top < 12) {
+        if (top < 64) {
           top = rect.bottom + 10;
+        }
+        if (top + tooltipEl.offsetHeight > window.innerHeight - 12) {
+          top = Math.max(64, window.innerHeight - tooltipEl.offsetHeight - 12);
         }
 
         tooltipEl.style.left = left + 'px';
@@ -2896,11 +2906,11 @@
 
       // ── Live Telemetry & Statistics Engine ──
       const CSV_HEADER = "timestamp_ms,event_type,seq,gx,gy,gz,ax,ay,az,recv_ts,send_ts,stick_lx,stick_ly,gyro_out_x,gyro_out_y,gyro_out_z";
-      let isRecording = false;
-      let recordStartTime = 0;
-      let recordTimerInterval = null;
-      let recordedLines = [];
-      let savedFilePath = '';
+      isRecording = false;
+      recordStartTime = 0;
+      recordTimerInterval = null;
+      recordedLines = [];
+      savedFilePath = '';
       const RECORD_MAX_DURATION_MS = 60000; // Hard 1-minute limit
       const MAX_CHART_SAMPLES = 36; // Expanded 36-sample rolling timeline
 
@@ -2915,8 +2925,8 @@
       let lostPacketsCount = 0;
       let totalExpectedPackets = 0;
       let lastLossResetTime = performance.now();
-      let lastTelemetryData = null;
-      let lastRecordedElapsedMs = 0;
+      lastTelemetryData = null;
+      lastRecordedElapsedMs = 0;
 
       function updateTelemetryStats(data) {
         lastTelemetryData = data;
@@ -3418,18 +3428,28 @@
       }
 
       // ── Wails Native Go Event Bridge ──
+      let wailsBridgeRegistered = false;
       function registerWailsTelemetryBridge() {
-        if (window.runtime?.EventsOn) {
+        if (wailsBridgeRegistered) return;
+        if (window.runtime && typeof window.runtime.EventsOn === 'function') {
+          wailsBridgeRegistered = true;
           window.runtime.EventsOn('livedebug:telemetry', (payload) => {
             try {
               const data = (typeof payload === 'string') ? JSON.parse(payload) : payload;
               handleTelemetryData(data);
             } catch (e) {}
           });
+          checkDeviceStatus();
         }
       }
       registerWailsTelemetryBridge();
-      window.addEventListener('DOMContentLoaded', registerWailsTelemetryBridge);
+      const wailsBridgeInterval = setInterval(() => {
+        if (wailsBridgeRegistered) {
+          clearInterval(wailsBridgeInterval);
+        } else {
+          registerWailsTelemetryBridge();
+        }
+      }, 50);
 
       // ── Direct WebSocket Stream (Fallback & External Browser Support) ──
       let ws = null;

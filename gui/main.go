@@ -23,6 +23,7 @@ func main() {
 	}
 
 	app := NewApp()
+	debugApp := NewLiveDebugApp()
 
 	err := wails.Run(&options.App{
 		Title:     "GyroBridge",
@@ -46,6 +47,11 @@ func main() {
 		},
 		Bind: []interface{}{
 			app,
+			debugApp,
+		},
+		EnableDefaultContextMenu: true,
+		Debug: options.Debug{
+			OpenInspectorOnStartup: false,
 		},
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
