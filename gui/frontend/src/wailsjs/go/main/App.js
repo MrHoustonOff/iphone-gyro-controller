@@ -50,8 +50,8 @@ export function ResetAHRS() {
   return window['go']['main']['App']['ResetAHRS']();
 }
 
-export function SaveProfile(arg1, arg2, arg3) {
-  return window['go']['main']['App']['SaveProfile'](arg1, arg2, arg3);
+export function SaveProfile(arg1, arg2, arg3, arg4, arg5) {
+  return window['go']['main']['App']['SaveProfile'](arg1, arg2, arg3, arg4, arg5);
 }
 
 export function SetActiveProfile(arg1) {

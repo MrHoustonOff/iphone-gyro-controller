@@ -40,10 +40,12 @@ const (
 
 // Profile represents a saved calibration profile with a 3x3 signed-permutation matrix.
 type Profile struct {
-	Slot   int         `json:"slot"`   // 0-3
-	Name   string      `json:"name"`   // user-visible name
+	Slot   int           `json:"slot"`   // 0-3
+	Name   string        `json:"name"`   // user-visible name
+	Device string        `json:"device"` // device name e.g. "Unknown"
+	Icon   string        `json:"icon"`   // "default", "vertical", "horizontal"
 	Matrix [3][3]float64 `json:"matrix"` // signed permutation matrix
-	Active bool        `json:"active"` // is this the currently applied profile?
+	Active bool          `json:"active"` // is this the currently applied profile?
 }
 
 // AppState represents the live state of Gyro Bridge
@@ -469,6 +471,8 @@ func NewApp() *App {
 		app.profiles[i] = Profile{
 			Slot:   i,
 			Name:   "",
+			Device: "Unknown",
+			Icon:   "default",
 			Matrix: defaultMatrix3x3(),
 			Active: false,
 		}
@@ -510,6 +514,8 @@ func (a *App) loadProfiles() {
 			a.profiles[i] = Profile{
 				Slot:   i,
 				Name:   "",
+				Device: "Unknown",
+				Icon:   "default",
 				Matrix: defaultMatrix3x3(),
 				Active: false,
 			}
@@ -521,6 +527,12 @@ func (a *App) loadProfiles() {
 	for i := 0; i < 4; i++ {
 		a.profiles[i] = stored.Profiles[i]
 		a.profiles[i].Slot = i // ensure slot index is canonical
+		if a.profiles[i].Device == "" {
+			a.profiles[i].Device = "Unknown"
+		}
+		if a.profiles[i].Icon == "" {
+			a.profiles[i].Icon = "default"
+		}
 		// Validate matrix: determinant must be |det| ≈ 1.0 (valid signed-permutation matrix)
 		if math.Abs(math.Abs(det3x3(a.profiles[i].Matrix))-1.0) > 0.05 {
 			a.profiles[i].Matrix = defaultMatrix3x3()
@@ -1192,11 +1204,17 @@ func (a *App) GetProfiles() []Profile {
 	return result
 }
 
-// SaveProfile overwrites a profile slot (slot 0-3) with the given name and matrix.
+// SaveProfile overwrites a profile slot (slot 0-3) with the given name, device, icon, and matrix.
 // The matrix must be a valid signed-permutation matrix with determinant -1.
-func (a *App) SaveProfile(slot int, name string, matrix [3][3]float64) string {
+func (a *App) SaveProfile(slot int, name string, device string, icon string, matrix [3][3]float64) string {
 	if slot < 0 || slot > 3 {
 		return "invalid slot"
+	}
+	if device == "" {
+		device = "Unknown"
+	}
+	if icon == "" {
+		icon = "default"
 	}
 
 	// Validate matrix: determinant must be -1 (Cemuhook DSU left-handed parity convention)
@@ -1212,6 +1230,8 @@ func (a *App) SaveProfile(slot int, name string, matrix [3][3]float64) string {
 	a.profiles[slot] = Profile{
 		Slot:   slot,
 		Name:   name,
+		Device: device,
+		Icon:   icon,
 		Matrix: matrix,
 		Active: (slot == a.activeSlot),
 	}

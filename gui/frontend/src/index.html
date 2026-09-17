@@ -95,40 +95,57 @@
               <span id="device-status-badge" class="device-status-badge online" data-i18n="status.online">online</span>
             </div>
 
+            <!-- Prominent Apple Inclinometer & Artificial Horizon HUD (Large 110x110) -->
+            <div class="gyro-hud-container" id="gyro-hud-container">
+              <div class="gyro-hud-bezel" title="Искусственный горизонт и компас">
+                <svg class="gyro-hud-svg" viewBox="0 0 120 120">
+                  <!-- Outer dial ring -->
+                  <circle cx="60" cy="60" r="54" class="hud-ring-outer"></circle>
+                  
+                  <!-- Concentric guide rings for leveling (Radius 14 ~ 3 deg level zone, Radius 28 ~ 15 deg, Radius 42 ~ 30 deg) -->
+                  <circle cx="60" cy="60" r="14" class="hud-ring-center" id="hud-level-zone"></circle>
+                  <circle cx="60" cy="60" r="28" class="hud-ring-guide"></circle>
+                  <circle cx="60" cy="60" r="42" class="hud-ring-guide"></circle>
+                  
+                  <!-- Crosshairs -->
+                  <line x1="15" y1="60" x2="105" y2="60" class="hud-crosshair"></line>
+                  <line x1="60" y1="15" x2="60" y2="105" class="hud-crosshair"></line>
+
+                  <!-- Dial Ticks (0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330) -->
+                  <g class="hud-ticks-group">
+                    <line x1="60" y1="6" x2="60" y2="12" class="hud-tick-major"></line>
+                    <line x1="60" y1="108" x2="60" y2="114" class="hud-tick-major"></line>
+                    <line x1="6" y1="60" x2="12" y2="60" class="hud-tick-major"></line>
+                    <line x1="108" y1="60" x2="114" y2="60" class="hud-tick-major"></line>
+
+                    <line x1="87" y1="13.2" x2="84" y2="18.4" class="hud-tick-minor"></line>
+                    <line x1="106.8" y1="33" x2="101.6" y2="36" class="hud-tick-minor"></line>
+                    <line x1="106.8" y1="87" x2="101.6" y2="84" class="hud-tick-minor"></line>
+                    <line x1="87" y1="106.8" x2="84" y2="101.6" class="hud-tick-minor"></line>
+                    <line x1="33" y1="106.8" x2="36" y2="101.6" class="hud-tick-minor"></line>
+                    <line x1="13.2" y1="87" x2="18.4" y2="84" class="hud-tick-minor"></line>
+                    <line x1="13.2" y1="33" x2="18.4" y2="36" class="hud-tick-minor"></line>
+                    <line x1="33" y1="13.2" x2="36" y2="18.4" class="hud-tick-minor"></line>
+                  </g>
+
+                  <!-- Dynamic Central Inclinometer Bubble -->
+                  <circle id="gyro-bubble" cx="60" cy="60" r="7.5" class="hud-level-bubble"></circle>
+
+                  <!-- Rotating Yaw Needle / Compass Indicator Group -->
+                  <g id="gyro-yaw-group" class="hud-yaw-group" transform="rotate(0 60 60)">
+                    <polygon points="60,6 56.5,14 63.5,14" class="hud-yaw-marker"></polygon>
+                    <line x1="60" y1="6" x2="60" y2="16" stroke="#30d158" stroke-width="2.5" stroke-linecap="round"></line>
+                  </g>
+                </svg>
+              </div>
+              <span class="hud-level-status" id="hud-level-status">LEVEL</span>
+            </div>
+
+            <!-- Apple-styled Telemetry & Network Health Row -->
             <div class="telemetry-row">
               <span class="metric-pill" id="device-hz">60 Hz</span>
               <span class="metric-pill" id="device-ping">3 ms</span>
-            </div>
-
-            <!-- Live Gyroscope Euler Angles Strip + Micro Level Widget -->
-            <div class="live-angles-row" id="live-angles-row">
-              <div class="gyro-micro-widget" title="Искусственный горизонт и компас">
-                <svg class="gyro-reticle" viewBox="0 0 32 32">
-                  <circle cx="16" cy="16" r="14" class="reticle-ring"></circle>
-                  <circle cx="16" cy="16" r="3" class="reticle-center"></circle>
-                  <line x1="16" y1="2" x2="16" y2="5" class="reticle-tick"></line>
-                  <line x1="16" y1="27" x2="16" y2="30" class="reticle-tick"></line>
-                  <line x1="2" y1="16" x2="5" y2="16" class="reticle-tick"></line>
-                  <line x1="27" y1="16" x2="30" y2="16" class="reticle-tick"></line>
-                  <circle id="gyro-bubble" cx="16" cy="16" r="3.2" class="gyro-bubble"></circle>
-                  <line id="gyro-yaw-pointer" x1="16" y1="2" x2="16" y2="5" class="yaw-pointer"></line>
-                </svg>
-              </div>
-
-              <div class="angles-cluster">
-                <div class="angle-chip" title="Pitch (наклон вперед/назад)">
-                  <span class="angle-tag">P</span>
-                  <span id="val-pitch" class="angle-num">+0.0°</span>
-                </div>
-                <div class="angle-chip" title="Roll (крен влево/вправо)">
-                  <span class="angle-tag">R</span>
-                  <span id="val-roll" class="angle-num">+0.0°</span>
-                </div>
-                <div class="angle-chip" title="Yaw (поворот)">
-                  <span class="angle-tag">Y</span>
-                  <span id="val-yaw" class="angle-num">+0.0°</span>
-                </div>
-              </div>
+              <span class="metric-pill network-health" id="network-health" data-i18n="calibration.network_quality_optimal">Отличное соединение</span>
             </div>
 
             <div class="device-duration-wrap">
@@ -139,37 +156,44 @@
 
           <button type="button" class="btn-apple-primary" id="btn-pause-resume" data-i18n="controls.pause">ПАУЗА</button>
 
-          <!-- Apple Profile Selection & Calibration Inset Module -->
+          <!-- Apple Profile Selection Dropdown & Calibration Action -->
           <div class="profiles-module">
             <div class="profiles-module-header">
               <span class="profiles-module-title" data-i18n="calibration.profiles_title">Профили управления</span>
               <span class="profile-active-tag" id="profile-active-tag">Слот 1 • Активен</span>
             </div>
 
-            <!-- 4 Apple Segmented Tabs -->
-            <div class="profiles-tabs" id="profiles-tabs" role="tablist">
-              <button type="button" class="profile-tab active" data-slot="0">
-                <span class="profile-tab-index">1</span>
-                <span class="profile-tab-title" id="tab-title-0">Слот 1</span>
+            <!-- Custom Apple Profile Dropdown -->
+            <div class="profile-dropdown-wrap" id="main-profile-dropdown-wrap">
+              <button type="button" class="profile-dropdown-trigger" id="main-profile-trigger">
+                <div class="profile-trigger-left">
+                  <div class="profile-icon-box" id="main-profile-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect x="2" y="6" width="20" height="12" rx="4"></rect>
+                      <path d="M6 12h4m-2-2v4"></path>
+                      <circle cx="15" cy="10" r="1" fill="currentColor"></circle>
+                      <circle cx="18" cy="13" r="1" fill="currentColor"></circle>
+                    </svg>
+                  </div>
+                  <div class="profile-trigger-meta">
+                    <span class="profile-trigger-title" id="main-profile-title">Слот 1</span>
+                    <span class="profile-trigger-device" id="main-profile-device">Устройство: Неизвестно</span>
+                  </div>
+                </div>
+                <div class="profile-trigger-right">
+                  <span class="profile-active-badge" id="main-profile-badge">Слот 1</span>
+                  <svg class="profile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
               </button>
-              <button type="button" class="profile-tab" data-slot="1">
-                <span class="profile-tab-index">2</span>
-                <span class="profile-tab-title" id="tab-title-1">Слот 2</span>
-              </button>
-              <button type="button" class="profile-tab" data-slot="2">
-                <span class="profile-tab-index">3</span>
-                <span class="profile-tab-title" id="tab-title-2">Слот 3</span>
-              </button>
-              <button type="button" class="profile-tab" data-slot="3">
-                <span class="profile-tab-index">4</span>
-                <span class="profile-tab-title" id="tab-title-3">Слот 4</span>
-              </button>
+
+              <div class="profile-dropdown-menu" id="main-profile-menu">
+                <!-- Populated dynamically with 4 slots -->
+              </div>
             </div>
 
-            <!-- Current Slot Details & Calibration Action -->
+            <!-- Profile Calibrate & Manage Bar -->
             <div class="profile-status-bar">
               <div class="profile-status-left">
-                <span class="profile-status-name" id="profile-current-name">Слот 1</span>
                 <span class="profile-status-desc" id="profile-current-desc">Оси: Pitch +X • Roll +Z • Yaw +Y</span>
               </div>
               <button type="button" class="btn-apple-secondary btn-calibrate-trigger" id="btn-open-calibration">
@@ -602,7 +626,7 @@
           <div class="cal-3d-wrapper">
             <div class="cal-3d-panel" id="cal-3d-panel">
               <canvas id="cal-3d-canvas" class="cal-3d-canvas"></canvas>
-              <div class="cal-3d-caption" id="cal-3d-caption">Положите телефон на стол в игровом хвате</div>
+              <div class="cal-3d-caption" id="cal-3d-caption">Place your phone on the table in gaming grip</div>
             </div>
             <div class="cal-3d-disclaimer" data-i18n="calibration.view_disclaimer">Ориентация модели может отличаться от реального хвата</div>
           </div>
@@ -641,7 +665,6 @@
             <div class="cal-confirm-btns">
               <button type="button" class="btn-apple-primary btn-lg" id="btn-confirm-yes" data-i18n="calibration.confirm_yes">Всё верно — Сохранить</button>
               <button type="button" class="btn-apple-secondary" id="btn-confirm-no" data-i18n="calibration.confirm_no">Настроить вручную</button>
-              <button type="button" class="cal-link-button" id="btn-confirm-restart" data-i18n="calibration.confirm_restart">Начать калибровку заново</button>
             </div>
           </div>
 
@@ -656,7 +679,13 @@
         </div>
 
         <div class="cal-wizard-footer">
-          <button type="button" class="btn-apple-secondary cal-btn-sm" id="cal-confirm-back" data-i18n="calibration.btn_back">← Назад</button>
+          <button type="button" class="btn-cal-restart-footer" id="btn-confirm-restart">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            <span data-i18n="calibration.btn_restart_cal">Начать заново</span>
+          </button>
           <div></div>
         </div>
       </div>
@@ -741,15 +770,111 @@
       <!-- ── Screen E: Save Profile ────────────────────────────────────── -->
       <div class="cal-screen" id="cal-screen-save" style="display:none;">
         <div class="cal-save-form">
-          <div class="cal-save-icon">
-            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          <div class="cal-save-header">
+            <h3 class="cal-step-headline" data-i18n="calibration.save_slot_title">Слот сохранения</h3>
+            <p class="cal-step-instruction">Выберите слот и настройте параметры профиля:</p>
           </div>
-          <h3 class="cal-step-headline">Сохранить профиль в Слот <span id="cal-save-slot-label">1</span></h3>
-          <p class="cal-step-instruction">Введите название для этого профиля управления:</p>
 
-          <input type="text" class="cal-name-input" id="cal-name-input"
-            placeholder="Например: Вертикальный хват" maxlength="40">
+          <!-- Slot Selection Dropdown (Duplicates Main Page Dropdown) -->
+          <div class="cal-save-section">
+            <div class="profile-dropdown-wrap" id="cal-save-dropdown-wrap">
+              <button type="button" class="profile-dropdown-trigger" id="cal-save-dropdown-trigger">
+                <div class="profile-trigger-left">
+                  <div class="profile-icon-box" id="cal-save-trigger-icon">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
+                      <rect x="2" y="6" width="20" height="12" rx="4"></rect>
+                      <path d="M6 12h4m-2-2v4"></path>
+                      <circle cx="15" cy="10" r="1" fill="currentColor"></circle>
+                      <circle cx="18" cy="13" r="1" fill="currentColor"></circle>
+                    </svg>
+                  </div>
+                  <div class="profile-trigger-meta">
+                    <span class="profile-trigger-title" id="cal-save-trigger-title">Слот 1</span>
+                    <span class="profile-trigger-device" id="cal-save-trigger-device" data-i18n="calibration.device_unknown">Устройство: Неизвестно</span>
+                  </div>
+                </div>
+                <div class="profile-trigger-right">
+                  <span class="profile-active-badge" id="cal-save-trigger-badge">Слот 1</span>
+                  <svg class="profile-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+              </button>
+              <div class="profile-dropdown-menu" id="cal-save-dropdown-menu">
+                <!-- Populated dynamically with 4 slots -->
+              </div>
+            </div>
+          </div>
 
+          <!-- Overwrite Warning Block (Shown when target slot already has a configured profile) -->
+          <div class="cal-save-warning" id="cal-save-warning" style="display:none;">
+            <svg class="cal-save-warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div class="cal-save-warning-text" id="cal-save-warning-text">
+              Внимание: этот слот уже содержит профиль и будет перезаписан.
+            </div>
+          </div>
+
+          <!-- Profile Name Input -->
+          <div class="cal-save-section">
+            <label class="cal-save-label" data-i18n="calibration.save_name_title">Название профиля</label>
+            <input type="text" class="cal-name-input" id="cal-name-input"
+              placeholder="Например: Вертикальный хват" maxlength="40">
+          </div>
+
+          <!-- Icon Selector (3 Options: Default gamepad, Vertical phone, Horizontal phone) -->
+          <div class="cal-save-section">
+            <label class="cal-save-label" data-i18n="calibration.save_icon_title">Ориентация / Ярлык</label>
+            <div class="cal-icon-selector">
+              <button type="button" class="cal-icon-card selected" data-icon="default" id="cal-icon-opt-default">
+                <div class="cal-icon-box">
+                  <svg class="cal-icon-card-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="2" y="6" width="20" height="12" rx="4"></rect>
+                    <path d="M6 12h4m-2-2v4"></path>
+                    <circle cx="15" cy="10" r="1" fill="currentColor"></circle>
+                    <circle cx="18" cy="13" r="1" fill="currentColor"></circle>
+                  </svg>
+                </div>
+                <span class="cal-icon-card-title" data-i18n="calibration.icon_default">Геймпад</span>
+              </button>
+
+              <button type="button" class="cal-icon-card" data-icon="vertical" id="cal-icon-opt-vertical">
+                <div class="cal-icon-box">
+                  <svg class="cal-icon-card-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="6" y="2" width="12" height="20" rx="2.5"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"></line>
+                    <line x1="10" y1="5" x2="14" y2="5"></line>
+                  </svg>
+                </div>
+                <span class="cal-icon-card-title" data-i18n="calibration.icon_vertical">Вертикальный</span>
+              </button>
+
+              <button type="button" class="cal-icon-card" data-icon="horizontal" id="cal-icon-opt-horizontal">
+                <div class="cal-icon-box">
+                  <svg class="cal-icon-card-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                    <rect x="2" y="6" width="20" height="12" rx="2.5"></rect>
+                    <line x1="18" y1="12" x2="18.01" y2="12" stroke-width="2.5"></line>
+                    <line x1="5" y1="10" x2="5" y2="14"></line>
+                  </svg>
+                </div>
+                <span class="cal-icon-card-title" data-i18n="calibration.icon_horizontal">Горизонтальный</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Device Info Block -->
+          <div class="cal-save-section">
+            <div class="cal-device-pill">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+                <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              </svg>
+              <span id="cal-save-device-text" data-i18n="calibration.device_unknown">Устройство: Неизвестно</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
           <div class="cal-save-actions">
             <button type="button" class="btn-apple-secondary" id="cal-save-back" data-i18n="calibration.btn_back">← Назад</button>
             <button type="button" class="btn-apple-primary btn-lg" id="btn-do-save" data-i18n="calibration.btn_save">Сохранить профиль</button>
@@ -1161,10 +1286,36 @@
     }
   };
 
+  // ── Profile Icons Helper ───────────────────────────────────────────────────
+  function getProfileIconSVG(iconType, size = 20) {
+    if (iconType === 'vertical') {
+      return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="6" y="2" width="12" height="20" rx="2.5"></rect>
+        <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"></line>
+        <line x1="10" y1="5" x2="14" y2="5"></line>
+      </svg>`;
+    }
+    if (iconType === 'horizontal') {
+      return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="2" y="6" width="20" height="12" rx="2.5"></rect>
+        <line x1="18" y1="12" x2="18.01" y2="12" stroke-width="2.5"></line>
+        <line x1="5" y1="10" x2="5" y2="14"></line>
+      </svg>`;
+    }
+    // Default gamepad
+    return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="2" y="6" width="20" height="12" rx="4"></rect>
+      <path d="M6 12h4m-2-2v4"></path>
+      <circle cx="15" cy="10" r="1" fill="currentColor"></circle>
+      <circle cx="18" cy="13" r="1" fill="currentColor"></circle>
+    </svg>`;
+  }
+
   // ── Profile Manager ─────────────────────────────────────────────────────────
   const ProfileManager = {
     profiles: [null, null, null, null],
     activeSlot: 0,
+    isDropdownOpen: false,
 
     sync(state) {
       if (!state || !state.profiles) return;
@@ -1175,33 +1326,69 @@
 
     render() {
       const activeIdx = this.activeSlot;
-      const activeProf = this.profiles[activeIdx];
+      const activeProf = this.profiles[activeIdx] || {
+        name: `Слот ${activeIdx + 1}`,
+        device: 'Unknown',
+        icon: 'default'
+      };
 
-      // 1. Update 4 segmented tabs
-      for (let i = 0; i < 4; i++) {
-        const tab = document.querySelector(`.profile-tab[data-slot="${i}"]`);
-        const titleEl = document.getElementById(`tab-title-${i}`);
-        const p = this.profiles[i];
-
-        if (tab) {
-          tab.classList.toggle('active', i === activeIdx);
-        }
-        if (titleEl) {
-          titleEl.textContent = (p && p.name) ? p.name : `Слот ${i + 1}`;
-        }
-      }
-
-      // 2. Update active profile tag and description
+      // 1. Update Dropdown Trigger
+      const triggerIcon = document.getElementById('main-profile-icon');
+      const triggerTitle = document.getElementById('main-profile-title');
+      const triggerDevice = document.getElementById('main-profile-device');
+      const triggerBadge = document.getElementById('main-profile-badge');
       const activeTag = document.getElementById('profile-active-tag');
+
+      if (triggerIcon) {
+        triggerIcon.innerHTML = getProfileIconSVG(activeProf.icon || 'default', 22);
+      }
+      if (triggerTitle) {
+        triggerTitle.textContent = activeProf.name || `Слот ${activeIdx + 1}`;
+      }
+      if (triggerDevice) {
+        const devName = activeProf.device || I18n.t('calibration.device_unknown') || 'Неизвестно';
+        triggerDevice.textContent = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', devName);
+      }
+      if (triggerBadge) {
+        triggerBadge.textContent = `Слот ${activeIdx + 1}`;
+      }
       if (activeTag) {
         activeTag.textContent = `Слот ${activeIdx + 1} • ${I18n.t('calibration.slot_active') || 'Активен'}`;
       }
 
-      const currentNameEl = document.getElementById('profile-current-name');
-      if (currentNameEl) {
-        currentNameEl.textContent = (activeProf && activeProf.name) ? activeProf.name : `Слот ${activeIdx + 1} (По умолчанию)`;
+      // 2. Populate Dropdown Menu
+      const menu = document.getElementById('main-profile-menu');
+      if (menu) {
+        menu.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+          const p = this.profiles[i] || { name: `Слот ${i + 1}`, device: 'Unknown', icon: 'default' };
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'profile-dropdown-item' + (i === activeIdx ? ' active' : '');
+          item.setAttribute('data-slot', String(i));
+
+          const devName = p.device || I18n.t('calibration.device_unknown') || 'Неизвестно';
+          const devText = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', devName);
+
+          item.innerHTML = `
+            <div class="profile-item-left">
+              <div class="profile-item-icon">
+                ${getProfileIconSVG(p.icon || 'default', 20)}
+              </div>
+              <div class="profile-item-meta">
+                <span class="profile-item-title">${p.name || `Слот ${i + 1}`}</span>
+                <span class="profile-item-sub">Слот ${i + 1} • ${devText}</span>
+              </div>
+            </div>
+            ${i === activeIdx ? '<span class="profile-item-check">✓</span>' : ''}
+          `;
+
+          item.addEventListener('click', () => this.selectSlot(i));
+          menu.appendChild(item);
+        }
       }
 
+      // 3. Update Axes description
       const currentDescEl = document.getElementById('profile-current-desc');
       if (currentDescEl) {
         if (activeProf && activeProf.matrix) {
@@ -1214,11 +1401,59 @@
             }
             return '?';
           };
-          currentDescEl.textContent = `Оси: P: ${axisName(0)} • Y: ${axisName(1)} • R: ${axisName(2)}`;
+          currentDescEl.textContent = `Оси: Pitch ${axisName(0)} • Yaw ${axisName(1)} • Roll ${axisName(2)}`;
         } else {
-          currentDescEl.textContent = 'Оси: Pitch -X • Yaw -Y • Roll +Z';
+          currentDescEl.textContent = 'Оси: Pitch +X • Yaw +Y • Roll +Z';
         }
       }
+    },
+
+    async selectSlot(slot) {
+      this.closeDropdown();
+      if (slot === this.activeSlot) return;
+
+      if (window.go?.main?.App) {
+        await window.go.main.App.SetActiveProfile(slot);
+        this.activeSlot = slot;
+        this.render();
+
+        // Mini animation: ripple glow on dropdown trigger
+        const trigger = document.getElementById('main-profile-trigger');
+        if (trigger) {
+          trigger.classList.remove('switched');
+          void trigger.offsetWidth;
+          trigger.classList.add('switched');
+          setTimeout(() => trigger.classList.remove('switched'), 850);
+        }
+
+        const profName = this.profiles[slot]?.name || `Слот ${slot + 1}`;
+        const msg = (I18n.t('calibration.profile_switched') || 'Профиль применен') + `: ${profName}`;
+        showToast(msg);
+      }
+    },
+
+    toggleDropdown() {
+      if (this.isDropdownOpen) {
+        this.closeDropdown();
+      } else {
+        this.openDropdown();
+      }
+    },
+
+    openDropdown() {
+      this.isDropdownOpen = true;
+      const trigger = document.getElementById('main-profile-trigger');
+      const menu = document.getElementById('main-profile-menu');
+      if (trigger) trigger.classList.add('open');
+      if (menu) menu.classList.add('show');
+    },
+
+    closeDropdown() {
+      this.isDropdownOpen = false;
+      const trigger = document.getElementById('main-profile-trigger');
+      const menu = document.getElementById('main-profile-menu');
+      if (trigger) trigger.classList.remove('open');
+      if (menu) menu.classList.remove('show');
     },
 
     initialized: false,
@@ -1227,16 +1462,17 @@
       if (this.initialized) return;
       this.initialized = true;
 
-      // Clicking on profile tabs
-      document.querySelectorAll('.profile-tab').forEach(tab => {
-        tab.addEventListener('click', async () => {
-          const slot = parseInt(tab.getAttribute('data-slot'), 10);
-          if (!isNaN(slot) && window.go?.main?.App) {
-            await window.go.main.App.SetActiveProfile(slot);
-            this.activeSlot = slot;
-            this.render();
-          }
-        });
+      // Dropdown toggle
+      document.getElementById('main-profile-trigger')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDropdown();
+      });
+
+      // Click outside to close
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#main-profile-dropdown-wrap')) {
+          this.closeDropdown();
+        }
       });
 
       // Calibrate button in online view
@@ -1650,12 +1886,14 @@
     builtMatrix: null,
     isCapturing: false,
     timerInterval: null,
+    selectedIcon: 'default',
+    isSaveDropdownOpen: false,
 
     STEPS_CONFIG: [
       {
         titleKey: 'calibration.step0_title',
         descKey: 'calibration.step0_desc',
-        caption: 'Положите телефон на стол в игровом хвате',
+        caption: 'Place your phone on the table in gaming grip',
         btnKey: 'calibration.step0_btn',
         durationMs: 1600,
         isRest: true
@@ -1746,13 +1984,7 @@
         }
         this._buildManualMatrix();
       } else if (screen === 'save') {
-        const labelEl = document.getElementById('cal-save-slot-label');
-        if (labelEl) labelEl.textContent = String(this.targetSlot + 1);
-        const nameInput = document.getElementById('cal-name-input');
-        if (nameInput) {
-          nameInput.value = `Профиль ${this.targetSlot + 1}`;
-          setTimeout(() => nameInput.select(), 50);
-        }
+        this._renderSaveScreen();
       }
     },
 
@@ -2296,6 +2528,186 @@
       }
     },
 
+    _renderSaveScreen() {
+      const slot = this.targetSlot;
+      const targetProf = ProfileManager.profiles[slot] || {
+        name: `Слот ${slot + 1}`,
+        device: 'Unknown',
+        icon: 'default'
+      };
+
+      // 1. Icon Selection: preserve or default to target profile's icon
+      if (!this.selectedIcon) {
+        this.selectedIcon = targetProf.icon || 'default';
+      }
+      this._updateIconCards(this.selectedIcon);
+
+      // 2. Trigger Info
+      const triggerIcon = document.getElementById('cal-save-trigger-icon');
+      const triggerTitle = document.getElementById('cal-save-trigger-title');
+      const triggerDevice = document.getElementById('cal-save-trigger-device');
+      const triggerBadge = document.getElementById('cal-save-trigger-badge');
+      const deviceText = document.getElementById('cal-save-device-text');
+
+      if (triggerIcon) {
+        triggerIcon.innerHTML = getProfileIconSVG(targetProf.icon || this.selectedIcon || 'default', 22);
+      }
+      if (triggerTitle) {
+        triggerTitle.textContent = targetProf.name || `Слот ${slot + 1}`;
+      }
+      const devName = targetProf.device || I18n.t('calibration.device_unknown') || 'Неизвестно';
+      const devLabel = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', devName);
+      if (triggerDevice) {
+        triggerDevice.textContent = devLabel;
+      }
+      if (triggerBadge) {
+        triggerBadge.textContent = `Слот ${slot + 1}`;
+      }
+      if (deviceText) {
+        deviceText.textContent = devLabel;
+      }
+
+      // 3. Name Input
+      const nameInput = document.getElementById('cal-name-input');
+      if (nameInput) {
+        nameInput.value = targetProf.name || `Слот ${slot + 1}`;
+        setTimeout(() => nameInput.select(), 50);
+      }
+
+      // 4. Overwrite Warning Block
+      const warnEl = document.getElementById('cal-save-warning');
+      const warnText = document.getElementById('cal-save-warning-text');
+      const hasExisting = targetProf && targetProf.matrix && targetProf.name;
+      if (warnEl) {
+        warnEl.style.display = hasExisting ? 'flex' : 'none';
+        if (hasExisting && warnText) {
+          const warnTmpl = I18n.t('calibration.save_overwrite_warn') || 'Внимание: слот {slot} уже содержит профиль «{name}» и будет перезаписан.';
+          warnText.textContent = warnTmpl.replace('{slot}', String(slot + 1)).replace('{name}', targetProf.name);
+        }
+      }
+
+      // 5. Populate Save Dropdown Menu
+      const menu = document.getElementById('cal-save-dropdown-menu');
+      if (menu) {
+        menu.innerHTML = '';
+        for (let i = 0; i < 4; i++) {
+          const p = ProfileManager.profiles[i] || { name: `Слот ${i + 1}`, device: 'Unknown', icon: 'default' };
+          const item = document.createElement('button');
+          item.type = 'button';
+          item.className = 'profile-dropdown-item' + (i === slot ? ' active' : '');
+          item.setAttribute('data-slot', String(i));
+
+          const pDev = p.device || I18n.t('calibration.device_unknown') || 'Неизвестно';
+          const pDevText = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', pDev);
+
+          item.innerHTML = `
+            <div class="profile-item-left">
+              <div class="profile-item-icon">
+                ${getProfileIconSVG(p.icon || 'default', 20)}
+              </div>
+              <div class="profile-item-meta">
+                <span class="profile-item-title">${p.name || `Слот ${i + 1}`}</span>
+                <span class="profile-item-sub">Слот ${i + 1} • ${pDevText}</span>
+              </div>
+            </div>
+            ${i === slot ? '<span class="profile-item-check">✓</span>' : ''}
+          `;
+
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.targetSlot = i;
+            this.selectedIcon = p.icon || 'default';
+            this.closeSaveDropdown();
+            this._renderSaveScreen();
+          });
+
+          menu.appendChild(item);
+        }
+      }
+    },
+
+    _updateIconCards(iconType) {
+      this.selectedIcon = iconType;
+      const cards = document.querySelectorAll('.cal-icon-card');
+      cards.forEach(card => {
+        if (card.getAttribute('data-icon') === iconType) {
+          card.classList.add('selected');
+        } else {
+          card.classList.remove('selected');
+        }
+      });
+      const triggerIcon = document.getElementById('cal-save-trigger-icon');
+      if (triggerIcon) {
+        triggerIcon.innerHTML = getProfileIconSVG(iconType, 22);
+      }
+    },
+
+    toggleSaveDropdown() {
+      if (this.isSaveDropdownOpen) {
+        this.closeSaveDropdown();
+      } else {
+        this.openSaveDropdown();
+      }
+    },
+
+    openSaveDropdown() {
+      this.isSaveDropdownOpen = true;
+      const trigger = document.getElementById('cal-save-dropdown-trigger');
+      const menu = document.getElementById('cal-save-dropdown-menu');
+      if (trigger) trigger.classList.add('open');
+      if (menu) menu.classList.add('show');
+    },
+
+    closeSaveDropdown() {
+      this.isSaveDropdownOpen = false;
+      const trigger = document.getElementById('cal-save-dropdown-trigger');
+      const menu = document.getElementById('cal-save-dropdown-menu');
+      if (trigger) trigger.classList.remove('open');
+      if (menu) menu.classList.remove('show');
+    },
+
+    retryCurrentStep() {
+      // 1. Clear recorded vector for current step
+      this.capturedVectors[this.captureStep] = null;
+
+      // 2. Clear locked axis corresponding to this step
+      if (this.captureStep === 0) {
+        // Rest: no axis locked
+      } else if (this.captureStep === 1) {
+        // Pitch: remove pitch locked axis
+        for (const k in this.lockedAxes) {
+          if (this.lockedAxes[k].role === 'pitch') {
+            delete this.lockedAxes[k];
+          }
+        }
+      } else if (this.captureStep === 2) {
+        // Roll: remove roll and computed yaw
+        for (const k in this.lockedAxes) {
+          if (this.lockedAxes[k].role === 'roll' || this.lockedAxes[k].role === 'yaw') {
+            delete this.lockedAxes[k];
+          }
+        }
+        this.builtMatrix = null;
+      }
+
+      // 3. Reset step pill: active, remove completed
+      const pill = document.getElementById(`step-pill-${this.captureStep}`);
+      if (pill) {
+        pill.classList.remove('completed');
+        pill.classList.add('active');
+      }
+
+      // 4. Disable forward button in footer
+      const btnForward = document.getElementById('cal-capture-forward');
+      if (btnForward) {
+        btnForward.disabled = true;
+      }
+
+      // 5. Reset capture controls and update telemetry
+      this._resetCaptureUI();
+      this.updateTelemetry(AppState.lastState);
+    },
+
     async save() {
       const slot = this.targetSlot;
       const name = document.getElementById('cal-name-input')?.value.trim()
@@ -2303,12 +2715,17 @@
       const mat = this.builtMatrix;
       if (!mat || slot < 0) return;
 
+      const curProf = ProfileManager.profiles[slot];
+      const device = curProf?.device || 'Unknown';
+      const icon = this.selectedIcon || 'default';
+
       if (window.go?.main?.App) {
-        const result = await window.go.main.App.SaveProfile(slot, name, mat);
+        const result = await window.go.main.App.SaveProfile(slot, name, device, icon, mat);
         if (result === 'ok') {
           await window.go.main.App.SetActiveProfile(slot);
           this.close();
-          showToast(`Профиль "${name}" успешно сохранён`);
+          const savedMsg = (I18n.t('calibration.profile_saved') || 'Профиль «{name}» успешно сохранён').replace('{name}', name);
+          showToast(savedMsg);
         } else {
           showToast(result);
         }
@@ -2329,7 +2746,7 @@
 
       // Retry step
       document.getElementById('btn-retry-step')?.addEventListener('click', () => {
-        this._resetCaptureUI();
+        this.retryCurrentStep();
       });
 
       // Next step
@@ -2499,6 +2916,27 @@
         this.save();
       });
 
+      // Save slot dropdown toggle
+      document.getElementById('cal-save-dropdown-trigger')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleSaveDropdown();
+      });
+
+      // Close save dropdown on outside click
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#cal-save-dropdown-wrap')) {
+          this.closeSaveDropdown();
+        }
+      });
+
+      // Icon selector cards
+      document.querySelectorAll('.cal-icon-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const icon = card.getAttribute('data-icon') || 'default';
+          this._updateIconCards(icon);
+        });
+      });
+
       // Spacebar to trigger capture when in capture screen
       window.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && this.currentScreen === 'capture' && !this.isCapturing) {
@@ -2612,42 +3050,36 @@
         document.getElementById('device-ping').textContent = `${state.pingMs || 3} ms`;
         document.getElementById('device-time').textContent = state.connectedTime || '00:00:00';
 
-        // Format live Euler angles (P, R, Y) with 1 decimal place and +/- sign
+        // Format live Euler angles (P, R, Y)
         const p = Number(state.pitch) || 0;
         const r = Number(state.roll) || 0;
         const y = Number(state.yaw) || 0;
 
-        const fmtAngle = (deg) => {
-          const sign = deg >= 0 ? '+' : '';
-          return `${sign}${deg.toFixed(1)}°`;
-        };
-        const elPitch = document.getElementById('val-pitch');
-        const elRoll  = document.getElementById('val-roll');
-        const elYaw   = document.getElementById('val-yaw');
-        if (elPitch) elPitch.textContent = fmtAngle(p);
-        if (elRoll)  elRoll.textContent  = fmtAngle(r);
-        if (elYaw)   elYaw.textContent   = fmtAngle(y);
-
-        // Update Micro Gyroscope Level Widget (Bubble & Compass pointer)
+        // Update Prominent Apple Gyro HUD (Bubble & Yaw Needle)
         const bubble = document.getElementById('gyro-bubble');
-        const yawPointer = document.getElementById('gyro-yaw-pointer');
-        if (bubble && yawPointer) {
-          const maxR = 9.5;
+        const yawGroup = document.getElementById('gyro-yaw-group');
+        const hudStatus = document.getElementById('hud-level-status');
+
+        if (bubble && yawGroup) {
+          const maxR = 40.0;
           // Pitch: tilt forward (p > 0) -> bubble forward (up, -Y in SVG); tilt backward (p < 0) -> bubble backward (down, +Y)
-          const offsetY = Math.max(-maxR, Math.min(maxR, -p * 0.22));
+          const offsetY = Math.max(-maxR, Math.min(maxR, -p * 0.9));
 
           // Roll: tilt right (r > 0) -> bubble right (+X in SVG); tilt left (r < 0) -> bubble left (-X)
-          const offsetX = Math.max(-maxR, Math.min(maxR, r * 0.22));
+          const offsetX = Math.max(-maxR, Math.min(maxR, r * 0.9));
 
-          bubble.setAttribute('cx', (16 + offsetX).toFixed(2));
-          bubble.setAttribute('cy', (16 + offsetY).toFixed(2));
+          bubble.setAttribute('cx', (60 + offsetX).toFixed(2));
+          bubble.setAttribute('cy', (60 + offsetY).toFixed(2));
 
-          // Snap to glowing green level state if within 4.0 degrees
-          const isLevel = Math.abs(p) <= 4.0 && Math.abs(r) <= 4.0;
+          // Snap to glowing green level state if within 3.0 degrees
+          const isLevel = Math.abs(p) <= 3.0 && Math.abs(r) <= 3.0;
           bubble.classList.toggle('level', isLevel);
+          if (hudStatus) {
+            hudStatus.classList.toggle('level', isLevel);
+          }
 
-          // Rotate compass pointer around center (16, 16) with Yaw
-          yawPointer.setAttribute('transform', `rotate(${y.toFixed(1)} 16 16)`);
+          // Rotate compass pointer around center (60, 60) with Yaw
+          yawGroup.setAttribute('transform', `rotate(${y.toFixed(1)} 60 60)`);
         }
 
         if (state.isPaused) {

@@ -3,6 +3,8 @@ export namespace main {
 	export class Profile {
 	    slot: number;
 	    name: string;
+	    device: string;
+	    icon: string;
 	    matrix: number[][];
 	    active: boolean;
 	
@@ -14,6 +16,8 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.slot = source["slot"];
 	        this.name = source["name"];
+	        this.device = source["device"];
+	        this.icon = source["icon"];
 	        this.matrix = source["matrix"];
 	        this.active = source["active"];
 	    }

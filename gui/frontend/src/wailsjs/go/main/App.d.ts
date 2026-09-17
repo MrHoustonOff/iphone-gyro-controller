@@ -26,7 +26,7 @@ export function PreviewMatrix(arg1:any):Promise<void>;
 
 export function ResetAHRS():Promise<void>;
 
-export function SaveProfile(arg1:number,arg2:string,arg3:any):Promise<string>;
+export function SaveProfile(arg1:number,arg2:string,arg3:string,arg4:string,arg5:any):Promise<string>;
 
 export function SetActiveProfile(arg1:number):Promise<string>;
 
