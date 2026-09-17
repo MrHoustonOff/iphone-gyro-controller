@@ -858,7 +858,6 @@ em {
 
 .hud-yaw-group {
   will-change: transform;
-  transition: transform 0.06s linear;
 }
 
 .hud-yaw-marker {
@@ -1401,7 +1400,7 @@ em {
   padding: 6px 14px;
   background: rgba(120, 120, 128, 0.08);
   border: 1px solid rgba(120, 120, 128, 0.18);
-  border-radius: var(--radius-pill);
+  border-radius: 6px;
   font-family: var(--font-mono);
   font-size: 13px;
   color: var(--text);

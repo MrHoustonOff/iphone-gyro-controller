@@ -1219,9 +1219,9 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.srv = srv
 
-	// Fallback orientation heartbeat (10 Hz = 100ms) for quiet periods
+	// Orientation heartbeat (30 Hz = 33ms) for smooth main GUI telemetry
 	go func() {
-		ticker := time.NewTicker(100 * time.Millisecond)
+		ticker := time.NewTicker(33 * time.Millisecond)
 		defer ticker.Stop()
 		for range ticker.C {
 			if a.hasClient.Load() {

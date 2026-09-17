@@ -3111,6 +3111,60 @@
     _alertTriggeredForDevice: null,
     _alertTimeout: null,
     _alertActive: false,
+    targetPitch: 0,
+    targetRoll: 0,
+    targetYaw: 0,
+    currentPitch: 0,
+    currentRoll: 0,
+    currentYaw: 0,
+    _inclinometerLoopRunning: false,
+
+    startInclinometerLoop() {
+      if (this._inclinometerLoopRunning) return;
+      this._inclinometerLoopRunning = true;
+
+      const bubble = document.getElementById('gyro-bubble');
+      const yawGroup = document.getElementById('gyro-yaw-group');
+      const hudStatus = document.getElementById('hud-level-status');
+      const maxR = 40.0;
+
+      const step = () => {
+        // Exponential lerp smoothing for 60/120/144Hz buttery smooth fluid movement
+        const factor = 0.22;
+        this.currentPitch += (this.targetPitch - this.currentPitch) * factor;
+        this.currentRoll += (this.targetRoll - this.currentRoll) * factor;
+
+        // Wrap-around shortest angle distance for yaw needle
+        let diffYaw = (this.targetYaw - this.currentYaw) % 360;
+        if (diffYaw > 180) diffYaw -= 360;
+        if (diffYaw < -180) diffYaw += 360;
+        this.currentYaw += diffYaw * factor;
+
+        if (bubble && yawGroup) {
+          // Pitch: tilt forward (p > 0) -> bubble forward (up, -Y in SVG); tilt backward (p < 0) -> bubble backward (down, +Y)
+          const offsetY = Math.max(-maxR, Math.min(maxR, -this.currentPitch * 0.9));
+          // Roll: tilt right (r > 0) -> bubble right (+X in SVG); tilt left (r < 0) -> bubble left (-X)
+          const offsetX = Math.max(-maxR, Math.min(maxR, this.currentRoll * 0.9));
+
+          bubble.setAttribute('cx', (60 + offsetX).toFixed(2));
+          bubble.setAttribute('cy', (60 + offsetY).toFixed(2));
+
+          // Snap to glowing green level state if within 3.0 degrees
+          const isLevel = Math.abs(this.currentPitch) <= 3.0 && Math.abs(this.currentRoll) <= 3.0;
+          bubble.classList.toggle('level', isLevel);
+          if (hudStatus) {
+            hudStatus.classList.toggle('level', isLevel);
+          }
+
+          // Rotate compass pointer around center (60, 60) with Yaw
+          yawGroup.setAttribute('transform', `rotate(${this.currentYaw.toFixed(2)} 60 60)`);
+        }
+
+        requestAnimationFrame(step);
+      };
+
+      requestAnimationFrame(step);
+    },
 
     findEmptyOrActiveSlot() {
       const profiles = (this.lastState && this.lastState.profiles) || ProfileManager.profiles || [];
@@ -3281,6 +3335,9 @@
       }
 
       if (isOffline) {
+        this.targetPitch = 0;
+        this.targetRoll = 0;
+        this.targetYaw = 0;
         const imgQr = document.getElementById('img-qr');
         if (state.qrCode && this._lastQrCode !== state.qrCode) {
           this._lastQrCode = state.qrCode;
@@ -3306,36 +3363,15 @@
         document.getElementById('device-ping').textContent = `${state.pingMs || 3} ms`;
         document.getElementById('device-time').textContent = state.connectedTime || '00:00:00';
 
-        // Format live Euler angles (P, R, Y)
-        const p = Number(state.pitch) || 0;
-        const r = Number(state.roll) || 0;
-        const y = Number(state.yaw) || 0;
-
-        // Update Prominent Apple Gyro HUD (Bubble & Yaw Needle)
-        const bubble = document.getElementById('gyro-bubble');
-        const yawGroup = document.getElementById('gyro-yaw-group');
-        const hudStatus = document.getElementById('hud-level-status');
-
-        if (bubble && yawGroup) {
-          const maxR = 40.0;
-          // Pitch: tilt forward (p > 0) -> bubble forward (up, -Y in SVG); tilt backward (p < 0) -> bubble backward (down, +Y)
-          const offsetY = Math.max(-maxR, Math.min(maxR, -p * 0.9));
-
-          // Roll: tilt right (r > 0) -> bubble right (+X in SVG); tilt left (r < 0) -> bubble left (-X)
-          const offsetX = Math.max(-maxR, Math.min(maxR, r * 0.9));
-
-          bubble.setAttribute('cx', (60 + offsetX).toFixed(2));
-          bubble.setAttribute('cy', (60 + offsetY).toFixed(2));
-
-          // Snap to glowing green level state if within 3.0 degrees
-          const isLevel = Math.abs(p) <= 3.0 && Math.abs(r) <= 3.0;
-          bubble.classList.toggle('level', isLevel);
-          if (hudStatus) {
-            hudStatus.classList.toggle('level', isLevel);
-          }
-
-          // Rotate compass pointer around center (60, 60) with Yaw
-          yawGroup.setAttribute('transform', `rotate(${y.toFixed(1)} 60 60)`);
+        // Update target Euler angles (P, R, Y) for continuous RAF lerp smoothing loop
+        if (state.isPaused) {
+          this.targetPitch = 0;
+          this.targetRoll = 0;
+          this.targetYaw = 0;
+        } else {
+          this.targetPitch = Number(state.pitch) || 0;
+          this.targetRoll = Number(state.roll) || 0;
+          this.targetYaw = Number(state.yaw) || 0;
         }
 
         if (state.isPaused) {
@@ -3390,6 +3426,7 @@
     async init() {
       if (this.initialized) return;
       this.initialized = true;
+      this.startInclinometerLoop();
 
       // Pause button action with debounce guard
       let pauseBusy = false;

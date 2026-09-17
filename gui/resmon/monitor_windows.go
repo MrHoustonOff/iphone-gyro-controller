@@ -3,6 +3,7 @@
 package resmon
 
 import (
+	"os"
 	"syscall"
 	"time"
 	"unsafe"
@@ -14,6 +15,12 @@ var (
 	procGetProcessMemoryInfo = psapi.NewProc("GetProcessMemoryInfo")
 	procGetProcessTimes      = kernel32.NewProc("GetProcessTimes")
 	procGlobalMemoryStatusEx = kernel32.NewProc("GlobalMemoryStatusEx")
+)
+
+const (
+	processQueryInformation = 0x0400
+	processQueryLimitedInfo = 0x1000
+	processVMRead           = 0x0010
 )
 
 // processMemoryCounters matches Windows PROCESS_MEMORY_COUNTERS layout.
@@ -44,11 +51,11 @@ type memoryStatusEx struct {
 }
 
 type windowsMonitor struct {
-	handle     syscall.Handle
-	lastKernel int64 // 100-ns ticks
-	lastUser   int64
-	lastWall   time.Time
-	totalRAM   uint64
+	rootPID      uint32
+	rootHandle   syscall.Handle
+	lastCPUTimes map[uint32]int64
+	lastWall     time.Time
+	totalRAM     uint64
 }
 
 func readTotalRAMWindows() uint64 {
@@ -66,59 +73,153 @@ func newPlatformMonitor() (Monitor, error) {
 	if err != nil {
 		return nil, err
 	}
+	rootPID := uint32(os.Getpid())
 	m := &windowsMonitor{
-		handle:   h,
-		lastWall: time.Now(),
-		totalRAM: readTotalRAMWindows(),
+		rootPID:      rootPID,
+		rootHandle:   h,
+		lastCPUTimes: make(map[uint32]int64),
+		lastWall:     time.Now(),
+		totalRAM:     readTotalRAMWindows(),
 	}
-	k, u := m.readCPUTimes()
-	m.lastKernel, m.lastUser = k, u
+	m.lastCPUTimes, _ = m.queryTreeStats()
 	return m, nil
 }
 
-func (m *windowsMonitor) readCPUTimes() (kernel, user int64) {
-	var creation, exit, k, u syscall.Filetime
-	procGetProcessTimes.Call(
-		uintptr(m.handle),
-		uintptr(unsafe.Pointer(&creation)),
-		uintptr(unsafe.Pointer(&exit)),
-		uintptr(unsafe.Pointer(&k)),
-		uintptr(unsafe.Pointer(&u)),
-	)
+// getProcessTreePIDs collects rootPID and all descendant child PIDs.
+func getProcessTreePIDs(rootPID uint32) []uint32 {
+	snap, err := syscall.CreateToolhelp32Snapshot(syscall.TH32CS_SNAPPROCESS, 0)
+	if err != nil {
+		return []uint32{rootPID}
+	}
+	defer syscall.CloseHandle(snap)
+
+	var entry syscall.ProcessEntry32
+	entry.Size = uint32(unsafe.Sizeof(entry))
+
+	if err := syscall.Process32First(snap, &entry); err != nil {
+		return []uint32{rootPID}
+	}
+
+	childrenOf := make(map[uint32][]uint32)
+	for {
+		childrenOf[entry.ParentProcessID] = append(childrenOf[entry.ParentProcessID], entry.ProcessID)
+		if err := syscall.Process32Next(snap, &entry); err != nil {
+			break
+		}
+	}
+
+	treePIDs := []uint32{rootPID}
+	queue := []uint32{rootPID}
+	visited := make(map[uint32]bool)
+	visited[rootPID] = true
+
+	for len(queue) > 0 {
+		curr := queue[0]
+		queue = queue[1:]
+
+		for _, child := range childrenOf[curr] {
+			if !visited[child] {
+				visited[child] = true
+				treePIDs = append(treePIDs, child)
+				queue = append(queue, child)
+			}
+		}
+	}
+
+	return treePIDs
+}
+
+func (m *windowsMonitor) queryTreeStats() (map[uint32]int64, uint64) {
+	pids := getProcessTreePIDs(m.rootPID)
+	cpuTimes := make(map[uint32]int64, len(pids))
+	var totalRSS uint64
+
 	toNanos := func(ft syscall.Filetime) int64 {
 		return (int64(ft.HighDateTime)<<32 | int64(ft.LowDateTime)) * 100
 	}
-	return toNanos(k), toNanos(u)
-}
 
-func (m *windowsMonitor) readRSS() uint64 {
-	var pmc processMemoryCounters
-	pmc.cb = uint32(unsafe.Sizeof(pmc))
-	procGetProcessMemoryInfo.Call(
-		uintptr(m.handle),
-		uintptr(unsafe.Pointer(&pmc)),
-		uintptr(pmc.cb),
-	)
-	return uint64(pmc.WorkingSetSize)
+	for _, pid := range pids {
+		var h syscall.Handle
+		var mustClose bool
+
+		if pid == m.rootPID {
+			h = m.rootHandle
+			mustClose = false
+		} else {
+			var err error
+			h, err = syscall.OpenProcess(processQueryInformation|processVMRead, false, pid)
+			if err != nil {
+				h, err = syscall.OpenProcess(processQueryLimitedInfo|processVMRead, false, pid)
+			}
+			if err != nil {
+				continue
+			}
+			mustClose = true
+		}
+
+		// Read CPU times
+		var creation, exit, k, u syscall.Filetime
+		r, _, _ := procGetProcessTimes.Call(
+			uintptr(h),
+			uintptr(unsafe.Pointer(&creation)),
+			uintptr(unsafe.Pointer(&exit)),
+			uintptr(unsafe.Pointer(&k)),
+			uintptr(unsafe.Pointer(&u)),
+		)
+		if r != 0 {
+			cpuTimes[pid] = toNanos(k) + toNanos(u)
+		}
+
+		// Read RAM Working Set
+		var pmc processMemoryCounters
+		pmc.cb = uint32(unsafe.Sizeof(pmc))
+		r, _, _ = procGetProcessMemoryInfo.Call(
+			uintptr(h),
+			uintptr(unsafe.Pointer(&pmc)),
+			uintptr(pmc.cb),
+		)
+		if r != 0 {
+			totalRSS += uint64(pmc.WorkingSetSize)
+		}
+
+		if mustClose {
+			syscall.CloseHandle(h)
+		}
+	}
+
+	return cpuTimes, totalRSS
 }
 
 func (m *windowsMonitor) Sample() Stats {
-	nowKernel, nowUser := m.readCPUTimes()
+	nowCPUTimes, totalRSS := m.queryTreeStats()
 	now := time.Now()
 
-	cpuDeltaNanos := (nowKernel - m.lastKernel) + (nowUser - m.lastUser)
-	wallDeltaNanos := now.Sub(m.lastWall).Nanoseconds()
-
-	var cpuPercent float64
-	if wallDeltaNanos > 0 {
-		cpuPercent = float64(cpuDeltaNanos) / float64(wallDeltaNanos) * 100
+	var totalCPUDeltaNanos int64
+	for pid, nowCPU := range nowCPUTimes {
+		if prevCPU, ok := m.lastCPUTimes[pid]; ok {
+			delta := nowCPU - prevCPU
+			if delta > 0 {
+				totalCPUDeltaNanos += delta
+			}
+		} else {
+			if nowCPU > 0 {
+				totalCPUDeltaNanos += nowCPU
+			}
+		}
 	}
 
-	m.lastKernel, m.lastUser, m.lastWall = nowKernel, nowUser, now
+	wallDeltaNanos := now.Sub(m.lastWall).Nanoseconds()
+	var cpuPercent float64
+	if wallDeltaNanos > 0 {
+		cpuPercent = float64(totalCPUDeltaNanos) / float64(wallDeltaNanos) * 100
+	}
+
+	m.lastCPUTimes = nowCPUTimes
+	m.lastWall = now
 
 	return Stats{
 		CPUPercent:    cpuPercent,
-		RAMBytes:      m.readRSS(),
+		RAMBytes:      totalRSS,
 		TotalRAMBytes: m.totalRAM,
 	}
 }
