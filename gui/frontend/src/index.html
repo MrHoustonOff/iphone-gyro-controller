@@ -2471,6 +2471,12 @@
       this.lastState = state;
       if (!state) return;
 
+      if (window._liveDebugWin && !window._liveDebugWin.closed && window._liveDebugWin.updateFromState) {
+        try {
+          window._liveDebugWin.updateFromState(state);
+        } catch (e) {}
+      }
+
       const viewOffline = document.getElementById('view-offline');
       const viewOnline = document.getElementById('view-online');
       const badgeStatus = document.getElementById('badge-status');
@@ -2572,12 +2578,10 @@
         const bubble = document.getElementById('gyro-bubble');
         const yawPointer = document.getElementById('gyro-yaw-pointer');
         if (bubble && yawPointer) {
-          const maxR = 8.5;
-          // Inverted per user calibration: tilt forward -> bubble forward; tilt backward -> bubble backward
-          const offsetY = Math.max(-maxR, Math.min(maxR, p * 0.22));
+          // Pitch: tilt forward (p > 0) -> bubble forward (up, -Y in SVG); tilt backward (p < 0) -> bubble backward (down, +Y)
+          const offsetY = Math.max(-maxR, Math.min(maxR, -p * 0.22));
 
-          // Tilt right (r > 0) -> bubble right (+X in SVG)
-          // Tilt left (r < 0) -> bubble left (-X in SVG)
+          // Roll: tilt right (r > 0) -> bubble right (+X in SVG); tilt left (r < 0) -> bubble left (-X)
           const offsetX = Math.max(-maxR, Math.min(maxR, r * 0.22));
 
           bubble.style.transform = `translate(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px)`;
@@ -2674,9 +2678,13 @@
       // Default offline QR copy chip
       setupCopyChip('chip-url', 'url-copy-badge', () => this.currentUrl);
 
-      // Live debug placeholder
+      // Open separate 3D LiveDebug window
       document.getElementById('link-live-debug')?.addEventListener('click', () => {
-        showToast(I18n.currentLang === 'ru' ? 'Live Debug в разработке' : 'Live Debug coming soon');
+        if (window._liveDebugWin && !window._liveDebugWin.closed) {
+          window._liveDebugWin.focus();
+          return;
+        }
+        window._liveDebugWin = window.open('livedebug.html', 'GyroBridgeLiveDebug', 'width=880,height=660,resizable=yes');
       });
 
 

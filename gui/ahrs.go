@@ -166,7 +166,11 @@ func (m *MadgwickAHRS) Update(rotX, rotY, rotZ, accX, accY, accZ float32, now ti
 	return m.Q0, m.Q1, m.Q2, m.Q3
 }
 
-// GetEulerAngles returns pitch, roll, yaw in degrees matching PadTest.
+// GetEulerAngles returns pitch, roll, yaw in degrees from calibrated quaternion.
+// Signs match canonical flight dynamics and user controls:
+//   Pitch > 0: nodding forward (nose down)
+//   Roll > 0: banking right
+//   Yaw > 0: turning clockwise (right)
 func (m *MadgwickAHRS) GetEulerAngles() (pitch, roll, yaw float64) {
 	m.mu.Lock()
 	q0, q1, q2, q3 := float64(m.Q0), float64(m.Q1), float64(m.Q2), float64(m.Q3)
@@ -177,8 +181,16 @@ func (m *MadgwickAHRS) GetEulerAngles() (pitch, roll, yaw float64) {
 	sq3 := q3 * q3
 
 	const rad2deg = 180.0 / math.Pi
-	pitch = math.Asin(math.Max(-1.0, math.Min(1.0, 2.0*(q0*q2-q3*q1)))) * rad2deg
-	yaw = math.Atan2(2.0*(q0*q3+q1*q2), 1.0-2.0*(sq2+sq3)) * rad2deg
-	roll = math.Atan2(2.0*(q0*q1+q2*q3), 1.0-2.0*(sq1+sq2)) * rad2deg
+
+	// Pitch (rotation around X): nodding forward is +angle
+	pitchSin := 2.0 * (q0*q1 - q2*q3)
+	pitch = math.Asin(math.Max(-1.0, math.Min(1.0, pitchSin))) * rad2deg
+
+	// Roll (rotation around Z): banking right is +angle
+	roll = -math.Atan2(2.0*(q0*q3+q1*q2), 1.0-2.0*(sq1+sq3)) * rad2deg
+
+	// Yaw (rotation around Y): turning clockwise is +angle
+	yaw = math.Atan2(2.0*(q0*q2+q1*q3), 1.0-2.0*(sq1+sq2)) * rad2deg
+
 	return pitch, roll, yaw
 }

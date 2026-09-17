@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GyroBridge 3D Live Debug</title>
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(18, 22, 34, 0.75);
+      --border: rgba(255, 255, 255, 0.12);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text: #f5f7fa;
+      --text-secondary: #94a3b8;
+      --text-tertiary: #64748b;
+      --accent: #007aff;
+      --accent-hover: #0062cc;
+      --success: #30d158;
+      --radius-pill: 9999px;
+      --radius-lg: 16px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: radial-gradient(ellipse at 50% 45%, #1d212d 0%, #07090e 100%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* ── Top Floating Bar ── */
+    .top-bar {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .top-bar-left, .top-bar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .brand-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 16px;
+      background: rgba(15, 20, 32, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .brand-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .fps-badge {
+      font-size: 11px;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      margin-left: 4px;
+    }
+
+    /* ── Eco Toggle Switch ── */
+    .eco-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 14px;
+      background: rgba(15, 20, 32, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text);
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      transition: all 0.18s ease;
+    }
+
+    .eco-control:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .eco-switch {
+      position: relative;
+      display: inline-block;
+      width: 32px;
+      height: 18px;
+    }
+
+    .eco-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .eco-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #3a4252;
+      transition: 0.25s ease;
+      border-radius: 18px;
+    }
+
+    .eco-slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+      background: white;
+      transition: 0.25s ease;
+      border-radius: 50%;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+
+    .eco-switch input:checked + .eco-slider {
+      background: var(--success);
+    }
+
+    .eco-switch input:checked + .eco-slider:before {
+      transform: translateX(14px);
+    }
+
+    /* ── Recenter Pill Button ── */
+    .btn-recenter {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-pill);
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #ffffff;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    }
+
+    .btn-recenter:hover {
+      background: var(--accent);
+      border-color: rgba(255, 255, 255, 0.4);
+      transform: scale(1.02);
+    }
+
+    .btn-recenter:active {
+      transform: scale(0.98);
+    }
+
+    /* ── Canvas Viewport ── */
+    #viewport-wrap {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #livedebug-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      transition: filter 0.3s ease;
+    }
+
+    #livedebug-canvas.blurred {
+      filter: blur(10px) brightness(0.65);
+    }
+
+    /* ── Eco Paused Overlay ── */
+    .eco-overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 8, 14, 0.45);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 50;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .eco-overlay.visible {
+      display: flex;
+      opacity: 1;
+    }
+
+    .eco-card {
+      background: rgba(18, 24, 38, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-lg);
+      padding: 24px 32px;
+      text-align: center;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+      max-width: 380px;
+      animation: pop-in 0.22s ease-out;
+    }
+
+    @keyframes pop-in {
+      from { transform: scale(0.95); opacity: 0; }
+      to { transform: scale(1.0); opacity: 1; }
+    }
+
+    .eco-icon {
+      width: 36px;
+      height: 36px;
+      margin-bottom: 12px;
+      color: var(--success);
+    }
+
+    .eco-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .eco-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-bottom: 14px;
+    }
+
+    .eco-hint {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(0, 122, 255, 0.12);
+      border: 1px solid rgba(0, 122, 255, 0.3);
+      padding: 4px 12px;
+      border-radius: var(--radius-pill);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Floating Controls Bar -->
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <div class="brand-pill">
+        <span class="brand-dot" id="status-dot"></span>
+        <span>GyroBridge 3D Live</span>
+        <span class="fps-badge" id="fps-counter">60 fps</span>
+      </div>
+    </div>
+
+    <div class="top-bar-right">
+      <label class="eco-control" title="При потере фокуса или сворачивании окна рендеринг засыпает для 0% нагрузки на GPU">
+        <span>Экономия ресурсов</span>
+        <div class="eco-switch">
+          <input type="checkbox" id="eco-toggle" checked>
+          <span class="eco-slider"></span>
+        </div>
+      </label>
+
+      <button type="button" class="btn-recenter" id="btn-recenter" title="Обнулить ориентацию (Пробел)">
+        Центрировать (Пробел)
+      </button>
+    </div>
+  </div>
+
+  <!-- Viewport Area -->
+  <div id="viewport-wrap">
+    <canvas id="livedebug-canvas"></canvas>
+
+    <!-- Eco Paused Frosted Overlay -->
+    <div class="eco-overlay" id="eco-overlay" title="Кликните для возобновления рендеринга">
+      <div class="eco-card">
+        <svg class="eco-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+        </svg>
+        <div class="eco-title">Рендеринг приостановлен</div>
+        <div class="eco-desc">Окно не в фокусе. 0% нагрузки на GPU и процессор.</div>
+        <span class="eco-hint">Кликните по окну для возобновления</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/three.min.js"></script>
+  <script src="assets/GLTFLoader.js"></script>
+
+  <script>
+    (function() {
+      const canvas = document.getElementById('livedebug-canvas');
+      const ecoOverlay = document.getElementById('eco-overlay');
+      const ecoToggle = document.getElementById('eco-toggle');
+      const fpsCounter = document.getElementById('fps-counter');
+      const btnRecenter = document.getElementById('btn-recenter');
+
+      // ── Three.js Setup ──
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+
+      // Camera: centered on gamepad (0, 0, 0), elevated 22 deg
+      const camera = new THREE.PerspectiveCamera(27, 1, 0.2, 50);
+      const camTarget = new THREE.Vector3(0, 0, 0);
+      const orbitHRadius = 7.6;
+      const orbitY = 3.2;
+
+      camera.position.set(camTarget.x, orbitY, camTarget.z + orbitHRadius);
+      camera.lookAt(camTarget);
+
+      // Studio Lighting
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.85);
+      scene.add(ambLight);
+
+      const mainLight = new THREE.DirectionalLight(0xffffff, 1.25);
+      mainLight.position.set(3, 7, 4);
+      scene.add(mainLight);
+
+      const fillLight = new THREE.DirectionalLight(0x8eb6ff, 0.45);
+      fillLight.position.set(-3, 5, 3);
+      scene.add(fillLight);
+
+      const bounceLight = new THREE.DirectionalLight(0x3a455a, 0.25);
+      bounceLight.position.set(0, -4, 2);
+      scene.add(bounceLight);
+
+      const rimLight = new THREE.DirectionalLight(0x007aff, 0.85);
+      rimLight.position.set(-2.5, 4.5, -4);
+      scene.add(rimLight);
+
+      // Radial fade grid floor
+      function createRadialGridTexture() {
+        const size = 1024;
+        const center = size / 2;
+        const step = 64;
+        const cvs = document.createElement('canvas');
+        cvs.width = size;
+        cvs.height = size;
+        const ctx = cvs.getContext('2d');
+
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.38)';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        for (let offset = step; offset < center; offset += step) {
+          ctx.moveTo(center + offset, 0); ctx.lineTo(center + offset, size);
+          ctx.moveTo(center - offset, 0); ctx.lineTo(center - offset, size);
+          ctx.moveTo(0, center + offset); ctx.lineTo(size, center + offset);
+          ctx.moveTo(0, center - offset); ctx.lineTo(size, center - offset);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(center, 0); ctx.lineTo(center, size);
+        ctx.moveTo(0, center); ctx.lineTo(size, center);
+        ctx.stroke();
+
+        ctx.globalCompositeOperation = 'destination-in';
+        const grad = ctx.createRadialGradient(center, center, 0, center, center, center * 0.72);
+        grad.addColorStop(0.0, 'rgba(0,0,0,1)');
+        grad.addColorStop(0.20, 'rgba(0,0,0,0.95)');
+        grad.addColorStop(0.48, 'rgba(0,0,0,0.55)');
+        grad.addColorStop(0.72, 'rgba(0,0,0,0.18)');
+        grad.addColorStop(0.90, 'rgba(0,0,0,0.02)');
+        grad.addColorStop(1.0, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, size, size);
+
+        const tex = new THREE.CanvasTexture(cvs);
+        tex.anisotropy = 4;
+        return tex;
+      }
+
+      const gridMat = new THREE.MeshBasicMaterial({
+        map: createRadialGridTexture(),
+        transparent: true,
+        depthWrite: false,
+        opacity: 0.85
+      });
+      const gridFloor = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), gridMat);
+      gridFloor.rotation.x = -Math.PI / 2;
+      gridFloor.position.y = -0.65;
+      scene.add(gridFloor);
+
+      // Hero Gamepad Object
+      const gamepadGroup = new THREE.Group();
+      scene.add(gamepadGroup);
+
+      const appleGamepadMaterial = new THREE.MeshStandardMaterial({
+        color: 0x282a30,
+        roughness: 0.92,
+        metalness: 0.0,
+      });
+
+      if (window.THREE.GLTFLoader) {
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          'assets/models/gamepad.glb',
+          (gltf) => {
+            const raw = gltf.scene;
+            raw.rotation.y = -Math.PI * 0.5;
+            raw.updateMatrixWorld(true);
+
+            const box = new THREE.Box3().setFromObject(raw);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            const targetScale = 2.05 / maxDim;
+            raw.scale.set(targetScale, targetScale, targetScale);
+            raw.updateMatrixWorld(true);
+
+            const finalBox = new THREE.Box3().setFromObject(raw);
+            const center = finalBox.getCenter(new THREE.Vector3());
+            raw.position.sub(center);
+
+            raw.traverse((child) => {
+              if (child.isMesh) {
+                child.material = appleGamepadMaterial;
+                child.castShadow = false;
+                child.receiveShadow = false;
+              }
+            });
+            gamepadGroup.add(raw);
+          },
+          undefined,
+          (err) => {
+            console.warn('Fallback: Gamepad model load error, creating fallback mesh:', err);
+            const fallbackMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.4, 1.0), appleGamepadMaterial);
+            gamepadGroup.add(fallbackMesh);
+          }
+        );
+      }
+
+      // Quaternions
+      const liveQuat = new THREE.Quaternion();
+      const currentQuat = new THREE.Quaternion();
+
+      function resize() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        if (w <= 0 || h <= 0) return;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      // ── Smart Resource Management & Animation Loop ──
+      let animId = null;
+      let isRendering = false;
+      let isFocused = true;
+      let frameCount = 0;
+      let lastFpsTime = performance.now();
+
+      function renderFrame() {
+        if (!isRendering) return;
+        animId = requestAnimationFrame(renderFrame);
+
+        // Smooth 1:1 motion tracking
+        currentQuat.slerp(liveQuat, 0.35);
+        gamepadGroup.quaternion.copy(currentQuat);
+
+        renderer.render(scene, camera);
+
+        // FPS meter
+        frameCount++;
+        const now = performance.now();
+        if (now - lastFpsTime >= 1000) {
+          const fps = Math.round((frameCount * 1000) / (now - lastFpsTime));
+          fpsCounter.textContent = `${fps} fps`;
+          frameCount = 0;
+          lastFpsTime = now;
+        }
+      }
+
+      function startRendering() {
+        if (isRendering) return;
+        isRendering = true;
+        canvas.classList.remove('blurred');
+        ecoOverlay.classList.remove('visible');
+        lastFpsTime = performance.now();
+        frameCount = 0;
+        animId = requestAnimationFrame(renderFrame);
+      }
+
+      function stopRendering(showEcoOverlay = false) {
+        if (!isRendering) return;
+        isRendering = false;
+        if (animId) {
+          cancelAnimationFrame(animId);
+          animId = null;
+        }
+        fpsCounter.textContent = '0 fps (пауза)';
+        if (showEcoOverlay) {
+          canvas.classList.add('blurred');
+          ecoOverlay.classList.add('visible');
+        }
+      }
+
+      function updatePowerState() {
+        const isHidden = document.hidden;
+        const ecoEnabled = ecoToggle.checked;
+
+        if (isHidden) {
+          // Completely hidden or minimized: stop rendering entirely
+          stopRendering(false);
+        } else if (!isFocused && ecoEnabled) {
+          // Unfocused and eco mode is active: pause rendering & show frosted overlay
+          stopRendering(true);
+        } else {
+          // Focused and visible: full 60fps rendering
+          startRendering();
+        }
+      }
+
+      // Visibility change (Minimized, backgrounded)
+      document.addEventListener('visibilitychange', updatePowerState);
+
+      // Focus / Blur
+      window.addEventListener('focus', () => {
+        isFocused = true;
+        updatePowerState();
+      });
+
+      window.addEventListener('blur', () => {
+        isFocused = false;
+        updatePowerState();
+      });
+
+      // Overlay click to resume
+      ecoOverlay.addEventListener('click', () => {
+        window.focus();
+        isFocused = true;
+        updatePowerState();
+      });
+
+      // Toggle switch change
+      ecoToggle.addEventListener('change', () => {
+        localStorage.setItem('gb_debug_eco', ecoToggle.checked ? 'true' : 'false');
+        updatePowerState();
+      });
+
+      if (localStorage.getItem('gb_debug_eco') === 'false') {
+        ecoToggle.checked = false;
+      }
+
+      // Start initial render
+      startRendering();
+
+      // ── Recenter Action ──
+      function doRecenter() {
+        liveQuat.set(0, 0, 0, 1);
+        currentQuat.set(0, 0, 0, 1);
+        gamepadGroup.quaternion.set(0, 0, 0, 1);
+
+        if (window.opener?.go?.main?.App?.ResetAHRS) {
+          window.opener.go.main.App.ResetAHRS().catch(() => {});
+        } else if (window.go?.main?.App?.ResetAHRS) {
+          window.go.main.App.ResetAHRS().catch(() => {});
+        }
+      }
+
+      btnRecenter.addEventListener('click', doRecenter);
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          doRecenter();
+        }
+      });
+
+      // ── External Data Injection (Parent Window & Runtime) ──
+      window.updateFromState = function(state) {
+        if (!state) return;
+        const q0 = Number(state.ahrsQ0);
+        const q1 = Number(state.ahrsQ1);
+        const q2 = Number(state.ahrsQ2);
+        const q3 = Number(state.ahrsQ3);
+
+        if (!isNaN(q0) && !isNaN(q1) && !isNaN(q2) && !isNaN(q3) &&
+            (q0 !== 0 || q1 !== 0 || q2 !== 0 || q3 !== 0)) {
+          // Three.js coordinates: -q1 (pitch), -q2 (yaw), q3 (roll), q0 (w)
+          liveQuat.set(-q1, -q2, q3, q0);
+          liveQuat.normalize();
+        }
+      };
+
+      // Listen via parent runtime or local runtime
+      if (window.opener && window.opener.runtime && window.opener.runtime.EventsOn) {
+        window.opener.runtime.EventsOn('state:change', window.updateFromState);
+      } else if (window.runtime && window.runtime.EventsOn) {
+        window.runtime.EventsOn('state:change', window.updateFromState);
+      }
+    })();
+  </script>
+</body>
+</html>
