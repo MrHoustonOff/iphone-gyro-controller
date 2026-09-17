@@ -60,6 +60,7 @@ type Server struct {
 	OnClientConnect    func(remoteAddr string)
 	OnClientDisconnect func(remoteAddr string)
 	OnClientPause      func(isPaused bool)
+	OnClientDevice     func(device string)
 	GetIsPaused        func() bool
 
 	clientMu    sync.Mutex
@@ -241,6 +242,9 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	if s.OnClientConnect != nil {
 		s.OnClientConnect(remoteAddr)
 	}
+	if dev := r.URL.Query().Get("device"); dev != "" && s.OnClientDevice != nil {
+		s.OnClientDevice(dev)
+	}
 
 	writeMu := &sync.Mutex{}
 	s.clientMu.Lock()
@@ -333,17 +337,22 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		// Check for text control messages (e.g. phone clicked pause/resume)
+		// Check for text control messages (e.g. phone clicked pause/resume or reported device model)
 		if msgType == websocket.TextMessage {
 			var ctrl struct {
 				Type     string `json:"type"`
 				IsPaused bool   `json:"isPaused"`
+				Model    string `json:"model"`
 			}
-			if err := json.Unmarshal(message, &ctrl); err == nil && ctrl.Type == "pause" {
-				if s.OnClientPause != nil {
+			if err := json.Unmarshal(message, &ctrl); err == nil {
+				if ctrl.Type == "pause" && s.OnClientPause != nil {
 					s.OnClientPause(ctrl.IsPaused)
+					continue
 				}
-				continue
+				if ctrl.Type == "device" && ctrl.Model != "" && s.OnClientDevice != nil {
+					s.OnClientDevice(ctrl.Model)
+					continue
+				}
 			}
 		}
 

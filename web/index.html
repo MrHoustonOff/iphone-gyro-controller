@@ -5,18 +5,68 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GyroBridge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#000000">
+  <title>GyroBridge Controller</title>
   <style>
+    /* ── Apple Cupertino Mobile Design System ────────────────────────────── */
     :root {
-      --bg: #070b14;
-      --primary: #38bdf8;
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --text: #f1f5f9;
-      --card-bg: rgba(18, 26, 44, 0.9);
-      --border: rgba(56, 189, 248, 0.2);
+      --bg: #000000;
+      --surface: #1C1C1E;
+      --surface-hover: #2C2C2E;
+      --surface-elevated: #242426;
+      --border: rgba(255, 255, 255, 0.12);
+      --border-subtle: rgba(255, 255, 255, 0.07);
+      --text: #FFFFFF;
+      --text-secondary: #8E8E93;
+      --text-tertiary: #636366;
+
+      --apple-blue: #0A84FF;
+      --apple-green: #28A745;
+      --apple-green-rgb: 40, 167, 69;
+      --apple-red: #FF3B30;
+      --apple-red-rgb: 255, 59, 48;
+      --apple-amber: #FF9F0A;
+      --apple-amber-rgb: 255, 159, 10;
+      --dot-online: #28A745;
+      --dot-offline: #FF3B30;
+      --dot-paused: #FF9F0A;
+
+      --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Consolas", Menlo, monospace;
+
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --radius-pill: 9999px;
+
+      --transition-fast: 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="light"] {
+      --bg: #F2F2F7;
+      --surface: #FFFFFF;
+      --surface-hover: #F2F2F7;
+      --surface-elevated: #E5E5EA;
+      --border: rgba(0, 0, 0, 0.08);
+      --border-subtle: rgba(0, 0, 0, 0.05);
+      --text: #000000;
+      --text-secondary: #6C6C70;
+      --text-tertiary: #AEAEB2;
+
+      --apple-blue: #0071E3;
+      --apple-green: #248A3D;
+      --apple-green-rgb: 36, 138, 61;
+      --apple-red: #FF3B30;
+      --apple-red-rgb: 255, 59, 48;
+      --apple-amber: #FF9500;
+      --apple-amber-rgb: 255, 149, 0;
+      --dot-online: #248A3D;
+      --dot-offline: #FF3B30;
+      --dot-paused: #FF9500;
     }
 
     * {
@@ -26,262 +76,857 @@
       user-select: none;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      transition: background-color var(--transition-fast), color var(--transition-fast);
     }
 
     body {
-      background: radial-gradient(circle at 50% 20%, #111e38 0%, var(--bg) 75%);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
       min-height: 100vh;
+      min-height: -webkit-fill-available;
+      padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 20px);
+    }
+
+    /* ── App Wrap ──────────────────────────────────────────────────────────── */
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin: 0 auto;
+      flex: 1;
+      justify-content: space-between;
+    }
+
+    /* ── Top Utility Header ────────────────────────────────────────────────── */
+    .header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.12);
+      gap: 8px;
+    }
+
+    .device-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+    }
+
+    .device-chip-icon {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .device-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--dot-offline);
+      transition: background-color var(--transition-fast);
+      flex-shrink: 0;
+    }
+    .device-status-dot.online { background: var(--dot-online); }
+    .device-status-dot.paused { background: var(--dot-paused); }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 32px;
+      min-width: 32px;
+      padding: 0 8px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .header-btn:active {
+      transform: scale(0.94);
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .header-btn.active {
+      color: var(--apple-blue);
+      border-color: rgba(10, 132, 255, 0.4);
+      background: rgba(10, 132, 255, 0.12);
+    }
+
+    .header-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+
+    /* ── Main Action Card: Connection ──────────────────────────────────────── */
+    .connection-card {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-main-connection {
+      width: 100%;
+      min-height: 94px;
+      padding: 16px 18px;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 6px;
+      text-align: left;
+      transition: all var(--transition-fast);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.16);
+    }
+    .btn-main-connection:active {
+      transform: scale(0.98);
+    }
+
+    /* State: Connected & Streaming (Active) */
+    .btn-main-connection.streaming {
+      background: rgba(var(--apple-green-rgb), 0.10);
+      border-color: rgba(var(--apple-green-rgb), 0.38);
+    }
+    .btn-main-connection.streaming .conn-title {
+      color: var(--dot-online);
+    }
+
+    /* State: Connected & Paused */
+    .btn-main-connection.paused {
+      background: rgba(var(--apple-amber-rgb), 0.10);
+      border-color: rgba(var(--apple-amber-rgb), 0.4);
+    }
+    .btn-main-connection.paused .conn-title {
+      color: var(--apple-amber);
+    }
+
+    /* State: Disconnected / Connecting */
+    .btn-main-connection.disconnected {
+      background: rgba(var(--apple-red-rgb), 0.08);
+      border-color: rgba(var(--apple-red-rgb), 0.35);
+    }
+    .btn-main-connection.disconnected .conn-title {
+      color: var(--apple-red);
+    }
+
+    .conn-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+
+    .conn-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 9px;
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .btn-main-connection.streaming .conn-badge {
+      background: rgba(var(--apple-green-rgb), 0.15);
+      color: var(--dot-online);
+      border: 1px solid rgba(var(--apple-green-rgb), 0.3);
+    }
+    .btn-main-connection.paused .conn-badge {
+      background: rgba(var(--apple-amber-rgb), 0.15);
+      color: var(--apple-amber);
+      border: 1px solid rgba(var(--apple-amber-rgb), 0.35);
+    }
+    .btn-main-connection.disconnected .conn-badge {
+      background: rgba(var(--apple-red-rgb), 0.12);
+      color: var(--apple-red);
+      border: 1px solid rgba(var(--apple-red-rgb), 0.3);
+    }
+
+    .conn-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .btn-main-connection.streaming .conn-badge-dot {
+      animation: pulseDot 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(1.25); }
+    }
+
+    .conn-hz-pill {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-tertiary);
+    }
+
+    .conn-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .conn-hint {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+
+    /* Sub Actions Bar under Connection Button */
+    .conn-sub-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .btn-sub-action {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 14px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .btn-sub-action:active {
+      transform: scale(0.96);
+      background: var(--surface-hover);
+    }
+    .btn-sub-action svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ── Central Block: Sensor Level / HUD & Warning ───────────────────────── */
+    .sensor-section {
+      width: 100%;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: env(safe-area-inset-top, 20px) 20px env(safe-area-inset-bottom, 24px);
+      flex: 1;
+      min-height: 220px;
+      position: relative;
     }
 
-    .app-wrap {
-      width: 100%;
-      max-width: 360px;
+    /* Prominent Apple Inclinometer & Artificial Horizon HUD */
+    .gyro-hud-container {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 20px;
-    }
-
-    .header-title {
-      font-size: 26px;
-      font-weight: 900;
-      letter-spacing: -0.03em;
-      background: linear-gradient(135deg, #ffffff 30%, #38bdf8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-
-    /* ── The 3 Primary Buttons ── */
-    .btn {
-      width: 100%;
-      min-height: 64px;
-      padding: 16px 20px;
-      font-size: 16px;
-      font-weight: 800;
-      border-radius: 16px;
-      border: 1px solid transparent;
-      cursor: pointer;
-      display: flex;
       align-items: center;
       justify-content: center;
       gap: 12px;
-      transition: all 0.2s ease;
-      touch-action: manipulation;
-      text-align: center;
-      -webkit-transform: translateZ(0);
-      transform: translateZ(0);
-      will-change: transform, filter;
-    }
-    .btn:active {
-      transform: scale(0.97) translateZ(0);
+      width: 100%;
+      transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
-    /* Button 1: Permissions */
-    .btn-perm {
-      background: rgba(30, 41, 59, 0.7);
-      color: #94a3b8;
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-    .btn-perm.granted {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border-color: rgba(16, 185, 129, 0.4);
-    }
-    .btn-perm.needs-permission {
-      background: linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(37, 99, 235, 0.35));
-      color: #38bdf8;
-      border-color: #38bdf8;
-      box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
-      animation: pulse-blue 1.8s infinite ease-in-out;
-      cursor: pointer;
-    }
-    @keyframes pulse-blue {
-      0%, 100% { filter: brightness(1); transform: scale(1) translateZ(0); }
-      50% { filter: brightness(1.2); transform: scale(1.02) translateZ(0); }
-    }
-
-    /* Button 2: Stream Status / Toggle */
-    .btn-stream {
-      background: rgba(30, 41, 59, 0.8);
-      color: #94a3b8;
-      border-color: rgba(255, 255, 255, 0.1);
-    }
-    /* Streaming OK - Glowing Active Green */
-    .btn-stream.active {
-      background: linear-gradient(135deg, #10b981, #059669);
-      color: #ffffff;
-      box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
-      border-color: #34d399;
-      animation: pulse-green 2s infinite ease-in-out;
-    }
-    /* Reconnecting / Connecting - Glowing Orange */
-    .btn-stream.reconnecting {
-      background: linear-gradient(135deg, #f59e0b, #d97706);
-      color: #ffffff;
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
-      border-color: #fbbf24;
-      animation: pulse-orange 1.5s infinite ease-in-out;
-    }
-    /* Paused - Glowing Amber */
-    .btn-stream.paused {
-      background: linear-gradient(135deg, #d97706, #b45309);
-      color: #ffffff;
-      box-shadow: 0 0 20px rgba(217, 119, 6, 0.5);
-      border-color: #f59e0b;
-    }
-    @keyframes pulse-green {
-      0%, 100% { filter: brightness(1); }
-      50% { filter: brightness(1.18); }
-    }
-    @keyframes pulse-orange {
-      0%, 100% { filter: brightness(1); }
-      50% { filter: brightness(1.18); }
-    }
-
-    /* Button 3: Auto-Calibration */
-    .btn-calib {
-      background: linear-gradient(135deg, #0284c7, #2563eb);
-      color: #ffffff;
-      box-shadow: 0 4px 18px rgba(37, 99, 235, 0.4);
-    }
-
-    /* ── Minimal Auto-Calibration Modal ── */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(4, 7, 15, 0.95);
-      -webkit-backdrop-filter: blur(12px);
-      backdrop-filter: blur(12px);
-      -webkit-transform: translateZ(0);
-      transform: translateZ(0);
-      z-index: 100;
+    .gyro-hud-bezel {
+      width: 190px;
+      height: 190px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: inset 0 2px 14px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(0, 0, 0, 0.12);
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .gyro-hud-svg {
+      width: 174px;
+      height: 174px;
+      overflow: visible;
+    }
+
+    .hud-ring-outer {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 1.5;
+    }
+
+    .hud-ring-center {
+      fill: none;
+      stroke: var(--border);
+      stroke-width: 1.4;
+      opacity: 0.7;
+      transition: stroke 0.2s ease, stroke-width 0.2s ease;
+    }
+
+    .hud-ring-center.level {
+      stroke: var(--dot-online);
+      stroke-width: 2;
+    }
+
+    .hud-ring-guide {
+      fill: none;
+      stroke: var(--border-subtle);
+      stroke-width: 0.8;
+      stroke-dasharray: 2 3;
+      opacity: 0.45;
+    }
+
+    .hud-crosshair {
+      stroke: var(--border-subtle);
+      stroke-width: 0.8;
+      opacity: 0.35;
+    }
+
+    .hud-tick-major {
+      stroke: var(--text-secondary);
+      stroke-width: 1.6;
+      stroke-linecap: round;
+    }
+
+    .hud-tick-minor {
+      stroke: var(--text-tertiary);
+      stroke-width: 1;
+      stroke-linecap: round;
+      opacity: 0.6;
+    }
+
+    .hud-level-bubble {
+      fill: var(--text);
+      opacity: 0.85;
+      transition: fill 0.2s ease;
+      will-change: cx, cy;
+    }
+
+    .hud-level-bubble.level {
+      fill: var(--dot-online);
+      opacity: 1;
+    }
+
+    .hud-yaw-group {
+      will-change: transform;
+      transition: transform 0.05s linear;
+    }
+
+    .hud-yaw-marker {
+      fill: var(--dot-online);
+    }
+
+    .hud-level-status {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      transition: all var(--transition-fast);
+      padding: 4px 14px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .hud-level-status.level {
+      color: var(--dot-online);
+      border-color: rgba(var(--apple-green-rgb), 0.3);
+      background: rgba(var(--apple-green-rgb), 0.12);
+    }
+
+    /* ── Warning Banner: Sensors Not Permitted / Inactive ──────────────────── */
+    .sensor-warning-card {
+      width: 100%;
+      background: rgba(var(--apple-red-rgb), 0.08);
+      border: 1px solid rgba(var(--apple-red-rgb), 0.35);
+      border-radius: var(--radius-xl);
+      padding: 22px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 12px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+      animation: alertPop 0.3s ease-out;
+    }
+
+    @keyframes alertPop {
+      from { opacity: 0; transform: scale(0.96); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .warning-icon-wrap {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: rgba(var(--apple-red-rgb), 0.15);
+      border: 1px solid rgba(var(--apple-red-rgb), 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--apple-red);
+    }
+    .warning-icon-wrap svg {
+      width: 22px;
+      height: 22px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+      fill: none;
+    }
+
+    .warning-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .warning-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      max-width: 320px;
+    }
+
+    .btn-grant-perm {
+      width: 100%;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      background: var(--apple-red);
+      color: #ffffff;
+      border: none;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform var(--transition-fast);
+      box-shadow: 0 4px 16px rgba(var(--apple-red-rgb), 0.35);
+    }
+    .btn-grant-perm:active {
+      transform: scale(0.97);
+    }
+
+    /* ── Bottom Info / Helper Footer ───────────────────────────────────────── */
+    .app-footer {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+
+    .footer-left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+
+    .footer-right {
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    /* ── OLED Screensaver & Anti-Touch Shield Overlay ───────────────────────── */
+    .screensaver-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000000;
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: env(safe-area-inset-top, 40px) 24px env(safe-area-inset-bottom, 36px);
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .modal-backdrop.open {
+    .screensaver-overlay.active {
       opacity: 1;
       pointer-events: auto;
     }
-    .modal-card {
-      width: 100%;
-      max-width: 340px;
-      background: var(--card-bg);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 24px 20px;
-      text-align: center;
+
+    .ss-top-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-pill);
+      font-size: 11px;
+      font-weight: 700;
+      color: #8E8E93;
+      letter-spacing: 0.04em;
+      transition: transform 15s ease-in-out;
+    }
+
+    .ss-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #28A745;
+      animation: pulseDot 2s infinite ease-in-out;
+    }
+
+    /* Smart Unlock Ring: Hold to unlock */
+    .ss-center-lock {
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
     }
-    .modal-instruction {
-      font-size: 16px;
+
+    .ss-lock-circle {
+      width: 90px;
+      height: 90px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ss-lock-svg {
+      width: 90px;
+      height: 90px;
+      transform: rotate(-90deg);
+    }
+
+    .ss-lock-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.12);
+      stroke-width: 3.5;
+    }
+
+    .ss-lock-progress {
+      fill: none;
+      stroke: #0A84FF;
+      stroke-width: 3.5;
+      stroke-linecap: round;
+      stroke-dasharray: 251.2;
+      stroke-dashoffset: 251.2;
+      transition: stroke-dashoffset 0.05s linear;
+    }
+
+    .ss-lock-icon {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      stroke: #FFFFFF;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.85;
+      transition: transform 0.2s ease;
+    }
+
+    .ss-lock-caption {
+      font-size: 13px;
       font-weight: 700;
-      line-height: 1.5;
-      color: #e2e8f0;
+      color: #8E8E93;
+      letter-spacing: 0.02em;
+      text-align: center;
     }
-    .modal-instruction strong {
-      color: var(--primary);
+
+    /* iOS-Style Swipe Up Lock Bar */
+    .ss-bottom-swipe {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
     }
-    .progress-bar-wrap {
-      width: 100%;
-      height: 8px;
-      background: #1e293b;
-      border-radius: 4px;
-      overflow: hidden;
-      margin-top: 4px;
+
+    .ss-swipe-bar {
+      width: 130px;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.4);
+      animation: bounceBar 2s infinite ease-in-out;
     }
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #38bdf8, #10b981);
-      transition: width 0.05s linear;
+
+    @keyframes bounceBar {
+      0%, 100% { transform: translateY(0); opacity: 0.4; }
+      50% { transform: translateY(-6px); opacity: 0.8; }
+    }
+
+    .ss-swipe-txt {
+      font-size: 12px;
+      font-weight: 600;
+      color: #636366;
+      letter-spacing: 0.04em;
     }
   </style>
 </head>
-<body>
+<body data-theme="dark">
 
-<div class="app-wrap">
-  <h1 class="header-title">GyroBridge <span style="display:inline-block; font-size:12px; font-weight:700; background:#38bdf8; color:#070b14; padding:2px 8px; border-radius:8px; margin-left:6px; vertical-align:middle;">v3.4-RAW</span></h1>
+<div class="app-container">
 
-  <!-- 1. Permission Request Button -->
-  <button id="btn-perm" class="btn btn-perm">
-    <span style="font-size: 18px; line-height: 1;">⌖</span>
-    <span id="txt-perm">ВКЛЮЧИТЬ ДАТЧИКИ</span>
-  </button>
-
-  <!-- 2. Auto-Calibration Button -->
-  <button id="btn-calib" class="btn btn-calib">
-    <span style="font-size: 18px; line-height: 1;">⟲</span>
-    <span>Автокалибровка</span>
-  </button>
-
-  <!-- 3. Transmission Start / Status Button -->
-  <button id="btn-stream" class="btn btn-stream reconnecting">
-    <span id="icon-stream" style="font-size: 16px; line-height: 1;">●</span>
-    <span id="txt-stream">ПОДКЛЮЧЕНИЕ...</span>
-  </button>
-
-  <!-- 4. Diagnostic & Live Sensor Debug Panel -->
-  <div id="debug-panel" style="width:100%; margin-top:6px; padding:12px 14px; background:#0f172a; border:2px solid #38bdf8; border-radius:14px; font-family:monospace; font-size:12px; color:#e2e8f0; text-align:left; box-sizing:border-box;">
-    <div style="font-size:13px; font-weight:800; color:#38bdf8; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">
-      ВЕРСИЯ: v3.4-RAW (ЧИСТЫЕ ДАТЧИКИ)
+  <!-- ── 1. Compact Utility Bar ─────────────────────────────────────────── -->
+  <header class="header-bar">
+    <div class="device-chip" id="device-chip" title="Модель устройства">
+      <svg class="device-chip-icon" viewBox="0 0 24 24">
+        <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+      </svg>
+      <span id="device-model-label">iPhone</span>
+      <span class="device-status-dot" id="header-status-dot"></span>
     </div>
-    <div style="font-size:11px; opacity:0.8; margin-bottom:8px;">
-      Сборка: 2026-09-17 12:50 | URL: <span id="dbg-url-info" style="color:#facc15;">-</span>
+
+    <div class="header-controls">
+      <!-- Screen WakeLock Button -->
+      <button class="header-btn" id="btn-wakelock" title="Блокировка сна экрана">
+        <svg viewBox="0 0 24 24">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </button>
+
+      <!-- Screensaver / Anti-Touch Shield Button -->
+      <button class="header-btn" id="btn-screensaver" title="Скринсейвер и защита от тыков">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </button>
+
+      <!-- Theme Switcher Button -->
+      <button class="header-btn" id="btn-theme" title="Сменить тему">
+        <svg id="theme-icon" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+      </button>
+
+      <!-- Language Switcher Button -->
+      <button class="header-btn" id="btn-lang" title="Switch language">
+        <span id="lang-label">RU</span>
+      </button>
     </div>
-    <div style="background:#1e293b; padding:8px 10px; border-radius:8px; margin-bottom:8px; line-height:1.4;">
-      <div style="color:#94a3b8; font-size:11px; font-weight:700; margin-bottom:2px;">СЫРОЙ ГИРОСКОП (device):</div>
-      <div>X (beta,  кивок): <span id="dbg-raw-x" style="color:#4ade80; font-weight:700;">0.00</span> °/s</div>
-      <div>Y (gamma, наклон): <span id="dbg-raw-y" style="color:#38bdf8; font-weight:700;">0.00</span> °/s</div>
-      <div>Z (alpha, компас): <span id="dbg-raw-z" style="color:#f472b6; font-weight:700;">0.00</span> °/s</div>
+  </header>
+
+  <!-- ── 2. Central Block: Visual Sensor HUD or Permission Warning ───────── -->
+  <section class="sensor-section">
+
+    <!-- Active Gyro & Horizon HUD Level (60 FPS Vector Display) -->
+    <div class="gyro-hud-container" id="sensor-hud-container">
+      <div class="gyro-hud-bezel" title="Искусственный горизонт и компас">
+        <svg class="gyro-hud-svg" viewBox="0 0 120 120">
+          <!-- Outer dial ring -->
+          <circle cx="60" cy="60" r="54" class="hud-ring-outer"></circle>
+
+          <!-- Concentric guide rings for leveling (Radius 14 ~ 3 deg level zone, Radius 28 ~ 15 deg, Radius 42 ~ 30 deg) -->
+          <circle cx="60" cy="60" r="14" class="hud-ring-center" id="hud-level-zone"></circle>
+          <circle cx="60" cy="60" r="28" class="hud-ring-guide"></circle>
+          <circle cx="60" cy="60" r="42" class="hud-ring-guide"></circle>
+
+          <!-- Crosshairs -->
+          <line x1="15" y1="60" x2="105" y2="60" class="hud-crosshair"></line>
+          <line x1="60" y1="15" x2="60" y2="105" class="hud-crosshair"></line>
+
+          <!-- Dial Ticks -->
+          <g class="hud-ticks-group">
+            <line x1="60" y1="6" x2="60" y2="12" class="hud-tick-major"></line>
+            <line x1="60" y1="108" x2="60" y2="114" class="hud-tick-major"></line>
+            <line x1="6" y1="60" x2="12" y2="60" class="hud-tick-major"></line>
+            <line x1="108" y1="60" x2="114" y2="60" class="hud-tick-major"></line>
+
+            <line x1="87" y1="13.2" x2="84" y2="18.4" class="hud-tick-minor"></line>
+            <line x1="106.8" y1="33" x2="101.6" y2="36" class="hud-tick-minor"></line>
+            <line x1="106.8" y1="87" x2="101.6" y2="84" class="hud-tick-minor"></line>
+            <line x1="87" y1="106.8" x2="84" y2="101.6" class="hud-tick-minor"></line>
+            <line x1="33" y1="106.8" x2="36" y2="101.6" class="hud-tick-minor"></line>
+            <line x1="13.2" y1="87" x2="18.4" y2="84" class="hud-tick-minor"></line>
+            <line x1="13.2" y1="33" x2="18.4" y2="36" class="hud-tick-minor"></line>
+            <line x1="33" y1="13.2" x2="36" y2="18.4" class="hud-tick-minor"></line>
+          </g>
+
+          <!-- Dynamic Central Inclinometer Bubble -->
+          <circle id="gyro-bubble" cx="60" cy="60" r="7.5" class="hud-level-bubble"></circle>
+
+          <!-- Rotating Yaw Needle / Compass Indicator Group -->
+          <g id="gyro-yaw-group" class="hud-yaw-group" transform="rotate(0 60 60)">
+            <polygon points="60,6 56.5,14 63.5,14" class="hud-yaw-marker"></polygon>
+            <line x1="60" y1="6" x2="60" y2="16" stroke="var(--dot-online)" stroke-width="2.5" stroke-linecap="round"></line>
+          </g>
+        </svg>
+      </div>
+      <span class="hud-level-status" id="hud-level-status">LEVEL</span>
     </div>
-    <div style="background:#1e293b; padding:8px 10px; border-radius:8px; margin-bottom:10px; line-height:1.4;">
-      <div style="color:#94a3b8; font-size:11px; font-weight:700; margin-bottom:2px;">ПЕРЕДАЕТСЯ В ПРИЛОЖЕНИЕ (ПК):</div>
-      <div>X: <span id="dbg-dsu-p" style="color:#4ade80; font-weight:700;">0.00</span> | Y: <span id="dbg-dsu-y" style="color:#38bdf8; font-weight:700;">0.00</span> | Z: <span id="dbg-dsu-r" style="color:#f472b6; font-weight:700;">0.00</span> °/s</div>
+
+    <!-- Sensor Permission Warning Card (Displayed when access is not yet granted) -->
+    <div class="sensor-warning-card" id="sensor-warning-card" style="display: none;">
+      <div class="warning-icon-wrap">
+        <svg viewBox="0 0 24 24">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+      </div>
+      <div class="warning-title" id="txt-warn-title">Требуется доступ к датчикам</div>
+      <div class="warning-desc" id="txt-warn-desc">
+        Браузер блокирует доступ к гироскопу. Нажмите кнопку ниже, чтобы разрешить отслеживание движений.
+      </div>
+      <button class="btn-grant-perm" id="btn-grant-sensors">ВКЛЮЧИТЬ ДАТЧИКИ</button>
     </div>
-    <button id="dbg-btn-refresh" type="button" style="width:100%; min-height:40px; background:#dc2626; color:#ffffff; font-weight:800; border:none; border-radius:8px; font-size:12px; cursor:pointer;">
-      СБРОСИТЬ КЭШ И ОБНОВИТЬ
+
+  </section>
+
+  <!-- ── 3. Central Block: Primary Connection Action Button ─────────────── -->
+  <section class="connection-card">
+    <button class="btn-main-connection disconnected" id="btn-main-connection">
+      <div class="conn-top-row">
+        <div class="conn-badge" id="conn-badge">
+          <span class="conn-badge-dot"></span>
+          <span id="conn-badge-text">ПОДКЛЮЧЕНИЕ...</span>
+        </div>
+        <div class="conn-hz-pill" id="conn-hz-pill">0 Hz</div>
+      </div>
+      <div class="conn-title" id="conn-title">ПОДКЛЮЧИТЬСЯ</div>
+      <div class="conn-hint" id="conn-hint">Нажмите для подключения к ПК по WebSocket</div>
     </button>
-    <button id="dbg-btn-copy20" type="button" style="width:100%; min-height:40px; margin-top:8px; background:#2563eb; color:#ffffff; font-weight:800; border:none; border-radius:8px; font-size:12px; cursor:pointer;">
-      СКОПИРОВАТЬ 20 ЗАПИСЕЙ В БУФЕР
-    </button>
-  </div>
+
+    <!-- Secondary Quick Actions (Reconnect & Recenter/Tare) -->
+    <div class="conn-sub-bar">
+      <button class="btn-sub-action" id="btn-toggle-socket">
+        <svg viewBox="0 0 24 24">
+          <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
+          <line x1="12" y1="2" x2="12" y2="12"></line>
+        </svg>
+        <span id="txt-sub-socket">Разорвать связь</span>
+      </button>
+
+      <button class="btn-sub-action" id="btn-tare">
+        <svg viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="3"></circle>
+          <line x1="12" y1="2" x2="12" y2="5"></line>
+          <line x1="12" y1="19" x2="12" y2="22"></line>
+          <line x1="2" y1="12" x2="5" y2="12"></line>
+          <line x1="19" y1="12" x2="22" y2="12"></line>
+        </svg>
+        <span id="txt-sub-tare">Центрировать</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ── 4. Compact Footer ──────────────────────────────────────────────── -->
+  <footer class="app-footer">
+    <div class="footer-left">
+      <span>GyroBridge</span>
+      <span style="opacity: 0.5;">•</span>
+      <span id="txt-footer-role">Клиент контроллера</span>
+    </div>
+    <div class="footer-right">
+      <span id="txt-ping-status">LAN Direct</span>
+    </div>
+  </footer>
+
 </div>
 
-<!-- Auto-Calibration Modal -->
-<div class="modal-backdrop" id="modal-calib">
-  <div class="modal-card">
-    <div style="font-size: 28px; font-weight: 700;">⌖</div>
-    <div class="modal-instruction" id="modal-msg">
-      Положите телефон <strong>экраном вверх</strong> и <strong>вперед к камере</strong>
-    </div>
+<!-- ── 5. OLED Screensaver & Anti-Touch Shield Overlay ─────────────────────── -->
+<div class="screensaver-overlay" id="screensaver-overlay">
+  <!-- Top: Wandering OLED burn-in safe status -->
+  <div class="ss-top-status" id="ss-top-status">
+    <span class="ss-dot"></span>
+    <span id="ss-status-label">LIVE • iPhone</span>
+  </div>
 
-    <div class="progress-bar-wrap">
-      <div class="progress-bar" id="calib-progress"></div>
+  <!-- Center: Smart Hold-To-Unlock Circle -->
+  <div class="ss-center-lock" id="ss-center-lock">
+    <div class="ss-lock-circle">
+      <svg class="ss-lock-svg" viewBox="0 0 90 90">
+        <circle cx="45" cy="45" r="40" class="ss-lock-track"></circle>
+        <circle cx="45" cy="45" r="40" class="ss-lock-progress" id="ss-lock-progress"></circle>
+      </svg>
+      <svg class="ss-lock-icon" viewBox="0 0 24 24">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+      </svg>
     </div>
+    <div class="ss-lock-caption" id="ss-lock-caption">Удерживайте 2 сек для разблокировки</div>
+  </div>
 
-    <button id="btn-start-calib" class="btn btn-calib" style="min-height:50px; margin-top:8px;">
-      Зафиксировать (2 сек)
-    </button>
-    <button id="btn-close-modal" class="btn btn-perm" style="min-height:44px; padding:10px;">
-      Отмена
-    </button>
+  <!-- Bottom: iOS Swipe Up Lock Bar -->
+  <div class="ss-bottom-swipe" id="ss-bottom-swipe">
+    <div class="ss-swipe-bar"></div>
+    <div class="ss-swipe-txt" id="ss-swipe-txt">Смахните вверх</div>
   </div>
 </div>
 
@@ -289,191 +934,376 @@
 'use strict';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Fixed Preset: "Горизонтально: экраном вверх, перед к камере"
+// 1. Localization Dictionary (Zero Emojis, Clean Cupertino Terminology)
 // ─────────────────────────────────────────────────────────────────────────────
-// Phone coordinates when flat on table, screen UP:
-// - Phone X: Right edge
-// - Phone Y: Top edge (forward towards camera/monitor)
-// - Phone Z: Screen normal (pointing UP to ceiling)
-//
-// Target Gamepad coordinates:
-// - Pitch (X, Red)   = +Phone X (rotation around X)
-// - Yaw   (Y, Green) = +Phone Z (vertical axis / spinning on table)
-// - Roll  (Z, Blue)  = -Phone Y (tilting sideways, right-handed SO(3), det = +1)
-// - Accel:
-//   - Accel X = +Phone X
-//   - Accel Y = +Phone Z (+1.0g along UP, controller lies flat!)
-//   - Accel Z = -Phone Y
-// ─────────────────────────────────────────────────────────────────────────────
+const I18N = {
+  ru: {
+    lang_btn: 'RU',
+    streaming_badge: 'Подключено • Передача',
+    paused_badge: 'На паузе',
+    disconnected_badge: 'Нет связи с ПК',
+    connecting_badge: 'Подключение...',
+    action_pause: 'ПАУЗА',
+    action_resume: 'ПРОДОЛЖИТЬ',
+    action_connect: 'ПОДКЛЮЧИТЬСЯ',
+    hint_streaming: 'Нажмите, чтобы временно остановить передачу данных',
+    hint_paused: 'Нажмите, чтобы возобновить передачу данных на ПК',
+    hint_disconnected: 'Нажмите для повторной попытки подключения по WebSocket',
+    sub_disconnect: 'Разорвать связь',
+    sub_connect: 'Переподключить',
+    sub_tare: 'Центрировать',
+    warn_title: 'Требуется доступ к датчикам',
+    warn_desc: 'Браузер блокирует доступ к гироскопу. Нажмите кнопку ниже, чтобы разрешить отслеживание движений.',
+    warn_btn: 'ВКЛЮЧИТЬ ДАТЧИКИ',
+    warn_denied: 'Доступ отклонен в Safari. Перейдите в Настройки -> Safari -> Движение и ориентация.',
+    footer_role: 'Клиент контроллера',
+    ss_caption: 'Удерживайте 2 сек для разблокировки',
+    ss_swipe: 'или смахните вверх',
+    level_status: 'ГОРИЗОНТ'
+  },
+  en: {
+    lang_btn: 'EN',
+    streaming_badge: 'Connected • Streaming',
+    paused_badge: 'Paused',
+    disconnected_badge: 'Disconnected',
+    connecting_badge: 'Connecting...',
+    action_pause: 'PAUSE',
+    action_resume: 'RESUME',
+    action_connect: 'CONNECT',
+    hint_streaming: 'Tap to temporarily pause motion transmission',
+    hint_paused: 'Tap to resume motion transmission to PC',
+    hint_disconnected: 'Tap to reconnect to PC via WebSocket',
+    sub_disconnect: 'Disconnect',
+    sub_connect: 'Reconnect',
+    sub_tare: 'Center / Tare',
+    warn_title: 'Sensor Access Required',
+    warn_desc: 'Motion sensors are restricted by the browser. Tap the button below to enable gyro tracking.',
+    warn_btn: 'ENABLE SENSORS',
+    warn_denied: 'Access denied. Enable in iOS Settings -> Safari -> Motion & Orientation Access.',
+    footer_role: 'Controller Client',
+    ss_caption: 'Hold for 2s to unlock',
+    ss_swipe: 'or swipe up',
+    level_status: 'LEVEL'
+  }
+};
 
-const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-              (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+let currentLang = localStorage.getItem('gb_lang') || 'ru';
+if (!I18N[currentLang]) currentLang = 'ru';
 
-const btnPerm       = document.getElementById('btn-perm');
-const txtPerm       = document.getElementById('txt-perm');
-const btnCalib      = document.getElementById('btn-calib');
-const btnStream     = document.getElementById('btn-stream');
-const txtStream     = document.getElementById('txt-stream');
-const iconStream    = document.getElementById('icon-stream');
-
-const modalCalib    = document.getElementById('modal-calib');
-const btnStartCalib = document.getElementById('btn-start-calib');
-const btnCloseModal = document.getElementById('btn-close-modal');
-const calibProgress = document.getElementById('calib-progress');
-const modalMsg      = document.getElementById('modal-msg');
-
-let isPaused = false;
-let isConnected = false;
-let isSamplingCalib = false;
-
-const dbgUrlInfo    = document.getElementById('dbg-url-info');
-const dbgRawX       = document.getElementById('dbg-raw-x');
-const dbgRawY       = document.getElementById('dbg-raw-y');
-const dbgRawZ       = document.getElementById('dbg-raw-z');
-const dbgDsuP       = document.getElementById('dbg-dsu-p');
-const dbgDsuY       = document.getElementById('dbg-dsu-y');
-const dbgDsuR       = document.getElementById('dbg-dsu-r');
-const dbgBtnRefresh = document.getElementById('dbg-btn-refresh');
-
-if (dbgUrlInfo) {
-  dbgUrlInfo.textContent = window.location.search || '(нет параметров)';
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('gb_lang', lang);
+  document.getElementById('lang-label').textContent = I18N[lang].lang_btn;
+  document.getElementById('txt-warn-title').textContent = I18N[lang].warn_title;
+  document.getElementById('txt-warn-desc').textContent = I18N[lang].warn_desc;
+  document.getElementById('btn-grant-sensors').textContent = I18N[lang].warn_btn;
+  document.getElementById('txt-sub-tare').textContent = I18N[lang].sub_tare;
+  document.getElementById('txt-footer-role').textContent = I18N[lang].footer_role;
+  document.getElementById('ss-lock-caption').textContent = I18N[lang].ss_caption;
+  document.getElementById('ss-swipe-txt').textContent = I18N[lang].ss_swipe;
+  updateConnectionUI();
 }
 
-if (dbgBtnRefresh) {
-  dbgBtnRefresh.addEventListener('click', () => {
-    localStorage.clear();
-    sessionStorage.clear();
-    window.location.href = window.location.origin + window.location.pathname + '?t=' + Date.now();
-  });
+document.getElementById('btn-lang').addEventListener('click', () => {
+  setLanguage(currentLang === 'ru' ? 'en' : 'ru');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 2. Apple Theme Toggle (Dark / Light)
+// ─────────────────────────────────────────────────────────────────────────────
+let currentTheme = localStorage.getItem('gb_theme') || 'dark';
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('gb_theme', theme);
+
+  const metaTheme = document.querySelector('meta[name="theme-color"]');
+  if (metaTheme) metaTheme.setAttribute('content', theme === 'light' ? '#F2F2F7' : '#000000');
+
+  const themeIcon = document.getElementById('theme-icon');
+  if (themeIcon) {
+    if (theme === 'light') {
+      // Moon SVG icon for toggling to dark
+      themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+    } else {
+      // Sun SVG icon for toggling to light
+      themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+    }
+  }
+}
+applyTheme(currentTheme);
+
+document.getElementById('btn-theme').addEventListener('click', () => {
+  applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3. Device Model Detection (iPad vs iPhone vs Android)
+// ─────────────────────────────────────────────────────────────────────────────
+function detectDeviceModel() {
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const maxTouchPoints = navigator.maxTouchPoints || 0;
+
+  // iPadOS 13+ identifies as MacIntel with touch points
+  const isIPad = /iPad/.test(ua) || (platform === 'MacIntel' && maxTouchPoints > 1);
+  if (isIPad) return 'iPad';
+
+  if (/iPhone|iPod/.test(ua)) return 'iPhone';
+  if (/Android/.test(ua)) return 'Android';
+  return 'Mobile Device';
 }
 
-const webLogFrames = [];
-const dbgBtnCopy20 = document.getElementById('dbg-btn-copy20');
-if (dbgBtnCopy20) {
-  dbgBtnCopy20.addEventListener('click', async () => {
-    if (webLogFrames.length === 0) {
-      alert('Нет записей кадров (подвигайте телефон)');
+const deviceModel = detectDeviceModel();
+document.getElementById('device-model-label').textContent = deviceModel;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. Screen Lock (WakeLock API & Silent Loop Fallback)
+// ─────────────────────────────────────────────────────────────────────────────
+let wakeLock = null;
+let wakeLockEnabled = true;
+const btnWakeLock = document.getElementById('btn-wakelock');
+
+async function requestWakeLock() {
+  if (!wakeLockEnabled) return;
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      btnWakeLock.classList.add('active');
+      wakeLock.addEventListener('release', () => {
+        if (wakeLockEnabled) {
+          btnWakeLock.classList.remove('active');
+        }
+      });
+    }
+  } catch (err) {
+    btnWakeLock.classList.remove('active');
+  }
+}
+
+function releaseWakeLock() {
+  if (wakeLock) {
+    wakeLock.release().catch(() => {});
+    wakeLock = null;
+  }
+  btnWakeLock.classList.remove('active');
+}
+
+btnWakeLock.addEventListener('click', () => {
+  wakeLockEnabled = !wakeLockEnabled;
+  if (wakeLockEnabled) {
+    requestWakeLock();
+  } else {
+    releaseWakeLock();
+  }
+});
+
+// Re-acquire WakeLock on visibility change (returning to browser)
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && wakeLockEnabled) {
+    requestWakeLock();
+  }
+});
+
+// Initial WakeLock request
+requestWakeLock();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 5. OLED Screensaver & Anti-Touch Shield (Smart Hold & Swipe Unlock)
+// ─────────────────────────────────────────────────────────────────────────────
+const screensaverOverlay = document.getElementById('screensaver-overlay');
+const btnScreensaver     = document.getElementById('btn-screensaver');
+const ssLockProgress     = document.getElementById('ss-lock-progress');
+const ssCenterLock       = document.getElementById('ss-center-lock');
+const ssBottomSwipe      = document.getElementById('ss-bottom-swipe');
+const ssTopStatus        = document.getElementById('ss-top-status');
+const ssStatusLabel      = document.getElementById('ss-status-label');
+
+let isScreensaverActive = false;
+let holdTimer = null;
+let holdStartTime = 0;
+const HOLD_DURATION = 2000; // 2.0s hold to unlock
+const CIRCLE_CIRCUMFERENCE = 251.2; // 2 * PI * 40
+
+function openScreensaver() {
+  isScreensaverActive = true;
+  screensaverOverlay.classList.add('active');
+  btnScreensaver.classList.add('active');
+  ssStatusLabel.textContent = `LIVE • ${deviceModel}`;
+  ssLockProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+  triggerWandering();
+}
+
+function closeScreensaver() {
+  isScreensaverActive = false;
+  screensaverOverlay.classList.remove('active');
+  btnScreensaver.classList.remove('active');
+  cancelHold();
+  if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
+}
+
+btnScreensaver.addEventListener('click', () => {
+  openScreensaver();
+});
+
+// OLED Burn-in prevention: wandering badge position shift every 20s
+let wanderingInterval = null;
+function triggerWandering() {
+  if (wanderingInterval) clearInterval(wanderingInterval);
+  wanderingInterval = setInterval(() => {
+    if (!isScreensaverActive) return;
+    const dx = (Math.random() - 0.5) * 40;
+    const dy = (Math.random() - 0.5) * 15;
+    ssTopStatus.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
+  }, 20000);
+}
+
+// 1) Hold-to-Unlock Logic
+function startHold(e) {
+  e.preventDefault();
+  holdStartTime = performance.now();
+  if (navigator.vibrate) navigator.vibrate(25);
+
+  const step = () => {
+    if (!holdStartTime) return;
+    const elapsed = performance.now() - holdStartTime;
+    const progress = Math.min(1, elapsed / HOLD_DURATION);
+    const offset = CIRCLE_CIRCUMFERENCE * (1 - progress);
+    ssLockProgress.style.strokeDashoffset = offset.toFixed(1);
+
+    if (progress >= 1) {
+      closeScreensaver();
       return;
     }
-    const lines = ["# Recent " + webLogFrames.length + " frames from phone browser:"];
-    lines.push("idx,ts,rawX,rawY,rawZ,dsuP,dsuY,dsuR,accX,accY,accZ");
-    webLogFrames.forEach((f, i) => {
-      lines.push(`${i+1},${f.ts},${f.rawX.toFixed(4)},${f.rawY.toFixed(4)},${f.rawZ.toFixed(4)},${f.p.toFixed(4)},${f.y.toFixed(4)},${f.r.toFixed(4)},${f.ax.toFixed(4)},${f.ay.toFixed(4)},${f.az.toFixed(4)}`);
-    });
-    const text = lines.join("\n");
-    try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-      }
-      const orig = dbgBtnCopy20.textContent;
-      dbgBtnCopy20.textContent = 'СКОПИРОВАНО 20 ЗАПИСЕЙ!';
-      setTimeout(() => { dbgBtnCopy20.textContent = orig; }, 1800);
-    } catch (e) {
-      alert('Не удалось скопировать: ' + e);
+    holdTimer = requestAnimationFrame(step);
+  };
+  holdTimer = requestAnimationFrame(step);
+}
+
+function cancelHold() {
+  holdStartTime = 0;
+  if (holdTimer) cancelAnimationFrame(holdTimer);
+  ssLockProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+}
+
+ssCenterLock.addEventListener('touchstart', startHold, { passive: false });
+ssCenterLock.addEventListener('touchend', cancelHold);
+ssCenterLock.addEventListener('touchcancel', cancelHold);
+ssCenterLock.addEventListener('mousedown', startHold);
+ssCenterLock.addEventListener('mouseup', cancelHold);
+ssCenterLock.addEventListener('mouseleave', cancelHold);
+
+// 2) Swipe-Up to Unlock Logic
+let touchStartY = 0;
+screensaverOverlay.addEventListener('touchstart', (e) => {
+  if (e.touches && e.touches[0]) {
+    touchStartY = e.touches[0].clientY;
+  }
+}, { passive: true });
+
+screensaverOverlay.addEventListener('touchend', (e) => {
+  if (e.changedTouches && e.changedTouches[0]) {
+    const deltaY = touchStartY - e.changedTouches[0].clientY;
+    if (deltaY > 110) { // Upward swipe threshold: >110px
+      closeScreensaver();
     }
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 1. Gyro Bias & ZUPT (Zero-Velocity Update)
-// ─────────────────────────────────────────────────────────────────────────────
-const G_CONST = 9.80665;
-const DEG2RAD_HALF = Math.PI / 360;
-
-try { localStorage.removeItem('gb_bias_up'); } catch (e) {}
-let biasX = 0, biasY = 0, biasZ = 0;
-
-let zeroYawOffset = 0;
-let rawGyr = { x: 0, y: 0, z: 0 };
-let rawAcc = { x: 0, y: 0, z: 0 };
-
-let curAlpha = 0, curBeta = 0, curGamma = 0;
-let calibAccSamples = [];
-let calibGyrSamples = [];
-
-const accelWin = [];
-let stillDetected = false;
-
-function updateZUPT(ax, ay, az) {
-  accelWin.push({ x: ax, y: ay, z: az });
-  if (accelWin.length > 10) accelWin.shift();
-  if (accelWin.length < 10) return;
-
-  let mx = 0, my = 0, mz = 0;
-  for (const s of accelWin) { mx += s.x; my += s.y; mz += s.z; }
-  mx /= 10; my /= 10; mz /= 10;
-
-  let v = 0;
-  for (const s of accelWin) {
-    const dx = s.x - mx, dy = s.y - my, dz = s.z - mz;
-    v += dx*dx + dy*dy + dz*dz;
   }
-  stillDetected = (v / 10) < 0.00018;
-}
+}, { passive: true });
 
-function applyBias(rx, ry, rz) {
-  if (stillDetected) {
-    biasX += (rx - biasX) * 0.20;
-    biasY += (ry - biasY) * 0.20;
-    biasZ += (rz - biasZ) * 0.20;
-    return [0, 0, 0];
-  }
-
-  let cx = rx - biasX;
-  let cy = ry - biasY;
-  let cz = rz - biasZ;
-
-  biasX += (rx - biasX) * 0.001;
-  biasY += (ry - biasY) * 0.001;
-  biasZ += (rz - biasZ) * 0.001;
-
-  if (Math.abs(cx) < 0.25) cx = 0;
-  if (Math.abs(cy) < 0.25) cy = 0;
-  if (Math.abs(cz) < 0.25) cz = 0;
-
-  return [cx, cy, cz];
-}
+// Prevent any touches on screensaver from bubbling to underlying UI
+screensaverOverlay.addEventListener('click', (e) => {
+  e.stopPropagation();
+});
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 2. WebSocket & Button 2 (Transmission Status / Toggle)
+// 6. WebSocket Connection & Interactive State Machine
 // ─────────────────────────────────────────────────────────────────────────────
 let ws = null;
-const binBuffer = new ArrayBuffer(46);
-const binView   = new DataView(binBuffer);
+let isConnected = false;
+let isPaused = false;
+let deliberateDisconnect = false;
+let packetCount = 0;
+let lastPacketCount = 0;
+let lastHzCalcTime = performance.now();
+let currentHz = 0;
 
-function updateStreamButtonUI() {
+const btnMainConnection = document.getElementById('btn-main-connection');
+const connBadge         = document.getElementById('conn-badge');
+const connBadgeText     = document.getElementById('conn-badge-text');
+const connTitle         = document.getElementById('conn-title');
+const connHint          = document.getElementById('conn-hint');
+const connHzPill        = document.getElementById('conn-hz-pill');
+const headerStatusDot   = document.getElementById('header-status-dot');
+const btnToggleSocket   = document.getElementById('btn-toggle-socket');
+const txtSubSocket      = document.getElementById('txt-sub-socket');
+
+function updateConnectionUI() {
+  const t = I18N[currentLang];
+
   if (!isConnected) {
-    btnStream.className = 'btn btn-stream reconnecting';
-    txtStream.textContent = 'ПЕРЕПОДКЛЮЧЕНИЕ...';
-    iconStream.textContent = '●';
+    btnMainConnection.className = 'btn-main-connection disconnected';
+    connBadgeText.textContent = deliberateDisconnect ? t.disconnected_badge : t.connecting_badge;
+    connTitle.textContent = t.action_connect;
+    connHint.textContent = t.hint_disconnected;
+    headerStatusDot.className = 'device-status-dot';
+    txtSubSocket.textContent = t.sub_connect;
+    connHzPill.textContent = '0 Hz';
   } else if (isPaused) {
-    btnStream.className = 'btn btn-stream paused';
-    txtStream.textContent = 'ПАУЗА (ВОЗОБНОВИТЬ)';
-    iconStream.textContent = '⏸';
+    btnMainConnection.className = 'btn-main-connection paused';
+    connBadgeText.textContent = t.paused_badge;
+    connTitle.textContent = t.action_resume;
+    connHint.textContent = t.hint_paused;
+    headerStatusDot.className = 'device-status-dot paused';
+    txtSubSocket.textContent = t.sub_disconnect;
+    connHzPill.textContent = `${currentHz} Hz`;
   } else {
-    btnStream.className = 'btn btn-stream active';
-    txtStream.textContent = 'ПЕРЕДАЧА АКТИВНА';
-    iconStream.textContent = '●';
+    btnMainConnection.className = 'btn-main-connection streaming';
+    connBadgeText.textContent = t.streaming_badge;
+    connTitle.textContent = t.action_pause;
+    connHint.textContent = t.hint_streaming;
+    headerStatusDot.className = 'device-status-dot online';
+    txtSubSocket.textContent = t.sub_disconnect;
+    connHzPill.textContent = `${currentHz} Hz`;
   }
 }
 
+// Calculate client-side transmission Hz
+setInterval(() => {
+  const now = performance.now();
+  const dt = (now - lastHzCalcTime) / 1000;
+  if (dt > 0.4) {
+    currentHz = Math.round((packetCount - lastPacketCount) / dt);
+    lastPacketCount = packetCount;
+    lastHzCalcTime = now;
+    if (isConnected) connHzPill.textContent = `${currentHz} Hz`;
+  }
+}, 500);
+
 function connectWSS() {
+  deliberateDisconnect = false;
+  if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+    return;
+  }
+
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(`${proto}//${location.host}/ws`);
+  const url = `${proto}//${location.host}/ws?device=${encodeURIComponent(deviceModel)}`;
+  ws = new WebSocket(url);
   ws.binaryType = 'arraybuffer';
 
   ws.onopen = () => {
     isConnected = true;
-    updateStreamButtonUI();
+    updateConnectionUI();
+
+    // Report device model immediately via JSON message
+    try {
+      ws.send(JSON.stringify({ type: 'device', model: deviceModel }));
+    } catch (e) {}
+
+    // Synchronize pause state
+    try {
+      ws.send(JSON.stringify({ type: 'pause', isPaused: isPaused }));
+    } catch (e) {}
   };
 
   ws.onmessage = async (e) => {
@@ -481,9 +1311,9 @@ function connectWSS() {
     if (e.data instanceof ArrayBuffer) {
       if (e.data.byteLength === 2) {
         const bytes = new Uint8Array(e.data);
-        if (bytes[0] === 0x50) { // 'P'
+        if (bytes[0] === 0x50) { // 'P' pause packet
           isPaused = (bytes[1] === 1);
-          updateStreamButtonUI();
+          updateConnectionUI();
           return;
         }
       }
@@ -494,7 +1324,7 @@ function connectWSS() {
         const bytes = new Uint8Array(buf);
         if (bytes[0] === 0x50) {
           isPaused = (bytes[1] === 1);
-          updateStreamButtonUI();
+          updateConnectionUI();
           return;
         }
       }
@@ -510,63 +1340,63 @@ function connectWSS() {
       }
       return;
     }
+
     try {
       const msg = JSON.parse(text);
-      if (msg.type === 'pause') {
-        isPaused = !!msg.isPaused;
-        updateStreamButtonUI();
+      if (msg.type === 'pause' && typeof msg.isPaused === 'boolean') {
+        isPaused = msg.isPaused;
+        updateConnectionUI();
       }
     } catch (err) {}
   };
 
   ws.onclose = () => {
     isConnected = false;
-    updateStreamButtonUI();
-    setTimeout(connectWSS, 2000);
+    updateConnectionUI();
+    if (!deliberateDisconnect) {
+      setTimeout(connectWSS, 2000);
+    }
   };
 
   ws.onerror = () => {
     isConnected = false;
-    updateStreamButtonUI();
+    updateConnectionUI();
   };
 }
-connectWSS();
 
-// Client idle heartbeat: keep connection alive even when phone is still on table
-setInterval(() => {
-  if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
-    if (performance.now() - lastMotionTime > 1500) {
-      sendFrame();
-    }
-  }
-}, 1000);
-
-// Background failsafe poll: sync pause state with PC every 400ms
+// Background polling failsafe for pause state synchronization
 setInterval(async () => {
+  if (deliberateDisconnect) return;
   try {
     const res = await fetch('/api/pause?t=' + Date.now(), { cache: 'no-store' });
     if (res.ok) {
       const data = await res.json();
       if (typeof data.isPaused === 'boolean' && data.isPaused !== isPaused) {
         isPaused = data.isPaused;
-        updateStreamButtonUI();
+        updateConnectionUI();
       }
     }
   } catch (e) {}
-}, 400);
+}, 500);
 
-btnStream.addEventListener('click', async () => {
+// Main Connection Button Click: Pause / Resume / Reconnect
+btnMainConnection.addEventListener('click', async () => {
+  if (navigator.vibrate) navigator.vibrate(20);
+
   if (!isConnected) {
     connectWSS();
     return;
   }
+
+  // Ensure sensors are activated if user tapped main button
   if (!sensorsActive && needsPermission) {
     requestSensors();
   }
-  isPaused = !isPaused;
-  updateStreamButtonUI();
 
-  // 1. Dual WebSocket transmission: Binary 2-byte + JSON text
+  isPaused = !isPaused;
+  updateConnectionUI();
+
+  // Dual transmission: Binary 2-byte + JSON text
   if (ws && ws.readyState === WebSocket.OPEN) {
     try {
       const binCtrl = new Uint8Array([0x50, isPaused ? 1 : 0]);
@@ -575,7 +1405,7 @@ btnStream.addEventListener('click', async () => {
     } catch (err) {}
   }
 
-  // 2. HTTP POST fallback for 100% redundancy
+  // Redundant HTTP fallback
   try {
     fetch('/api/pause', {
       method: 'POST',
@@ -585,22 +1415,50 @@ btnStream.addEventListener('click', async () => {
   } catch (err) {}
 });
 
+// Secondary Action: Disconnect / Force Reconnect Toggle
+btnToggleSocket.addEventListener('click', () => {
+  if (navigator.vibrate) navigator.vibrate(20);
+  if (isConnected) {
+    deliberateDisconnect = true;
+    if (ws) ws.close();
+  } else {
+    deliberateDisconnect = false;
+    connectWSS();
+  }
+});
+
+// Start initial WebSocket connection
+connectWSS();
+
 // ─────────────────────────────────────────────────────────────────────────────
-// 3. Sensor Streaming (Strict Horizontal Screen-Up SO(3) Frame)
+// 7. Sensor Capture & High-Performance Telemetry Streaming
 // ─────────────────────────────────────────────────────────────────────────────
+const G_CONST = 9.80665;
+const DEG2RAD_HALF = Math.PI / 360;
+
+const binBuffer = new ArrayBuffer(46);
+const binView   = new DataView(binBuffer);
+
+let curAlpha = 0, curBeta = 0, curGamma = 0;
+let zeroYawOffset = 0;
 let outQx = 0, outQy = 0, outQz = 0, outQw = 1;
 let dsuPitch = 0, dsuYaw = 0, dsuRoll = 0;
 let dsuAccX = 0, dsuAccY = 0, dsuAccZ = 0;
 let lastMotionTime = 0;
 
+const bubble    = document.getElementById('gyro-bubble');
+const yawGroup  = document.getElementById('gyro-yaw-group');
+const hudStatus = document.getElementById('hud-level-status');
+
 function onOrientation(e) {
   if (e.alpha !== null || e.beta !== null || e.gamma !== null) {
-    onFirstSensorData();
+    onSensorDataReceived();
   }
   curAlpha = e.alpha || 0;
   curBeta  = e.beta  || 0;
   curGamma = e.gamma || 0;
 
+  // Convert device orientation to unit quaternion
   const a = ((curAlpha - zeroYawOffset + 360) % 360) * DEG2RAD_HALF;
   const b = curBeta  * DEG2RAD_HALF;
   const c = curGamma * DEG2RAD_HALF;
@@ -609,32 +1467,55 @@ function onOrientation(e) {
   const cB = Math.cos(b), sB = Math.sin(b);
   const cC = Math.cos(c), sC = Math.sin(c);
 
-  const qw = cA * cB * cC + sA * sB * sC;
-  const qx = cA * sB * cC + sA * cB * sC;
-  const qy = -sA * sB * cC + cA * cB * sC;
-  const qz = sA * cB * cC - cA * sB * sC;
-
-  // Direct device orientation quaternion
-  outQx = qx;
-  outQy = qy;
-  outQz = qz;
-  outQw = qw;
+  outQw = cA * cB * cC + sA * sB * sC;
+  outQx = cA * sB * cC + sA * cB * sC;
+  outQy = -sA * sB * cC + cA * cB * sC;
+  outQz = sA * cB * cC - cA * sB * sC;
 
   if (outQw < 0) {
     outQx = -outQx; outQy = -outQy; outQz = -outQz; outQw = -outQw;
   }
 
-  if (performance.now() - lastMotionTime > 200) sendFrame();
+  // Update Visual HUD Level (60 FPS SVG animation)
+  updateHUDLevel(curBeta, curGamma, curAlpha);
+
+  if (performance.now() - lastMotionTime > 200) {
+    sendFrame();
+  }
 }
 
-// Single source of truth for reading physical device sensor channels.
-// W3C spec: beta = rotation around X, gamma = rotation around Y, alpha = rotation around Z.
+function updateHUDLevel(pitch, roll, yaw) {
+  if (!bubble || !yawGroup) return;
+
+  const maxR = 40.0;
+  // Pitch: tilt forward (pitch > 0) -> bubble moves up (-Y)
+  const offsetY = Math.max(-maxR, Math.min(maxR, -pitch * 0.9));
+  // Roll: tilt right (roll > 0) -> bubble moves right (+X)
+  const offsetX = Math.max(-maxR, Math.min(maxR, roll * 0.9));
+
+  bubble.setAttribute('cx', (60 + offsetX).toFixed(2));
+  bubble.setAttribute('cy', (60 + offsetY).toFixed(2));
+
+  // Snap to green level state if within 3.0 degrees
+  const isLevel = Math.abs(pitch) <= 3.0 && Math.abs(roll) <= 3.0;
+  bubble.classList.toggle('level', isLevel);
+  const levelZone = document.getElementById('hud-level-zone');
+  if (levelZone) levelZone.classList.toggle('level', isLevel);
+  if (hudStatus) {
+    hudStatus.classList.toggle('level', isLevel);
+  }
+
+  // Rotate yaw needle around center (60, 60)
+  const normalizedYaw = (yaw - zeroYawOffset + 360) % 360;
+  yawGroup.setAttribute('transform', `rotate(${normalizedYaw.toFixed(1)} 60 60)`);
+}
+
 function readRawGyro(e) {
   if (!e.rotationRate) return { x: 0, y: 0, z: 0 };
   return {
-    x: e.rotationRate.beta  || 0, // X: rotation around physical X axis (forward/back nod)
-    y: e.rotationRate.gamma || 0, // Y: rotation around physical Y axis (left/right tilt)
-    z: e.rotationRate.alpha || 0  // Z: rotation around physical Z axis (spin on table)
+    x: e.rotationRate.beta  || 0,
+    y: e.rotationRate.gamma || 0,
+    z: e.rotationRate.alpha || 0
   };
 }
 
@@ -650,38 +1531,18 @@ function readRawAccel(e) {
 
 function onMotion(e) {
   lastMotionTime = performance.now();
-  onFirstSensorData();
+  onSensorDataReceived();
 
-  rawGyr = readRawGyro(e);
-  rawAcc = readRawAccel(e);
+  const gyr = readRawGyro(e);
+  const acc = readRawAccel(e);
 
-  updateZUPT(rawAcc.x, rawAcc.y, rawAcc.z);
+  dsuPitch = gyr.x;
+  dsuYaw   = gyr.y;
+  dsuRoll  = gyr.z;
 
-  if (isSamplingCalib) {
-    calibAccSamples.push({ ...rawAcc });
-    calibGyrSamples.push({ ...rawGyr });
-    return;
-  }
-
-  // Send 100% pure raw sensor frame in physical device coordinates (X, Y, Z).
-  // No shifting baseline, no deadband clipping on phone — PC calibration is single source of truth!
-  dsuPitch = rawGyr.x;
-  dsuYaw   = rawGyr.y;
-  dsuRoll  = rawGyr.z;
-
-  // Raw device acceleration (X, Y, Z):
-  dsuAccX = rawAcc.x;
-  dsuAccY = rawAcc.y;
-  dsuAccZ = rawAcc.z;
-
-  if (dbgRawX) {
-    dbgRawX.textContent = rawGyr.x.toFixed(1);
-    dbgRawY.textContent = rawGyr.y.toFixed(1);
-    dbgRawZ.textContent = rawGyr.z.toFixed(1);
-    dbgDsuP.textContent = dsuPitch.toFixed(1);
-    dbgDsuY.textContent = dsuYaw.toFixed(1);
-    dbgDsuR.textContent = dsuRoll.toFixed(1);
-  }
+  dsuAccX = acc.x;
+  dsuAccY = acc.y;
+  dsuAccZ = acc.z;
 
   sendFrame();
 }
@@ -690,9 +1551,9 @@ function sendFrame() {
   if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) return;
 
   binView.setUint32(0,  (Date.now() & 0xFFFFFFFF) >>> 0, true);
-  binView.setFloat32(4,  dsuPitch, true); // Pitch (RotX) -> offset 68
-  binView.setFloat32(8,  dsuYaw,   true); // Yaw   (RotY) -> offset 72
-  binView.setFloat32(12, dsuRoll,  true); // Roll  (RotZ) -> offset 76
+  binView.setFloat32(4,  dsuPitch, true); // Pitch (RotX)
+  binView.setFloat32(8,  dsuYaw,   true); // Yaw   (RotY)
+  binView.setFloat32(12, dsuRoll,  true); // Roll  (RotZ)
   binView.setFloat32(16, outQx,    true);
   binView.setFloat32(20, outQy,    true);
   binView.setFloat32(24, outQz,    true);
@@ -701,89 +1562,42 @@ function sendFrame() {
   binView.setFloat32(36, dsuAccY,  true);
   binView.setFloat32(40, dsuAccZ,  true);
   binView.setUint16(44,  isPaused ? 1 : 0, true);
-  ws.send(binBuffer);
 
-  webLogFrames.push({
-    ts: (Date.now() & 0xFFFFFFFF) >>> 0,
-    p: dsuPitch,
-    y: dsuYaw,
-    r: dsuRoll,
-    ax: dsuAccX,
-    ay: dsuAccY,
-    az: dsuAccZ,
-    rawX: (typeof rawGyr !== 'undefined' && rawGyr) ? rawGyr.x : 0,
-    rawY: (typeof rawGyr !== 'undefined' && rawGyr) ? rawGyr.y : 0,
-    rawZ: (typeof rawGyr !== 'undefined' && rawGyr) ? rawGyr.z : 0
-  });
-  if (webLogFrames.length > 20) webLogFrames.shift();
+  ws.send(binBuffer);
+  packetCount++;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// 4. Auto-Calibration (Prompt: Screen UP, Forward to Camera)
-// ─────────────────────────────────────────────────────────────────────────────
-btnCalib.addEventListener('click', () => {
-  modalCalib.classList.add('open');
-  calibProgress.style.width = '0%';
-  btnStartCalib.disabled = false;
-  btnStartCalib.textContent = 'Зафиксировать (2 сек)';
-  modalMsg.innerHTML = 'Положите телефон <strong>экраном вверх</strong> и <strong>вперед к камере</strong>';
-});
-
-btnCloseModal.addEventListener('click', () => {
-  isSamplingCalib = false;
-  modalCalib.classList.remove('open');
-});
-
-btnStartCalib.addEventListener('click', () => {
-  isSamplingCalib = true;
-  calibAccSamples = [];
-  calibGyrSamples = [];
-  btnStartCalib.disabled = true;
-  btnStartCalib.textContent = 'Идет калибровка...';
-
-  const startTime = performance.now();
-  const DURATION = 2000;
-
-  const timer = setInterval(() => {
-    const elapsed = performance.now() - startTime;
-    const p = Math.min(1, elapsed / DURATION);
-    calibProgress.style.width = (p * 100).toFixed(0) + '%';
-
-    if (p >= 1) {
-      clearInterval(timer);
-      isSamplingCalib = false;
-
-      if (calibGyrSamples.length > 10) {
-        let gx = 0, gy = 0, gz = 0;
-        for (const s of calibGyrSamples) { gx += s.x; gy += s.y; gz += s.z; }
-        biasX = gx / calibGyrSamples.length;
-        biasY = gy / calibGyrSamples.length;
-        biasZ = gz / calibGyrSamples.length;
-        localStorage.setItem('gb_bias_up', JSON.stringify({ x: biasX, y: biasY, z: biasZ }));
-      }
-
-      zeroYawOffset = curAlpha; // Tare heading
-      modalMsg.innerHTML = '<span style="color:#10b981;">✓ Калибровка завершена!</span>';
-      setTimeout(() => {
-        modalCalib.classList.remove('open');
-      }, 600);
+// Client idle heartbeat: keep connection alive even when phone is still on table
+setInterval(() => {
+  if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
+    if (performance.now() - lastMotionTime > 1200) {
+      sendFrame();
     }
-  }, 50);
+  }
+}, 1000);
+
+// Tare Heading (Recenter Button)
+document.getElementById('btn-tare').addEventListener('click', () => {
+  if (navigator.vibrate) navigator.vibrate(25);
+  zeroYawOffset = curAlpha;
+  updateHUDLevel(curBeta, curGamma, curAlpha);
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 5. Permission Request Button & Sensor Initialization
+// 8. Sensor Permission Warning & Activation Handler
 // ─────────────────────────────────────────────────────────────────────────────
 const needsPermission = typeof DeviceMotionEvent !== 'undefined' &&
                         typeof DeviceMotionEvent.requestPermission === 'function';
 let sensorsActive = false;
+const sensorWarningCard = document.getElementById('sensor-warning-card');
+const sensorHudContainer= document.getElementById('sensor-hud-container');
+const btnGrantSensors   = document.getElementById('btn-grant-sensors');
 
-function onFirstSensorData() {
+function onSensorDataReceived() {
   if (!sensorsActive) {
     sensorsActive = true;
-    btnPerm.classList.remove('needs-permission');
-    btnPerm.classList.add('granted');
-    txtPerm.textContent = 'Датчики работают ✓';
+    sensorWarningCard.style.display = 'none';
+    sensorHudContainer.style.display = 'flex';
   }
 }
 
@@ -792,12 +1606,17 @@ async function requestSensors() {
     try {
       const resp = await DeviceMotionEvent.requestPermission();
       if (resp === 'granted') {
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          await DeviceOrientationEvent.requestPermission().catch(() => {});
+        }
         initSensors();
       } else {
-        txtPerm.textContent = 'Доступ запрещен';
+        document.getElementById('txt-warn-desc').textContent = I18N[currentLang].warn_denied;
+        btnGrantSensors.disabled = true;
+        btnGrantSensors.style.opacity = '0.5';
       }
     } catch (err) {
-      txtPerm.textContent = 'Ошибка доступа';
+      document.getElementById('txt-warn-desc').textContent = I18N[currentLang].warn_denied;
     }
   } else {
     initSensors();
@@ -807,21 +1626,29 @@ async function requestSensors() {
 function initSensors() {
   window.addEventListener('deviceorientation', onOrientation, true);
   window.addEventListener('devicemotion', onMotion, true);
-  if ('wakeLock' in navigator) {
-    navigator.wakeLock.request('screen').catch(() => {});
-  }
 }
 
-btnPerm.addEventListener('click', () => {
+btnGrantSensors.addEventListener('click', () => {
   requestSensors();
 });
 
+// Automatic Initial Sensor Startup or Permission Prompt
 if (needsPermission) {
-  btnPerm.classList.add('needs-permission');
-  txtPerm.textContent = 'ВКЛЮЧИТЬ ДАТЧИКИ (НАЖМИТЕ)';
+  sensorWarningCard.style.display = 'flex';
+  sensorHudContainer.style.display = 'none';
 } else {
   initSensors();
+  // Watchdog: If no sensor events arrive within 700ms, display warning
+  setTimeout(() => {
+    if (!sensorsActive) {
+      sensorWarningCard.style.display = 'flex';
+      sensorHudContainer.style.display = 'none';
+    }
+  }, 700);
 }
+
+// Initial localization
+setLanguage(currentLang);
 
 </script>
 </body>

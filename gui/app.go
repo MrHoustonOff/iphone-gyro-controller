@@ -144,6 +144,7 @@ type App struct {
 	curQy       atomic.Uint64
 	curQz       atomic.Uint64
 	curQw       atomic.Uint64
+	deviceName  atomic.Value
 	connectedAt time.Time
 	clientAddr  string
 	primaryIP   string
@@ -465,6 +466,7 @@ func NewApp() *App {
 		currentTheme: "dark",
 		currentLang:  "ru",
 	}
+	app.deviceName.Store("Controller")
 
 	// Initialize 4 empty slots with default portrait matrix
 	for i := range app.profiles {
@@ -826,6 +828,7 @@ func (a *App) startup(ctx context.Context) {
 			if c <= 0 {
 				a.hasClient.Store(false)
 				a.connectedAt = time.Time{}
+				a.deviceName.Store("Controller")
 				a.emitStateChange()
 				a.broadcastLiveDebugJSON(map[string]any{
 					"type":      "device_status",
@@ -833,6 +836,13 @@ func (a *App) startup(ctx context.Context) {
 				})
 			}
 		})
+	}
+
+	srv.OnClientDevice = func(device string) {
+		if device != "" {
+			a.deviceName.Store(device)
+			a.emitStateChange()
+		}
 	}
 
 	srv.OnClientPause = func(isPaused bool) {
@@ -1135,10 +1145,17 @@ func (a *App) GetState() AppState {
 		a.matrixMu.RUnlock()
 	}
 
+	devName := "Controller"
+	if v := a.deviceName.Load(); v != nil {
+		if s, ok := v.(string); ok && s != "" {
+			devName = s
+		}
+	}
+
 	return AppState{
 		Status:        status,
 		IsPaused:      a.isPaused.Load(),
-		DeviceName:    "Controller",
+		DeviceName:    devName,
 		Hz:            hz,
 		PingMs:        3,
 		ConnectedTime: connectedDuration,
