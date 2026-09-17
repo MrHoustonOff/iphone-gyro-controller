@@ -30,6 +30,10 @@ export function GetTranslations(arg1) {
   return window['go']['main']['App']['GetTranslations'](arg1);
 }
 
+export function OpenLiveDebugWindow() {
+  return window['go']['main']['App']['OpenLiveDebugWindow']();
+}
+
 export function PreviewMatrix(arg1) {
   return window['go']['main']['App']['PreviewMatrix'](arg1);
 }

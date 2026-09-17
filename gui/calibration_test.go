@@ -1,7 +1,9 @@
 package main
 
 import (
+	"io/fs"
 	"math"
+	"strings"
 	"testing"
 )
 
@@ -237,3 +239,36 @@ func TestMadgwickAHRS_EulerAngleSigns(t *testing.T) {
 		t.Fatalf("Expected yaw ~+30.0, got p=%f r=%f y=%f", p, r, y)
 	}
 }
+
+func TestLiveDebug_AssetsAndBroadcast(t *testing.T) {
+	// Verify embedded assets contain livedebug.html and required static assets
+	subFS, err := fs.Sub(assets, "frontend/src")
+	if err != nil {
+		t.Fatalf("fs.Sub failed: %v", err)
+	}
+
+	htmlData, err := fs.ReadFile(subFS, "livedebug.html")
+	if err != nil {
+		t.Fatalf("failed to read livedebug.html from embedded FS: %v", err)
+	}
+	if len(htmlData) == 0 {
+		t.Fatal("livedebug.html is empty")
+	}
+
+	// Verify crucial elements in livedebug.html
+	content := string(htmlData)
+	if !strings.Contains(content, "livedebug-canvas") {
+		t.Fatal("livedebug.html missing livedebug-canvas")
+	}
+	if !strings.Contains(content, "eco-toggle") {
+		t.Fatal("livedebug.html missing eco-toggle")
+	}
+	if !strings.Contains(content, "/livedebug/ws") {
+		t.Fatal("livedebug.html missing /livedebug/ws endpoint connection")
+	}
+
+	// Verify broadcast with zero clients does not panic
+	app := &App{}
+	app.broadcastLiveDebug(1, 0, 0, 0)
+}
+

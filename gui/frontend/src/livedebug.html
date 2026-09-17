@@ -316,8 +316,8 @@
   </div>
 
   <!-- Scripts -->
-  <script src="assets/three.min.js"></script>
-  <script src="assets/GLTFLoader.js"></script>
+  <script src="/assets/three.min.js"></script>
+  <script src="/assets/GLTFLoader.js"></script>
 
   <script>
     (function() {
@@ -326,6 +326,7 @@
       const ecoToggle = document.getElementById('eco-toggle');
       const fpsCounter = document.getElementById('fps-counter');
       const btnRecenter = document.getElementById('btn-recenter');
+      const statusDot = document.getElementById('status-dot');
 
       // ── Three.js Setup ──
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -430,7 +431,7 @@
       if (window.THREE.GLTFLoader) {
         const loader = new THREE.GLTFLoader();
         loader.load(
-          'assets/models/gamepad.glb',
+          '/assets/models/gamepad.glb',
           (gltf) => {
             const raw = gltf.scene;
             raw.rotation.y = -Math.PI * 0.5;
@@ -513,6 +514,8 @@
         isRendering = true;
         canvas.classList.remove('blurred');
         ecoOverlay.classList.remove('visible');
+        currentQuat.copy(liveQuat);
+        gamepadGroup.quaternion.copy(currentQuat);
         lastFpsTime = performance.now();
         frameCount = 0;
         animId = requestAnimationFrame(renderFrame);
@@ -588,10 +591,17 @@
         currentQuat.set(0, 0, 0, 1);
         gamepadGroup.quaternion.set(0, 0, 0, 1);
 
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          try {
+            ws.send(JSON.stringify({ action: 'recenter' }));
+          } catch (e) {}
+        }
+        fetch('/livedebug/recenter', { method: 'POST' }).catch(() => {});
+
         if (window.opener?.go?.main?.App?.ResetAHRS) {
-          window.opener.go.main.App.ResetAHRS().catch(() => {});
+          try { window.opener.go.main.App.ResetAHRS(); } catch (e) {}
         } else if (window.go?.main?.App?.ResetAHRS) {
-          window.go.main.App.ResetAHRS().catch(() => {});
+          try { window.go.main.App.ResetAHRS(); } catch (e) {}
         }
       }
 
@@ -604,7 +614,80 @@
         }
       });
 
-      // ── External Data Injection (Parent Window & Runtime) ──
+      // ── WebSocket Real-time Quaternion Stream ──
+      let ws = null;
+      let reconnectTimer = null;
+
+      function updateStatus(connected) {
+        if (!statusDot) return;
+        if (connected) {
+          statusDot.style.background = 'var(--success)';
+          statusDot.style.boxShadow = '0 0 8px var(--success)';
+        } else {
+          statusDot.style.background = '#ff453a';
+          statusDot.style.boxShadow = '0 0 8px #ff453a';
+        }
+      }
+
+      function connectWebSocket() {
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer);
+          reconnectTimer = null;
+        }
+
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = location.host || '127.0.0.1:8080';
+        const url = `${protocol}//${host}/livedebug/ws`;
+
+        try {
+          ws = new WebSocket(url);
+        } catch (err) {
+          updateStatus(false);
+          scheduleReconnect();
+          return;
+        }
+
+        ws.onopen = () => {
+          updateStatus(true);
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            const q0 = Number(data.q0);
+            const q1 = Number(data.q1);
+            const q2 = Number(data.q2);
+            const q3 = Number(data.q3);
+
+            if (!isNaN(q0) && !isNaN(q1) && !isNaN(q2) && !isNaN(q3) &&
+                (q0 !== 0 || q1 !== 0 || q2 !== 0 || q3 !== 0)) {
+              // Three.js coordinates: -q1 (pitch), -q2 (yaw), q3 (roll), q0 (w)
+              liveQuat.set(-q1, -q2, q3, q0);
+              liveQuat.normalize();
+            }
+          } catch (e) {}
+        };
+
+        ws.onclose = () => {
+          updateStatus(false);
+          scheduleReconnect();
+        };
+
+        ws.onerror = () => {
+          updateStatus(false);
+          try { ws.close(); } catch (e) {}
+        };
+      }
+
+      function scheduleReconnect() {
+        if (!reconnectTimer) {
+          reconnectTimer = setTimeout(connectWebSocket, 1500);
+        }
+      }
+
+      connectWebSocket();
+
+      // ── External Data Injection Fallback (Parent Window & Runtime) ──
       window.updateFromState = function(state) {
         if (!state) return;
         const q0 = Number(state.ahrsQ0);
@@ -620,7 +703,6 @@
         }
       };
 
-      // Listen via parent runtime or local runtime
       if (window.opener && window.opener.runtime && window.opener.runtime.EventsOn) {
         window.opener.runtime.EventsOn('state:change', window.updateFromState);
       } else if (window.runtime && window.runtime.EventsOn) {

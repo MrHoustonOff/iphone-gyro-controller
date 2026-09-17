@@ -5,7 +5,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"math"
+	"mime"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,8 +23,13 @@ import (
 	"gyrobridge/pkg/server"
 	"gyrobridge/web"
 
+	"github.com/gorilla/websocket"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
+
+func init() {
+	_ = mime.AddExtensionType(".glb", "model/gltf-binary")
+}
 
 const (
 	HTTPPort  = 8080
@@ -176,6 +184,9 @@ type App struct {
 	calLogMu     sync.Mutex
 	calStepLogs  map[int]StepCaptureLog
 	calValResult ValidationResult
+	// LiveDebug standalone window WebSocket clients
+	liveDebugMu      sync.RWMutex
+	liveDebugClients map[*websocket.Conn]struct{}
 }
 
 // StepCaptureLog stores the full recorded session of a calibration gesture step
@@ -632,6 +643,7 @@ func (a *App) startup(ctx context.Context) {
 			a.curAhrsQ1.Store(math.Float64bits(float64(q1)))
 			a.curAhrsQ2.Store(math.Float64bits(float64(q2)))
 			a.curAhrsQ3.Store(math.Float64bits(float64(q3)))
+			a.broadcastLiveDebug(q0, q1, q2, q3)
 		}
 
 		if a.isPaused.Load() {
@@ -692,6 +704,88 @@ func (a *App) startup(ctx context.Context) {
 
 	srv.GetIsPaused = a.isPaused.Load
 
+	// LiveDebug standalone 3D window routes and WebSocket streamer
+	subFS, err := fs.Sub(assets, "frontend/src")
+	if err == nil {
+		liveUpgrader := websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool { return true },
+		}
+
+		registerLiveDebug := func(mux *http.ServeMux) {
+			mux.Handle("/assets/", http.FileServer(http.FS(subFS)))
+			mux.Handle("/livedebug/assets/", http.StripPrefix("/livedebug", http.FileServer(http.FS(subFS))))
+			mux.HandleFunc("/livedebug", func(w http.ResponseWriter, r *http.Request) {
+				data, err := fs.ReadFile(subFS, "livedebug.html")
+				if err != nil {
+					http.Error(w, "Not found", http.StatusNotFound)
+					return
+				}
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+				w.WriteHeader(http.StatusOK)
+				w.Write(data)
+			})
+			mux.HandleFunc("/livedebug/", func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/livedebug/" {
+					data, err := fs.ReadFile(subFS, "livedebug.html")
+					if err != nil {
+						http.Error(w, "Not found", http.StatusNotFound)
+						return
+					}
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+					w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+					w.WriteHeader(http.StatusOK)
+					w.Write(data)
+					return
+				}
+				http.NotFound(w, r)
+			})
+			mux.HandleFunc("/livedebug/recenter", func(w http.ResponseWriter, r *http.Request) {
+				a.ResetAHRS()
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"status":"ok"}`))
+			})
+			mux.HandleFunc("/livedebug/ws", func(w http.ResponseWriter, r *http.Request) {
+				conn, err := liveUpgrader.Upgrade(w, r, nil)
+				if err != nil {
+					return
+				}
+				a.liveDebugMu.Lock()
+				if a.liveDebugClients == nil {
+					a.liveDebugClients = make(map[*websocket.Conn]struct{})
+				}
+				a.liveDebugClients[conn] = struct{}{}
+				a.liveDebugMu.Unlock()
+
+				go func(c *websocket.Conn) {
+					defer func() {
+						a.liveDebugMu.Lock()
+						delete(a.liveDebugClients, c)
+						a.liveDebugMu.Unlock()
+						c.Close()
+					}()
+
+					for {
+						_, msgBytes, err := c.ReadMessage()
+						if err != nil {
+							break
+						}
+						var req map[string]string
+						if json.Unmarshal(msgBytes, &req) == nil {
+							if req["action"] == "recenter" {
+								a.ResetAHRS()
+							}
+						}
+					}
+				}(conn)
+			})
+		}
+
+		registerLiveDebug(srv.HTTPMux)
+		registerLiveDebug(srv.HTTPSMux)
+	}
+
 	if err := srv.Start(); err != nil {
 		fmt.Printf("[-] Server start error: %v\n", err)
 	}
@@ -717,6 +811,12 @@ func (a *App) shutdown(ctx context.Context) {
 	if a.dsuSrv != nil {
 		a.dsuSrv.Stop()
 	}
+	a.liveDebugMu.Lock()
+	for conn := range a.liveDebugClients {
+		conn.Close()
+	}
+	a.liveDebugClients = make(map[*websocket.Conn]struct{})
+	a.liveDebugMu.Unlock()
 }
 
 func (a *App) emitStateChange() {
@@ -950,6 +1050,52 @@ func (a *App) ClearPreview() {
 func (a *App) ResetAHRS() {
 	if a.ahrs != nil {
 		a.ahrs.Reset()
+		a.broadcastLiveDebug(1, 0, 0, 0)
+	}
+}
+
+type liveDebugMsg struct {
+	Q0 float32 `json:"q0"`
+	Q1 float32 `json:"q1"`
+	Q2 float32 `json:"q2"`
+	Q3 float32 `json:"q3"`
+}
+
+func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32) {
+	a.liveDebugMu.RLock()
+	clientCount := len(a.liveDebugClients)
+	a.liveDebugMu.RUnlock()
+	if clientCount == 0 {
+		return
+	}
+
+	msg := liveDebugMsg{
+		Q0: q0,
+		Q1: q1,
+		Q2: q2,
+		Q3: q3,
+	}
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return
+	}
+
+	a.liveDebugMu.Lock()
+	defer a.liveDebugMu.Unlock()
+	for conn := range a.liveDebugClients {
+		_ = conn.SetWriteDeadline(time.Now().Add(50 * time.Millisecond))
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			conn.Close()
+			delete(a.liveDebugClients, conn)
+		}
+	}
+}
+
+// OpenLiveDebugWindow opens the standalone 3D Live Debug window in the user's default browser.
+func (a *App) OpenLiveDebugWindow() {
+	url := fmt.Sprintf("http://127.0.0.1:%d/livedebug", HTTPPort)
+	if a.ctx != nil {
+		wailsRuntime.BrowserOpenURL(a.ctx, url)
 	}
 }
 

@@ -16,6 +16,8 @@ export function GetState():Promise<main.AppState>;
 
 export function GetTranslations(arg1:string):Promise<string>;
 
+export function OpenLiveDebugWindow():Promise<void>;
+
 export function PreviewMatrix(arg1:any):Promise<void>;
 
 export function ResetAHRS():Promise<void>;

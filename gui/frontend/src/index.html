@@ -431,7 +431,7 @@
 
   <!-- Apple Style Footer Bar -->
   <footer class="app-footer">
-    <span class="footer-link" id="link-live-debug" data-i18n="nav.live_debug" style="display: none;">Live Debug →</span>
+    <span class="footer-link" id="link-live-debug" data-i18n="nav.live_debug" style="display: none;">Live Debug Window →</span>
   </footer>
 
   <!-- Subtle Notification Toast -->
@@ -2679,12 +2679,13 @@
       setupCopyChip('chip-url', 'url-copy-badge', () => this.currentUrl);
 
       // Open separate 3D LiveDebug window
-      document.getElementById('link-live-debug')?.addEventListener('click', () => {
-        if (window._liveDebugWin && !window._liveDebugWin.closed) {
-          window._liveDebugWin.focus();
-          return;
+      document.getElementById('link-live-debug')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (window.go?.main?.App?.OpenLiveDebugWindow) {
+          window.go.main.App.OpenLiveDebugWindow();
+        } else {
+          window.open('http://127.0.0.1:8080/livedebug', '_blank');
         }
-        window._liveDebugWin = window.open('livedebug.html', 'GyroBridgeLiveDebug', 'width=880,height=660,resizable=yes');
       });
 
 
