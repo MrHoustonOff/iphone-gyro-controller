@@ -1495,7 +1495,7 @@ func (a *App) StopCapture(step int) CaptureResult {
 			Success:     true,
 			AxisIdx:     -1,
 			Sign:        1.0,
-			AxisName:    fmt.Sprintf("Bias: %.2f, %.2f, %.2f", bX, bY, bZ),
+			AxisName:    a.getI18nMsg("calibration.step0_result_success"),
 			Confidence:  1.0,
 			SampleCount: len(samples),
 			PeakSpeed:   peakSpeed,

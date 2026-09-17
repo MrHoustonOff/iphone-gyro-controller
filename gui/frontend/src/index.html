@@ -991,10 +991,14 @@
   // ── Initial Setup Wizard Manager ───────────────────────────────────────────
   const SetupWizard = {
     isOpen: false,
+    initialized: false,
     currentScreen: 'select', // 'select' | 'android' | 'ios'
     iosStep: 1,
 
     init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
       // Platform select buttons
       document.getElementById('btn-platform-ios')?.addEventListener('click', () => {
         this.showScreen('ios');
@@ -1217,7 +1221,12 @@
       }
     },
 
+    initialized: false,
+
     init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
       // Clicking on profile tabs
       document.querySelectorAll('.profile-tab').forEach(tab => {
         tab.addEventListener('click', async () => {
@@ -1632,6 +1641,8 @@
   const CalibrationWizard = {
     targetSlot: 0,
     isOpen: false,
+    initialized: false,
+    isTransitioning: false,
     currentScreen: 'slots', // 'slots' | 'capture' | 'confirm' | 'manual' | 'save'
     captureStep: 0,         // 0=rest, 1=pitch, 2=roll
     capturedVectors: [],    // [[ux, uy, uz], [rx, ry, rz], [fx, fy, fz]]
@@ -2202,6 +2213,10 @@
     },
 
     nextStep() {
+      if (this.isTransitioning) return;
+      this.isTransitioning = true;
+      setTimeout(() => { this.isTransitioning = false; }, 300);
+
       if (this.captureStep < 2) {
         this.captureStep++;
         this._updateStepUI();
@@ -2301,6 +2316,9 @@
     },
 
     init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
       // Close button
       document.getElementById('cal-close-btn')?.addEventListener('click', () => this.close());
 
@@ -2321,6 +2339,7 @@
 
       // Capture back: returns to previous step or closes wizard if at step 0
       document.getElementById('cal-capture-back')?.addEventListener('click', () => {
+        if (this.isTransitioning) return;
         this._resetCaptureTimer();
         if (this.captureStep > 0) {
           this.captureStep--;
@@ -2332,12 +2351,9 @@
 
       // Capture forward: navigates to next step or confirm screen
       document.getElementById('cal-capture-forward')?.addEventListener('click', () => {
-        if (this.captureStep === 0) {
-          this.captureStep = 1;
-          this._updateStepUI();
-        } else if (this.captureStep === 1) {
-          this.captureStep = 2;
-          this._updateStepUI();
+        if (this.isTransitioning) return;
+        if (this.captureStep < 2) {
+          this.nextStep();
         } else {
           if (!this.builtMatrix && this.capturedVectors[1] && this.capturedVectors[2]) {
             if (window.go?.main?.App) {
@@ -2686,13 +2702,6 @@
       if (this.initialized) return;
       this.initialized = true;
 
-      // Initialize Setup Wizard
-      SetupWizard.init();
-
-      // Initialize Calibration Wizard & Profile Manager
-      CalibrationWizard.init();
-      ProfileManager.init();
-
       // Pause button action with debounce guard
       let pauseBusy = false;
       document.getElementById('btn-pause-resume')?.addEventListener('click', async () => {
@@ -2759,6 +2768,7 @@
       if (fallbackTimer) clearTimeout(fallbackTimer);
       I18n.init();
       ProfileManager.init();
+      SetupWizard.init();
       CalibrationWizard.init();
       AppState.init();
     };
