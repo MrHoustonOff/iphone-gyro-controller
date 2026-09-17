@@ -822,16 +822,17 @@
       gap: 4px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       position: relative;
+      overflow: hidden;
       cursor: default;
-      transition: border-color var(--transition-fast), background-color var(--transition-theme);
+      transition: border-color var(--transition-fast), background-color var(--transition-theme), box-shadow var(--transition-fast);
     }
 
     .stat-card:hover {
-      border-color: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.16);
     }
 
     [data-theme="light"] .stat-card:hover {
-      border-color: rgba(0, 0, 0, 0.12);
+      border-color: rgba(0, 0, 0, 0.14);
     }
 
     .stat-card.full-width {
@@ -862,106 +863,49 @@
       text-overflow: ellipsis;
     }
 
-    /* ── Apple HIG 2s Hold-to-Reveal Info Badge ────────────────────────────── */
-    .stat-info-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 15px;
-      height: 15px;
-      padding: 0;
-      margin: 0;
+    .stat-card.is-filling {
+      border-color: rgba(10, 132, 255, 0.45);
+      box-shadow: 0 2px 14px rgba(10, 132, 255, 0.16), 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .stat-card.is-filled {
+      border-color: rgba(10, 132, 255, 0.7);
+      box-shadow: 0 2px 20px rgba(10, 132, 255, 0.28), 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .stat-card-progress {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2.5px;
       background: transparent;
-      border: none;
-      border-radius: 50%;
-      color: var(--text-secondary);
-      cursor: help;
-      outline: none;
-      flex-shrink: 0;
-      position: relative;
-      user-select: none;
-      -webkit-user-select: none;
-      transition: color var(--transition-fast), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      z-index: 10;
+      overflow: hidden;
     }
 
-    .stat-info-btn:hover {
-      color: var(--apple-blue);
-      transform: scale(1.1);
-    }
-
-    .stat-info-svg {
-      width: 14px;
-      height: 14px;
-      display: block;
-      overflow: visible;
-    }
-
-    .stat-info-bg {
-      fill: var(--apple-blue);
+    .stat-card-progress-bar {
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, #0A84FF 0%, #5E5CE6 50%, #BF5AF2 100%);
+      box-shadow: 0 0 10px rgba(10, 132, 255, 0.8), 0 0 4px #5E5CE6;
+      transform: scaleX(0);
+      transform-origin: left;
       opacity: 0;
-      transform: scale(0.6);
-      transform-origin: 12px 12px;
-      transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: none;
     }
 
-    .stat-info-track {
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 1.8;
-      opacity: 0.28;
-      transition: stroke var(--transition-theme), opacity var(--transition-fast);
-    }
-
-    .stat-info-btn:hover .stat-info-track {
-      opacity: 0.42;
-    }
-
-    .stat-info-progress {
-      fill: none;
-      stroke: var(--apple-blue);
-      stroke-width: 2.2;
-      stroke-linecap: round;
-      stroke-dasharray: 59.69;
-      stroke-dashoffset: 59.69;
-      transition: stroke-dashoffset 0.25s ease-out;
+    .stat-card.is-filling .stat-card-progress-bar {
       opacity: 1;
+      transform: scaleX(1);
+      transition: transform 1000ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease;
     }
 
-    /* Active 2-second fill animation while user is holding hover on (?) */
-    .stat-info-btn.is-filling .stat-info-progress {
-      stroke-dashoffset: 0;
-      transition: stroke-dashoffset 2000ms linear;
-    }
-
-    /* Completed state after 2 seconds */
-    .stat-info-btn.is-filled {
-      color: var(--apple-blue);
-      transform: scale(1.18);
-    }
-
-    .stat-info-btn.is-filled .stat-info-bg {
-      opacity: 0.16;
-      transform: scale(1);
-    }
-
-    .stat-info-btn.is-filled .stat-info-progress {
-      stroke-dashoffset: 0;
-      filter: drop-shadow(0 0 3px rgba(10, 132, 255, 0.7));
-    }
-
-    .stat-info-mark {
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      transition: stroke var(--transition-fast);
-    }
-
-    .stat-info-dot {
-      stroke: currentColor;
-      stroke-width: 2.6;
-      stroke-linecap: round;
-      transition: stroke var(--transition-fast);
+    .stat-card.is-filled .stat-card-progress-bar {
+      opacity: 1;
+      transform: scaleX(1);
+      transition: none;
     }
 
     .stat-chip {
@@ -1435,19 +1379,11 @@
 
           <div class="stats-grid-2col">
             <!-- In Hz -->
-            <div class="stat-card" id="card-in-hz">
+            <div class="stat-card" id="card-in-hz" data-i18n-tip="live_debug.stats_in_hz_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_in_hz">Частота (Hz)</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_in_hz_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-chip green" id="chip-in-hz">60 Hz</span>
               </div>
@@ -1461,19 +1397,11 @@
             </div>
 
             <!-- Latency (ms) -->
-            <div class="stat-card" id="card-latency">
+            <div class="stat-card" id="card-latency" data-i18n-tip="live_debug.stats_latency_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_latency">Задержка (мс)</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_latency_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-chip green" id="chip-latency">< 20ms</span>
               </div>
@@ -1487,19 +1415,11 @@
             </div>
 
             <!-- Jitter (ms) -->
-            <div class="stat-card" id="card-jitter">
+            <div class="stat-card" id="card-jitter" data-i18n-tip="live_debug.stats_jitter_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_jitter">Джиттер (мс)</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_jitter_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-chip green" id="chip-jitter">--</span>
               </div>
@@ -1513,19 +1433,11 @@
             </div>
 
             <!-- Packet Loss -->
-            <div class="stat-card" id="card-loss">
+            <div class="stat-card" id="card-loss" data-i18n-tip="live_debug.stats_loss_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_loss">Потери пакетов</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_loss_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-chip muted" id="chip-loss">0%</span>
               </div>
@@ -1536,19 +1448,11 @@
             </div>
 
             <!-- Raw Gyroscope -->
-            <div class="stat-card full-width">
+            <div class="stat-card full-width" id="card-raw-gyro" data-i18n-tip="live_debug.stats_raw_gyro_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_raw_gyro">Сырой гироскоп (°/s)</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_raw_gyro_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
@@ -1560,19 +1464,11 @@
             </div>
 
             <!-- Raw Accelerometer -->
-            <div class="stat-card full-width">
+            <div class="stat-card full-width" id="card-raw-accel" data-i18n-tip="live_debug.stats_raw_accel_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_raw_accel">Сырой акселерометр (g)</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_raw_accel_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
@@ -1598,19 +1494,11 @@
 
           <div class="stats-grid-2col">
             <!-- Out Hz -->
-            <div class="stat-card" id="card-out-hz">
+            <div class="stat-card" id="card-out-hz" data-i18n-tip="live_debug.stats_out_hz_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_out_hz">Частота DSU (Hz)</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_out_hz_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-chip green" id="chip-out-hz">DSU</span>
               </div>
@@ -1624,19 +1512,11 @@
             </div>
 
             <!-- Pipeline Latency (ms) -->
-            <div class="stat-card" id="card-pipe-ms">
+            <div class="stat-card" id="card-pipe-ms" data-i18n-tip="live_debug.stats_pipe_latency_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_pipe_latency">Задержка пайплайна (мс)</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_pipe_latency_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-chip green" id="chip-pipe-ms">< 1ms</span>
               </div>
@@ -1650,19 +1530,11 @@
             </div>
 
             <!-- DSU Clients Count -->
-            <div class="stat-card full-width" id="card-dsu-clients">
+            <div class="stat-card full-width" id="card-dsu-clients" data-i18n-tip="live_debug.stats_dsu_clients_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_dsu_clients">Клиенты DSU</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_dsu_clients_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-chip muted" id="chip-dsu-clients" data-i18n="live_debug.dsu_clients_initial">0 активных</span>
               </div>
@@ -1676,19 +1548,11 @@
             </div>
 
             <!-- DSU Gyro Motion Output -->
-            <div class="stat-card full-width">
+            <div class="stat-card full-width" id="card-out-gyro" data-i18n-tip="live_debug.stats_out_gyro_tip">
+              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_out_gyro">Выходной гироскоп DSU</span>
-                  <button type="button" class="stat-info-btn" data-i18n-tip="live_debug.stats_out_gyro_tip" aria-label="Info">
-                    <svg class="stat-info-svg" viewBox="0 0 24 24">
-                      <circle class="stat-info-bg" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-track" cx="12" cy="12" r="9.5"></circle>
-                      <circle class="stat-info-progress" cx="12" cy="12" r="9.5" transform="rotate(-90 12 12)"></circle>
-                      <path class="stat-info-mark" d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-                      <line class="stat-info-dot" x1="12" y1="17" x2="12.01" y2="17"></line>
-                    </svg>
-                  </button>
                 </div>
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
@@ -2714,14 +2578,29 @@
         })
         .catch(() => {});
 
-      // Telemetry silence watchdog (if frames stop for >2.5s, mark as disconnected)
+      // Background polling failsafe for device connection status
+      setInterval(() => {
+        fetch('http://127.0.0.1:8080/livedebug/status')
+          .then(r => r.json())
+          .then(d => {
+            if (d && typeof d.device_connected === 'boolean') {
+              if (d.device_connected) {
+                lastFrameTime = performance.now();
+                if (!isPhoneConnected) setPhoneConnected(true);
+              }
+            }
+          })
+          .catch(() => {});
+      }, 3000);
+
+      // Telemetry silence watchdog (if frames stop for >6.0s, mark as disconnected)
       setInterval(() => {
         if (isPhoneConnected && lastFrameTime > 0) {
-          if (performance.now() - lastFrameTime > 2500) {
+          if (performance.now() - lastFrameTime > 6000) {
             setPhoneConnected(false);
           }
         }
-      }, 800);
+      }, 1000);
 
       // ── Recenter Action ──
       function doRecenter() {
@@ -2754,25 +2633,24 @@
         }
       });
 
-      // ── Apple HIG 2s Hold-to-Reveal Tooltip Engine ──
+      // ── Apple HIG 1s Delay + 1s Hold-to-Reveal Card Tooltip Engine ──
       const tooltipEl = document.getElementById('stats-floating-tooltip');
-      let currentTipBtn = null;
-      let holdTimer = null;
-      let hideTimer = null;
+      let currentHoverCard = null;
+      let cardDelayTimer = null;
+      let cardFillTimer = null;
 
-      function showTooltipFor(btn) {
-        if (!tooltipEl || !btn) return;
-        const tipKey = btn.getAttribute('data-i18n-tip');
+      function showCardTooltip(card) {
+        if (!tooltipEl || !card) return;
+        const tipKey = card.getAttribute('data-i18n-tip');
         const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
-        const text = btn.getAttribute('data-tooltip-text') || (dict && dict[tipKey]);
+        const text = card.getAttribute('data-tooltip-text') || (dict && dict[tipKey]);
         if (!text) return;
 
-        currentTipBtn = btn;
         tooltipEl.textContent = text;
         tooltipEl.style.display = 'block';
         tooltipEl.style.visibility = 'hidden';
 
-        const rect = btn.getBoundingClientRect();
+        const rect = card.getBoundingClientRect();
         const ttWidth = Math.min(280, window.innerWidth - 24);
         let left = rect.left + (rect.width / 2) - (ttWidth / 2);
         if (left < 12) left = 12;
@@ -2790,79 +2668,67 @@
         tooltipEl.classList.add('show');
       }
 
-      function hideTooltip() {
-        if (!tooltipEl) return;
-        tooltipEl.classList.remove('show');
-        if (currentTipBtn) {
-          currentTipBtn.classList.remove('is-filled', 'is-filling');
-          currentTipBtn = null;
+      function resetCardHover(card) {
+        if (!card) return;
+        card.classList.remove('is-filling', 'is-filled');
+      }
+
+      function hideCardTooltip() {
+        clearTimeout(cardDelayTimer);
+        clearTimeout(cardFillTimer);
+        cardDelayTimer = null;
+        cardFillTimer = null;
+
+        if (currentHoverCard) {
+          resetCardHover(currentHoverCard);
+          currentHoverCard = null;
         }
-        setTimeout(() => {
-          if (!tooltipEl.classList.contains('show')) {
-            tooltipEl.style.display = 'none';
-          }
-        }, 220);
+
+        if (tooltipEl) {
+          tooltipEl.classList.remove('show');
+          tooltipEl.style.display = 'none';
+        }
       }
 
       function setupTooltips() {
         if (!tooltipEl) return;
 
-        tooltipEl.addEventListener('mouseenter', () => {
-          clearTimeout(hideTimer);
-        });
-
-        tooltipEl.addEventListener('mouseleave', () => {
-          clearTimeout(hideTimer);
-          hideTimer = setTimeout(hideTooltip, 200);
-        });
-
-        document.querySelectorAll('.stat-info-btn').forEach(btn => {
-          btn.addEventListener('mouseenter', () => {
-            clearTimeout(hideTimer);
-            if (currentTipBtn && currentTipBtn !== btn) {
-              currentTipBtn.classList.remove('is-filled', 'is-filling');
+        const cards = document.querySelectorAll('.stat-card[data-i18n-tip]');
+        cards.forEach(card => {
+          card.addEventListener('pointerenter', () => {
+            if (currentHoverCard && currentHoverCard !== card) {
+              resetCardHover(currentHoverCard);
+            }
+            clearTimeout(cardDelayTimer);
+            clearTimeout(cardFillTimer);
+            if (tooltipEl) {
+              tooltipEl.classList.remove('show');
+              tooltipEl.style.display = 'none';
             }
 
-            if (btn.classList.contains('is-filled') && tooltipEl.classList.contains('show')) {
-              return;
-            }
+            currentHoverCard = card;
+            resetCardHover(card);
 
-            btn.classList.remove('is-filled', 'is-filling');
-            void btn.offsetWidth;
-            btn.classList.add('is-filling');
+            // Step 1: Wait exactly 1.0 second (1000ms) before starting fill animation
+            cardDelayTimer = setTimeout(() => {
+              if (currentHoverCard !== card) return;
+              card.classList.add('is-filling');
 
-            clearTimeout(holdTimer);
-            holdTimer = setTimeout(() => {
-              btn.classList.remove('is-filling');
-              btn.classList.add('is-filled');
-              showTooltipFor(btn);
-            }, 2000); // 2-second hold requirement
+              // Step 2: 1.0 second (1000ms) smooth fill animation
+              cardFillTimer = setTimeout(() => {
+                if (currentHoverCard !== card) return;
+                card.classList.remove('is-filling');
+                card.classList.add('is-filled');
+                showCardTooltip(card);
+              }, 1000);
+            }, 1000);
           });
 
-          btn.addEventListener('mouseleave', () => {
-            clearTimeout(holdTimer);
-            if (btn.classList.contains('is-filled')) {
-              clearTimeout(hideTimer);
-              hideTimer = setTimeout(hideTooltip, 200);
+          card.addEventListener('pointerleave', () => {
+            if (currentHoverCard === card) {
+              hideCardTooltip();
             } else {
-              btn.classList.remove('is-filling');
-            }
-          });
-
-          btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (btn.classList.contains('is-filled') && tooltipEl.classList.contains('show')) {
-              clearTimeout(holdTimer);
-              hideTooltip();
-            } else {
-              clearTimeout(holdTimer);
-              clearTimeout(hideTimer);
-              if (currentTipBtn && currentTipBtn !== btn) {
-                currentTipBtn.classList.remove('is-filled', 'is-filling');
-              }
-              btn.classList.remove('is-filling');
-              btn.classList.add('is-filled');
-              showTooltipFor(btn);
+              resetCardHover(card);
             }
           });
         });
@@ -3457,7 +3323,9 @@
           reconnectTimer = null;
         }
 
-        const wsUrl = 'ws://127.0.0.1:8080/livedebug/ws';
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host || '127.0.0.1:8080';
+        const wsUrl = `${protocol}//${host}/livedebug/ws`;
 
         try {
           ws = new WebSocket(wsUrl);
@@ -3490,14 +3358,21 @@
               if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
               if (data.lang && data.lang !== currentLang) applyLang(data.lang);
               if (typeof data.device_connected === 'boolean') {
-                setPhoneConnected(data.device_connected);
+                if (data.device_connected) {
+                  lastFrameTime = performance.now();
+                  setPhoneConnected(true);
+                } else if (lastFrameTime === 0) {
+                  setPhoneConnected(false);
+                }
               }
               return;
             }
 
             // Device connected status update
             if (data.type === 'device_status') {
-              setPhoneConnected(Boolean(data.connected));
+              const connected = Boolean(data.connected);
+              if (connected) lastFrameTime = performance.now();
+              setPhoneConnected(connected);
               return;
             }
 
@@ -3511,6 +3386,14 @@
             if (data.type === 'lang') {
               if (data.lang && data.lang !== currentLang) applyLang(data.lang);
               return;
+            }
+
+            // Mark device as active on ANY valid telemetry packet
+            if (data.device_connected === true || (typeof data.in_hz === 'number' && data.in_hz > 0) || data.seq !== undefined) {
+              lastFrameTime = performance.now();
+              if (!isPhoneConnected) {
+                setPhoneConnected(true);
+              }
             }
 
             // Telemetry quaternion frame

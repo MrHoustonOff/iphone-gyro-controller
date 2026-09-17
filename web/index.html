@@ -1426,6 +1426,9 @@ function connectWSS() {
   ws.onerror = () => {
     isConnected = false;
     updateConnectionUI();
+    if (!deliberateDisconnect) {
+      setTimeout(connectWSS, 2000);
+    }
   };
 }
 
