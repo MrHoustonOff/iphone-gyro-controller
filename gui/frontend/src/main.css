@@ -223,7 +223,7 @@ em {
   height: 64px;
   min-height: 64px;
   border-bottom: 1px solid var(--border);
-  background-color: var(--bg);
+  background-color: var(--surface);
   padding: 0 clamp(16px, 3vw, 32px);
   display: flex;
   align-items: center;

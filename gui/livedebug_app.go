@@ -85,10 +85,10 @@ func runLiveDebug() {
 
 	err := wails.Run(&options.App{
 		Title:            "GyroBridge - Live Debug",
-		Width:            1180,
-		Height:           760,
-		MinWidth:         860,
-		MinHeight:        560,
+		Width:            1120,
+		Height:           720,
+		MinWidth:         820,
+		MinHeight:        500,
 		StartHidden:      true,
 		BackgroundColour: &options.RGBA{R: 6, G: 8, B: 13, A: 255},
 		AssetServer: &assetserver.Options{

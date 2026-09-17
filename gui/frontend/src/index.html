@@ -2616,20 +2616,22 @@
         const bubble = document.getElementById('gyro-bubble');
         const yawPointer = document.getElementById('gyro-yaw-pointer');
         if (bubble && yawPointer) {
+          const maxR = 9.5;
           // Pitch: tilt forward (p > 0) -> bubble forward (up, -Y in SVG); tilt backward (p < 0) -> bubble backward (down, +Y)
           const offsetY = Math.max(-maxR, Math.min(maxR, -p * 0.22));
 
           // Roll: tilt right (r > 0) -> bubble right (+X in SVG); tilt left (r < 0) -> bubble left (-X)
           const offsetX = Math.max(-maxR, Math.min(maxR, r * 0.22));
 
-          bubble.style.transform = `translate(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px)`;
+          bubble.setAttribute('cx', (16 + offsetX).toFixed(2));
+          bubble.setAttribute('cy', (16 + offsetY).toFixed(2));
 
           // Snap to glowing green level state if within 4.0 degrees
           const isLevel = Math.abs(p) <= 4.0 && Math.abs(r) <= 4.0;
           bubble.classList.toggle('level', isLevel);
 
           // Rotate compass pointer around center (16, 16) with Yaw
-          yawPointer.style.transform = `rotate(${y.toFixed(1)}deg)`;
+          yawPointer.setAttribute('transform', `rotate(${y.toFixed(1)} 16 16)`);
         }
 
         if (state.isPaused) {

@@ -681,6 +681,10 @@ func (a *App) startup(ctx context.Context) {
 			a.connectedAt = time.Now()
 		}
 		a.emitStateChange()
+		a.broadcastLiveDebugJSON(map[string]any{
+			"type":      "device_status",
+			"connected": true,
+		})
 	}
 
 	srv.OnClientDisconnect = func(remoteAddr string) {
@@ -701,6 +705,10 @@ func (a *App) startup(ctx context.Context) {
 				a.hasClient.Store(false)
 				a.connectedAt = time.Time{}
 				a.emitStateChange()
+				a.broadcastLiveDebugJSON(map[string]any{
+					"type":      "device_status",
+					"connected": false,
+				})
 			}
 		})
 	}
@@ -835,6 +843,20 @@ func (a *App) startup(ctx context.Context) {
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(map[string]string{"lang": curL})
 			})
+			mux.HandleFunc("/livedebug/status", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "*")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]any{
+					"device_connected": a.hasClient.Load(),
+				})
+			})
 			mux.HandleFunc("/livedebug/ws", func(w http.ResponseWriter, r *http.Request) {
 				conn, err := liveUpgrader.Upgrade(w, r, nil)
 				if err != nil {
@@ -847,7 +869,7 @@ func (a *App) startup(ctx context.Context) {
 				a.liveDebugClients[conn] = struct{}{}
 				a.liveDebugMu.Unlock()
 
-				// Send immediate initial theme and language sync frame
+				// Send immediate initial theme, language, and device connection sync frame
 				a.themeMu.RLock()
 				curT := a.currentTheme
 				curL := a.currentLang
@@ -858,10 +880,11 @@ func (a *App) startup(ctx context.Context) {
 				if curL == "" {
 					curL = "ru"
 				}
-				syncBytes, _ := json.Marshal(map[string]string{
-					"type":  "sync",
-					"theme": curT,
-					"lang":  curL,
+				syncBytes, _ := json.Marshal(map[string]any{
+					"type":             "sync",
+					"theme":            curT,
+					"lang":             curL,
+					"device_connected": a.hasClient.Load(),
 				})
 				_ = conn.WriteMessage(websocket.TextMessage, syncBytes)
 

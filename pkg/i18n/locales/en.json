@@ -108,6 +108,8 @@
     "model_desc": "Select orientation model",
     "model_gamepad": "Gamepad",
     "model_select": "3D Model",
+    "no_phone_desc": "Scan the QR code in the main window to connect motion sensors",
+    "no_phone_title": "No Connection to Phone",
     "paused_hint": "Click to resume",
     "paused_title": "Rendering paused",
     "recenter": "Recenter",

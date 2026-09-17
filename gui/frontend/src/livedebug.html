@@ -13,6 +13,8 @@
       overflow: hidden;
       height: 100vh;
       width: 100vw;
+      min-width: 820px;
+      min-height: 500px;
       display: flex;
       flex-direction: column;
       font-family: var(--font-sans);
@@ -20,9 +22,9 @@
     }
 
     .app-header {
-      height: 64px;
-      min-height: 64px;
-      padding: 0 24px;
+      height: 56px;
+      min-height: 56px;
+      padding: 0 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -36,113 +38,127 @@
     .header-left, .header-right {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 12px;
     }
 
     .brand-title {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 18px;
+      gap: 8px;
+      font-size: 17px;
       font-weight: 700;
       letter-spacing: -0.02em;
       color: var(--text);
     }
 
     .brand-badge {
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
-      padding: 3px 8px;
+      padding: 2px 7px;
       border-radius: var(--radius-pill);
       background: var(--surface-hover);
       border: 1px solid var(--border);
       color: var(--apple-blue);
     }
 
-    /* ── Split 50/50 Workspace ────────────────────────────────────────────────── */
+    /* ── Split 50/50 Workspace (Responsive Sizing Constraints) ─────────────────── */
     .split-workspace {
       display: flex;
       flex: 1;
-      width: 100vw;
-      height: calc(100vh - 64px);
+      width: 100%;
+      height: calc(100vh - 56px);
+      min-height: 444px;
       overflow: hidden;
     }
 
-    /* ── Left Controls Panel (50%) ── */
+    /* ── Left Controls Panel (Compact Footprint) ──────────────────────────────── */
     .left-controls {
-      width: 50%;
+      width: 42%;
+      min-width: 300px;
+      max-width: 440px;
       height: 100%;
-      padding: clamp(20px, 3.5vh, 32px) clamp(20px, 3.5vw, 36px);
+      padding: 16px 20px;
       overflow-y: auto;
       overflow-x: hidden;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 10px;
       border-right: 1px solid var(--border);
       background-color: var(--bg);
       box-sizing: border-box;
+      flex-shrink: 0;
       transition: background-color var(--transition-theme), border-color var(--transition-theme);
     }
 
     .controls-inner {
       width: 100%;
-      max-width: 480px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      margin: 0 auto;
+      gap: 10px;
     }
 
-    /* Apple Inset Grouped Card */
+    /* Apple Compact Inset Grouped Card */
     .apple-group-card {
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 18px 22px;
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
       box-shadow: var(--card-shadow);
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme);
+      gap: 8px;
+      transition: background-color var(--transition-theme), border-color var(--transition-theme);
     }
 
     .control-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
     }
 
     .control-info {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
       flex: 1;
       min-width: 0;
     }
 
     .control-title {
-      font-size: 15px;
+      font-size: 13px;
       font-weight: 600;
       letter-spacing: -0.01em;
       color: var(--text);
-      line-height: 1.3;
+      line-height: 1.25;
     }
 
     .control-desc {
-      font-size: 12.5px;
+      font-size: 11px;
       color: var(--text-secondary);
-      line-height: 1.45;
+      line-height: 1.35;
     }
 
-    /* Standard Apple iOS Toggle Switch */
+    /* Compact Apple Segmented Control */
+    .segmented-control.compact {
+      height: 28px;
+      padding: 2px;
+    }
+
+    .segmented-control.compact .segmented-btn {
+      font-size: 12px;
+      padding: 4px 10px;
+      line-height: 1;
+    }
+
+    /* Compact Apple iOS Toggle Switch */
     .apple-switch {
       position: relative;
       display: inline-block;
-      width: 48px;
-      height: 28px;
+      width: 40px;
+      height: 24px;
       flex-shrink: 0;
     }
 
@@ -165,14 +181,14 @@
     .apple-slider:before {
       position: absolute;
       content: "";
-      height: 22px;
-      width: 22px;
+      height: 18px;
+      width: 18px;
       left: 2px;
       bottom: 2px;
       background-color: #FFFFFF;
       transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 50%;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.28);
     }
 
     input:checked + .apple-slider {
@@ -181,27 +197,27 @@
     }
 
     input:checked + .apple-slider:before {
-      transform: translateX(20px);
+      transform: translateX(16px);
     }
 
-    /* Apple Recenter Pill Action Button */
+    /* Compact Apple Recenter Button */
     .btn-recenter-action {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       width: 100%;
-      padding: 11px 18px;
+      padding: 8px 14px;
       background: var(--btn-primary-bg);
       color: var(--btn-primary-text);
       border: none;
       border-radius: var(--radius-pill);
       font-family: var(--font-sans);
-      font-size: 14px;
+      font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
       transition: all var(--transition-fast);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
     }
 
     .btn-recenter-action:hover {
@@ -215,10 +231,10 @@
 
     .apple-kbd {
       font-family: var(--font-mono);
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      padding: 2px 7px;
-      border-radius: 5px;
+      padding: 1px 5px;
+      border-radius: 4px;
       background: rgba(0, 0, 0, 0.14);
       color: inherit;
       border: 1px solid rgba(0, 0, 0, 0.12);
@@ -229,10 +245,11 @@
       border-color: rgba(0, 0, 0, 0.2);
     }
 
-    /* ── Right 3D Viewport (50%) ──────────────────────────────────────────────── */
+    /* ── Right 3D Viewport (Expanding Canvas Area) ─────────────────────────────── */
     .right-viewport {
       position: relative;
-      width: 50%;
+      flex: 1;
+      min-width: 380px;
       height: 100%;
       overflow: hidden;
       display: flex;
@@ -250,9 +267,98 @@
     }
 
     #livedebug-canvas.blurred {
-      filter: blur(16px) brightness(0.72);
+      filter: blur(16px) brightness(0.70);
       transform: scale(0.985);
       pointer-events: none;
+    }
+
+    /* Phone Disconnected Red Accent Overlay */
+    .no-phone-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.58);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+
+    [data-theme="light"] .no-phone-overlay {
+      background: rgba(242, 242, 247, 0.68);
+    }
+
+    .no-phone-overlay.visible {
+      display: flex;
+      opacity: 1;
+    }
+
+    .no-phone-card {
+      background-color: var(--surface);
+      border: 1px solid rgba(255, 69, 58, 0.55);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      text-align: center;
+      max-width: 340px;
+      width: 100%;
+      box-shadow: 0 12px 40px rgba(255, 69, 58, 0.16), var(--card-shadow);
+      animation: alertPulse 3s infinite ease-in-out;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { border-color: rgba(255, 69, 58, 0.50); }
+      50% { border-color: rgba(255, 69, 58, 0.90); box-shadow: 0 12px 48px rgba(255, 69, 58, 0.28); }
+    }
+
+    .no-phone-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      background: rgba(255, 69, 58, 0.15);
+      border: 1px solid rgba(255, 69, 58, 0.35);
+      color: #FF453A;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .no-phone-icon {
+      width: 34px;
+      height: 34px;
+      color: #FF453A;
+      stroke-width: 1.8;
+      stroke: currentColor;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      margin-bottom: 2px;
+    }
+
+    .no-phone-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      line-height: 1.3;
+    }
+
+    .no-phone-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.45;
     }
 
     /* Eco Paused Frosted Glass Overlay */
@@ -263,7 +369,7 @@
       display: none;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.42);
+      background: rgba(0, 0, 0, 0.45);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       cursor: pointer;
@@ -283,10 +389,10 @@
     .eco-card {
       background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-xl);
-      padding: 22px 28px;
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
       text-align: center;
-      max-width: 300px;
+      max-width: 280px;
       box-shadow: var(--card-shadow);
       transition: transform var(--transition-fast);
     }
@@ -296,23 +402,23 @@
     }
 
     .eco-icon {
-      width: 34px;
-      height: 34px;
-      margin: 0 auto 10px;
+      width: 32px;
+      height: 32px;
+      margin: 0 auto 8px;
       color: var(--text-secondary);
     }
 
     .eco-title {
-      font-size: 14.5px;
+      font-size: 14px;
       font-weight: 700;
       letter-spacing: -0.01em;
       color: var(--text);
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     .eco-hint {
       display: inline-block;
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--apple-blue);
       font-weight: 600;
     }
@@ -327,15 +433,15 @@
         <span>GyroBridge</span>
         <span class="brand-badge">Live Debug</span>
       </div>
-      <div class="status-capsule online" id="status-capsule">
+      <div class="status-capsule offline" id="status-capsule">
         <span class="status-dot" id="status-dot"></span>
-        <span id="fps-counter" class="status-text">60 fps</span>
+        <span id="fps-counter" class="status-text">нет связи</span>
       </div>
     </div>
 
     <div class="header-right">
       <!-- Apple RU / EN Segmented Control -->
-      <div class="segmented-control" id="lang-control">
+      <div class="segmented-control compact" id="lang-control">
         <button type="button" class="segmented-btn" id="lang-ru">RU</button>
         <button type="button" class="segmented-btn" id="lang-en">EN</button>
       </div>
@@ -363,7 +469,7 @@
   <!-- Split 50/50 Workspace -->
   <main class="split-workspace">
 
-    <!-- Left Controls Panel (50%) -->
+    <!-- Left Controls Panel (Compact Footprint) -->
     <aside class="left-controls">
       <div class="controls-inner">
 
@@ -374,7 +480,7 @@
               <span class="control-title" data-i18n="live_debug.model_select">3D-модель</span>
               <span class="control-desc" data-i18n="live_debug.model_desc">Выбор объекта отображения</span>
             </div>
-            <div class="segmented-control" id="model-segmented">
+            <div class="segmented-control compact" id="model-segmented">
               <button type="button" class="segmented-btn active" id="btn-model-gamepad" data-i18n="live_debug.model_gamepad">Геймпад</button>
               <button type="button" class="segmented-btn" id="btn-model-cube" data-i18n="live_debug.model_cube">Кубик</button>
             </div>
@@ -410,9 +516,23 @@
       </div>
     </aside>
 
-    <!-- Right 3D Viewport (50%) -->
+    <!-- Right 3D Viewport (Expanding Canvas Area) -->
     <section class="right-viewport" id="viewport-wrap">
       <canvas id="livedebug-canvas"></canvas>
+
+      <!-- Phone Disconnected Red Accent Alert Overlay -->
+      <div class="no-phone-overlay visible" id="no-phone-overlay">
+        <div class="no-phone-card">
+          <svg class="no-phone-icon" viewBox="0 0 24 24">
+            <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"></line>
+            <line x1="2" y1="2" x2="22" y2="22" stroke-width="2" stroke="#FF453A"></line>
+          </svg>
+          <div class="no-phone-badge" data-i18n="live_debug.disconnected_badge">ОФФЛАЙН</div>
+          <div class="no-phone-title" data-i18n="live_debug.no_phone_title">Нет соединения с телефоном</div>
+          <div class="no-phone-desc" data-i18n="live_debug.no_phone_desc">Подключите телефон по QR-коду в главном окне для передачи данных гироскопа</div>
+        </div>
+      </div>
 
       <!-- Eco Paused Overlay -->
       <div class="eco-overlay" id="eco-overlay" title="Кликните для возобновления">
@@ -452,6 +572,9 @@
           "live_debug.paused_hint": "Кликните для возобновления",
           "live_debug.status_online": "в сети",
           "live_debug.status_offline": "нет связи",
+          "live_debug.no_phone_title": "Нет соединения с телефоном",
+          "live_debug.no_phone_desc": "Подключите телефон по QR-коду в главном окне для передачи данных гироскопа",
+          "live_debug.disconnected_badge": "ОФФЛАЙН",
           "app.theme_toggle": "Переключить тему"
         },
         en: {
@@ -469,6 +592,9 @@
           "live_debug.paused_hint": "Click to resume",
           "live_debug.status_online": "online",
           "live_debug.status_offline": "offline",
+          "live_debug.no_phone_title": "No Connection to Phone",
+          "live_debug.no_phone_desc": "Scan the QR code in the main window to connect motion sensors",
+          "live_debug.disconnected_badge": "OFFLINE",
           "app.theme_toggle": "Toggle Theme"
         }
       };
@@ -491,6 +617,10 @@
           const key = el.getAttribute('data-i18n-title');
           if (dict[key]) el.title = dict[key];
         });
+
+        if (!isPhoneConnected && fpsCounter) {
+          fpsCounter.textContent = dict["live_debug.status_offline"] || "offline";
+        }
       }
 
       function setLangAndSync(lang) {
@@ -537,6 +667,7 @@
       // ── DOM Elements ──
       const canvas = document.getElementById('livedebug-canvas');
       const viewportWrap = document.getElementById('viewport-wrap');
+      const noPhoneOverlay = document.getElementById('no-phone-overlay');
       const ecoOverlay = document.getElementById('eco-overlay');
       const ecoToggle = document.getElementById('eco-toggle');
       const fpsCounter = document.getElementById('fps-counter');
@@ -836,12 +967,14 @@
       window.addEventListener('resize', resize);
       resize();
 
-      // ── Animation Loop and Resource Saving ──
+      // ── Animation Loop, Resource Saving, and Connection State ──
       let animId = null;
       let isRendering = false;
       let isFocused = true;
+      let isPhoneConnected = false;
       let frameCount = 0;
       let lastFpsTime = performance.now();
+      let lastFrameTime = 0;
 
       function renderFrame() {
         if (!isRendering) return;
@@ -857,13 +990,14 @@
         const now = performance.now();
         if (now - lastFpsTime >= 1000) {
           const fps = Math.round((frameCount * 1000) / (now - lastFpsTime));
-          if (fpsCounter) fpsCounter.textContent = `${fps} fps`;
+          if (fpsCounter && isPhoneConnected) fpsCounter.textContent = `${fps} fps`;
           frameCount = 0;
           lastFpsTime = now;
         }
       }
 
       function startRendering() {
+        if (!isPhoneConnected) return; // Do not render if phone is disconnected
         if (isRendering) return;
         isRendering = true;
         canvas.classList.remove('blurred');
@@ -883,14 +1017,20 @@
           cancelAnimationFrame(animId);
           animId = null;
         }
-        if (fpsCounter) fpsCounter.textContent = '0 fps';
-        if (showEcoOverlay) {
+        if (showEcoOverlay && isPhoneConnected) {
           canvas.classList.add('blurred');
           ecoOverlay.classList.add('visible');
         }
       }
 
       function updatePowerState() {
+        if (!isPhoneConnected) {
+          stopRendering(false);
+          canvas.classList.add('blurred');
+          noPhoneOverlay?.classList.add('visible');
+          return;
+        }
+
         const isHidden = document.hidden;
         const ecoEnabled = ecoToggle.checked;
 
@@ -900,6 +1040,37 @@
           stopRendering(true);
         } else {
           startRendering();
+        }
+      }
+
+      function setPhoneConnected(connected) {
+        if (isPhoneConnected === connected) return;
+        isPhoneConnected = connected;
+
+        const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+
+        if (connected) {
+          noPhoneOverlay?.classList.remove('visible');
+          statusCapsule?.classList.remove('offline');
+          statusCapsule?.classList.add('online');
+          if (statusDot) {
+            statusDot.style.background = 'var(--dot-online)';
+            statusDot.style.boxShadow = '0 0 8px var(--dot-online)';
+          }
+          updatePowerState();
+        } else {
+          noPhoneOverlay?.classList.add('visible');
+          statusCapsule?.classList.remove('online');
+          statusCapsule?.classList.add('offline');
+          if (statusDot) {
+            statusDot.style.background = 'var(--dot-offline)';
+            statusDot.style.boxShadow = '0 0 8px var(--dot-offline)';
+          }
+          if (fpsCounter) {
+            fpsCounter.textContent = dict["live_debug.status_offline"] || "offline";
+          }
+          stopRendering(false);
+          canvas.classList.add('blurred');
         }
       }
 
@@ -933,10 +1104,9 @@
       // Initial Theme, Lang, and Render Setup
       applyLang(currentLang);
       applyTheme(currentTheme, false);
-      startRendering();
       window.focus();
 
-      // Immediate HTTP sync fetch on startup
+      // Initial HTTP queries for sync
       fetch('http://127.0.0.1:8080/livedebug/theme')
         .then(r => r.json())
         .then(d => {
@@ -950,6 +1120,24 @@
           if (d && d.lang && d.lang !== currentLang) applyLang(d.lang);
         })
         .catch(() => {});
+
+      fetch('http://127.0.0.1:8080/livedebug/status')
+        .then(r => r.json())
+        .then(d => {
+          if (d && typeof d.device_connected === 'boolean') {
+            setPhoneConnected(d.device_connected);
+          }
+        })
+        .catch(() => {});
+
+      // Telemetry silence watchdog (if frames stop for >2.5s, mark as disconnected)
+      setInterval(() => {
+        if (isPhoneConnected && lastFrameTime > 0) {
+          if (performance.now() - lastFrameTime > 2500) {
+            setPhoneConnected(false);
+          }
+        }
+      }, 800);
 
       // ── Recenter Action ──
       function doRecenter() {
@@ -981,20 +1169,9 @@
       let ws = null;
       let reconnectTimer = null;
 
-      function updateStatus(connected) {
-        if (!statusDot || !statusCapsule) return;
-        if (connected) {
-          statusCapsule.className = 'status-capsule online';
-          statusDot.style.background = 'var(--dot-online)';
-          statusDot.style.boxShadow = '0 0 8px var(--dot-online)';
-        } else {
-          statusCapsule.className = 'status-capsule offline';
-          statusDot.style.background = 'var(--dot-offline)';
-          statusDot.style.boxShadow = '0 0 8px var(--dot-offline)';
-          if (fpsCounter) {
-            const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
-            fpsCounter.textContent = dict["live_debug.status_offline"] || "offline";
-          }
+      function updateWsStatus(connected) {
+        if (!connected) {
+          setPhoneConnected(false);
         }
       }
 
@@ -1009,13 +1186,13 @@
         try {
           ws = new WebSocket(wsUrl);
         } catch (err) {
-          updateStatus(false);
+          updateWsStatus(false);
           scheduleReconnect();
           return;
         }
 
         ws.onopen = () => {
-          updateStatus(true);
+          // Connected to core server WS
         };
 
         ws.onmessage = (event) => {
@@ -1036,6 +1213,15 @@
             if (data.type === 'sync') {
               if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
               if (data.lang && data.lang !== currentLang) applyLang(data.lang);
+              if (typeof data.device_connected === 'boolean') {
+                setPhoneConnected(data.device_connected);
+              }
+              return;
+            }
+
+            // Device connected status update
+            if (data.type === 'device_status') {
+              setPhoneConnected(Boolean(data.connected));
               return;
             }
 
@@ -1059,6 +1245,10 @@
 
             if (!isNaN(q0) && !isNaN(q1) && !isNaN(q2) && !isNaN(q3) &&
                 (q0 !== 0 || q1 !== 0 || q2 !== 0 || q3 !== 0)) {
+              lastFrameTime = performance.now();
+              if (!isPhoneConnected) {
+                setPhoneConnected(true);
+              }
               // Three.js coordinates: -q1 (pitch), -q2 (yaw), q3 (roll), q0 (w)
               liveQuat.set(-q1, -q2, q3, q0);
               liveQuat.normalize();
@@ -1067,12 +1257,12 @@
         };
 
         ws.onclose = () => {
-          updateStatus(false);
+          updateWsStatus(false);
           scheduleReconnect();
         };
 
         ws.onerror = () => {
-          updateStatus(false);
+          updateWsStatus(false);
           try { ws.close(); } catch (e) {}
         };
       }
