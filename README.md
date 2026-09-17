@@ -41,6 +41,16 @@ GyroBridge includes a dedicated real-time 3D telemetry window to verify sensor r
 
 ---
 
+## Advanced Settings & Customization
+
+Click the **Settings** button in the header to access advanced options:
+- **Custom Ports**: Modify Cemuhook DSU (`26760`), HTTP pairing (`8080`), and HTTPS controller (`8443`) ports with real-time collision checks.
+- **Gyro Deadzone**: Filter out resting sensor micro-jitters with customizable noise deadzone levels.
+- **Audio Feedback**: Choose between cute synthesized celesta chimes, classic Windows system sounds, or silent mode.
+- **Appearance**: Switch between Apple-inspired dark and light interfaces.
+
+---
+
 ## Security, Antivirus & Transparency
 
 GyroBridge is 100% open-source software under the MIT license. It contains zero trackers, no telemetry, and makes no external internet connections whatsoever - all communication is strictly between your phone and your PC over your local home Wi-Fi.
