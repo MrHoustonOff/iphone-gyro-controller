@@ -134,7 +134,7 @@
                   <!-- Rotating Yaw Needle / Compass Indicator Group -->
                   <g id="gyro-yaw-group" class="hud-yaw-group" transform="rotate(0 60 60)">
                     <polygon points="60,6 56.5,14 63.5,14" class="hud-yaw-marker"></polygon>
-                    <line x1="60" y1="6" x2="60" y2="16" stroke="#30d158" stroke-width="2.5" stroke-linecap="round"></line>
+                    <line x1="60" y1="6" x2="60" y2="16" stroke="#34C759" stroke-width="2.5" stroke-linecap="round"></line>
                   </g>
                 </svg>
               </div>
@@ -1444,15 +1444,24 @@
       this.isDropdownOpen = true;
       const trigger = document.getElementById('main-profile-trigger');
       const menu = document.getElementById('main-profile-menu');
+      const wrap = document.getElementById('main-profile-dropdown-wrap');
       if (trigger) trigger.classList.add('open');
-      if (menu) menu.classList.add('show');
+      if (wrap) wrap.classList.add('open');
+      if (menu) {
+        menu.classList.add('show');
+        setTimeout(() => {
+          menu.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      }
     },
 
     closeDropdown() {
       this.isDropdownOpen = false;
       const trigger = document.getElementById('main-profile-trigger');
       const menu = document.getElementById('main-profile-menu');
+      const wrap = document.getElementById('main-profile-dropdown-wrap');
       if (trigger) trigger.classList.remove('open');
+      if (wrap) wrap.classList.remove('open');
       if (menu) menu.classList.remove('show');
     },
 
@@ -2654,15 +2663,24 @@
       this.isSaveDropdownOpen = true;
       const trigger = document.getElementById('cal-save-dropdown-trigger');
       const menu = document.getElementById('cal-save-dropdown-menu');
+      const wrap = document.getElementById('cal-save-dropdown-wrap');
       if (trigger) trigger.classList.add('open');
-      if (menu) menu.classList.add('show');
+      if (wrap) wrap.classList.add('open');
+      if (menu) {
+        menu.classList.add('show');
+        setTimeout(() => {
+          menu.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      }
     },
 
     closeSaveDropdown() {
       this.isSaveDropdownOpen = false;
       const trigger = document.getElementById('cal-save-dropdown-trigger');
       const menu = document.getElementById('cal-save-dropdown-menu');
+      const wrap = document.getElementById('cal-save-dropdown-wrap');
       if (trigger) trigger.classList.remove('open');
+      if (wrap) wrap.classList.remove('open');
       if (menu) menu.classList.remove('show');
     },
 

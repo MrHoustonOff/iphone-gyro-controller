@@ -464,13 +464,13 @@
 
     .no-phone-card {
       background-color: var(--surface);
-      border: 1px solid rgba(255, 69, 58, 0.55);
+      border: 1px solid rgba(255, 59, 48, 0.55);
       border-radius: var(--radius-lg);
       padding: 24px 28px;
       text-align: center;
       max-width: 340px;
       width: 100%;
-      box-shadow: 0 12px 40px rgba(255, 69, 58, 0.16), var(--card-shadow);
+      box-shadow: 0 12px 40px rgba(255, 59, 48, 0.16), var(--card-shadow);
       animation: alertPulse 3s infinite ease-in-out;
       display: flex;
       flex-direction: column;
@@ -479,8 +479,8 @@
     }
 
     @keyframes alertPulse {
-      0%, 100% { border-color: rgba(255, 69, 58, 0.50); }
-      50% { border-color: rgba(255, 69, 58, 0.90); box-shadow: 0 12px 48px rgba(255, 69, 58, 0.28); }
+      0%, 100% { border-color: rgba(255, 59, 48, 0.50); }
+      50% { border-color: rgba(255, 59, 48, 0.90); box-shadow: 0 12px 48px rgba(255, 59, 48, 0.28); }
     }
 
     .no-phone-badge {
@@ -489,9 +489,9 @@
       gap: 6px;
       padding: 3px 10px;
       border-radius: var(--radius-pill);
-      background: rgba(255, 69, 58, 0.15);
-      border: 1px solid rgba(255, 69, 58, 0.35);
-      color: #FF453A;
+      background: rgba(255, 59, 48, 0.15);
+      border: 1px solid rgba(255, 59, 48, 0.35);
+      color: #FF3B30;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.04em;
@@ -502,7 +502,7 @@
     .no-phone-icon {
       width: 34px;
       height: 34px;
-      color: #FF453A;
+      color: #FF3B30;
       stroke-width: 1.8;
       stroke: currentColor;
       fill: none;
@@ -718,7 +718,7 @@
           <svg class="no-phone-icon" viewBox="0 0 24 24">
             <rect x="5" y="2" width="14" height="20" rx="3"></rect>
             <line x1="12" y1="18" x2="12.01" y2="18" stroke-width="2.5"></line>
-            <line x1="2" y1="2" x2="22" y2="22" stroke-width="2" stroke="#FF453A"></line>
+            <line x1="2" y1="2" x2="22" y2="22" stroke-width="2" stroke="#FF3B30"></line>
           </svg>
           <div class="no-phone-badge" data-i18n="live_debug.disconnected_badge">ОФФЛАЙН</div>
           <div class="no-phone-title" data-i18n="live_debug.no_phone_title">Нет соединения с телефоном</div>
