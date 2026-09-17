@@ -715,7 +715,11 @@ func (a *App) startup(ctx context.Context) {
 			return // Muted during pause
 		}
 		if a.dsuSrv != nil {
-			a.dsuSrv.SendMotion(corrected)
+			// Cemuhook DSU protocol convention: Yaw (RotY) has opposite sign convention
+			// (nose left = +, nose right / clockwise = -) compared to Three.js view.
+			dsuFrame := corrected
+			dsuFrame.RotY = -corrected.RotY
+			a.dsuSrv.SendMotion(dsuFrame)
 		}
 	})
 
