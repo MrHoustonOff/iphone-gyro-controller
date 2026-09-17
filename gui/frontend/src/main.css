@@ -1984,6 +1984,7 @@ em {
 }
 
 .cal-modal {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
@@ -1997,6 +1998,7 @@ em {
   display: flex;
   flex-direction: column;
   animation: calModalIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 @keyframes calModalIn {
@@ -3729,9 +3731,9 @@ em {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 18px;
+  padding: 12px 18px;
   border-bottom: 1px solid var(--border);
-  min-height: 56px;
+  min-height: 52px;
   transition: background var(--transition-fast);
 }
 
@@ -3741,8 +3743,7 @@ em {
 
 .setting-info {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  align-items: center;
   flex: 1;
   min-width: 0;
 }
@@ -3764,31 +3765,28 @@ em {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 19px;
+  height: 19px;
   border-radius: 50%;
   background: rgba(120, 120, 128, 0.16);
   color: var(--text-secondary);
-  cursor: help;
+  cursor: pointer;
+  border: none;
+  padding: 0;
   transition: background 0.15s, color 0.15s, transform 0.15s;
   flex-shrink: 0;
 }
 
-.setting-infotip:hover {
+.setting-infotip:hover,
+.setting-infotip.is-active-tip {
   background: var(--accent);
   color: #FFFFFF;
-  transform: scale(1.08);
+  transform: scale(1.1);
 }
 
 .setting-infotip svg {
   width: 12px;
   height: 12px;
-}
-
-.setting-desc {
-  font-size: 12.5px;
-  color: var(--text-secondary);
-  line-height: 1.35;
 }
 
 .setting-control {
@@ -3854,6 +3852,31 @@ em {
 .setting-select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.2);
+}
+
+.btn-sound-preview {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.btn-sound-preview:hover {
+  background: rgba(120, 120, 128, 0.15);
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.btn-sound-preview:active {
+  transform: scale(0.94);
 }
 
 /* Authentic iOS Toggle Switch */
@@ -3942,7 +3965,7 @@ em {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 16px;
   margin-top: 4px;
   flex-wrap: wrap;
 }
@@ -3959,6 +3982,21 @@ em {
   border-color: rgba(255, 59, 48, 0.4);
 }
 
+.settings-footer-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.settings-save-notice {
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  text-align: right;
+  letter-spacing: -0.01em;
+  opacity: 0.85;
+}
+
 .settings-footer-actions {
   display: flex;
   align-items: center;
@@ -3972,6 +4010,40 @@ em {
   font-size: 14px;
   max-width: none;
   width: auto;
+}
+
+/* Floating Apple HIG Tooltip for Settings */
+.apple-floating-tooltip {
+  position: fixed;
+  z-index: 3000;
+  display: none;
+  max-width: 290px;
+  padding: 9px 13px;
+  background: rgba(28, 28, 30, 0.94);
+  color: #FFFFFF;
+  font-size: 11.5px;
+  line-height: 1.45;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  pointer-events: none !important;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.apple-floating-tooltip.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+[data-theme="light"] .apple-floating-tooltip {
+  background: rgba(255, 255, 255, 0.96);
+  color: #1C1C1E;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.14);
 }
 
 /* Welcome Module Specifics */
@@ -4135,72 +4207,59 @@ em {
   background: rgba(120, 120, 128, 0.15);
 }
 
-/* ── Calibration Disconnect Window Alert & Blur ────────────────────────────── */
-body.cal-disconnect-window-alert {
-  box-shadow: inset 0 0 0 5px #ff3b30, inset 0 0 35px rgba(255, 59, 48, 0.45) !important;
-  animation: cal-window-alert-pulse 1.4s ease-in-out infinite alternate !important;
+/* ── Calibration Disconnect Modal Card Alert & Blur (Scoped to Modal) ── */
+.cal-modal.cal-modal-disconnected {
+  border-color: rgba(255, 59, 48, 0.65) !important;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 59, 48, 0.22) !important;
 }
 
-@keyframes cal-window-alert-pulse {
-  0% {
-    box-shadow: inset 0 0 0 5px #ff3b30, inset 0 0 25px rgba(255, 59, 48, 0.35) !important;
-  }
-  100% {
-    box-shadow: inset 0 0 0 6px #ff453a, inset 0 0 50px rgba(255, 59, 48, 0.7) !important;
-  }
-}
-
-body.cal-disconnect-window-alert .cal-modal {
-  border: 2px solid #ff3b30 !important;
-  box-shadow: 0 0 50px rgba(255, 59, 48, 0.35), var(--card-shadow) !important;
-}
-
-/* Modal Disconnect Warning Blur Overlay */
+/* Modal Disconnect Warning Blur Overlay (Scoped strictly inside .cal-modal) */
 .cal-disconnect-overlay {
-  position: fixed;
+  position: absolute;
   inset: 0;
-  z-index: 2500;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(10, 10, 14, 0.76);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-  animation: calDisconnectFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(18, 18, 20, 0.76);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: inherit;
+  animation: calDisconnectFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="light"] .cal-disconnect-overlay {
+  background: rgba(255, 255, 255, 0.82);
 }
 
 @keyframes calDisconnectFadeIn {
   from {
     opacity: 0;
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
   }
   to {
     opacity: 1;
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
   }
 }
 
 .cal-disconnect-card {
-  max-width: 440px;
+  max-width: 380px;
   width: 100%;
-  background: var(--bg-card);
-  border: 1px solid rgba(255, 59, 48, 0.35);
-  border-radius: 20px;
-  padding: 32px 28px;
+  background: var(--surface-elevated);
+  border: 1px solid rgba(255, 59, 48, 0.25);
+  border-radius: var(--radius-lg);
+  padding: 28px 24px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55), 0 0 35px rgba(255, 59, 48, 0.22);
-  animation: calDisconnectCardPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-lg), 0 0 32px rgba(255, 59, 48, 0.15);
+  animation: calDisconnectCardPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes calDisconnectCardPop {
   from {
-    transform: scale(0.94);
+    transform: scale(0.95);
     opacity: 0;
   }
   to {
@@ -4210,50 +4269,49 @@ body.cal-disconnect-window-alert .cal-modal {
 }
 
 .cal-disconnect-icon-box {
-  width: 68px;
-  height: 68px;
+  width: 52px;
+  height: 52px;
   border-radius: 50%;
   background: rgba(255, 59, 48, 0.12);
-  border: 1.5px solid rgba(255, 59, 48, 0.35);
+  border: 1px solid rgba(255, 59, 48, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   color: #ff3b30;
-  box-shadow: 0 0 24px rgba(255, 59, 48, 0.2);
 }
 
 .cal-disconnect-icon-box svg {
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
 }
 
 .cal-disconnect-title {
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 700;
-  color: var(--text-primary);
-  margin: 0 0 10px 0;
+  color: var(--text);
+  margin: 0 0 8px 0;
   letter-spacing: -0.015em;
 }
 
 .cal-disconnect-desc {
-  font-size: 13.5px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.45;
   color: var(--text-secondary);
-  margin: 0 0 22px 0;
-  max-width: 360px;
+  margin: 0 0 18px 0;
+  max-width: 320px;
 }
 
 .cal-disconnect-pulse-badge {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   background: rgba(255, 59, 48, 0.09);
-  border: 1px solid rgba(255, 59, 48, 0.2);
-  border-radius: 20px;
-  padding: 6px 14px;
-  margin-bottom: 24px;
-  font-size: 12.5px;
+  border: 1px solid rgba(255, 59, 48, 0.22);
+  border-radius: var(--radius-pill);
+  padding: 5px 12px;
+  margin-bottom: 20px;
+  font-size: 12px;
   font-weight: 500;
   color: #ff453a;
 }

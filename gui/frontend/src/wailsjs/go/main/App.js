@@ -62,6 +62,10 @@ export function OpenLiveDebugWindow() {
   return window['go']['main']['App']['OpenLiveDebugWindow']();
 }
 
+export function PlaySystemSound(arg1) {
+  return window['go']['main']['App']['PlaySystemSound'](arg1);
+}
+
 export function PreviewMatrix(arg1) {
   return window['go']['main']['App']['PreviewMatrix'](arg1);
 }

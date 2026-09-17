@@ -32,6 +32,8 @@ export function MarkFirstLaunchDone():Promise<void>;
 
 export function OpenLiveDebugWindow():Promise<void>;
 
+export function PlaySystemSound(arg1:string):Promise<void>;
+
 export function PreviewMatrix(arg1:any):Promise<void>;
 
 export function ResetAHRS():Promise<void>;

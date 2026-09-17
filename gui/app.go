@@ -12,11 +12,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
 	"time"
+	"unsafe"
 
 	"gyrobridge/pkg/ca"
 	"gyrobridge/pkg/dsu"
@@ -217,6 +219,7 @@ type App struct {
 	gyroDeadzoneBits atomic.Uint64
 	stillnessHint    atomic.Bool
 	disconnectAlert  atomic.Bool
+	soundMode        string
 }
 
 // AppSettings holds configurable parameters exposed in the settings window
@@ -232,6 +235,7 @@ type AppSettings struct {
 	GyroDeadzone    float64 `json:"gyroDeadzone"`
 	StillnessHint   bool    `json:"stillnessHint"`
 	DisconnectAlert bool    `json:"disconnectAlert"`
+	SoundMode       string  `json:"soundMode"`
 }
 
 // StepCaptureLog stores the full recorded session of a calibration gesture step
@@ -505,6 +509,7 @@ func NewApp() *App {
 	app.gyroDeadzoneBits.Store(math.Float64bits(0.20))
 	app.stillnessHint.Store(true)
 	app.disconnectAlert.Store(true)
+	app.soundMode = "cute"
 	app.deviceName.Store("Controller")
 
 	// Initialize 6 empty slots with default portrait matrix
@@ -582,6 +587,7 @@ func (a *App) loadSettings() {
 		GyroDeadzone    float64 `json:"gyroDeadzone"`
 		StillnessHint   *bool   `json:"stillnessHint"`
 		DisconnectAlert *bool   `json:"disconnectAlert"`
+		SoundMode       string  `json:"soundMode"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
@@ -622,6 +628,11 @@ func (a *App) loadSettings() {
 	}
 	if s.DisconnectAlert != nil {
 		a.disconnectAlert.Store(*s.DisconnectAlert)
+	}
+	if s.SoundMode != "" {
+		a.soundMode = s.SoundMode
+	} else {
+		a.soundMode = "cute"
 	}
 }
 
@@ -664,6 +675,11 @@ func (a *App) saveSettings() {
 		deadzone = 0.20
 	}
 
+	soundM := a.soundMode
+	if soundM == "" {
+		soundM = "cute"
+	}
+
 	s := AppSettings{
 		Theme:           theme,
 		Lang:            lang,
@@ -676,6 +692,7 @@ func (a *App) saveSettings() {
 		GyroDeadzone:    deadzone,
 		StillnessHint:   a.stillnessHint.Load(),
 		DisconnectAlert: a.disconnectAlert.Load(),
+		SoundMode:       soundM,
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -1930,6 +1947,11 @@ func (a *App) GetAppSettings() AppSettings {
 
 	deadzone := math.Float64frombits(a.gyroDeadzoneBits.Load())
 
+	soundM := a.soundMode
+	if soundM == "" {
+		soundM = "cute"
+	}
+
 	return AppSettings{
 		Theme:           theme,
 		Lang:            lang,
@@ -1942,6 +1964,7 @@ func (a *App) GetAppSettings() AppSettings {
 		GyroDeadzone:    deadzone,
 		StillnessHint:   a.stillnessHint.Load(),
 		DisconnectAlert: a.disconnectAlert.Load(),
+		SoundMode:       soundM,
 	}
 }
 
@@ -1988,6 +2011,9 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 	}
 	a.stillnessHint.Store(s.StillnessHint)
 	a.disconnectAlert.Store(s.DisconnectAlert)
+	if s.SoundMode != "" {
+		a.soundMode = s.SoundMode
+	}
 
 	a.themeMu.Lock()
 	if s.Theme == "dark" || s.Theme == "light" {
@@ -2005,6 +2031,44 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 		"success":      true,
 		"dsuRestarted": dsuRestarted,
 	}, nil
+}
+
+// PlaySystemSound plays a native Windows sound for hardware connect/disconnect
+func (a *App) PlaySystemSound(soundType string) {
+	if runtime.GOOS != "windows" {
+		return
+	}
+	mod := syscall.NewLazyDLL("winmm.dll")
+	proc := mod.NewProc("PlaySoundW")
+
+	var soundName string
+	var fallbackPath string
+	switch soundType {
+	case "connect":
+		soundName = "DeviceConnect"
+		fallbackPath = `C:\Windows\Media\Windows Hardware Insert.wav`
+	case "disconnect":
+		soundName = "DeviceDisconnect"
+		fallbackPath = `C:\Windows\Media\Windows Hardware Remove.wav`
+	default:
+		return
+	}
+
+	ptr, err := syscall.UTF16PtrFromString(soundName)
+	if err == nil {
+		// SND_ASYNC (0x0001) | SND_ALIAS (0x00010000) | SND_NODEFAULT (0x0002)
+		ret, _, _ := proc.Call(uintptr(unsafe.Pointer(ptr)), 0, uintptr(0x0001|0x00010000|0x0002))
+		if ret != 0 {
+			return
+		}
+	}
+
+	if _, err := os.Stat(fallbackPath); err == nil {
+		if fptr, ferr := syscall.UTF16PtrFromString(fallbackPath); ferr == nil {
+			// SND_ASYNC (0x0001) | SND_FILENAME (0x00020000)
+			_, _, _ = proc.Call(uintptr(unsafe.Pointer(fptr)), 0, uintptr(0x0001|0x00020000))
+		}
+	}
 }
 
 func (a *App) broadcastLiveDebugJSON(v any) {

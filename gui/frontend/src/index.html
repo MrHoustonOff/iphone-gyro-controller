@@ -617,15 +617,14 @@
                     <div class="setting-info">
                       <div class="setting-label-row">
                         <span class="setting-label" data-i18n="settings_modal.dsu_port">Порт DSU (Cemuhook)</span>
-                        <span class="setting-infotip" data-i18n-title="settings_modal.dsu_port_tip" title="UDP-порт сервера протокола Cemuhook DSU. К нему подключаются игры и эмуляторы (Cemu, RPCS3, Ryujinx, Dolphin и др.). По умолчанию: 26760.">
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.dsu_port_tip" aria-label="Info">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                           </svg>
-                        </span>
+                        </button>
                       </div>
-                      <span class="setting-desc" data-i18n="settings_modal.dsu_port_desc">UDP порт для эмуляторов (по умолчанию: 26760)</span>
                     </div>
                     <div class="setting-control">
                       <input type="number" id="setting-dsu-port" class="setting-input-num" min="1024" max="65535" step="1" value="26760">
@@ -637,15 +636,14 @@
                     <div class="setting-info">
                       <div class="setting-label-row">
                         <span class="setting-label" data-i18n="settings_modal.http_port">Порт HTTP (Сопряжение)</span>
-                        <span class="setting-infotip" data-i18n-title="settings_modal.http_port_tip" title="Порт TCP веб-сервера для начального сопряжения смартфона и скачивания профилей сертификатов iOS. По умолчанию: 8080.">
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.http_port_tip" aria-label="Info">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                           </svg>
-                        </span>
+                        </button>
                       </div>
-                      <span class="setting-desc" data-i18n="settings_modal.http_port_desc">TCP порт веб-сервера сопряжения (по умолчанию: 8080)</span>
                     </div>
                     <div class="setting-control">
                       <input type="number" id="setting-http-port" class="setting-input-num" min="1024" max="65535" step="1" value="8080">
@@ -657,15 +655,14 @@
                     <div class="setting-info">
                       <div class="setting-label-row">
                         <span class="setting-label" data-i18n="settings_modal.https_port">Порт HTTPS (Контроллер)</span>
-                        <span class="setting-infotip" data-i18n-title="settings_modal.https_port_tip" title="Защищенный TLS порт веб-контроллера. Браузер Safari требует обязательный HTTPS для доступа к гироскопу. По умолчанию: 8443.">
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.https_port_tip" aria-label="Info">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                           </svg>
-                        </span>
+                        </button>
                       </div>
-                      <span class="setting-desc" data-i18n="settings_modal.https_port_desc">Шлюз TLS/WSS для веб-приложения (по умолчанию: 8443)</span>
                     </div>
                     <div class="setting-control">
                       <input type="number" id="setting-https-port" class="setting-input-num" min="1024" max="65535" step="1" value="8443">
@@ -683,15 +680,14 @@
                     <div class="setting-info">
                       <div class="setting-label-row">
                         <span class="setting-label" data-i18n="settings_modal.gyro_deadzone">Порог шума гироскопа (Deadzone)</span>
-                        <span class="setting-infotip" data-i18n-title="settings_modal.gyro_deadzone_tip" title="Фильтрует микрошумы сенсора телефона в состоянии покоя, устраняя паразитную дрожь прицела в играх.">
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.gyro_deadzone_tip" aria-label="Info">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                           </svg>
-                        </span>
+                        </button>
                       </div>
-                      <span class="setting-desc" data-i18n="settings_modal.gyro_deadzone_desc">Подавление шума сенсора в покое</span>
                     </div>
                     <div class="setting-control">
                       <select id="setting-gyro-deadzone" class="setting-select">
@@ -709,15 +705,14 @@
                     <div class="setting-info">
                       <div class="setting-label-row">
                         <span class="setting-label" data-i18n="settings_modal.stillness_hint">Подсказка о калибровке неподвижности</span>
-                        <span class="setting-infotip" data-i18n-title="settings_modal.stillness_hint_tip" title="Показывать всплывающую подсказку рекалибровки, если телефон неподвижно лежит на столе с сильным наклоном (>10 градусов).">
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.stillness_hint_tip" aria-label="Info">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                           </svg>
-                        </span>
+                        </button>
                       </div>
-                      <span class="setting-desc" data-i18n="settings_modal.stillness_hint_desc">Предупреждать при наклоне > 10° на столе</span>
                     </div>
                     <div class="setting-control">
                       <label class="apple-toggle">
@@ -732,21 +727,49 @@
                     <div class="setting-info">
                       <div class="setting-label-row">
                         <span class="setting-label" data-i18n="settings_modal.disconnect_alert">Предупреждение об отключении</span>
-                        <span class="setting-infotip" data-i18n-title="settings_modal.disconnect_alert_tip" title="Окрашивать окно в красный цвет и показывать размытие с предупреждением, если экран телефона выключился во время калибровки.">
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.disconnect_alert_tip" aria-label="Info">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                           </svg>
-                        </span>
+                        </button>
                       </div>
-                      <span class="setting-desc" data-i18n="settings_modal.disconnect_alert_desc">Красная рамка и размытие при выключении экрана</span>
                     </div>
                     <div class="setting-control">
                       <label class="apple-toggle">
                         <input type="checkbox" id="setting-disconnect-alert" checked>
                         <span class="apple-toggle-slider"></span>
                       </label>
+                    </div>
+                  </div>
+
+                  <!-- Sound Alerts Mode -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.sound_mode">Звуковые сигналы событий</span>
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_mode_tip" aria-label="Info">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="setting-control" style="gap: 8px;">
+                      <select id="setting-sound-mode" class="setting-select">
+                        <option value="cute" data-i18n="settings_modal.sound_cute">Милая мелодия (Синтезатор)</option>
+                        <option value="windows" data-i18n="settings_modal.sound_windows">Системные звуки Windows</option>
+                        <option value="off" data-i18n="settings_modal.sound_off">Отключено</option>
+                      </select>
+                      <button type="button" class="btn-sound-preview" id="btn-sound-preview" data-i18n-tip="settings_modal.sound_preview_tip" aria-label="Preview Sound">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -761,15 +784,14 @@
                     <div class="setting-info">
                       <div class="setting-label-row">
                         <span class="setting-label" data-i18n="settings_modal.theme">Тема оформления</span>
-                        <span class="setting-infotip" data-i18n-title="settings_modal.theme_tip" title="Выбор цветовой темы оформления интерфейса GyroBridge (тёмная или светлая).">
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.theme_tip" aria-label="Info">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                           </svg>
-                        </span>
+                        </button>
                       </div>
-                      <span class="setting-desc" data-i18n="settings_modal.theme_desc">Цветовая схема приложения</span>
                     </div>
                     <div class="setting-control">
                       <div class="settings-segmented-group" id="setting-theme-segmented" role="group" aria-label="Theme">
@@ -784,15 +806,14 @@
                     <div class="setting-info">
                       <div class="setting-label-row">
                         <span class="setting-label" data-i18n="settings_modal.language">Язык интерфейса</span>
-                        <span class="setting-infotip" data-i18n-title="settings_modal.language_tip" title="Выбор основного языка интерфейса приложения GyroBridge.">
+                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.language_tip" aria-label="Info">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                             <circle cx="12" cy="12" r="10"></circle>
                             <line x1="12" y1="16" x2="12" y2="12"></line>
                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                           </svg>
-                        </span>
+                        </button>
                       </div>
-                      <span class="setting-desc" data-i18n="settings_modal.language_desc">Язык меню и сообщений</span>
                     </div>
                     <div class="setting-control">
                       <div class="settings-segmented-group" id="setting-lang-segmented" role="group" aria-label="Language">
@@ -807,10 +828,13 @@
 
             <!-- Settings Footer Controls -->
             <div class="settings-footer-row">
-              <button type="button" class="btn-apple-secondary btn-settings-reset" id="btn-settings-reset" data-i18n="settings_modal.btn_reset" data-i18n-title="settings_modal.btn_reset_tip" title="Восстановить все сетевые порты и параметры сенсора к заводским значениям по умолчанию.">Сбросить по умолчанию</button>
-              <div class="settings-footer-actions">
-                <button type="button" class="btn-apple-secondary" id="btn-settings-close" data-i18n="settings_modal.btn_cancel">Отмена</button>
-                <button type="button" class="btn-apple-primary" id="btn-settings-save" data-i18n="settings_modal.btn_save">Сохранить</button>
+              <button type="button" class="btn-apple-secondary btn-settings-reset" id="btn-settings-reset" data-i18n="settings_modal.btn_reset" data-i18n-tip="settings_modal.btn_reset_tip">Сбросить по умолчанию</button>
+              <div class="settings-footer-right">
+                <div class="settings-save-notice" data-i18n="settings_modal.save_notice">При сохранении веб-серверы перезапустятся, страница обновится</div>
+                <div class="settings-footer-actions">
+                  <button type="button" class="btn-apple-secondary" id="btn-settings-close" data-i18n="settings_modal.btn_cancel">Отмена</button>
+                  <button type="button" class="btn-apple-primary" id="btn-settings-save" data-i18n="settings_modal.btn_save">Сохранить</button>
+                </div>
               </div>
             </div>
           </div>
@@ -1287,30 +1311,33 @@
         </div>
       </div>
 
-    </div><!-- .cal-modal -->
-
-    <!-- Calibration Disconnect Fullscreen Blur Overlay -->
-    <div id="cal-disconnect-overlay" class="cal-disconnect-overlay" style="display: none;" role="alertdialog" aria-modal="true">
-      <div class="cal-disconnect-card">
-        <div class="cal-disconnect-icon-box">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="5" y="2" width="14" height="20" rx="3"></rect>
-            <line x1="12" y1="18" x2="12.01" y2="18"></line>
-            <line x1="2" y1="2" x2="22" y2="22" stroke="#ff3b30" stroke-width="2.5"></line>
-          </svg>
-        </div>
-        <h3 class="cal-disconnect-title" data-i18n="calibration.disconnect_alert_title">Телефон отключен</h3>
-        <p class="cal-disconnect-desc" data-i18n="calibration.disconnect_alert_desc">Экран телефона выключился или заблокирован. Разблокируйте смартфон и держите экран включенным во время калибровки.</p>
-        <div class="cal-disconnect-pulse-badge">
-          <span class="cal-disconnect-dot"></span>
-          <span data-i18n="calibration.disconnect_waiting">Ожидание переподключения...</span>
-        </div>
-        <div class="cal-disconnect-actions">
-          <button type="button" class="btn-apple-secondary cal-btn-sm" id="btn-cancel-cal-disconnect" data-i18n="calibration.disconnect_btn_cancel">Отменить калибровку</button>
+      <!-- Calibration Disconnect Modal Card Blur Overlay (Scoped strictly inside .cal-modal) -->
+      <div id="cal-disconnect-overlay" class="cal-disconnect-overlay" style="display: none;" role="alertdialog" aria-modal="true">
+        <div class="cal-disconnect-card">
+          <div class="cal-disconnect-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+              <line x1="2" y1="2" x2="22" y2="22" stroke="#ff3b30" stroke-width="2.5"></line>
+            </svg>
+          </div>
+          <h3 class="cal-disconnect-title" data-i18n="calibration.disconnect_alert_title">Телефон отключен</h3>
+          <p class="cal-disconnect-desc" data-i18n="calibration.disconnect_alert_desc">Экран телефона выключился или заблокирован. Разблокируйте смартфон и держите экран включенным во время калибровки.</p>
+          <div class="cal-disconnect-pulse-badge">
+            <span class="cal-disconnect-dot"></span>
+            <span data-i18n="calibration.disconnect_waiting">Ожидание переподключения...</span>
+          </div>
+          <div class="cal-disconnect-actions">
+            <button type="button" class="btn-apple-secondary cal-btn-sm" id="btn-cancel-cal-disconnect" data-i18n="calibration.disconnect_btn_cancel">Отменить калибровку</button>
+          </div>
         </div>
       </div>
-    </div>
+
+    </div><!-- .cal-modal -->
   </div><!-- #cal-overlay -->
+
+  <!-- Floating Tooltip for Settings Infotips -->
+  <div id="settings-floating-tooltip" class="apple-floating-tooltip"></div>
 
   <script>
   'use strict';
@@ -1827,6 +1854,126 @@
     }
   };
 
+  // ── Sound Alerts Manager ───────────────────────────────────────────────────
+  const SoundManager = {
+    audioCtx: null,
+    _lastPlayTs: { connect: 0, disconnect: 0 },
+
+    getAudioContext() {
+      if (!this.audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          this.audioCtx = new AudioContextClass();
+        }
+      }
+      if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        this.audioCtx.resume().catch(() => {});
+      }
+      return this.audioCtx;
+    },
+
+    getMode() {
+      if (SettingsManager.currentSettings && SettingsManager.currentSettings.soundMode) {
+        return SettingsManager.currentSettings.soundMode;
+      }
+      const sel = document.getElementById('setting-sound-mode');
+      return sel?.value || 'cute';
+    },
+
+    async play(type) {
+      const mode = this.getMode();
+      if (mode === 'off') return;
+
+      const now = Date.now();
+      if (this._lastPlayTs[type] && now - this._lastPlayTs[type] < 600) {
+        return;
+      }
+      this._lastPlayTs[type] = now;
+
+      if (mode === 'windows') {
+        if (window.go?.main?.App?.PlaySystemSound) {
+          try {
+            window.go.main.App.PlaySystemSound(type);
+          } catch (e) {
+            console.warn('PlaySystemSound error:', e);
+          }
+        }
+        return;
+      }
+
+      // Synthesized celesta arpeggios via Web Audio API
+      if (type === 'connect') {
+        this.playCuteConnect();
+      } else if (type === 'disconnect') {
+        this.playCuteDisconnect();
+      }
+    },
+
+    playTone(freq, startTime, duration, gainValue = 0.12, type = 'sine') {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, startTime);
+
+      gain.gain.setValueAtTime(0.0001, startTime);
+      gain.gain.exponentialRampToValueAtTime(gainValue, startTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    },
+
+    playCuteConnect() {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      // Uplifting arpeggio: C5 (523Hz), E5 (659Hz), G5 (784Hz), C6 (1046Hz)
+      const notes = [
+        { f: 523.25, t: 0.00, d: 0.22, g: 0.13 },
+        { f: 659.25, t: 0.07, d: 0.22, g: 0.14 },
+        { f: 783.99, t: 0.14, d: 0.24, g: 0.15 },
+        { f: 1046.50, t: 0.21, d: 0.38, g: 0.16 }
+      ];
+      for (const n of notes) {
+        this.playTone(n.f, now + n.t, n.d, n.g, 'sine');
+      }
+    },
+
+    playCuteDisconnect() {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      // Soft descending drop: G5 (784Hz), Eb5 (622Hz), C5 (523Hz)
+      const notes = [
+        { f: 783.99, t: 0.00, d: 0.18, g: 0.13 },
+        { f: 622.25, t: 0.08, d: 0.20, g: 0.12 },
+        { f: 523.25, t: 0.17, d: 0.32, g: 0.11 }
+      ];
+      for (const n of notes) {
+        this.playTone(n.f, now + n.t, n.d, n.g, 'sine');
+      }
+    },
+
+    preview() {
+      const sel = document.getElementById('setting-sound-mode');
+      const mode = sel ? sel.value : this.getMode();
+      if (mode === 'windows') {
+        if (window.go?.main?.App?.PlaySystemSound) {
+          try { window.go.main.App.PlaySystemSound('connect'); } catch (e) {}
+        }
+      } else {
+        this.playCuteConnect();
+      }
+    }
+  };
+
   // ── Settings Module Manager ────────────────────────────────────────────────
   const SettingsManager = {
     isOpen: false,
@@ -1857,6 +2004,11 @@
         await this.save();
       });
 
+      // Preview sound button
+      document.getElementById('btn-sound-preview')?.addEventListener('click', () => {
+        SoundManager.preview();
+      });
+
       // Theme segmented control clicks
       document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1880,8 +2032,76 @@
         });
       });
 
+      // Initialize Apple-style floating infotips
+      this.initTooltips();
+
       // Load initial settings silently on startup
       await this.fetchSettings();
+    },
+
+    initTooltips() {
+      const tooltipEl = document.getElementById('settings-floating-tooltip');
+      if (!tooltipEl) return;
+
+      const showTooltip = (targetEl) => {
+        const tipKey = targetEl.getAttribute('data-i18n-tip');
+        if (!tipKey) return;
+        const text = I18n.t(tipKey) || tipKey;
+        if (!text) return;
+
+        tooltipEl.textContent = text;
+        tooltipEl.style.display = 'block';
+        tooltipEl.style.visibility = 'hidden';
+
+        const rect = targetEl.getBoundingClientRect();
+        const ttWidth = Math.min(280, window.innerWidth - 24);
+        let left = rect.left + (rect.width / 2) - (ttWidth / 2);
+        if (left < 12) left = 12;
+        if (left + ttWidth > window.innerWidth - 12) left = window.innerWidth - ttWidth - 12;
+
+        let top = rect.top - 8 - tooltipEl.offsetHeight;
+        if (top < 12) {
+          top = rect.bottom + 8;
+        }
+        if (top + tooltipEl.offsetHeight > window.innerHeight - 12) {
+          top = Math.max(12, window.innerHeight - tooltipEl.offsetHeight - 12);
+        }
+
+        tooltipEl.style.left = left + 'px';
+        tooltipEl.style.top = top + 'px';
+        tooltipEl.style.visibility = 'visible';
+        void tooltipEl.offsetWidth;
+        tooltipEl.classList.add('show');
+      };
+
+      const hideTooltip = () => {
+        tooltipEl.classList.remove('show');
+        tooltipEl.style.display = 'none';
+      };
+
+      const container = document.getElementById('view-settings');
+      if (container) {
+        container.querySelectorAll('[data-i18n-tip]').forEach(el => {
+          el.addEventListener('mouseenter', () => showTooltip(el));
+          el.addEventListener('mouseleave', () => hideTooltip());
+          el.addEventListener('click', (e) => {
+            if (el.classList.contains('setting-infotip')) {
+              e.stopPropagation();
+              if (tooltipEl.classList.contains('show')) {
+                hideTooltip();
+              } else {
+                showTooltip(el);
+              }
+            }
+          });
+        });
+      }
+
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-i18n-tip]') && !e.target.closest('#settings-floating-tooltip')) {
+          hideTooltip();
+        }
+      });
     },
 
     async fetchSettings() {
@@ -1994,6 +2214,11 @@
         disconnectCheckbox.checked = (s.disconnectAlert !== false);
       }
 
+      const soundSelect = document.getElementById('setting-sound-mode');
+      if (soundSelect) {
+        soundSelect.value = s.soundMode || 'cute';
+      }
+
       // Theme segmented control
       const activeTheme = s.theme || ThemeManager.theme || 'dark';
       document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(btn => {
@@ -2039,6 +2264,11 @@
       const disconnectCheckbox = document.getElementById('setting-disconnect-alert');
       if (disconnectCheckbox) {
         disconnectCheckbox.checked = true;
+      }
+
+      const soundSelect = document.getElementById('setting-sound-mode');
+      if (soundSelect) {
+        soundSelect.value = 'cute';
       }
     },
 
@@ -2092,6 +2322,7 @@
       const gyroDeadzone = parseFloat(document.getElementById('setting-gyro-deadzone')?.value || '0.20');
       const stillnessHint = !!document.getElementById('setting-stillness-hint')?.checked;
       const disconnectAlert = !!document.getElementById('setting-disconnect-alert')?.checked;
+      const soundMode = document.getElementById('setting-sound-mode')?.value || 'cute';
       const selectedTheme = document.querySelector('#setting-theme-segmented .settings-seg-btn.active')?.getAttribute('data-val') || ThemeManager.theme || 'dark';
       const selectedLang = document.querySelector('#setting-lang-segmented .settings-seg-btn.active')?.getAttribute('data-val') || I18n.currentLang || 'ru';
 
@@ -2106,7 +2337,8 @@
         httpsPort: httpsPort,
         gyroDeadzone: isNaN(gyroDeadzone) ? 0.20 : gyroDeadzone,
         stillnessHint: stillnessHint,
-        disconnectAlert: disconnectAlert
+        disconnectAlert: disconnectAlert,
+        soundMode: soundMode
       };
 
       try {
@@ -2126,7 +2358,9 @@
         }
 
         showToast(I18n.t('settings_modal.saved_toast') || 'Настройки успешно сохранены!');
-        this.close();
+        setTimeout(() => {
+          window.location.reload();
+        }, 450);
       } catch (err) {
         console.error('SaveAppSettings error:', err);
         showToast((I18n.t('stats.stats_modal_save_err') || 'Ошибка сохранения: ') + err);
@@ -2922,8 +3156,12 @@
       if (SettingsManager.currentSettings && SettingsManager.currentSettings.disconnectAlert === false) return;
       this.isDisconnectAlertActive = true;
 
-      // Add prominent red outline to the whole window
-      document.body.classList.add('cal-disconnect-window-alert');
+      // Add subtle Apple red outline to the modal card only
+      const modalEl = document.querySelector('.cal-modal');
+      if (modalEl) {
+        modalEl.classList.add('cal-modal-disconnected');
+        modalEl.scrollTop = 0;
+      }
 
       // If active capture was running, abort countdown/recording safely
       if (this.isCapturing) {
@@ -2940,17 +3178,29 @@
       if (alertOverlay) {
         alertOverlay.style.display = 'flex';
       }
+
+      if (typeof SoundManager !== 'undefined') {
+        SoundManager.play('disconnect');
+      }
     },
 
     hideDisconnectAlert() {
       if (!this.isDisconnectAlertActive) return;
       this.isDisconnectAlertActive = false;
 
+      const modalEl = document.querySelector('.cal-modal');
+      if (modalEl) {
+        modalEl.classList.remove('cal-modal-disconnected');
+      }
       document.body.classList.remove('cal-disconnect-window-alert');
 
       const alertOverlay = document.getElementById('cal-disconnect-overlay');
       if (alertOverlay) {
         alertOverlay.style.display = 'none';
+      }
+
+      if (typeof SoundManager !== 'undefined') {
+        SoundManager.play('connect');
       }
 
       if (this.wasInterruptedByDisconnect) {
@@ -4354,7 +4604,15 @@
 
       const isOffline = (state.status === 'offline');
       if (this._lastIsOffline !== isOffline) {
+        const prevOffline = this._lastIsOffline;
         this._lastIsOffline = isOffline;
+        if (prevOffline !== null && typeof SoundManager !== 'undefined') {
+          if (!isOffline) {
+            SoundManager.play('connect');
+          } else {
+            SoundManager.play('disconnect');
+          }
+        }
         if (isOffline) {
           if (!SetupWizard?.isOpen && !HelpManager?.isOpen && !SettingsManager?.isOpen && !WelcomeManager?.isOpen) {
             viewOffline.style.display = 'flex';

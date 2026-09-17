@@ -12,6 +12,7 @@ export namespace main {
 	    gyroDeadzone: number;
 	    stillnessHint: boolean;
 	    disconnectAlert: boolean;
+	    soundMode: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -30,6 +31,7 @@ export namespace main {
 	        this.gyroDeadzone = source["gyroDeadzone"];
 	        this.stillnessHint = source["stillnessHint"];
 	        this.disconnectAlert = source["disconnectAlert"];
+	        this.soundMode = source["soundMode"];
 	    }
 	}
 	export class Profile {
