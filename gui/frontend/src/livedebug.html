@@ -272,6 +272,170 @@
       pointer-events: none;
     }
 
+    /* Floating Apple Segmented Camera Mode Bar */
+    .floating-cam-bar {
+      position: absolute;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      pointer-events: auto;
+    }
+
+    .segmented-control.glass {
+      background: rgba(28, 28, 30, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 3px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    [data-theme="light"] .segmented-control.glass {
+      background: rgba(255, 255, 255, 0.80);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    .segmented-control.glass .segmented-btn {
+      border-radius: var(--radius-pill);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 4px 12px;
+      height: 24px;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    /* Quad Camera Grid Overlay */
+    .quad-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: none;
+    }
+
+    .quad-overlay.visible {
+      display: block;
+    }
+
+    .quad-divider-v {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .quad-divider-h {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .quad-tag {
+      position: absolute;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .quad-tag.top-left {
+      top: 12px;
+      left: 12px;
+    }
+
+    .quad-tag.top-right {
+      top: 12px;
+      left: calc(50% + 12px);
+    }
+
+    .quad-tag.bottom-left {
+      top: calc(50% + 12px);
+      left: 12px;
+    }
+
+    .quad-tag.bottom-right {
+      top: calc(50% + 12px);
+      left: calc(50% + 12px);
+    }
+
+    /* Orbit Mode Controls Bar */
+    .orbit-controls-bar {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 30;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      background: rgba(28, 28, 30, 0.75);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      padding: 4px 6px 4px 14px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.28);
+    }
+
+    [data-theme="light"] .orbit-controls-bar {
+      background: rgba(255, 255, 255, 0.80);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+    }
+
+    .orbit-controls-bar.visible {
+      display: flex;
+    }
+
+    .orbit-hint {
+      font-size: 11px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .btn-camera-reset {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      font-family: var(--font-sans);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn-camera-reset:hover {
+      background: var(--surface-hover);
+      color: var(--apple-blue);
+      border-color: var(--apple-blue);
+    }
+
+    .btn-camera-reset:active {
+      transform: scale(0.96);
+    }
+
     /* Phone Disconnected Red Accent Overlay */
     .no-phone-overlay {
       position: absolute;
@@ -460,7 +624,7 @@
           <path d="m19.07 4.93-1.41 1.41"></path>
         </svg>
         <svg id="icon-theme-moon" viewBox="0 0 24 24" style="display: none;">
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          <path d="M12 3a6 6 0 0 0 9 9 9 0 1 1-9-9Z"></path>
         </svg>
       </button>
     </div>
@@ -520,6 +684,34 @@
     <section class="right-viewport" id="viewport-wrap">
       <canvas id="livedebug-canvas"></canvas>
 
+      <!-- Floating Apple Segmented Camera Mode Bar -->
+      <nav class="floating-cam-bar" aria-label="Camera Modes">
+        <div class="segmented-control compact glass" id="cam-segmented">
+          <button type="button" class="segmented-btn active" id="btn-cam-static" data-mode="static" data-i18n="live_debug.cam_static">Статический</button>
+          <button type="button" class="segmented-btn" id="btn-cam-quad" data-mode="quad" data-i18n="live_debug.cam_quad">4 камеры</button>
+          <button type="button" class="segmented-btn" id="btn-cam-orbit" data-mode="orbit" data-i18n="live_debug.cam_dynamic">Динамический</button>
+        </div>
+      </nav>
+
+      <!-- Quad Camera Grid Overlay -->
+      <div class="quad-overlay" id="quad-overlay">
+        <div class="quad-divider-v"></div>
+        <div class="quad-divider-h"></div>
+        <div class="quad-tag top-left" data-i18n="live_debug.cam_front">Спереди</div>
+        <div class="quad-tag top-right" data-i18n="live_debug.cam_top">Сверху</div>
+        <div class="quad-tag bottom-left" data-i18n="live_debug.cam_right">Справа</div>
+        <div class="quad-tag bottom-right" data-i18n="live_debug.cam_iso">3/4 Обзор</div>
+      </div>
+
+      <!-- Dynamic Orbit Mode Floating Controls Bar -->
+      <div class="orbit-controls-bar" id="orbit-controls-bar">
+        <span class="orbit-hint" data-i18n="live_debug.cam_orbit_hint">Зажмите ЛКМ для вращения • Колесико — зум</span>
+        <button type="button" class="btn-camera-reset" id="btn-reset-cam" title="Сбросить положение камеры">
+          <kbd class="apple-kbd">R</kbd>
+          <span data-i18n="live_debug.cam_reset">Сброс камеры</span>
+        </button>
+      </div>
+
       <!-- Phone Disconnected Red Accent Alert Overlay -->
       <div class="no-phone-overlay visible" id="no-phone-overlay">
         <div class="no-phone-card">
@@ -575,6 +767,16 @@
           "live_debug.no_phone_title": "Нет соединения с телефоном",
           "live_debug.no_phone_desc": "Подключите телефон по QR-коду в главном окне для передачи данных гироскопа",
           "live_debug.disconnected_badge": "ОФФЛАЙН",
+          "live_debug.cam_mode": "Режим камеры",
+          "live_debug.cam_static": "Статический",
+          "live_debug.cam_quad": "4 камеры",
+          "live_debug.cam_dynamic": "Динамический",
+          "live_debug.cam_front": "Спереди",
+          "live_debug.cam_top": "Сверху",
+          "live_debug.cam_right": "Справа",
+          "live_debug.cam_iso": "3/4 Обзор",
+          "live_debug.cam_orbit_hint": "Зажмите ЛКМ для вращения • Колесико — зум",
+          "live_debug.cam_reset": "Сброс камеры",
           "app.theme_toggle": "Переключить тему"
         },
         en: {
@@ -595,6 +797,16 @@
           "live_debug.no_phone_title": "No Connection to Phone",
           "live_debug.no_phone_desc": "Scan the QR code in the main window to connect motion sensors",
           "live_debug.disconnected_badge": "OFFLINE",
+          "live_debug.cam_mode": "Camera Mode",
+          "live_debug.cam_static": "Static",
+          "live_debug.cam_quad": "4 Cameras",
+          "live_debug.cam_dynamic": "Dynamic",
+          "live_debug.cam_front": "Front",
+          "live_debug.cam_top": "Top",
+          "live_debug.cam_right": "Right",
+          "live_debug.cam_iso": "3/4 View",
+          "live_debug.cam_orbit_hint": "Drag LMB to orbit • Scroll to zoom",
+          "live_debug.cam_reset": "Reset Camera",
           "app.theme_toggle": "Toggle Theme"
         }
       };
@@ -668,6 +880,8 @@
       const canvas = document.getElementById('livedebug-canvas');
       const viewportWrap = document.getElementById('viewport-wrap');
       const noPhoneOverlay = document.getElementById('no-phone-overlay');
+      const quadOverlay = document.getElementById('quad-overlay');
+      const orbitBar = document.getElementById('orbit-controls-bar');
       const ecoOverlay = document.getElementById('eco-overlay');
       const ecoToggle = document.getElementById('eco-toggle');
       const fpsCounter = document.getElementById('fps-counter');
@@ -676,6 +890,12 @@
       const btnRecenter = document.getElementById('btn-recenter');
       const btnModelGamepad = document.getElementById('btn-model-gamepad');
       const btnModelCube = document.getElementById('btn-model-cube');
+      const btnResetCam = document.getElementById('btn-reset-cam');
+
+      // Camera Mode Buttons
+      const btnCamStatic = document.getElementById('btn-cam-static');
+      const btnCamQuad = document.getElementById('btn-cam-quad');
+      const btnCamOrbit = document.getElementById('btn-cam-orbit');
 
       // ── Three.js Studio Scene ──
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -685,13 +905,66 @@
 
       const scene = new THREE.Scene();
 
-      // Camera: spacious Apple Keynote framing
-      const camera = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
-      const camTarget = new THREE.Vector3(0, 0, 0);
-      const orbitHRadius = 9.8;
-      const orbitY = 4.2;
-      camera.position.set(camTarget.x, orbitY, camTarget.z + orbitHRadius);
-      camera.lookAt(camTarget);
+      // ── Camera Modes Definitions ──
+      // 1. Static Camera
+      const cameraStatic = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
+      cameraStatic.position.set(0, 4.2, 9.8);
+      cameraStatic.lookAt(0, 0, 0);
+
+      // 2. Dynamic Orbit Camera
+      const DEFAULT_RADIUS = 10.66;
+      const DEFAULT_PHI = Math.acos(4.2 / 10.66); // ~1.166 rad
+      const DEFAULT_THETA = 0;
+
+      let orbitRadius = DEFAULT_RADIUS;
+      let orbitPhi = DEFAULT_PHI;
+      let orbitTheta = DEFAULT_THETA;
+
+      const cameraOrbit = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
+
+      function updateOrbitCamera() {
+        const sinPhi = Math.sin(orbitPhi);
+        const cosPhi = Math.cos(orbitPhi);
+        const sinTheta = Math.sin(orbitTheta);
+        const cosTheta = Math.cos(orbitTheta);
+
+        cameraOrbit.position.set(
+          orbitRadius * sinPhi * sinTheta,
+          orbitRadius * cosPhi,
+          orbitRadius * sinPhi * cosTheta
+        );
+        cameraOrbit.lookAt(0, 0, 0);
+      }
+      updateOrbitCamera();
+
+      function resetOrbitCamera() {
+        orbitRadius = DEFAULT_RADIUS;
+        orbitPhi = DEFAULT_PHI;
+        orbitTheta = DEFAULT_THETA;
+        updateOrbitCamera();
+      }
+
+      // 3. Quad Viewport Cameras
+      // Front View (+Z)
+      const cameraFront = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
+      cameraFront.position.set(0, 0, 9.0);
+      cameraFront.lookAt(0, 0, 0);
+
+      // Top View (+Y)
+      const cameraTop = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
+      cameraTop.position.set(0, 9.0, 0);
+      cameraTop.up.set(0, 0, -1);
+      cameraTop.lookAt(0, 0, 0);
+
+      // Right View (+X)
+      const cameraRight = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
+      cameraRight.position.set(9.0, 0, 0);
+      cameraRight.lookAt(0, 0, 0);
+
+      // 3/4 Isometric Perspective (3/4 horizontal & 3/4 vertical)
+      const cameraIso = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
+      cameraIso.position.set(6.8, 5.8, 6.8);
+      cameraIso.lookAt(0, 0, 0);
 
       // Studio Lighting
       const ambLight = new THREE.AmbientLight(0xffffff, 0.90);
@@ -951,6 +1224,75 @@
       btnModelCube?.addEventListener('click', () => applyModel('cube'));
       applyModel(currentModel);
 
+      // ── Camera Modes Switcher Logic ──
+      let currentCamMode = localStorage.getItem('gb_debug_cam_mode') || 'static';
+
+      function setCamMode(mode) {
+        currentCamMode = mode;
+        localStorage.setItem('gb_debug_cam_mode', mode);
+
+        btnCamStatic?.classList.toggle('active', mode === 'static');
+        btnCamQuad?.classList.toggle('active', mode === 'quad');
+        btnCamOrbit?.classList.toggle('active', mode === 'orbit');
+
+        quadOverlay?.classList.toggle('visible', mode === 'quad');
+        orbitBar?.classList.toggle('visible', mode === 'orbit');
+
+        if (mode === 'orbit') {
+          canvas.style.cursor = 'grab';
+        } else {
+          canvas.style.cursor = 'default';
+        }
+
+        // Automatic camera reset on switching modes (NEVER touching phone AHRS orientation!)
+        resetOrbitCamera();
+        resize();
+      }
+
+      btnCamStatic?.addEventListener('click', () => setCamMode('static'));
+      btnCamQuad?.addEventListener('click', () => setCamMode('quad'));
+      btnCamOrbit?.addEventListener('click', () => setCamMode('orbit'));
+      btnResetCam?.addEventListener('click', () => resetOrbitCamera());
+
+      // ── Mouse Drag & Wheel Orbit Controls ──
+      let isDragging = false;
+      let prevMousePos = { x: 0, y: 0 };
+
+      canvas.addEventListener('mousedown', (e) => {
+        if (currentCamMode !== 'orbit') return;
+        if (e.button === 0) {
+          isDragging = true;
+          prevMousePos = { x: e.clientX, y: e.clientY };
+          canvas.style.cursor = 'grabbing';
+        }
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging || currentCamMode !== 'orbit') return;
+        const dx = e.clientX - prevMousePos.x;
+        const dy = e.clientY - prevMousePos.y;
+        orbitTheta -= dx * 0.007;
+        orbitPhi = Math.max(0.08, Math.min(Math.PI * 0.92, orbitPhi - dy * 0.007));
+        updateOrbitCamera();
+        prevMousePos = { x: e.clientX, y: e.clientY };
+      });
+
+      window.addEventListener('mouseup', () => {
+        if (isDragging) {
+          isDragging = false;
+          if (currentCamMode === 'orbit') {
+            canvas.style.cursor = 'grab';
+          }
+        }
+      });
+
+      canvas.addEventListener('wheel', (e) => {
+        if (currentCamMode !== 'orbit') return;
+        e.preventDefault();
+        orbitRadius = Math.max(4.0, Math.min(22.0, orbitRadius + e.deltaY * 0.01));
+        updateOrbitCamera();
+      }, { passive: false });
+
       // ── Quaternions and Tracking ──
       const liveQuat = new THREE.Quaternion();
       const currentQuat = new THREE.Quaternion();
@@ -961,8 +1303,10 @@
         const h = viewportWrap.clientHeight;
         if (w <= 0 || h <= 0) return;
         renderer.setSize(w, h, false);
-        camera.aspect = w / h;
-        camera.updateProjectionMatrix();
+        cameraStatic.aspect = w / h;
+        cameraStatic.updateProjectionMatrix();
+        cameraOrbit.aspect = w / h;
+        cameraOrbit.updateProjectionMatrix();
       }
       window.addEventListener('resize', resize);
       resize();
@@ -984,7 +1328,56 @@
         gamepadGroup.quaternion.copy(currentQuat);
         cubeGroup.quaternion.copy(currentQuat);
 
-        renderer.render(scene, camera);
+        if (!viewportWrap) return;
+        const w = viewportWrap.clientWidth;
+        const h = viewportWrap.clientHeight;
+        if (w <= 0 || h <= 0) return;
+
+        if (currentCamMode === 'quad') {
+          const halfW = Math.floor(w / 2);
+          const halfH = Math.floor(h / 2);
+
+          renderer.setScissorTest(true);
+
+          // 1. Top-Left: Front (+Z)
+          renderer.setViewport(0, halfH, halfW, halfH);
+          renderer.setScissor(0, halfH, halfW, halfH);
+          cameraFront.aspect = halfW / halfH;
+          cameraFront.updateProjectionMatrix();
+          renderer.render(scene, cameraFront);
+
+          // 2. Top-Right: Top (+Y)
+          renderer.setViewport(halfW, halfH, halfW, halfH);
+          renderer.setScissor(halfW, halfH, halfW, halfH);
+          cameraTop.aspect = halfW / halfH;
+          cameraTop.updateProjectionMatrix();
+          renderer.render(scene, cameraTop);
+
+          // 3. Bottom-Left: Right (+X)
+          renderer.setViewport(0, 0, halfW, halfH);
+          renderer.setScissor(0, 0, halfW, halfH);
+          cameraRight.aspect = halfW / halfH;
+          cameraRight.updateProjectionMatrix();
+          renderer.render(scene, cameraRight);
+
+          // 4. Bottom-Right: 3/4 Isometric Perspective
+          renderer.setViewport(halfW, 0, halfW, halfH);
+          renderer.setScissor(halfW, 0, halfW, halfH);
+          cameraIso.aspect = halfW / halfH;
+          cameraIso.updateProjectionMatrix();
+          renderer.render(scene, cameraIso);
+
+          renderer.setScissorTest(false);
+        } else if (currentCamMode === 'orbit') {
+          renderer.setViewport(0, 0, w, h);
+          renderer.setScissor(0, 0, w, h);
+          renderer.render(scene, cameraOrbit);
+        } else {
+          // Static Mode
+          renderer.setViewport(0, 0, w, h);
+          renderer.setScissor(0, 0, w, h);
+          renderer.render(scene, cameraStatic);
+        }
 
         frameCount++;
         const now = performance.now();
@@ -1101,9 +1494,10 @@
         ecoToggle.checked = false;
       }
 
-      // Initial Theme, Lang, and Render Setup
+      // Initial Theme, Lang, CamMode, and Render Setup
       applyLang(currentLang);
       applyTheme(currentTheme, false);
+      setCamMode(currentCamMode);
       window.focus();
 
       // Initial HTTP queries for sync
@@ -1162,6 +1556,11 @@
         if (e.code === 'Space') {
           e.preventDefault();
           doRecenter();
+        } else if (e.code === 'KeyR' || e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
+          if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            resetOrbitCamera(); // Resets camera view only, NEVER the phone AHRS orientation!
+          }
         }
       });
 

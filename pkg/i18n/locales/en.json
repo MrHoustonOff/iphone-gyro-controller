@@ -102,6 +102,17 @@
     "resume": "RESUME"
   },
   "live_debug": {
+    "cam_dynamic": "Dynamic",
+    "cam_front": "Front",
+    "cam_iso": "3/4 View",
+    "cam_mode": "Camera Mode",
+    "cam_orbit_hint": "Drag LMB to orbit • Scroll to zoom",
+    "cam_quad": "4 Cameras",
+    "cam_reset": "Reset Camera",
+    "cam_right": "Right",
+    "cam_static": "Static",
+    "cam_top": "Top",
+    "disconnected_badge": "OFFLINE",
     "eco_desc": "Pause rendering when window is inactive",
     "eco_mode": "Resource Saving",
     "model_cube": "Cube",
