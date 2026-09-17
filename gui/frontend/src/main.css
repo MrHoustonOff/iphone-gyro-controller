@@ -3502,9 +3502,13 @@ em {
   }
   .status-capsule .status-text {
     display: none;
+  }
 }
 
-.author-signature {
+.author-signature,
+.author-signature:link,
+.author-signature:visited,
+.author-signature:active {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -3514,6 +3518,7 @@ em {
   user-select: none;
   letter-spacing: -0.01em;
   text-decoration: none;
+  outline: none;
   cursor: pointer;
   transition: opacity 0.2s ease, color 0.2s ease;
 }
@@ -3521,6 +3526,7 @@ em {
 .author-signature:hover {
   opacity: 1;
   color: var(--text);
+  text-decoration: none;
 }
 
 .author-signature .github-icon {
@@ -3638,7 +3644,10 @@ em {
   padding-top: 12px;
 }
 
-.help-author-discreet {
+.help-author-discreet,
+.help-author-discreet:link,
+.help-author-discreet:visited,
+.help-author-discreet:active {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -3647,6 +3656,7 @@ em {
   opacity: 0.6;
   user-select: none;
   text-decoration: none;
+  outline: none;
   cursor: pointer;
   transition: opacity 0.2s ease, color 0.2s ease;
 }
@@ -3654,6 +3664,7 @@ em {
 .help-author-discreet:hover {
   opacity: 1;
   color: var(--text);
+  text-decoration: none;
 }
 
 .help-author-discreet .github-icon {

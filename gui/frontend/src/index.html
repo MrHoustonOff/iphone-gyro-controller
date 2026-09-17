@@ -655,8 +655,8 @@
       <!-- RAM Monitor Capsule -->
       <div class="footer-metric-item" id="footer-metric-ram" data-i18n-title="footer.ram_tip">
         <span class="footer-metric-label" data-i18n="footer.ram">ОЗУ</span>
-        <span class="footer-metric-val" id="footer-ram-val">--.--- MB</span>
-        <span class="footer-metric-sub" id="footer-ram-pct">(--.---%)</span>
+        <span class="footer-metric-val" id="footer-ram-val">-- MB</span>
+        <span class="footer-metric-sub" id="footer-ram-pct"></span>
       </div>
     </div>
 
@@ -4067,26 +4067,21 @@
       const totalRamMb = typeof stats.totalRamMb === 'number' ? stats.totalRamMb : 0;
       const ramPct = typeof stats.ramPercent === 'number' ? stats.ramPercent : 0;
 
-      // Update RAM text with thousandths precision (3 decimals)
+      // Update RAM text with integer MB
       const ramValEl = document.getElementById('footer-ram-val');
       const ramPctEl = document.getElementById('footer-ram-pct');
       const itemRam = document.getElementById('footer-metric-ram');
 
+      const ramWholeMb = Math.round(ramMb);
       if (ramValEl) {
-        if (ramMb >= 1024) {
-          ramValEl.textContent = (ramMb / 1024).toFixed(3) + ' GB';
-        } else {
-          ramValEl.textContent = ramMb.toFixed(3) + ' MB';
-        }
+        ramValEl.textContent = `${ramWholeMb} MB`;
       }
       if (ramPctEl) {
-        ramPctEl.textContent = `(${ramPct.toFixed(3)}%)`;
+        ramPctEl.textContent = '';
       }
 
       if (itemRam && totalRamMb > 0) {
-        const totalStr = totalRamMb >= 1024 ? (totalRamMb / 1024).toFixed(3) + ' GB' : totalRamMb.toFixed(3) + ' MB';
-        const usedStr = ramMb >= 1024 ? (ramMb / 1024).toFixed(3) + ' GB' : ramMb.toFixed(3) + ' MB';
-        itemRam.title = `${usedStr} / ${totalStr} (${ramPct.toFixed(3)}%)`;
+        itemRam.title = `${ramWholeMb} MB / ${Math.round(totalRamMb)} MB`;
       }
     }
   };
