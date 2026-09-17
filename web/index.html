@@ -369,6 +369,37 @@
       stroke-linejoin: round;
     }
 
+    .btn-screensaver-full {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 14px;
+      min-height: 42px;
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .btn-screensaver-full:active {
+      transform: scale(0.98);
+      background: var(--surface-hover);
+    }
+    .btn-screensaver-full svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     /* ── Central Block: Sensor Level / HUD & Warning ───────────────────────── */
     .sensor-section {
       width: 100%;
@@ -377,7 +408,7 @@
       align-items: center;
       justify-content: center;
       flex: 1;
-      min-height: 220px;
+      min-height: 170px;
       position: relative;
     }
 
@@ -387,14 +418,14 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 12px;
+      gap: 8px;
       width: 100%;
       transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
     .gyro-hud-bezel {
-      width: 190px;
-      height: 190px;
+      width: 154px;
+      height: 154px;
       border-radius: 50%;
       background: var(--surface);
       border: 1px solid var(--border);
@@ -407,8 +438,8 @@
     }
 
     .gyro-hud-svg {
-      width: 174px;
-      height: 174px;
+      width: 140px;
+      height: 140px;
       overflow: visible;
     }
 
@@ -859,7 +890,7 @@
       <div class="conn-hint" id="conn-hint">Нажмите для подключения к ПК по WebSocket</div>
     </button>
 
-    <!-- Secondary Quick Actions (Reconnect & Screen Lock) -->
+    <!-- Secondary Quick Actions (Reconnect & Keep Screen Awake) -->
     <div class="conn-sub-bar">
       <button class="btn-sub-action" id="btn-toggle-socket">
         <svg viewBox="0 0 24 24">
@@ -871,12 +902,21 @@
 
       <button class="btn-sub-action active" id="btn-screenlock">
         <svg viewBox="0 0 24 24">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+          <line x1="8" y1="21" x2="16" y2="21"></line>
+          <line x1="12" y1="17" x2="12" y2="21"></line>
         </svg>
-        <span id="txt-sub-screenlock">Скринлок: Вкл</span>
+        <span id="txt-sub-screenlock">Не гасить экран: Вкл</span>
       </button>
     </div>
+
+    <!-- Full-Width Screensaver & Anti-Touch Shield Action Button -->
+    <button class="btn-screensaver-full" id="btn-screensaver-main">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+      </svg>
+      <span id="txt-screensaver-main">Защита от касаний (Скринсейвер)</span>
+    </button>
   </section>
 
   <!-- ── 4. Compact Footer ──────────────────────────────────────────────── -->
@@ -944,8 +984,9 @@ const I18N = {
     hint_disconnected: 'Нажмите для повторной попытки подключения по WebSocket',
     sub_disconnect: 'Разорвать связь',
     sub_connect: 'Переподключить',
-    sub_screenlock_on: 'Скринлок: Вкл',
-    sub_screenlock_off: 'Скринлок: Выкл',
+    sub_screenlock_on: 'Не гасить экран: Вкл',
+    sub_screenlock_off: 'Не гасить экран: Выкл',
+    sub_screensaver_btn: 'Защита от касаний (Скринсейвер)',
     warn_title: 'Требуется доступ к датчикам',
     warn_desc: 'Браузер блокирует доступ к гироскопу. Нажмите кнопку ниже, чтобы разрешить отслеживание движений.',
     warn_btn: 'ВКЛЮЧИТЬ ДАТЧИКИ',
@@ -969,8 +1010,9 @@ const I18N = {
     hint_disconnected: 'Tap to reconnect to PC via WebSocket',
     sub_disconnect: 'Disconnect',
     sub_connect: 'Reconnect',
-    sub_screenlock_on: 'Screen Lock: ON',
-    sub_screenlock_off: 'Screen Lock: OFF',
+    sub_screenlock_on: 'Keep Awake: ON',
+    sub_screenlock_off: 'Keep Awake: OFF',
+    sub_screensaver_btn: 'Touch Shield (Screensaver)',
     warn_title: 'Sensor Access Required',
     warn_desc: 'Motion sensors are restricted by the browser. Tap the button below to enable gyro tracking.',
     warn_btn: 'ENABLE SENSORS',
@@ -995,6 +1037,8 @@ function setLanguage(lang) {
   document.getElementById('txt-footer-role').textContent = I18N[lang].footer_role;
   document.getElementById('ss-lock-caption').textContent = I18N[lang].ss_caption;
   document.getElementById('ss-swipe-txt').textContent = I18N[lang].ss_swipe;
+  const txtScreensaverMain = document.getElementById('txt-screensaver-main');
+  if (txtScreensaverMain) txtScreensaverMain.textContent = I18N[lang].sub_screensaver_btn;
   updateWakeLockUI();
   updateConnectionUI();
 }
@@ -1122,13 +1166,14 @@ requestWakeLock();
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. OLED Screensaver & Anti-Touch Shield (Smart Hold & Swipe Unlock)
 // ─────────────────────────────────────────────────────────────────────────────
-const screensaverOverlay = document.getElementById('screensaver-overlay');
-const btnScreensaver     = document.getElementById('btn-screensaver');
-const ssLockProgress     = document.getElementById('ss-lock-progress');
-const ssCenterLock       = document.getElementById('ss-center-lock');
-const ssBottomSwipe      = document.getElementById('ss-bottom-swipe');
-const ssTopStatus        = document.getElementById('ss-top-status');
-const ssStatusLabel      = document.getElementById('ss-status-label');
+const screensaverOverlay  = document.getElementById('screensaver-overlay');
+const btnScreensaver      = document.getElementById('btn-screensaver');
+const btnScreensaverMain  = document.getElementById('btn-screensaver-main');
+const ssLockProgress      = document.getElementById('ss-lock-progress');
+const ssCenterLock        = document.getElementById('ss-center-lock');
+const ssBottomSwipe       = document.getElementById('ss-bottom-swipe');
+const ssTopStatus         = document.getElementById('ss-top-status');
+const ssStatusLabel       = document.getElementById('ss-status-label');
 
 let isScreensaverActive = false;
 let holdTimer = null;
@@ -1139,7 +1184,8 @@ const CIRCLE_CIRCUMFERENCE = 251.2; // 2 * PI * 40
 function openScreensaver() {
   isScreensaverActive = true;
   screensaverOverlay.classList.add('active');
-  btnScreensaver.classList.add('active');
+  if (btnScreensaver) btnScreensaver.classList.add('active');
+  if (btnScreensaverMain) btnScreensaverMain.classList.add('active');
   ssStatusLabel.textContent = `LIVE • ${deviceModel}`;
   ssLockProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
   triggerWandering();
@@ -1148,14 +1194,23 @@ function openScreensaver() {
 function closeScreensaver() {
   isScreensaverActive = false;
   screensaverOverlay.classList.remove('active');
-  btnScreensaver.classList.remove('active');
+  if (btnScreensaver) btnScreensaver.classList.remove('active');
+  if (btnScreensaverMain) btnScreensaverMain.classList.remove('active');
   cancelHold();
   if (navigator.vibrate) navigator.vibrate([40, 50, 40]);
 }
 
-btnScreensaver.addEventListener('click', () => {
-  openScreensaver();
-});
+if (btnScreensaver) {
+  btnScreensaver.addEventListener('click', () => {
+    openScreensaver();
+  });
+}
+
+if (btnScreensaverMain) {
+  btnScreensaverMain.addEventListener('click', () => {
+    openScreensaver();
+  });
+}
 
 // OLED Burn-in prevention: wandering badge position shift every 20s
 let wanderingInterval = null;
