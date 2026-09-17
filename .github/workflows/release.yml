@@ -99,9 +99,7 @@ jobs:
           $notes = Get-Content docs/RELEASE_NOTES.md -Raw
           $vtLines = @(
             "",
-            "---",
-            "",
-            "### Security & VirusTotal Reports",
+            "### VirusTotal Verification Reports",
             "- **Windows x86_64 (``GyroBridge.exe``)**: [VirusTotal Scan Report](https://www.virustotal.com/gui/file/$amd64Hash)",
             "  SHA-256: ``$amd64Hash``",
             "- **Windows ARM64 (``GyroBridge-windows-arm64.exe``)**: [VirusTotal Scan Report](https://www.virustotal.com/gui/file/$arm64Hash)",

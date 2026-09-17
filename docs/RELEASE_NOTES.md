@@ -39,3 +39,16 @@ No installation required. Download, run, and connect.
 - **RAM Monitor**: Live working set memory tracking.
 - **Bilingual Interface**: Full English and Russian support.
 - **Open-Source**: Licensed under the MIT License.
+
+---
+
+## Security & False Positive Notice
+
+GyroBridge is 100% free, open-source software under the MIT license. It does not collect telemetry, contains no analytics or ads, and makes zero external network connections (all communication is strictly restricted to your local Wi-Fi network between your PC and phone).
+
+Because GyroBridge is an independent open-source project without a paid enterprise digital signature certificate ($400+/year EV Code Signing), automated machine-learning heuristics in some antivirus engines (such as Microsoft Defender generic `!ml` tags) may initially flag freshly compiled Go binaries.
+
+If you have any security reservations:
+1. **Audit the Code**: Every line of code is open in this repository. You can inspect it yourself or pass it to any AI assistant (ChatGPT, Claude, Gemini) for an independent audit.
+2. **Build from Source**: You can compile `GyroBridge.exe` directly on your PC using the official Go and Wails toolchains in just a couple of minutes.
+

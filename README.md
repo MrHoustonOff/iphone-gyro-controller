@@ -41,6 +41,19 @@ GyroBridge includes a dedicated real-time 3D telemetry window to verify sensor r
 
 ---
 
+## Security, Antivirus & Transparency
+
+GyroBridge is 100% open-source software under the MIT license. It contains zero trackers, no telemetry, and makes no external internet connections whatsoever - all communication is strictly between your phone and your PC over your local home Wi-Fi.
+
+### Antivirus False Positives Notice
+Independent open-source developers rarely purchase proprietary EV (Extended Validation) code signing certificates due to exorbitant recurring costs ($400+/year). Because of this, automated machine-learning heuristics in certain antivirus software (e.g., Microsoft Defender generic `!ml` tags) might flag freshly compiled binaries as unfamiliar.
+
+We regularly scan release binaries against VirusTotal (69+ engines clean). If you have any security reservations:
+- **Inspect the Source**: Review the entire codebase yourself or pass it to any AI agent (Claude, ChatGPT, Gemini, etc.) to perform an independent security review.
+- **Build from Source**: Follow the instructions below to compile the binary directly on your own machine using Go and Wails.
+
+---
+
 ## Building from Source
 
 Prerequisites:
