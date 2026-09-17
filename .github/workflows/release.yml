@@ -42,13 +42,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          name: ${{ github.event.inputs.tag || github.ref_name }} — VIP Functionality Ready
-          body: |
-            Готов VIP функционал. Базовый скелет, DSU Cemuhook сервер и математика ориентации запущены.
-            Ничего толком не тестировалось, всё сделано на живую нитку. Далее начинаются куда более сложные процессы.
-
-            ### Файлы релиза:
-            - **gyrobridge.exe** — единый исполняемый файл для Windows (без внешних зависимостей).
+          name: ${{ github.event.inputs.tag || github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: true
           files: |
             gyrobridge.exe
           draft: false
