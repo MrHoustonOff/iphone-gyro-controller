@@ -36,14 +36,14 @@ jobs:
       - name: Build Windows AMD64 (x86_64)
         run: |
           cd gui
-          wails build -o GyroBridge-windows-amd64.exe
+          wails build -tags native_webview2loader -o GyroBridge-windows-amd64.exe
           Copy-Item build\bin\GyroBridge-windows-amd64.exe build\bin\GyroBridge.exe
         shell: powershell
 
       - name: Build Windows ARM64
         run: |
           cd gui
-          wails build -platform windows/arm64 -o GyroBridge-windows-arm64.exe
+          wails build -platform windows/arm64 -tags native_webview2loader -o GyroBridge-windows-arm64.exe
         shell: powershell
 
       - name: Generate Checksums
