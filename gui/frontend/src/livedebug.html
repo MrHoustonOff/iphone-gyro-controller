@@ -655,6 +655,35 @@
       color: var(--text-secondary);
     }
 
+    .stats-hint-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      margin-top: 3px;
+      user-select: none;
+      -webkit-user-select: none;
+      width: fit-content;
+    }
+
+    [data-theme="light"] .stats-hint-pill {
+      background: rgba(0, 0, 0, 0.03);
+      border-color: rgba(0, 0, 0, 0.07);
+    }
+
+    .stats-hint-icon {
+      width: 11px;
+      height: 11px;
+      stroke: var(--apple-blue);
+      flex-shrink: 0;
+    }
+
     /* Record Box */
     .stats-record-card {
       padding: 10px 12px;
@@ -823,16 +852,26 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.08);
       position: relative;
       overflow: hidden;
-      cursor: default;
-      transition: border-color var(--transition-fast), background-color var(--transition-theme), box-shadow var(--transition-fast);
+      cursor: pointer;
+      transform-origin: center center;
+      transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color var(--transition-fast),
+                  background-color var(--transition-theme),
+                  box-shadow 0.22s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .stat-card:hover {
-      border-color: rgba(255, 255, 255, 0.16);
+    .stat-card:hover,
+    .stat-card.is-hovered {
+      transform: translateY(-2px) scale(1.02);
+      border-color: rgba(255, 255, 255, 0.24);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28), 0 1px 4px rgba(0, 0, 0, 0.12);
+      z-index: 5;
     }
 
-    [data-theme="light"] .stat-card:hover {
-      border-color: rgba(0, 0, 0, 0.14);
+    [data-theme="light"] .stat-card:hover,
+    [data-theme="light"] .stat-card.is-hovered {
+      border-color: rgba(0, 0, 0, 0.18);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
     }
 
     .stat-card.full-width {
@@ -864,13 +903,17 @@
     }
 
     .stat-card.is-filling {
-      border-color: rgba(10, 132, 255, 0.45);
-      box-shadow: 0 2px 14px rgba(10, 132, 255, 0.16), 0 1px 3px rgba(0,0,0,0.08);
+      transform: translateY(-2.5px) scale(1.025);
+      border-color: rgba(10, 132, 255, 0.65);
+      box-shadow: 0 8px 24px rgba(10, 132, 255, 0.28), 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 6;
     }
 
     .stat-card.is-filled {
-      border-color: rgba(10, 132, 255, 0.7);
-      box-shadow: 0 2px 20px rgba(10, 132, 255, 0.28), 0 1px 3px rgba(0,0,0,0.08);
+      transform: translateY(-2.5px) scale(1.025);
+      border-color: rgba(10, 132, 255, 0.9);
+      box-shadow: 0 8px 28px rgba(10, 132, 255, 0.38), 0 2px 8px rgba(0, 0, 0, 0.2);
+      z-index: 6;
     }
 
     .stat-card-progress {
@@ -878,18 +921,25 @@
       top: 0;
       left: 0;
       right: 0;
-      height: 2.5px;
-      background: transparent;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.06);
       pointer-events: none;
       z-index: 10;
       overflow: hidden;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .stat-card:hover .stat-card-progress,
+    .stat-card.is-hovered .stat-card-progress {
+      opacity: 1;
     }
 
     .stat-card-progress-bar {
       width: 100%;
       height: 100%;
       background: linear-gradient(90deg, #0A84FF 0%, #5E5CE6 50%, #BF5AF2 100%);
-      box-shadow: 0 0 10px rgba(10, 132, 255, 0.8), 0 0 4px #5E5CE6;
+      box-shadow: 0 0 12px rgba(10, 132, 255, 0.9), 0 0 4px #5E5CE6;
       transform: scaleX(0);
       transform-origin: left;
       opacity: 0;
@@ -973,6 +1023,7 @@
       background: rgba(0, 0, 0, 0.20);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.30);
+      pointer-events: none;
     }
 
     [data-theme="light"] .stat-chart-wrap {
@@ -1344,6 +1395,14 @@
             </span>
           </div>
           <span class="stats-header-sub" data-i18n="live_debug.stats_desc">Мониторинг потока данных в реальном времени</span>
+          <div class="stats-hint-pill">
+            <svg class="stats-hint-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <span data-i18n="live_debug.stats_hover_hint">Удерживайте курсор на карточке 1 сек для описания</span>
+          </div>
         </div>
 
         <!-- CSV Recording Control Card -->
@@ -1708,6 +1767,7 @@
           "live_debug.cam_reset_title": "Сбросить положение камеры",
           "live_debug.stats_title": "Статистика",
           "live_debug.stats_desc": "Мониторинг потока данных в реальном времени",
+          "live_debug.stats_hover_hint": "Удерживайте курсор на карточке 1 сек для описания",
           "live_debug.stats_record_start": "Начать запись",
           "live_debug.stats_record_stop": "Остановить",
           "live_debug.stats_recording": "Запись...",
@@ -1791,6 +1851,7 @@
           "live_debug.cam_reset_title": "Reset camera position",
           "live_debug.stats_title": "Statistics",
           "live_debug.stats_desc": "Real-time pipeline data stream monitoring",
+          "live_debug.stats_hover_hint": "Hover over card for 1 sec to reveal description",
           "live_debug.stats_record_start": "Start Recording",
           "live_debug.stats_record_stop": "Stop Recording",
           "live_debug.stats_recording": "Recording...",
@@ -2548,6 +2609,20 @@
         ecoToggle.checked = false;
       }
 
+      // Helper to dynamically resolve core server host (handles Wails virtual host 'wails.localhost')
+      function getCoreHost() {
+        const h = window.location.hostname;
+        if (!h || h === 'wails.localhost' || h === 'localhost.wails' || window.location.protocol === 'file:') {
+          return '127.0.0.1:8080';
+        }
+        if (h === 'localhost' || h === '127.0.0.1') {
+          return `${h}:${window.location.port || '8080'}`;
+        }
+        return window.location.host;
+      }
+      const coreHost = getCoreHost();
+      const coreBaseUrl = `http://${coreHost}`;
+
       // Initial Theme, Lang, CamMode, and Render Setup
       applyLang(currentLang);
       applyTheme(currentTheme, false);
@@ -2555,32 +2630,37 @@
       window.focus();
 
       // Initial HTTP queries for sync
-      fetch('http://127.0.0.1:8080/livedebug/theme')
+      fetch(`${coreBaseUrl}/livedebug/theme`)
         .then(r => r.json())
         .then(d => {
           if (d && d.theme && d.theme !== currentTheme) applyTheme(d.theme, false);
         })
         .catch(() => {});
 
-      fetch('http://127.0.0.1:8080/livedebug/lang')
+      fetch(`${coreBaseUrl}/livedebug/lang`)
         .then(r => r.json())
         .then(d => {
           if (d && d.lang && d.lang !== currentLang) applyLang(d.lang);
         })
         .catch(() => {});
 
-      fetch('http://127.0.0.1:8080/livedebug/status')
+      fetch(`${coreBaseUrl}/livedebug/status`)
         .then(r => r.json())
         .then(d => {
           if (d && typeof d.device_connected === 'boolean') {
-            setPhoneConnected(d.device_connected);
+            if (d.device_connected) {
+              lastFrameTime = performance.now();
+              setPhoneConnected(true);
+            } else {
+              setPhoneConnected(false);
+            }
           }
         })
         .catch(() => {});
 
       // Background polling failsafe for device connection status
       setInterval(() => {
-        fetch('http://127.0.0.1:8080/livedebug/status')
+        fetch(`${coreBaseUrl}/livedebug/status`)
           .then(r => r.json())
           .then(d => {
             if (d && typeof d.device_connected === 'boolean') {
@@ -2591,7 +2671,7 @@
             }
           })
           .catch(() => {});
-      }, 3000);
+      }, 2500);
 
       // Telemetry silence watchdog (if frames stop for >6.0s, mark as disconnected)
       setInterval(() => {
@@ -2612,7 +2692,7 @@
         if (ws && ws.readyState === WebSocket.OPEN) {
           try { ws.send(JSON.stringify({ action: 'recenter' })); } catch (e) {}
         }
-        fetch('http://127.0.0.1:8080/livedebug/recenter', { method: 'POST' }).catch(() => {});
+        fetch(`${coreBaseUrl}/livedebug/recenter`, { method: 'POST' }).catch(() => {});
 
         if (window.go?.main?.LiveDebugApp?.ResetAHRS) {
           try { window.go.main.LiveDebugApp.ResetAHRS(); } catch (e) {}
@@ -2670,7 +2750,7 @@
 
       function resetCardHover(card) {
         if (!card) return;
-        card.classList.remove('is-filling', 'is-filled');
+        card.classList.remove('is-hovered', 'is-filling', 'is-filled');
       }
 
       function hideCardTooltip() {
@@ -2708,6 +2788,7 @@
 
             currentHoverCard = card;
             resetCardHover(card);
+            card.classList.add('is-hovered');
 
             // Step 1: Wait exactly 1.0 second (1000ms) before starting fill animation
             cardDelayTimer = setTimeout(() => {
@@ -2729,6 +2810,23 @@
               hideCardTooltip();
             } else {
               resetCardHover(card);
+            }
+          });
+
+          card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            clearTimeout(cardDelayTimer);
+            clearTimeout(cardFillTimer);
+            if (card.classList.contains('is-filled') && tooltipEl.classList.contains('show')) {
+              hideCardTooltip();
+            } else {
+              if (currentHoverCard && currentHoverCard !== card) {
+                resetCardHover(currentHoverCard);
+              }
+              currentHoverCard = card;
+              card.classList.remove('is-filling');
+              card.classList.add('is-hovered', 'is-filled');
+              showCardTooltip(card);
             }
           });
         });
@@ -3287,7 +3385,7 @@
         if (window.go?.main?.LiveDebugApp?.OpenInFolder) {
           window.go.main.LiveDebugApp.OpenInFolder(savedFilePath);
         } else {
-          fetch(`http://127.0.0.1:8080/livedebug/show-in-folder?path=${encodeURIComponent(savedFilePath)}`).catch(() => {});
+          fetch(`${coreBaseUrl}/livedebug/show-in-folder?path=${encodeURIComponent(savedFilePath)}`).catch(() => {});
         }
       }
 
@@ -3312,7 +3410,7 @@
       let reconnectTimer = null;
 
       function updateWsStatus(connected) {
-        if (!connected) {
+        if (!connected && (lastFrameTime === 0 || performance.now() - lastFrameTime > 4000)) {
           setPhoneConnected(false);
         }
       }
@@ -3323,9 +3421,8 @@
           reconnectTimer = null;
         }
 
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host || '127.0.0.1:8080';
-        const wsUrl = `${protocol}//${host}/livedebug/ws`;
+        const wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${getCoreHost()}/livedebug/ws`;
 
         try {
           ws = new WebSocket(wsUrl);
@@ -3336,7 +3433,18 @@
         }
 
         ws.onopen = () => {
-          // Connected to core server WS
+          // Connected to core server WS - refresh status immediately
+          fetch(`${coreBaseUrl}/livedebug/status`)
+            .then(r => r.json())
+            .then(d => {
+              if (d && typeof d.device_connected === 'boolean') {
+                if (d.device_connected) {
+                  lastFrameTime = performance.now();
+                  setPhoneConnected(true);
+                }
+              }
+            })
+            .catch(() => {});
         };
 
         ws.onmessage = (event) => {
