@@ -3,6 +3,8 @@ package main
 import (
 	"io/fs"
 	"math"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -434,5 +436,63 @@ func TestLandscapeCalibration_YawAndPadTest(t *testing.T) {
 	}
 }
 
+func TestProfileSlots6_And_SettingsPersistence(t *testing.T) {
+	tempDir, err := os.MkdirTemp("", "gyrobridge-test-*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
 
+	app := NewApp()
+	app.profilesDir = tempDir
 
+	// Verify initial 6 slots
+	profs := app.GetProfiles()
+	if len(profs) != 6 {
+		t.Fatalf("expected 6 profile slots, got %d", len(profs))
+	}
+
+	// Test saving to slot 5 (6th slot)
+	mat := defaultMatrix3x3()
+	res := app.SaveProfile(5, "Slot Six Custom", "iPhone 15 Pro", "vertical", mat)
+	if res != "ok" {
+		t.Fatalf("failed to save slot 5: %s", res)
+	}
+
+	// Verify out-of-bounds rejected
+	resInvalid := app.SaveProfile(6, "Invalid", "iPhone", "vertical", mat)
+	if resInvalid != "invalid slot" {
+		t.Fatalf("expected invalid slot for slot 6, got %s", resInvalid)
+	}
+
+	// Verify slot 5 in GetProfiles
+	profs = app.GetProfiles()
+	if profs[5].Name != "Slot Six Custom" {
+		t.Fatalf("expected slot 5 name 'Slot Six Custom', got '%s'", profs[5].Name)
+	}
+
+	// Test SetActiveProfile to 5
+	resActive := app.SetActiveProfile(5)
+	if resActive != "ok" {
+		t.Fatalf("failed to set active profile to 5: %s", resActive)
+	}
+	if app.activeSlot != 5 {
+		t.Fatalf("expected activeSlot 5, got %d", app.activeSlot)
+	}
+
+	// Test settings persistence
+	app.SetTheme("light")
+	app.SetLang("en")
+
+	settingsPath := filepath.Join(tempDir, "settings.json")
+	if _, err := os.Stat(settingsPath); os.IsNotExist(err) {
+		t.Fatalf("settings.json was not created at %s", settingsPath)
+	}
+
+	// Test logs persistence
+	app.logEvent("TEST", "Test log message")
+	logPath := filepath.Join(tempDir, "logs", "gyrobridge.log")
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		t.Fatalf("gyrobridge.log was not created at %s", logPath)
+	}
+}

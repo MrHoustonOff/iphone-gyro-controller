@@ -41,7 +41,9 @@ func main() {
 			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {
 				if app.ctx != nil {
 					wailsRuntime.WindowUnminimise(app.ctx)
-					wailsRuntime.Show(app.ctx)
+					wailsRuntime.WindowShow(app.ctx)
+					wailsRuntime.WindowSetAlwaysOnTop(app.ctx, true)
+					wailsRuntime.WindowSetAlwaysOnTop(app.ctx, false)
 				}
 			},
 		},

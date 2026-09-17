@@ -167,7 +167,7 @@ type App struct {
 	gyroBias      [3]float64
 	// Profile system
 	profilesMu   sync.RWMutex
-	profiles     [4]Profile // exactly 4 slots, always
+	profiles     [6]Profile // exactly 6 slots, always
 	activeSlot   int        // -1 = identity/none
 	profilesDir  string
 	// Active calibration matrix (applied to frames before DSU forwarding)
@@ -475,7 +475,7 @@ func NewApp() *App {
 	}
 	app.deviceName.Store("Controller")
 
-	// Initialize 4 empty slots with default portrait matrix
+	// Initialize 6 empty slots with default portrait matrix
 	for i := range app.profiles {
 		app.profiles[i] = Profile{
 			Slot:   i,
@@ -487,13 +487,97 @@ func NewApp() *App {
 		}
 	}
 
-	// Load persisted profiles
+	// Ensure logs directory exists
+	_ = os.MkdirAll(filepath.Join(profilesDir, "logs"), 0755)
+
+	// Load persisted settings and profiles
+	app.loadSettings()
 	app.loadProfiles()
+	app.logEvent("INFO", "GyroBridge initialized: IP=%s, Theme=%s, Lang=%s", primaryIP, app.currentTheme, app.currentLang)
 
 	return app
 }
 
 const CurrentProfileSchemaVersion = 2
+
+// logEvent writes a timestamped line to %APPDATA%/gyrobridge/logs/gyrobridge.log
+func (a *App) logEvent(level, format string, args ...any) {
+	if a.profilesDir == "" {
+		return
+	}
+	logDir := filepath.Join(a.profilesDir, "logs")
+	_ = os.MkdirAll(logDir, 0755)
+	logPath := filepath.Join(logDir, "gyrobridge.log")
+
+	f, err := os.OpenFile(logPath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	msg := fmt.Sprintf(format, args...)
+	ts := time.Now().Format("2006-01-02 15:04:05.000")
+	fmt.Fprintf(f, "[%s] [%s] %s\n", ts, level, msg)
+}
+
+// loadSettings loads theme, language, and slot preferences from settings.json
+func (a *App) loadSettings() {
+	path := filepath.Join(a.profilesDir, "settings.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return
+	}
+	var s struct {
+		Theme      string `json:"theme"`
+		Lang       string `json:"lang"`
+		ActiveSlot int    `json:"activeSlot"`
+	}
+	if err := json.Unmarshal(data, &s); err != nil {
+		return
+	}
+	if s.Theme == "dark" || s.Theme == "light" {
+		a.currentTheme = s.Theme
+	}
+	if s.Lang == "ru" || s.Lang == "en" {
+		a.currentLang = s.Lang
+	}
+	if s.ActiveSlot >= 0 && s.ActiveSlot < 6 {
+		a.activeSlot = s.ActiveSlot
+	}
+}
+
+// saveSettings persists theme, language, and activeSlot to settings.json
+func (a *App) saveSettings() {
+	if err := os.MkdirAll(a.profilesDir, 0755); err != nil {
+		return
+	}
+	path := filepath.Join(a.profilesDir, "settings.json")
+
+	a.themeMu.RLock()
+	theme := a.currentTheme
+	lang := a.currentLang
+	a.themeMu.RUnlock()
+
+	a.profilesMu.RLock()
+	slot := a.activeSlot
+	a.profilesMu.RUnlock()
+
+	s := struct {
+		Theme      string `json:"theme"`
+		Lang       string `json:"lang"`
+		ActiveSlot int    `json:"activeSlot"`
+	}{
+		Theme:      theme,
+		Lang:       lang,
+		ActiveSlot: slot,
+	}
+
+	data, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		return
+	}
+	_ = os.WriteFile(path, data, 0644)
+}
 
 // loadProfiles reads profiles.json from disk
 func (a *App) loadProfiles() {
@@ -505,7 +589,7 @@ func (a *App) loadProfiles() {
 
 	var stored struct {
 		SchemaVersion int        `json:"schemaVersion"`
-		Profiles      [4]Profile `json:"profiles"`
+		Profiles      []Profile  `json:"profiles"`
 		ActiveSlot    int        `json:"activeSlot"`
 		GyroBias      [3]float64 `json:"gyroBias"`
 		CalGravity    [3]float64 `json:"calGravity,omitempty"`
@@ -517,9 +601,9 @@ func (a *App) loadProfiles() {
 	a.profilesMu.Lock()
 	defer a.profilesMu.Unlock()
 
-	// If schema version is outdated, reset all profiles to canonical defaults (§5 of spec)
-	if stored.SchemaVersion != CurrentProfileSchemaVersion {
-		for i := 0; i < 4; i++ {
+	// If schema version is outdated (< 2), reset all profiles to canonical defaults (§5 of spec)
+	if stored.SchemaVersion < CurrentProfileSchemaVersion {
+		for i := 0; i < 6; i++ {
 			a.profiles[i] = Profile{
 				Slot:   i,
 				Name:   "",
@@ -533,8 +617,19 @@ func (a *App) loadProfiles() {
 		return
 	}
 
-	for i := 0; i < 4; i++ {
-		a.profiles[i] = stored.Profiles[i]
+	for i := 0; i < 6; i++ {
+		if i < len(stored.Profiles) {
+			a.profiles[i] = stored.Profiles[i]
+		} else {
+			a.profiles[i] = Profile{
+				Slot:   i,
+				Name:   "",
+				Device: "Unknown",
+				Icon:   "default",
+				Matrix: defaultMatrix3x3(),
+				Active: false,
+			}
+		}
 		a.profiles[i].Slot = i // ensure slot index is canonical
 		if a.profiles[i].Device == "" {
 			a.profiles[i].Device = "Unknown"
@@ -550,7 +645,7 @@ func (a *App) loadProfiles() {
 	a.activeSlot = stored.ActiveSlot
 
 	// Restore active matrix
-	if a.activeSlot >= 0 && a.activeSlot < 4 {
+	if a.activeSlot >= 0 && a.activeSlot < 6 {
 		a.matrixMu.Lock()
 		a.activeMatrix = a.profiles[a.activeSlot].Matrix
 		a.matrixMu.Unlock()
@@ -577,7 +672,7 @@ func (a *App) saveProfiles() {
 	a.biasMu.RLock()
 	stored := struct {
 		SchemaVersion int        `json:"schemaVersion"`
-		Profiles      [4]Profile `json:"profiles"`
+		Profiles      [6]Profile `json:"profiles"`
 		ActiveSlot    int        `json:"activeSlot"`
 		GyroBias      [3]float64 `json:"gyroBias"`
 		CalGravity    [3]float64 `json:"calGravity,omitempty"`
@@ -596,6 +691,7 @@ func (a *App) saveProfiles() {
 		return
 	}
 	_ = os.WriteFile(path, data, 0644)
+	a.saveSettings()
 }
 
 // startup is called at application startup: initializes services in background
@@ -1240,8 +1336,8 @@ func (a *App) GetState() AppState {
 	activeSlot := a.activeSlot
 	a.profilesMu.RUnlock()
 
-	profilesList := make([]Profile, 4)
-	for i := 0; i < 4; i++ {
+	profilesList := make([]Profile, 6)
+	for i := 0; i < 6; i++ {
 		profilesList[i] = profilesCopy[i]
 		profilesList[i].Active = (i == activeSlot)
 	}
@@ -1320,23 +1416,23 @@ func (a *App) TogglePause() AppState {
 	return a.GetState()
 }
 
-// GetProfiles returns current 4 profile slots
+// GetProfiles returns current 6 profile slots
 func (a *App) GetProfiles() []Profile {
 	a.profilesMu.RLock()
 	defer a.profilesMu.RUnlock()
 
-	result := make([]Profile, 4)
-	for i := 0; i < 4; i++ {
+	result := make([]Profile, 6)
+	for i := 0; i < 6; i++ {
 		result[i] = a.profiles[i]
 		result[i].Active = (i == a.activeSlot)
 	}
 	return result
 }
 
-// SaveProfile overwrites a profile slot (slot 0-3) with the given name, device, icon, and matrix.
+// SaveProfile overwrites a profile slot (slot 0-5) with the given name, device, icon, and matrix.
 // The matrix must be a valid signed-permutation matrix with determinant -1.
 func (a *App) SaveProfile(slot int, name string, device string, icon string, matrix [3][3]float64) string {
-	if slot < 0 || slot > 3 {
+	if slot < 0 || slot > 5 {
 		return "invalid slot"
 	}
 	if device == "" {
@@ -1383,7 +1479,7 @@ func (a *App) SaveProfile(slot int, name string, device string, icon string, mat
 
 // SetActiveProfile selects the profile at the given slot (-1 = identity/none)
 func (a *App) SetActiveProfile(slot int) string {
-	if slot < -1 || slot > 3 {
+	if slot < -1 || slot > 5 {
 		return "invalid slot"
 	}
 
@@ -1561,6 +1657,7 @@ func (a *App) SetTheme(theme string) {
 			wailsRuntime.WindowSetLightTheme(a.ctx)
 		}
 	}
+	a.saveSettings()
 }
 
 // SetLang updates language on backend, broadcasts to Live Debug window, and emits event to main window.
@@ -1580,6 +1677,7 @@ func (a *App) SetLang(lang string) {
 	if a.ctx != nil {
 		wailsRuntime.EventsEmit(a.ctx, "lang-sync", lang)
 	}
+	a.saveSettings()
 }
 
 // GetTheme returns the current synchronized theme.
@@ -1702,7 +1800,13 @@ func (a *App) writeDebugCSV(step int, samples []captureSample, result CaptureRes
 // getI18nMsg returns localized message or fallback
 func (a *App) getI18nMsg(key string) string {
 	if a.i18nMgr != nil {
-		return a.i18nMgr.Get(a.i18nMgr.BaseLanguage(), key)
+		a.themeMu.RLock()
+		lang := a.currentLang
+		a.themeMu.RUnlock()
+		if lang == "" {
+			lang = a.i18nMgr.BaseLanguage()
+		}
+		return a.i18nMgr.Get(lang, key)
 	}
 	return key
 }
@@ -2202,9 +2306,9 @@ func (a *App) CopyCalibrationReport() string {
 
 	// Steps (0 = Rest/Stillness, 1 = Pitch, 2 = Roll)
 	stepNames := map[int]string{
-		0: "STEP 0: REST / STILLNESS BIAS (Калибровка покоя)",
-		1: "STEP 1: PITCH (Кивок вперед)",
-		2: "STEP 2: ROLL (Крен вправо)",
+		0: "STEP 0: REST / STILLNESS BIAS",
+		1: "STEP 1: PITCH (Nod forward)",
+		2: "STEP 2: ROLL (Bank right)",
 	}
 
 	for step := 0; step < 3; step++ {

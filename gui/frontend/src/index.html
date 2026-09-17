@@ -212,14 +212,14 @@
               </button>
 
               <div class="profile-dropdown-menu" id="main-profile-menu">
-                <!-- Populated dynamically with 4 slots -->
+                <!-- Populated dynamically with 6 slots -->
               </div>
             </div>
 
             <!-- Profile Calibrate & Manage Bar -->
             <div class="profile-status-bar">
               <div class="profile-status-left">
-                <span class="profile-status-desc" id="profile-current-desc">Оси: Pitch +X • Roll +Z • Yaw +Y</span>
+                <span class="profile-status-desc" id="profile-current-desc" data-i18n="calibration.axes_default_desc">Оси: Pitch +X • Yaw +Y • Roll +Z</span>
               </div>
               <button type="button" class="btn-apple-secondary btn-calibrate-trigger" id="btn-open-calibration">
                 <svg class="icon-calibrate" viewBox="0 0 24 24">
@@ -727,7 +727,7 @@
             <div class="cal-3d-panel" id="cal-3d-panel-confirm">
               <button type="button" class="cal-3d-recenter-pill" id="btn-confirm-recenter" data-i18n="calibration.confirm_recenter">Центрировать (Пробел)</button>
               <canvas id="cal-3d-canvas-confirm" class="cal-3d-canvas"></canvas>
-              <div class="cal-3d-caption">Покрутите телефон в руках</div>
+              <div class="cal-3d-caption" data-i18n="calibration.confirm_caption">Покрутите телефон в руках</div>
             </div>
             <div class="cal-3d-disclaimer" data-i18n="calibration.view_disclaimer">Ориентация модели может отличаться от реального хвата</div>
           </div>
@@ -761,9 +761,9 @@
               <div class="cal-manual-row">
                 <span class="cal-manual-label" data-i18n="calibration.manual_axis_forward">Вперед / Pitch</span>
                 <select class="cal-axis-select" id="man-pitch-axis">
-                  <option value="0" selected>Ось X</option>
-                  <option value="1">Ось Y</option>
-                  <option value="2">Ось Z</option>
+                  <option value="0" selected data-i18n="calibration.manual_axis_x">Ось X</option>
+                  <option value="1" data-i18n="calibration.manual_axis_y">Ось Y</option>
+                  <option value="2" data-i18n="calibration.manual_axis_z">Ось Z</option>
                 </select>
                 <label class="cal-invert-label">
                   <input type="checkbox" id="man-pitch-inv">
@@ -775,9 +775,9 @@
               <div class="cal-manual-row">
                 <span class="cal-manual-label" data-i18n="calibration.manual_axis_up">Вверх / Yaw</span>
                 <select class="cal-axis-select" id="man-yaw-axis">
-                  <option value="0">Ось X</option>
-                  <option value="1" selected>Ось Y</option>
-                  <option value="2">Ось Z</option>
+                  <option value="0" data-i18n="calibration.manual_axis_x">Ось X</option>
+                  <option value="1" selected data-i18n="calibration.manual_axis_y">Ось Y</option>
+                  <option value="2" data-i18n="calibration.manual_axis_z">Ось Z</option>
                 </select>
                 <label class="cal-invert-label">
                   <input type="checkbox" id="man-yaw-inv">
@@ -789,9 +789,9 @@
               <div class="cal-manual-row">
                 <span class="cal-manual-label" data-i18n="calibration.manual_axis_right">Вправо / Roll</span>
                 <select class="cal-axis-select" id="man-roll-axis">
-                  <option value="0">Ось X</option>
-                  <option value="1">Ось Y</option>
-                  <option value="2" selected>Ось Z</option>
+                  <option value="0" data-i18n="calibration.manual_axis_x">Ось X</option>
+                  <option value="1" data-i18n="calibration.manual_axis_y">Ось Y</option>
+                  <option value="2" selected data-i18n="calibration.manual_axis_z">Ось Z</option>
                 </select>
                 <label class="cal-invert-label">
                   <input type="checkbox" id="man-roll-inv">
@@ -815,7 +815,7 @@
             <div class="cal-3d-panel" id="cal-3d-panel-manual">
               <button type="button" class="cal-3d-recenter-pill" id="btn-manual-recenter" data-i18n="calibration.confirm_recenter">Центрировать (Пробел)</button>
               <canvas id="cal-3d-canvas-manual" class="cal-3d-canvas"></canvas>
-              <div class="cal-3d-caption">Покрутите телефон для проверки</div>
+              <div class="cal-3d-caption" data-i18n="calibration.caption_rotate_check">Покрутите телефон для проверки</div>
             </div>
             <div class="cal-3d-disclaimer" data-i18n="calibration.view_disclaimer">Ориентация модели может отличаться от реального хвата</div>
           </div>
@@ -827,7 +827,7 @@
         <div class="cal-save-form">
           <div class="cal-save-header">
             <h3 class="cal-step-headline" data-i18n="calibration.save_slot_title">Слот сохранения</h3>
-            <p class="cal-step-instruction">Выберите слот и настройте параметры профиля:</p>
+            <p class="cal-step-instruction" data-i18n="calibration.save_slot_hint">Выберите слот и настройте параметры профиля:</p>
           </div>
 
           <!-- Slot Selection Dropdown (Duplicates Main Page Dropdown) -->
@@ -854,20 +854,20 @@
                 </div>
               </button>
               <div class="profile-dropdown-menu" id="cal-save-dropdown-menu">
-                <!-- Populated dynamically with 4 slots -->
+                <!-- Populated dynamically with 6 slots -->
               </div>
             </div>
           </div>
 
-          <!-- Overwrite Warning Block (Shown when target slot already has a configured profile) -->
-          <div class="cal-save-warning" id="cal-save-warning" style="display:none;">
+          <!-- Overwrite Warning Block (Always shown as a gentle inline warning notice) -->
+          <div class="cal-save-warning" id="cal-save-warning">
             <svg class="cal-save-warning-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
               <line x1="12" y1="9" x2="12" y2="13"></line>
               <line x1="12" y1="17" x2="12.01" y2="17"></line>
             </svg>
-            <div class="cal-save-warning-text" id="cal-save-warning-text">
-              Внимание: этот слот уже содержит профиль и будет перезаписан.
+            <div class="cal-save-warning-text" id="cal-save-warning-text" data-i18n="calibration.save_overwrite_note">
+              Внимание: если выбранный слот уже содержит профиль, он будет перезаписан.
             </div>
           </div>
 
@@ -1059,6 +1059,8 @@
         const val = this.t(key);
         if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
           el.value = val;
+        } else if (el.tagName === 'OPTION') {
+          el.textContent = val;
         } else {
           el.innerHTML = renderMarkdown(val);
         }
@@ -1099,7 +1101,12 @@
             CalibrationWizard._updateStepUI();
           } else if (CalibrationWizard.currentScreen === 'slots') {
             CalibrationWizard.renderSlotList();
+          } else if (CalibrationWizard.currentScreen === 'save') {
+            CalibrationWizard._renderSaveScreen();
           }
+        }
+        if (typeof ProfileManager !== 'undefined') {
+          ProfileManager.render();
         }
         if (AppState.lastState) {
           AppState.render(AppState.lastState);
@@ -1130,6 +1137,12 @@
       await this.setLanguage(this.currentLang, true);
     }
   };
+
+  // ── Profile Slot Formatter ──────────────────────────────────────────────────
+  function formatSlotName(idx) {
+    const prefix = I18n.t('calibration.slot_prefix') || (I18n.currentLang === 'ru' ? 'Слот' : 'Slot');
+    return `${prefix} ${idx + 1}`;
+  }
 
   // ── Toast Utility ───────────────────────────────────────────────────────────
   function showToast(text) {
@@ -1368,7 +1381,7 @@
 
   // ── Profile Manager ─────────────────────────────────────────────────────────
   const ProfileManager = {
-    profiles: [null, null, null, null],
+    profiles: [null, null, null, null, null, null],
     activeSlot: 0,
     isDropdownOpen: false,
     _lastProfilesJson: '',
@@ -1376,7 +1389,7 @@
 
     sync(state) {
       if (!state || !state.profiles) return;
-      const slot = (state.activeSlot >= 0 && state.activeSlot < 4) ? state.activeSlot : 0;
+      const slot = (state.activeSlot >= 0 && state.activeSlot < 6) ? state.activeSlot : 0;
       const pJson = JSON.stringify(state.profiles);
       if (pJson === this._lastProfilesJson && slot === this._lastActiveSlot) {
         return;
@@ -1391,7 +1404,7 @@
     render() {
       const activeIdx = this.activeSlot;
       const activeProf = this.profiles[activeIdx] || {
-        name: `Слот ${activeIdx + 1}`,
+        name: formatSlotName(activeIdx),
         device: 'Unknown',
         icon: 'default'
       };
@@ -1407,25 +1420,25 @@
         triggerIcon.innerHTML = getProfileIconSVG(activeProf.icon || 'default', 22);
       }
       if (triggerTitle) {
-        triggerTitle.textContent = activeProf.name || `Слот ${activeIdx + 1}`;
+        triggerTitle.textContent = activeProf.name || formatSlotName(activeIdx);
       }
       if (triggerDevice) {
         const devName = activeProf.device || I18n.t('calibration.device_unknown') || 'Неизвестно';
         triggerDevice.textContent = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', devName);
       }
       if (triggerBadge) {
-        triggerBadge.textContent = `Слот ${activeIdx + 1}`;
+        triggerBadge.textContent = formatSlotName(activeIdx);
       }
       if (activeTag) {
-        activeTag.textContent = `Слот ${activeIdx + 1} • ${I18n.t('calibration.slot_active') || 'Активен'}`;
+        activeTag.textContent = `${formatSlotName(activeIdx)} • ${I18n.t('calibration.slot_active') || 'Активен'}`;
       }
 
       // 2. Populate Dropdown Menu
       const menu = document.getElementById('main-profile-menu');
       if (menu) {
         menu.innerHTML = '';
-        for (let i = 0; i < 4; i++) {
-          const p = this.profiles[i] || { name: `Слот ${i + 1}`, device: 'Unknown', icon: 'default' };
+        for (let i = 0; i < 6; i++) {
+          const p = this.profiles[i] || { name: formatSlotName(i), device: 'Unknown', icon: 'default' };
           const item = document.createElement('button');
           item.type = 'button';
           item.className = 'profile-dropdown-item' + (i === activeIdx ? ' active' : '');
@@ -1440,8 +1453,8 @@
                 ${getProfileIconSVG(p.icon || 'default', 20)}
               </div>
               <div class="profile-item-meta">
-                <span class="profile-item-title">${p.name || `Слот ${i + 1}`}</span>
-                <span class="profile-item-sub">Слот ${i + 1} • ${devText}</span>
+                <span class="profile-item-title">${p.name || formatSlotName(i)}</span>
+                <span class="profile-item-sub">${formatSlotName(i)} • ${devText}</span>
               </div>
             </div>
             ${i === activeIdx ? '<span class="profile-item-check">✓</span>' : ''}
@@ -1459,6 +1472,7 @@
       // 3. Update Axes description
       const currentDescEl = document.getElementById('profile-current-desc');
       if (currentDescEl) {
+        const axesLabel = I18n.t('calibration.axes_label') || (I18n.currentLang === 'ru' ? 'Оси' : 'Axes');
         if (activeProf && activeProf.matrix) {
           const m = activeProf.matrix;
           const axisName = (row) => {
@@ -1469,9 +1483,9 @@
             }
             return '?';
           };
-          currentDescEl.textContent = `Оси: Pitch ${axisName(0)} • Yaw ${axisName(1)} • Roll ${axisName(2)}`;
+          currentDescEl.textContent = `${axesLabel}: Pitch ${axisName(0)} • Yaw ${axisName(1)} • Roll ${axisName(2)}`;
         } else {
-          currentDescEl.textContent = 'Оси: Pitch +X • Yaw +Y • Roll +Z';
+          currentDescEl.textContent = `${axesLabel}: Pitch +X • Yaw +Y • Roll +Z`;
         }
       }
     },
@@ -1497,7 +1511,7 @@
           setTimeout(() => trigger.classList.remove('switched'), 850);
         }
 
-        const profName = this.profiles[slot]?.name || `Слот ${slot + 1}`;
+        const profName = this.profiles[slot]?.name || formatSlotName(slot);
         const msg = (I18n.t('calibration.profile_switched') || 'Профиль применен') + `: ${profName}`;
         showToast(msg);
       } catch (err) {
@@ -1975,7 +1989,7 @@
       {
         titleKey: 'calibration.step0_title',
         descKey: 'calibration.step0_desc',
-        caption: 'Place your phone on the table in gaming grip',
+        captionKey: 'calibration.step0_caption',
         btnKey: 'calibration.step0_btn',
         durationMs: 1600,
         isRest: true
@@ -1983,7 +1997,7 @@
       {
         titleKey: 'calibration.step1_title',
         descKey: 'calibration.step1_desc',
-        caption: 'Наклоните вперёд (кивок)',
+        captionKey: 'calibration.step1_caption',
         btnKey: 'calibration.step1_btn',
         durationMs: 2400,
         isRest: false
@@ -1991,7 +2005,7 @@
       {
         titleKey: 'calibration.step2_title',
         descKey: 'calibration.step2_desc',
-        caption: 'Накрените вправо (крен)',
+        captionKey: 'calibration.step2_caption',
         btnKey: 'calibration.step2_btn',
         durationMs: 2400,
         isRest: false
@@ -2104,7 +2118,7 @@
       if (!list) return;
       list.innerHTML = '';
 
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 6; i++) {
         const p = ProfileManager.profiles[i];
         const card = document.createElement('div');
         card.className = 'cal-slot-card' + (p && p.active ? ' active' : '');
@@ -2114,7 +2128,7 @@
 
         const numEl = document.createElement('span');
         numEl.className = 'cal-slot-card-num';
-        numEl.textContent = `Слот ${i + 1}`;
+        numEl.textContent = formatSlotName(i);
 
         const nameEl = document.createElement('span');
         nameEl.className = 'cal-slot-card-name';
@@ -2141,7 +2155,7 @@
         const btnCal = document.createElement('button');
         btnCal.type = 'button';
         btnCal.className = 'btn-apple-primary cal-btn-sm';
-        btnCal.textContent = (p && p.name) ? 'Перекалибровать' : 'Калибровать';
+        btnCal.textContent = (p && p.name) ? (I18n.t('calibration.btn_recalibrate') || 'Перекалибровать') : (I18n.t('calibration.btn_calibrate_short') || I18n.t('calibration.btn_calibrate') || 'Калибровать');
         btnCal.addEventListener('click', () => this.startCaptureFlow(i));
         actions.appendChild(btnCal);
 
@@ -2180,7 +2194,7 @@
 
       if (titleEl) titleEl.innerHTML = renderMarkdown(I18n.t(cfg.titleKey));
       if (descEl) descEl.innerHTML = renderMarkdown(I18n.t(cfg.descKey));
-      if (captionEl) captionEl.textContent = cfg.caption;
+      if (captionEl) captionEl.textContent = I18n.t(cfg.captionKey) || '';
 
       // 3. Reset capture UI
       this._resetCaptureUI();
@@ -2540,7 +2554,9 @@
               resultTitle.textContent = I18n.t('calibration.capture_fail_title') || 'Ошибка калибровки';
             }
             if (resultSubtext) {
-              resultSubtext.innerHTML = renderMarkdown(valRes.errorMsg || 'Оси не согласуются друг с другом.');
+              const errKey = valRes.errorCode ? ('calibration.' + valRes.errorCode) : '';
+              const locErr = errKey ? I18n.t(errKey) : '';
+              resultSubtext.innerHTML = renderMarkdown((locErr && locErr !== errKey) ? locErr : (valRes.errorMsg || I18n.t('calibration.err_axes_inconsistent') || 'Оси не согласуются друг с другом.'));
             }
             if (btnNext) btnNext.style.display = 'none';
             if (btnRetry) btnRetry.textContent = I18n.t('calibration.btn_retry') || 'Повторить';
@@ -2557,7 +2573,9 @@
           resultTitle.textContent = I18n.t('calibration.capture_fail_title') || 'Движение не распознано';
         }
         if (resultSubtext) {
-          resultSubtext.innerHTML = renderMarkdown(result.errorMsg || 'Ошибка записи движения');
+          const errKey = result.errorCode ? ('calibration.' + result.errorCode) : '';
+          const locErr = errKey ? I18n.t(errKey) : '';
+          resultSubtext.innerHTML = renderMarkdown((locErr && locErr !== errKey) ? locErr : (result.errorMsg || I18n.t('calibration.err_motion_record') || 'Ошибка записи движения'));
         }
         if (btnNext) btnNext.style.display = 'none';
         if (btnRetry) btnRetry.textContent = I18n.t('calibration.btn_retry') || 'Повторить';
@@ -2652,7 +2670,7 @@
     _renderSaveScreen() {
       const slot = this.targetSlot;
       const targetProf = ProfileManager.profiles[slot] || {
-        name: `Слот ${slot + 1}`,
+        name: formatSlotName(slot),
         device: 'Unknown',
         icon: 'default'
       };
@@ -2679,14 +2697,14 @@
         triggerIcon.innerHTML = getProfileIconSVG(targetProf.icon || this.selectedIcon || 'default', 22);
       }
       if (triggerTitle) {
-        triggerTitle.textContent = targetProf.name || `Слот ${slot + 1}`;
+        triggerTitle.textContent = targetProf.name || formatSlotName(slot);
       }
       const devLabel = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', finalDevice);
       if (triggerDevice) {
         triggerDevice.textContent = devLabel;
       }
       if (triggerBadge) {
-        triggerBadge.textContent = `Слот ${slot + 1}`;
+        triggerBadge.textContent = formatSlotName(slot);
       }
       if (deviceText) {
         deviceText.textContent = devLabel;
@@ -2702,24 +2720,20 @@
         setTimeout(() => nameInput.select(), 50);
       }
 
-      // 4. Overwrite Warning Block
+      // 4. Overwrite Warning Block (Always visible inline warning notice)
       const warnEl = document.getElementById('cal-save-warning');
       const warnText = document.getElementById('cal-save-warning-text');
-      const hasExisting = targetProf && targetProf.matrix && targetProf.name;
-      if (warnEl) {
-        warnEl.style.display = hasExisting ? 'flex' : 'none';
-        if (hasExisting && warnText) {
-          const warnTmpl = I18n.t('calibration.save_overwrite_warn') || 'Внимание: слот {slot} уже содержит профиль «{name}» и будет перезаписан.';
-          warnText.textContent = warnTmpl.replace('{slot}', String(slot + 1)).replace('{name}', targetProf.name);
-        }
+      if (warnEl) warnEl.style.display = 'flex';
+      if (warnText) {
+        warnText.textContent = I18n.t('calibration.save_overwrite_note') || 'Внимание: если выбранный слот уже содержит профиль, он будет перезаписан.';
       }
 
       // 5. Populate Save Dropdown Menu
       const menu = document.getElementById('cal-save-dropdown-menu');
       if (menu) {
         menu.innerHTML = '';
-        for (let i = 0; i < 4; i++) {
-          const p = ProfileManager.profiles[i] || { name: `Слот ${i + 1}`, device: 'Unknown', icon: 'default' };
+        for (let i = 0; i < 6; i++) {
+          const p = ProfileManager.profiles[i] || { name: formatSlotName(i), device: 'Unknown', icon: 'default' };
           const item = document.createElement('button');
           item.type = 'button';
           item.className = 'profile-dropdown-item' + (i === slot ? ' active' : '');
@@ -2734,8 +2748,8 @@
                 ${getProfileIconSVG(p.icon || 'default', 20)}
               </div>
               <div class="profile-item-meta">
-                <span class="profile-item-title">${p.name || `Слот ${i + 1}`}</span>
-                <span class="profile-item-sub">Слот ${i + 1} • ${pDevText}</span>
+                <span class="profile-item-title">${p.name || formatSlotName(i)}</span>
+                <span class="profile-item-sub">${formatSlotName(i)} • ${pDevText}</span>
               </div>
             </div>
             ${i === slot ? '<span class="profile-item-check">✓</span>' : ''}
@@ -2848,7 +2862,7 @@
     async save() {
       const slot = this.targetSlot;
       const name = document.getElementById('cal-name-input')?.value.trim()
-        || `Профиль ${slot + 1}`;
+        || formatSlotName(slot);
       const mat = this.builtMatrix;
       if (!mat || slot < 0) return;
 
@@ -3022,13 +3036,13 @@
           }
           if (btn) {
             const orig = btn.textContent;
-            btn.textContent = 'Отчет скопирован!';
+            btn.textContent = I18n.t('calibration.report_copied') || 'Отчет скопирован!';
             setTimeout(() => { btn.textContent = orig; }, 1800);
           }
-          showToast('Полный отчет теста скопирован в буфер обмена!');
+          showToast(I18n.t('calibration.report_copied_toast') || 'Полный отчет теста скопирован в буфер обмена!');
         } catch (err) {
           console.error('Copy report failed:', err);
-          showToast('Ошибка копирования: ' + err);
+          showToast((I18n.t('calibration.report_copy_err') || 'Ошибка копирования: ') + err);
         }
       };
 
@@ -3100,7 +3114,7 @@
 
     findEmptyOrActiveSlot() {
       const profiles = (this.lastState && this.lastState.profiles) || ProfileManager.profiles || [];
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 6; i++) {
         const p = profiles[i];
         if (!p || !p.name || p.name.startsWith('Слот') || p.name.startsWith('Slot')) {
           return i;
@@ -3339,7 +3353,8 @@
           if (deviceStatusBadge) {
             if (state.hz === 0 && Math.abs(p) < 0.001 && Math.abs(r) < 0.001 && Math.abs(y) < 0.001) {
               deviceStatusBadge.className = 'device-status-badge waiting';
-              deviceStatusBadge.innerHTML = renderMarkdown(I18n.currentLang === 'ru' ? 'ожидание датчиков...' : 'waiting for sensors...');
+              deviceStatusBadge.setAttribute('data-i18n', 'status.waiting_sensors');
+              deviceStatusBadge.innerHTML = renderMarkdown(I18n.t('status.waiting_sensors') || 'ожидание датчиков...');
             } else {
               deviceStatusBadge.className = 'device-status-badge online';
               deviceStatusBadge.setAttribute('data-i18n', 'status.online');
