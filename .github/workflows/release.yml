@@ -66,7 +66,6 @@ jobs:
 
           if ($env:VT_API_KEY) {
             Write-Host "Submitting release binaries to VirusTotal..."
-            $headers = @{ "x-apikey" = $env:VT_API_KEY }
 
             foreach ($file in @($amd64Path, $arm64Path)) {
               try {
@@ -75,22 +74,29 @@ jobs:
 
                 $uploadUrl = "https://www.virustotal.com/api/v3/files"
                 if ($item.Length -gt 32MB) {
-                  $urlResp = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" -Headers $headers -Method Get
-                  $uploadUrl = $urlResp.data
+                  $urlRaw = curl.exe -s -S -X GET "https://www.virustotal.com/api/v3/files/upload_url" -H "x-apikey: $env:VT_API_KEY"
+                  $urlJson = $urlRaw | ConvertFrom-Json
+                  if ($urlJson.data) {
+                    $uploadUrl = $urlJson.data
+                  }
                 }
 
-                $form = @{ file = $item }
-                $uploadResp = Invoke-RestMethod -Uri $uploadUrl -Headers $headers -Method Post -Form $form -TimeoutSec 180
-                Write-Host "Upload completed successfully. Analysis ID: $($uploadResp.data.id)"
+                $respRaw = curl.exe -s -S -X POST $uploadUrl -H "x-apikey: $env:VT_API_KEY" -F "file=@$($item.FullName)"
+                $respJson = $respRaw | ConvertFrom-Json
+                if ($respJson.data.id) {
+                  Write-Host "Upload completed successfully. Analysis ID: $($respJson.data.id)"
+                } else {
+                  Write-Warning "VirusTotal API response: $respRaw"
+                }
               } catch {
-                Write-Warning "VirusTotal upload notice for $($file): $_"
+                Write-Warning "VirusTotal upload error for $($file): $_"
               }
             }
           } else {
             Write-Warning "VT_API_KEY secret not found or empty, skipping upload."
           }
 
-          $notes = Get-Content RELEASE_NOTES.md -Raw
+          $notes = Get-Content docs/RELEASE_NOTES.md -Raw
           $vtLines = @(
             "",
             "---",

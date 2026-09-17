@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"os"
 	"path/filepath"
@@ -28,14 +29,17 @@ func main() {
 
 	err := wails.Run(&options.App{
 		Title:     "GyroBridge",
-		Width:     1020,
-		Height:    860,
-		MinWidth:  680,
-		MinHeight: 600,
+		Width:     880,
+		Height:    620,
+		MinWidth:  620,
+		MinHeight: 480,
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
 		OnStartup:  app.startup,
+		OnDomReady: func(ctx context.Context) {
+			wailsRuntime.WindowCenter(ctx)
+		},
 		OnShutdown: app.shutdown,
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId: "gyrobridge-desktop-lock-uuid",

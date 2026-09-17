@@ -1,8 +1,10 @@
-**English** | [Русский](README_RU.md)
+**English** | [Русский](docs/README_RU.md)
 
 # GyroBridge
 
 GyroBridge turns your smartphone (iOS or Android) into a high-precision, low-latency motion controller for PC games and emulators using the Cemuhook DSU protocol.
+
+![GyroBridge Core Interface](docs/imgs/core%20screen.jpg)
 
 Compatible with Cemu, RPCS3, Ryujinx, Yuzu, Dolphin, PCSX2, and any game or tool supporting Cemuhook DSU.
 
@@ -28,6 +30,14 @@ In your emulator's input/controller settings, configure the motion server:
 - **Server IP**: `127.0.0.1`
 - **Server Port**: `26760`
 - **Protocol**: Cemuhook DSU
+
+---
+
+## Live 3D Telemetry & Diagnostics
+
+GyroBridge includes a dedicated real-time 3D telemetry window to verify sensor response, orientation stability, and DSU packet delivery rate:
+
+![3D Telemetry & Diagnostics](docs/imgs/3d%20view%20screen.jpg)
 
 ---
 
