@@ -1019,11 +1019,28 @@
       font-family: var(--font-sans);
     }
 
-    .stat-sparkline {
+    .stat-chart-wrap {
+      width: 100%;
+      height: 60px;
+      margin-top: 6px;
+      position: relative;
+      border-radius: 9px;
+      overflow: hidden;
+      background: rgba(0, 0, 0, 0.20);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.30);
+    }
+
+    [data-theme="light"] .stat-chart-wrap {
+      background: rgba(0, 0, 0, 0.04);
+      border-color: rgba(0, 0, 0, 0.08);
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-chart-canvas {
       display: block;
-      width: 72px;
-      height: 20px;
-      border-radius: 2px;
+      width: 100%;
+      height: 100%;
     }
 
     .stat-vector-unit {
@@ -1436,7 +1453,10 @@
               </div>
               <div class="stat-card-val-row">
                 <span class="stat-big-val" id="val-in-hz">--</span>
-                <canvas class="stat-sparkline" id="spark-in-hz" width="72" height="20"></canvas>
+                <span class="stat-val-unit">Hz</span>
+              </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-in-hz"></canvas>
               </div>
             </div>
 
@@ -1459,7 +1479,10 @@
               </div>
               <div class="stat-card-val-row">
                 <span class="stat-big-val" id="val-latency">--</span>
-                <span class="stat-val-unit">мс</span>
+                <span class="stat-val-unit" data-i18n="live_debug.stats_unit_ms">мс</span>
+              </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-latency"></canvas>
               </div>
             </div>
 
@@ -1482,7 +1505,10 @@
               </div>
               <div class="stat-card-val-row">
                 <span class="stat-big-val" id="val-jitter">--</span>
-                <canvas class="stat-sparkline" id="spark-jitter" width="72" height="20"></canvas>
+                <span class="stat-val-unit" data-i18n="live_debug.stats_unit_ms">мс</span>
+              </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-jitter"></canvas>
               </div>
             </div>
 
@@ -1592,6 +1618,9 @@
                 <span class="stat-big-val" id="val-out-hz">--</span>
                 <span class="stat-val-unit">Hz</span>
               </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-out-hz"></canvas>
+              </div>
             </div>
 
             <!-- Pipeline Latency (ms) -->
@@ -1613,7 +1642,10 @@
               </div>
               <div class="stat-card-val-row">
                 <span class="stat-big-val" id="val-pipe-ms">--</span>
-                <span class="stat-val-unit">мс</span>
+                <span class="stat-val-unit" data-i18n="live_debug.stats_unit_ms">мс</span>
+              </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-pipe-ms"></canvas>
               </div>
             </div>
 
@@ -1632,14 +1664,14 @@
                     </svg>
                   </button>
                 </div>
-                <span class="stat-chip muted" id="chip-dsu-clients">0 активных</span>
+                <span class="stat-chip muted" id="chip-dsu-clients" data-i18n="live_debug.dsu_clients_initial">0 активных</span>
               </div>
               <div class="stat-card-val-row dsu-clients-row">
                 <div class="dsu-client-status">
                   <span class="status-dot" id="dsu-status-dot" style="background-color: var(--text-secondary);"></span>
                   <span class="stat-big-val" id="val-dsu-clients">0</span>
                 </div>
-                <span class="stat-desc-inline" id="desc-dsu-clients">Ожидание эмулятора</span>
+                <span class="stat-desc-inline" id="desc-dsu-clients" data-i18n="live_debug.dsu_desc_waiting">Ожидание эмулятора</span>
               </div>
             </div>
 
@@ -1698,7 +1730,7 @@
       <!-- Dynamic Orbit Mode Floating Controls Bar -->
       <div class="orbit-controls-bar" id="orbit-controls-bar">
         <span class="orbit-hint" data-i18n="live_debug.cam_orbit_hint">Зажмите ЛКМ для вращения • Колесико — зум</span>
-        <button type="button" class="btn-camera-reset" id="btn-reset-cam" title="Сбросить положение камеры">
+        <button type="button" class="btn-camera-reset" id="btn-reset-cam" data-i18n-title="live_debug.cam_reset_title" title="Сбросить положение камеры">
           <kbd class="apple-kbd">R</kbd>
           <span data-i18n="live_debug.cam_reset">Сброс камеры</span>
         </button>
@@ -1719,7 +1751,7 @@
       </div>
 
       <!-- Eco Paused Overlay -->
-      <div class="eco-overlay" id="eco-overlay" title="Кликните для возобновления">
+      <div class="eco-overlay" id="eco-overlay" data-i18n-title="live_debug.paused_hint" title="Кликните для возобновления">
         <div class="eco-card">
           <svg class="eco-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="6" y="4" width="4" height="16"></rect>
@@ -1741,7 +1773,7 @@
     <div class="stats-modal-card">
       <div class="stats-modal-header">
         <span class="stats-modal-title" data-i18n="live_debug.stats_modal_title">Сохранение записи телеметрии</span>
-        <button type="button" class="stats-modal-close btn-icon" id="btn-modal-close" title="Закрыть">
+        <button type="button" class="stats-modal-close btn-icon" id="btn-modal-close" data-i18n-title="live_debug.stats_modal_close" title="Закрыть">
           <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
@@ -1809,6 +1841,7 @@
           "live_debug.cam_iso": "3/4 Обзор",
           "live_debug.cam_orbit_hint": "Зажмите ЛКМ для вращения • Колесико — зум",
           "live_debug.cam_reset": "Сброс камеры",
+          "live_debug.cam_reset_title": "Сбросить положение камеры",
           "live_debug.stats_title": "Статистика",
           "live_debug.stats_desc": "Мониторинг потока данных в реальном времени",
           "live_debug.stats_record_start": "Начать запись",
@@ -1845,9 +1878,22 @@
           "live_debug.stats_modal_btn_save": "Сохранить файл...",
           "live_debug.stats_modal_btn_copy": "Копировать в буфер",
           "live_debug.stats_modal_btn_cancel": "Не сохранять",
+          "live_debug.stats_modal_close": "Закрыть",
           "live_debug.stats_modal_saved": "Файл сохранен: ",
           "live_debug.stats_modal_copied": "Скопировано в буфер обмена",
           "live_debug.stats_modal_open_folder": "Показать в папке",
+          "live_debug.jitter_stable": "стабильно",
+          "live_debug.jitter_normal": "норма",
+          "live_debug.jitter_high": "джиттер",
+          "live_debug.dsu_clients_active": "активных",
+          "live_debug.dsu_clients_initial": "0 активных",
+          "live_debug.dsu_desc_streaming": "Передача данных",
+          "live_debug.dsu_desc_waiting": "Ожидание эмулятора",
+          "live_debug.stats_rows_unit": "строк",
+          "live_debug.stats_sec_unit": "сек",
+          "live_debug.stats_unit_ms": "мс",
+          "live_debug.stats_modal_save_err": "Ошибка сохранения: ",
+          "live_debug.stats_modal_copy_err": "Не удалось скопировать: ",
           "app.theme_toggle": "Переключить тему"
         },
         en: {
@@ -1878,6 +1924,7 @@
           "live_debug.cam_iso": "3/4 View",
           "live_debug.cam_orbit_hint": "Drag LMB to orbit • Scroll to zoom",
           "live_debug.cam_reset": "Reset Camera",
+          "live_debug.cam_reset_title": "Reset camera position",
           "live_debug.stats_title": "Statistics",
           "live_debug.stats_desc": "Real-time pipeline data stream monitoring",
           "live_debug.stats_record_start": "Start Recording",
@@ -1914,9 +1961,22 @@
           "live_debug.stats_modal_btn_save": "Save File...",
           "live_debug.stats_modal_btn_copy": "Copy to Clipboard",
           "live_debug.stats_modal_btn_cancel": "Don't Save",
+          "live_debug.stats_modal_close": "Close",
           "live_debug.stats_modal_saved": "File saved: ",
           "live_debug.stats_modal_copied": "Copied to clipboard",
           "live_debug.stats_modal_open_folder": "Show in Folder",
+          "live_debug.jitter_stable": "stable",
+          "live_debug.jitter_normal": "normal",
+          "live_debug.jitter_high": "jitter",
+          "live_debug.dsu_clients_active": "active",
+          "live_debug.dsu_clients_initial": "0 active",
+          "live_debug.dsu_desc_streaming": "Streaming data",
+          "live_debug.dsu_desc_waiting": "Waiting for emulator",
+          "live_debug.stats_rows_unit": "rows",
+          "live_debug.stats_sec_unit": "sec",
+          "live_debug.stats_unit_ms": "ms",
+          "live_debug.stats_modal_save_err": "Save error: ",
+          "live_debug.stats_modal_copy_err": "Failed to copy: ",
           "app.theme_toggle": "Toggle Theme"
         }
       };
@@ -1944,8 +2004,24 @@
           if (dict[key]) el.setAttribute('data-tooltip-text', dict[key]);
         });
 
+        const btnText = document.getElementById('record-btn-text');
+        if (btnText) {
+          btnText.textContent = isRecording
+            ? (dict["live_debug.stats_record_stop"] || "Stop Recording")
+            : (dict["live_debug.stats_record_start"] || "Start Recording");
+        }
+
         if (!isPhoneConnected && fpsCounter) {
           fpsCounter.textContent = dict["live_debug.status_offline"] || "offline";
+        }
+
+        if (lastTelemetryData) {
+          updateTelemetryStats(lastTelemetryData);
+        }
+
+        const modal = document.getElementById('stats-save-modal');
+        if (modal && modal.style.display !== 'none' && lastRecordedElapsedMs) {
+          openSaveModal(lastRecordedElapsedMs);
         }
       }
 
@@ -2792,33 +2868,136 @@
         });
       }
 
-      // ── Lightweight Canvas Sparkline Renderer ──
-      function drawSparkline(canvasId, data, minVal, maxVal, strokeColor) {
+      // ── Helper: Color Converter for Ambient Glow & Fills ──
+      function hexToRgba(hex, alpha) {
+        if (!hex) return `rgba(10, 132, 255, ${alpha})`;
+        if (hex.startsWith('rgba')) return hex;
+        let c = hex.replace('#', '');
+        if (c.length === 3) c = c.split('').map(x => x + x).join('');
+        const num = parseInt(c, 16);
+        const r = (num >> 16) & 255;
+        const g = (num >> 8) & 255;
+        const b = num & 255;
+        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      }
+
+      // ── Apple HIG Fluid Telemetry Area-Chart Renderer ──
+      function drawAppleChart(canvasId, data, minVal, maxVal, strokeColor) {
         const canvas = document.getElementById(canvasId);
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
-        const w = canvas.width;
-        const h = canvas.height;
+
+        // HiDPI Retina Display Crispness scaling
+        const dpr = window.devicePixelRatio || 1;
+        const rect = canvas.getBoundingClientRect();
+        const w = rect.width || canvas.clientWidth || 160;
+        const h = rect.height || canvas.clientHeight || 60;
+
+        const targetW = Math.round(w * dpr);
+        const targetH = Math.round(h * dpr);
+        if (canvas.width !== targetW || canvas.height !== targetH) {
+          canvas.width = targetW;
+          canvas.height = targetH;
+        }
+
+        ctx.save();
+        ctx.scale(dpr, dpr);
         ctx.clearRect(0, 0, w, h);
-        if (!data || data.length < 2) return;
 
-        const range = (maxVal - minVal) || 1;
+        // Subtle midpoint guide line
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.06)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
         ctx.beginPath();
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 1.5;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
+        ctx.moveTo(0, h / 2);
+        ctx.lineTo(w, h / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
+        if (!data || data.length < 2) {
+          ctx.restore();
+          return;
+        }
+
+        const padTop = 7;
+        const padBottom = 7;
+        const plotH = h - padTop - padBottom;
+        const range = (maxVal - minVal) || 1;
+
+        // Compute coordinate points
+        const pts = [];
         const step = w / (data.length - 1);
         for (let i = 0; i < data.length; i++) {
-          const val = Math.max(minVal, Math.min(maxVal, data[i]));
-          const norm = (val - minVal) / range;
+          const clamped = Math.max(minVal, Math.min(maxVal, data[i]));
+          const norm = (clamped - minVal) / range;
           const x = i * step;
-          const y = h - 2 - (norm * (h - 4));
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
+          const y = h - padBottom - (norm * plotH);
+          pts.push({ x, y });
         }
+
+        // Build smooth Catmull-Rom cubic Bezier spline
+        const path = new Path2D();
+        path.moveTo(pts[0].x, pts[0].y);
+
+        for (let i = 0; i < pts.length - 1; i++) {
+          const p0 = pts[i === 0 ? 0 : i - 1];
+          const p1 = pts[i];
+          const p2 = pts[i + 1];
+          const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+
+          const cp1x = p1.x + (p2.x - p0.x) / 6;
+          const cp1y = p1.y + (p2.y - p0.y) / 6;
+          const cp2x = p2.x - (p3.x - p1.x) / 6;
+          const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+          path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+        }
+
+        // 1. Lush translucent area gradient under curve
+        const fillPath = new Path2D(path);
+        fillPath.lineTo(pts[pts.length - 1].x, h);
+        fillPath.lineTo(pts[0].x, h);
+        fillPath.closePath();
+
+        const grad = ctx.createLinearGradient(0, padTop, 0, h);
+        grad.addColorStop(0, hexToRgba(strokeColor, 0.38));
+        grad.addColorStop(0.55, hexToRgba(strokeColor, 0.12));
+        grad.addColorStop(1, hexToRgba(strokeColor, 0.00));
+        ctx.fillStyle = grad;
+        ctx.fill(fillPath);
+
+        // 2. Stroke with vibrant Apple halo glow
+        ctx.shadowColor = hexToRgba(strokeColor, 0.50);
+        ctx.shadowBlur = 7;
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2.4;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+        ctx.stroke(path);
+
+        // 3. Glowing live head indicator dot on latest point
+        ctx.shadowBlur = 0;
+        const lastPt = pts[pts.length - 1];
+
+        ctx.beginPath();
+        ctx.arc(lastPt.x, lastPt.y, 5.2, 0, Math.PI * 2);
+        ctx.fillStyle = hexToRgba(strokeColor, 0.35);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(lastPt.x, lastPt.y, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fill();
+        ctx.lineWidth = 1.3;
+        ctx.strokeStyle = strokeColor;
         ctx.stroke();
+
+        ctx.restore();
+      }
+
+      function drawSparkline(canvasId, data, minVal, maxVal, strokeColor) {
+        drawAppleChart(canvasId, data, minVal, maxVal, strokeColor);
       }
 
       // ── Live Telemetry & Statistics Engine ──
@@ -2829,18 +3008,26 @@
       let recordedLines = [];
       let savedFilePath = '';
       const RECORD_MAX_DURATION_MS = 60000; // Hard 1-minute limit
+      const MAX_CHART_SAMPLES = 36; // Expanded 36-sample rolling timeline
 
       // Incoming metrics rolling history
       const hzHistory = [];
+      const latencyHistory = [];
       const jitterHistory = [];
+      const outHzHistory = [];
+      const pipeMsHistory = [];
       let lastPacketRecvTime = 0;
       let lastSeq = 0;
       let lostPacketsCount = 0;
       let totalExpectedPackets = 0;
       let lastLossResetTime = performance.now();
+      let lastTelemetryData = null;
+      let lastRecordedElapsedMs = 0;
 
       function updateTelemetryStats(data) {
+        lastTelemetryData = data;
         const now = performance.now();
+        const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
 
         // 1. INPUT Frequency (In Hz)
         const inHz = typeof data.in_hz === 'number' && data.in_hz > 0 ? data.in_hz : 0;
@@ -2866,8 +3053,8 @@
 
         if (inHz > 0) {
           hzHistory.push(inHz);
-          if (hzHistory.length > 25) hzHistory.shift();
-          drawSparkline('spark-in-hz', hzHistory, 30, 70, '#34C759');
+          if (hzHistory.length > MAX_CHART_SAMPLES) hzHistory.shift();
+          drawAppleChart('spark-in-hz', hzHistory, 30, 80, '#34C759');
         }
 
         // 2. Latency & Jitter
@@ -2898,6 +3085,9 @@
             chipLatencyEl.textContent = '> 50ms';
           }
         }
+        latencyHistory.push(latencyMs);
+        if (latencyHistory.length > MAX_CHART_SAMPLES) latencyHistory.shift();
+        drawAppleChart('spark-latency', latencyHistory, 0, 50, '#0A84FF');
 
         // Jitter
         if (lastPacketRecvTime > 0) {
@@ -2905,17 +3095,19 @@
           const expectedInterval = inHz > 0 ? (1000 / inHz) : 16.67;
           const jitter = Math.abs(interval - expectedInterval);
           jitterHistory.push(jitter);
-          if (jitterHistory.length > 25) jitterHistory.shift();
+          if (jitterHistory.length > MAX_CHART_SAMPLES) jitterHistory.shift();
 
           const avgJitter = jitterHistory.reduce((a, b) => a + b, 0) / jitterHistory.length;
           const valJitterEl = document.getElementById('val-jitter');
           const chipJitterEl = document.getElementById('chip-jitter');
           if (valJitterEl) valJitterEl.textContent = avgJitter.toFixed(1);
           if (chipJitterEl) {
-            chipJitterEl.textContent = avgJitter < 3 ? 'стабильно' : (avgJitter < 8 ? 'норма' : 'джиттер');
+            chipJitterEl.textContent = avgJitter < 3
+              ? (dict["live_debug.jitter_stable"] || "stable")
+              : (avgJitter < 8 ? (dict["live_debug.jitter_normal"] || "normal") : (dict["live_debug.jitter_high"] || "jitter"));
             chipJitterEl.className = avgJitter < 3 ? 'stat-chip green' : (avgJitter < 8 ? 'stat-chip yellow' : 'stat-chip red');
           }
-          drawSparkline('spark-jitter', jitterHistory, 0, 15, '#FF9500');
+          drawAppleChart('spark-jitter', jitterHistory, 0, 15, '#FF9500');
         }
         lastPacketRecvTime = now;
 
@@ -2974,6 +3166,11 @@
         const outHz = typeof data.out_hz === 'number' && data.out_hz > 0 ? data.out_hz : inHz;
         const valOutHzEl = document.getElementById('val-out-hz');
         if (valOutHzEl) valOutHzEl.textContent = outHz > 0 ? outHz.toFixed(1) : '--';
+        if (outHz > 0) {
+          outHzHistory.push(outHz);
+          if (outHzHistory.length > MAX_CHART_SAMPLES) outHzHistory.shift();
+          drawAppleChart('spark-out-hz', outHzHistory, 30, 80, '#5E5CE6');
+        }
 
         const pipeMs = typeof data.pipe_ms === 'number' ? data.pipe_ms : 0.4;
         const valPipeMsEl = document.getElementById('val-pipe-ms');
@@ -2991,6 +3188,9 @@
             chipPipeMsEl.textContent = '> 3ms';
           }
         }
+        pipeMsHistory.push(pipeMs);
+        if (pipeMsHistory.length > MAX_CHART_SAMPLES) pipeMsHistory.shift();
+        drawAppleChart('spark-pipe-ms', pipeMsHistory, 0, 3.5, '#30D158');
 
         const dsuClients = typeof data.dsu_clients === 'number' ? data.dsu_clients : 0;
         const valDsuClientsEl = document.getElementById('val-dsu-clients');
@@ -3004,10 +3204,13 @@
         }
         if (chipDsuClientsEl) {
           chipDsuClientsEl.className = dsuClients > 0 ? 'stat-chip green' : 'stat-chip muted';
-          chipDsuClientsEl.textContent = dsuClients > 0 ? `${dsuClients} активных` : '0 активных';
+          const activeWord = dict["live_debug.dsu_clients_active"] || (currentLang === 'ru' ? 'активных' : 'active');
+          chipDsuClientsEl.textContent = `${dsuClients} ${activeWord}`;
         }
         if (descDsuClientsEl) {
-          descDsuClientsEl.textContent = dsuClients > 0 ? 'Передача данных' : 'Ожидание эмулятора';
+          descDsuClientsEl.textContent = dsuClients > 0
+            ? (dict["live_debug.dsu_desc_streaming"] || "Streaming data")
+            : (dict["live_debug.dsu_desc_waiting"] || "Waiting for emulator");
         }
 
         const outGxEl = document.getElementById('out-gx');
@@ -3047,7 +3250,8 @@
           const approxBytes = lineCount * 75;
           const countTagEl = document.getElementById('record-count-tag');
           if (countTagEl) {
-            countTagEl.textContent = `${(lineCount - 1).toLocaleString()} строк • ${Math.round(approxBytes / 1024)} KB`;
+            const rowsWord = dict["live_debug.stats_rows_unit"] || (currentLang === 'ru' ? 'строк' : 'rows');
+            countTagEl.textContent = `${(lineCount - 1).toLocaleString()} ${rowsWord} • ${Math.round(approxBytes / 1024)} KB`;
           }
         }
       }
@@ -3113,6 +3317,7 @@
       }
 
       function openSaveModal(elapsedMs) {
+        lastRecordedElapsedMs = elapsedMs;
         const modal = document.getElementById('stats-save-modal');
         if (!modal) return;
 
@@ -3127,8 +3332,12 @@
         const statusMsgEl = document.getElementById('modal-status-msg');
         const btnOpenFolder = document.getElementById('btn-modal-open-folder');
 
-        if (durationEl) durationEl.textContent = `${durationSec} сек`;
-        if (rowsEl) rowsEl.textContent = `${lineCount.toLocaleString()}`;
+        const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+        const secUnit = dict["live_debug.stats_sec_unit"] || (currentLang === 'ru' ? 'сек' : 'sec');
+        const rowsUnit = dict["live_debug.stats_rows_unit"] || (currentLang === 'ru' ? 'строк' : 'rows');
+
+        if (durationEl) durationEl.textContent = `${durationSec} ${secUnit}`;
+        if (rowsEl) rowsEl.textContent = `${lineCount.toLocaleString()} ${rowsUnit}`;
         if (sizeEl) sizeEl.textContent = `${sizeKb} KB`;
         if (statusMsgEl) statusMsgEl.style.display = 'none';
         if (btnOpenFolder) btnOpenFolder.style.display = 'none';
@@ -3163,8 +3372,9 @@
             })
             .catch(err => {
               if (statusMsgEl) {
+                const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
                 statusMsgEl.className = 'modal-status-banner error';
-                statusMsgEl.textContent = "Ошибка сохранения: " + err;
+                statusMsgEl.textContent = (dict["live_debug.stats_modal_save_err"] || "Ошибка сохранения: ") + err;
                 statusMsgEl.style.display = 'block';
               }
             });
@@ -3198,8 +3408,9 @@
           }
         }).catch(err => {
           if (statusMsgEl) {
+            const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
             statusMsgEl.className = 'modal-status-banner error';
-            statusMsgEl.textContent = "Не удалось скопировать: " + err;
+            statusMsgEl.textContent = (dict["live_debug.stats_modal_copy_err"] || "Не удалось скопировать: ") + err;
             statusMsgEl.style.display = 'block';
           }
         });
