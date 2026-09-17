@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -75,6 +78,50 @@ func (a *LiveDebugApp) SetWindowTheme(theme string) {
 	} else if theme == "light" {
 		wailsRuntime.WindowSetLightTheme(a.ctx)
 	}
+}
+
+// SaveCSVFile opens a native save dialog and saves the CSV content to the selected file path.
+func (a *LiveDebugApp) SaveCSVFile(defaultName string, content string) (string, error) {
+	if a.ctx == nil {
+		return "", fmt.Errorf("context not initialized")
+	}
+	savePath, err := wailsRuntime.SaveFileDialog(a.ctx, wailsRuntime.SaveDialogOptions{
+		DefaultFilename: defaultName,
+		Title:           "Сохранить запись телеметрии CSV",
+		Filters: []wailsRuntime.FileFilter{
+			{
+				DisplayName: "CSV Files (*.csv)",
+				Pattern:     "*.csv",
+			},
+			{
+				DisplayName: "All Files (*.*)",
+				Pattern:     "*.*",
+			},
+		},
+	})
+	if err != nil {
+		return "", err
+	}
+	if savePath == "" {
+		return "", nil
+	}
+	if !strings.HasSuffix(strings.ToLower(savePath), ".csv") {
+		savePath += ".csv"
+	}
+	if err := os.WriteFile(savePath, []byte(content), 0644); err != nil {
+		return "", err
+	}
+	return savePath, nil
+}
+
+// OpenInFolder opens Windows Explorer selecting the given file path.
+func (a *LiveDebugApp) OpenInFolder(filePath string) {
+	if filePath == "" {
+		return
+	}
+	go func() {
+		_ = exec.Command("explorer.exe", "/select,", filepath.Clean(filePath)).Start()
+	}()
 }
 
 // runLiveDebug initializes and runs the dedicated Live Debug window instance.

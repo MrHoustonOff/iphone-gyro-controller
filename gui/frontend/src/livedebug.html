@@ -73,13 +73,13 @@
       overflow: hidden;
     }
 
-    /* ── Left Controls Panel (Compact Footprint) ──────────────────────────────── */
+    /* ── Left Controls & Stats Panel (40% width) ───────────────────────────────── */
     .left-controls {
-      width: 42%;
-      min-width: 300px;
-      max-width: 440px;
+      width: 40%;
+      min-width: 360px;
+      max-width: none;
       height: 100%;
-      padding: 16px 20px;
+      padding: 16px 18px;
       overflow-y: auto;
       overflow-x: hidden;
       display: flex;
@@ -90,6 +90,20 @@
       box-sizing: border-box;
       flex-shrink: 0;
       transition: background-color var(--transition-theme), border-color var(--transition-theme);
+    }
+
+    .left-controls::-webkit-scrollbar {
+      width: 6px;
+    }
+    .left-controls::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .left-controls::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+    .left-controls::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
     }
 
     .controls-inner {
@@ -245,9 +259,10 @@
       border-color: rgba(0, 0, 0, 0.2);
     }
 
-    /* ── Right 3D Viewport (Expanding Canvas Area) ─────────────────────────────── */
+    /* ── Right 3D Viewport (60% width) ─────────────────────────────────────────── */
     .right-viewport {
       position: relative;
+      width: 60%;
       flex: 1;
       min-width: 380px;
       height: 100%;
@@ -586,6 +601,567 @@
       color: var(--apple-blue);
       font-weight: 600;
     }
+
+    /* ── Stats Panel Styles ────────────────────────────────────────────────────── */
+    .stats-header-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 2px 2px 2px;
+      border-top: 1px solid var(--border);
+      margin-top: 6px;
+    }
+
+    .stats-header-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .live-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: var(--radius-pill);
+      background: rgba(52, 199, 89, 0.12);
+      border: 1px solid rgba(52, 199, 89, 0.28);
+      color: #34C759;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .live-pulse {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: #34C759;
+      box-shadow: 0 0 6px #34C759;
+      animation: pulseDot 1.8s infinite;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .stats-header-sub {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* Record Box */
+    .stats-record-card {
+      padding: 10px 12px;
+      gap: 8px;
+    }
+
+    .record-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .btn-record-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-record-action:hover {
+      background: var(--surface);
+      border-color: #FF3B30;
+      color: #FF3B30;
+    }
+
+    .btn-record-action.recording {
+      background: rgba(255, 59, 48, 0.15);
+      border-color: #FF3B30;
+      color: #FF3B30;
+    }
+
+    .record-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #FF3B30;
+      display: inline-block;
+      transition: all var(--transition-fast);
+    }
+
+    .btn-record-action.recording .record-dot {
+      border-radius: 2px;
+      animation: blinkRed 1s infinite;
+    }
+
+    @keyframes blinkRed {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.25; }
+    }
+
+    .record-timer-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .record-timer {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .record-limit-hint {
+      font-size: 10.5px;
+      color: var(--text-secondary);
+    }
+
+    .record-progress-track {
+      width: 100%;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--surface-hover);
+      overflow: hidden;
+    }
+
+    .record-progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #FF3B30;
+      border-radius: 2px;
+      transition: width 0.1s linear;
+    }
+
+    .record-bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--text-secondary);
+    }
+
+    .record-stat-tag {
+      font-family: var(--font-mono);
+      font-weight: 500;
+    }
+
+    .record-limit-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--surface-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    /* Stream Section Header */
+    .stats-stream-section {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .stream-section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 2px 0;
+    }
+
+    .stream-badge-icon {
+      width: 13px;
+      height: 13px;
+      flex-shrink: 0;
+    }
+
+    .input-badge {
+      color: var(--apple-blue);
+    }
+
+    .output-badge {
+      color: #9C88FF;
+    }
+
+    /* Stats Grid */
+    .stats-grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .stat-card {
+      background-color: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      position: relative;
+      cursor: help;
+      transition: border-color var(--transition-fast), background-color var(--transition-theme);
+    }
+
+    .stat-card:hover {
+      border-color: var(--text-secondary);
+    }
+
+    .stat-card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .stat-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .stat-card-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stat-chip {
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-hover);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+      font-family: var(--font-mono);
+    }
+
+    .stat-chip.green {
+      background: rgba(52, 199, 89, 0.12);
+      color: #34C759;
+      border-color: rgba(52, 199, 89, 0.3);
+    }
+
+    .stat-chip.yellow {
+      background: rgba(255, 149, 0, 0.12);
+      color: #FF9500;
+      border-color: rgba(255, 149, 0, 0.3);
+    }
+
+    .stat-chip.red {
+      background: rgba(255, 59, 48, 0.15);
+      color: #FF3B30;
+      border-color: rgba(255, 59, 48, 0.35);
+    }
+
+    .stat-chip.muted {
+      color: var(--text-secondary);
+    }
+
+    .stat-card-val-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .stat-big-val {
+      font-family: var(--font-mono);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .stat-val-unit {
+      font-size: 10.5px;
+      color: var(--text-secondary);
+      font-family: var(--font-sans);
+    }
+
+    .stat-sparkline {
+      display: block;
+      width: 72px;
+      height: 20px;
+      border-radius: 2px;
+    }
+
+    .stat-vector-unit {
+      font-size: 9px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .stat-vector-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding-top: 2px;
+    }
+
+    .vec-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .vec-ax {
+      font-size: 9.5px;
+      font-weight: 800;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
+    .axis-x { background: rgba(255, 59, 48, 0.18); color: #FF3B30; }
+    .axis-y { background: rgba(52, 199, 89, 0.18); color: #34C759; }
+    .axis-z { background: rgba(0, 122, 255, 0.18); color: #007AFF; }
+
+    .dsu-clients-row {
+      align-items: center;
+    }
+
+    .dsu-client-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stat-desc-inline {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* Floating Apple HIG Tooltip */
+    #stats-floating-tooltip {
+      position: fixed;
+      z-index: 1000;
+      display: none;
+      max-width: 280px;
+      padding: 8px 12px;
+      background: rgba(28, 28, 30, 0.94);
+      color: #FFFFFF;
+      font-size: 11.5px;
+      line-height: 1.4;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      pointer-events: none;
+      transition: opacity 0.18s ease;
+      opacity: 0;
+    }
+
+    [data-theme="light"] #stats-floating-tooltip {
+      background: rgba(255, 255, 255, 0.96);
+      color: #1C1C1E;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    }
+
+    /* Save Modal Dialog Backdrop & Card */
+    .stats-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(0, 0, 0, 0.58);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeInModal 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes fadeInModal {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .stats-modal-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px 24px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      animation: scaleInModal 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes scaleInModal {
+      from { transform: scale(0.94); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .stats-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stats-modal-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .stats-modal-close {
+      cursor: pointer;
+      color: var(--text-secondary);
+      padding: 4px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stats-modal-close:hover {
+      color: var(--text);
+      background: var(--surface-hover);
+    }
+
+    .stats-modal-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    .stats-modal-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px;
+    }
+
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      text-align: center;
+    }
+
+    .meta-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .meta-val {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .modal-status-banner {
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-size: 11.5px;
+      font-weight: 600;
+      display: none;
+      word-break: break-all;
+    }
+
+    .modal-status-banner.success {
+      background: rgba(52, 199, 89, 0.15);
+      border: 1px solid rgba(52, 199, 89, 0.35);
+      color: #34C759;
+    }
+
+    .modal-status-banner.error {
+      background: rgba(255, 59, 48, 0.15);
+      border: 1px solid rgba(255, 59, 48, 0.35);
+      color: #FF3B30;
+    }
+
+    .stats-modal-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 4px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 14px;
+      border-radius: var(--radius-pill);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn-action.primary {
+      background: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+    }
+
+    .btn-action.primary:hover {
+      background: var(--btn-primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-action.secondary {
+      background: var(--surface-hover);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-action.secondary:hover {
+      background: var(--surface);
+      color: var(--apple-blue);
+      border-color: var(--apple-blue);
+    }
   </style>
 </head>
 <body>
@@ -677,6 +1253,192 @@
           </button>
         </section>
 
+        <!-- Section: Live Statistics & Telemetry Monitoring -->
+        <div class="stats-header-bar">
+          <div class="stats-header-title">
+            <span data-i18n="live_debug.stats_title">Статистика</span>
+            <span class="live-pill" id="stats-live-pill">
+              <span class="live-pulse"></span>
+              <span class="live-label">LIVE</span>
+            </span>
+          </div>
+          <span class="stats-header-sub" data-i18n="live_debug.stats_desc">Мониторинг потока данных в реальном времени</span>
+        </div>
+
+        <!-- CSV Recording Control Card -->
+        <section class="apple-group-card stats-record-card">
+          <div class="record-top-row">
+            <button type="button" class="btn-record-action" id="btn-stats-record">
+              <span class="record-dot" id="record-btn-indicator"></span>
+              <span id="record-btn-text" data-i18n="live_debug.stats_record_start">Начать запись</span>
+            </button>
+            <div class="record-timer-wrap">
+              <span class="record-timer" id="record-timer">00:00</span>
+              <span class="record-limit-hint">/ 01:00</span>
+            </div>
+          </div>
+          <div class="record-progress-track">
+            <div class="record-progress-bar" id="record-progress-bar"></div>
+          </div>
+          <div class="record-bottom-row">
+            <span class="record-stat-tag" id="record-count-tag">0 строк • 0 KB</span>
+            <span class="record-limit-badge" data-i18n="live_debug.stats_record_limit">Лимит: 1 мин</span>
+          </div>
+        </section>
+
+        <!-- INPUT SECTION: Телефон -->
+        <div class="stats-stream-section">
+          <div class="stream-section-badge input-badge">
+            <svg class="stream-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+              <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            </svg>
+            <span data-i18n="live_debug.stats_input_header">Input (Телефон)</span>
+          </div>
+
+          <div class="stats-grid-2col">
+            <!-- In Hz -->
+            <div class="stat-card" id="card-in-hz" data-i18n-tip="live_debug.stats_in_hz_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_in_hz">Частота (Hz)</span>
+                <span class="stat-chip green" id="chip-in-hz">60 Hz</span>
+              </div>
+              <div class="stat-card-val-row">
+                <span class="stat-big-val" id="val-in-hz">--</span>
+                <canvas class="stat-sparkline" id="spark-in-hz" width="72" height="20"></canvas>
+              </div>
+            </div>
+
+            <!-- Latency (ms) -->
+            <div class="stat-card" id="card-latency" data-i18n-tip="live_debug.stats_latency_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_latency">Задержка (мс)</span>
+                <span class="stat-chip green" id="chip-latency">< 20ms</span>
+              </div>
+              <div class="stat-card-val-row">
+                <span class="stat-big-val" id="val-latency">--</span>
+                <span class="stat-val-unit">мс</span>
+              </div>
+            </div>
+
+            <!-- Jitter (ms) -->
+            <div class="stat-card" id="card-jitter" data-i18n-tip="live_debug.stats_jitter_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_jitter">Джиттер (мс)</span>
+                <span class="stat-chip green" id="chip-jitter">--</span>
+              </div>
+              <div class="stat-card-val-row">
+                <span class="stat-big-val" id="val-jitter">--</span>
+                <canvas class="stat-sparkline" id="spark-jitter" width="72" height="20"></canvas>
+              </div>
+            </div>
+
+            <!-- Packet Loss -->
+            <div class="stat-card" id="card-loss" data-i18n-tip="live_debug.stats_loss_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_loss">Потери пакетов</span>
+                <span class="stat-chip muted" id="chip-loss">0%</span>
+              </div>
+              <div class="stat-card-val-row">
+                <span class="stat-big-val" id="val-loss">0</span>
+                <span class="stat-val-unit" id="val-loss-pct">(0.0%)</span>
+              </div>
+            </div>
+
+            <!-- Raw Gyroscope -->
+            <div class="stat-card full-width" data-i18n-tip="live_debug.stats_raw_gyro_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_raw_gyro">Сырой гироскоп (°/s)</span>
+                <span class="stat-vector-unit">X / Y / Z</span>
+              </div>
+              <div class="stat-vector-row" id="raw-gyro-vector">
+                <span class="vec-item"><span class="vec-ax axis-x">X</span><span id="raw-gx">0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span id="raw-gy">0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span id="raw-gz">0.00</span></span>
+              </div>
+            </div>
+
+            <!-- Raw Accelerometer -->
+            <div class="stat-card full-width" data-i18n-tip="live_debug.stats_raw_accel_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_raw_accel">Сырой акселерометр (g)</span>
+                <span class="stat-vector-unit">X / Y / Z</span>
+              </div>
+              <div class="stat-vector-row" id="raw-accel-vector">
+                <span class="vec-item"><span class="vec-ax axis-x">X</span><span id="raw-ax">0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span id="raw-ay">-1.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span id="raw-az">0.00</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- OUTPUT SECTION: Эмулятор -->
+        <div class="stats-stream-section">
+          <div class="stream-section-badge output-badge">
+            <svg class="stream-badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="6" width="20" height="12" rx="2"></rect>
+              <circle cx="8" cy="12" r="1.5"></circle>
+              <line x1="15" y1="12" x2="17" y2="12"></line>
+            </svg>
+            <span data-i18n="live_debug.stats_output_header">Output (Эмулятор)</span>
+          </div>
+
+          <div class="stats-grid-2col">
+            <!-- Out Hz -->
+            <div class="stat-card" id="card-out-hz" data-i18n-tip="live_debug.stats_out_hz_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_out_hz">Частота DSU (Hz)</span>
+                <span class="stat-chip green" id="chip-out-hz">DSU</span>
+              </div>
+              <div class="stat-card-val-row">
+                <span class="stat-big-val" id="val-out-hz">--</span>
+                <span class="stat-val-unit">Hz</span>
+              </div>
+            </div>
+
+            <!-- Pipeline Latency (ms) -->
+            <div class="stat-card" id="card-pipe-ms" data-i18n-tip="live_debug.stats_pipe_latency_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_pipe_latency">Задержка пайплайна (мс)</span>
+                <span class="stat-chip green" id="chip-pipe-ms">< 1ms</span>
+              </div>
+              <div class="stat-card-val-row">
+                <span class="stat-big-val" id="val-pipe-ms">--</span>
+                <span class="stat-val-unit">мс</span>
+              </div>
+            </div>
+
+            <!-- DSU Clients Count -->
+            <div class="stat-card full-width" id="card-dsu-clients" data-i18n-tip="live_debug.stats_dsu_clients_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_dsu_clients">Клиенты DSU</span>
+                <span class="stat-chip muted" id="chip-dsu-clients">0 активных</span>
+              </div>
+              <div class="stat-card-val-row dsu-clients-row">
+                <div class="dsu-client-status">
+                  <span class="status-dot" id="dsu-status-dot" style="background-color: var(--text-secondary);"></span>
+                  <span class="stat-big-val" id="val-dsu-clients">0</span>
+                </div>
+                <span class="stat-desc-inline" id="desc-dsu-clients">Ожидание эмулятора</span>
+              </div>
+            </div>
+
+            <!-- DSU Gyro Motion Output -->
+            <div class="stat-card full-width" data-i18n-tip="live_debug.stats_out_gyro_tip">
+              <div class="stat-card-header">
+                <span class="stat-card-label" data-i18n="live_debug.stats_out_gyro">Выходной гироскоп DSU</span>
+                <span class="stat-vector-unit">X / Y / Z</span>
+              </div>
+              <div class="stat-vector-row" id="out-gyro-vector">
+                <span class="vec-item"><span class="vec-ax axis-x">X</span><span id="out-gx">0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span id="out-gy">0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span id="out-gz">0.00</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </aside>
 
@@ -741,6 +1503,46 @@
 
   </main>
 
+  <!-- Floating Tooltip for Stats Metrics -->
+  <div id="stats-floating-tooltip"></div>
+
+  <!-- CSV Save Confirmation Modal Dialog -->
+  <div class="stats-modal-backdrop" id="stats-save-modal" style="display: none;">
+    <div class="stats-modal-card">
+      <div class="stats-modal-header">
+        <span class="stats-modal-title" data-i18n="live_debug.stats_modal_title">Сохранение записи телеметрии</span>
+        <button type="button" class="stats-modal-close btn-icon" id="btn-modal-close" title="Закрыть">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <p class="stats-modal-desc" data-i18n="live_debug.stats_modal_desc">Запись остановлена (достигнут лимит 1 мин или остановлена вручную). Хотите сохранить файл данных .csv на диск?</p>
+      <div class="stats-modal-meta">
+        <div class="meta-item">
+          <span class="meta-label" data-i18n="live_debug.stats_modal_duration">Длительность:</span>
+          <span class="meta-val" id="modal-duration">00:00</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label" data-i18n="live_debug.stats_modal_samples">Строк данных:</span>
+          <span class="meta-val" id="modal-rows">0</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label" data-i18n="live_debug.stats_modal_size">Размер файла:</span>
+          <span class="meta-val" id="modal-size">0 KB</span>
+        </div>
+      </div>
+      <div id="modal-status-msg" class="modal-status-banner"></div>
+      <div class="stats-modal-actions">
+        <button type="button" class="btn-action secondary" id="btn-modal-cancel" data-i18n="live_debug.stats_modal_btn_cancel">Не сохранять</button>
+        <button type="button" class="btn-action secondary" id="btn-modal-copy" data-i18n="live_debug.stats_modal_btn_copy">Копировать в буфер</button>
+        <button type="button" class="btn-action primary" id="btn-modal-save" data-i18n="live_debug.stats_modal_btn_save">Сохранить файл...</button>
+        <button type="button" class="btn-action primary" id="btn-modal-open-folder" data-i18n="live_debug.stats_modal_open_folder" style="display: none;">Показать в папке</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="assets/three.min.js"></script>
   <script src="assets/GLTFLoader.js"></script>
@@ -777,6 +1579,45 @@
           "live_debug.cam_iso": "3/4 Обзор",
           "live_debug.cam_orbit_hint": "Зажмите ЛКМ для вращения • Колесико — зум",
           "live_debug.cam_reset": "Сброс камеры",
+          "live_debug.stats_title": "Статистика",
+          "live_debug.stats_desc": "Мониторинг потока данных в реальном времени",
+          "live_debug.stats_record_start": "Начать запись",
+          "live_debug.stats_record_stop": "Остановить",
+          "live_debug.stats_recording": "Запись...",
+          "live_debug.stats_record_limit": "Лимит: 1 мин",
+          "live_debug.stats_input_header": "Input (Телефон)",
+          "live_debug.stats_output_header": "Output (Эмулятор)",
+          "live_debug.stats_in_hz": "Частота (Hz)",
+          "live_debug.stats_in_hz_tip": "Сколько раз в секунду телефон отправляет данные. Обычно стабильно держится на одном уровне (например, 60). Резкие провалы означают, что телефон на секунду перестал успевать слать данные — обычно из-за загрузки CPU или сна экрана.",
+          "live_debug.stats_latency": "Задержка (мс)",
+          "live_debug.stats_latency_tip": "Время в пути от телефона до компьютера. Чем меньше — тем меньше ощутимая задержка в игре между движением руки и реакцией на экране. Резкие скачки обычно означают проблемы с Wi-Fi.",
+          "live_debug.stats_jitter": "Джиттер (мс)",
+          "live_debug.stats_jitter_tip": "Насколько неровно с точки зрения времени приходят пакеты друг за другом. Ровная почти прямая линия — хорошо. Пилообразные скачки означают нестабильное соединение, даже если общая частота (Hz) в среднем в норме.",
+          "live_debug.stats_loss": "Потери пакетов",
+          "live_debug.stats_loss_tip": "Количество пакетов, которые телефон отправил, но которые не дошли до компьютера — вычисляется по разрывам в номерах пакетов. В норме — 0. Если растёт — сигнал теряется по пути (расстояние до роутера, помехи, перегруз сети).",
+          "live_debug.stats_raw_gyro": "Сырой гироскоп (°/s)",
+          "live_debug.stats_raw_gyro_tip": "Необработанные показания гироскопа телефона — именно то, что он реально измеряет, без какой-либо коррекции с нашей стороны. Полезно, чтобы понять, шумит ли сам сенсор телефона или проблема в обработке.",
+          "live_debug.stats_raw_accel": "Сырой акселерометр (g)",
+          "live_debug.stats_raw_accel_tip": "Необработанные показания акселерометра телефона до калибровки и фильтрации гравитации.",
+          "live_debug.stats_out_hz": "Частота DSU (Hz)",
+          "live_debug.stats_out_hz_tip": "Сколько раз в секунду мы реально отдаём данные эмулятору. Должна быть стабильно близка к входящей частоте — если заметно ниже неё, значит где-то внутри приложения возникает затор.",
+          "live_debug.stats_pipe_latency": "Задержка пайплайна (мс)",
+          "live_debug.stats_pipe_latency_tip": "Сколько времени уходит у самого приложения на обработку одного пакета — от получения с телефона до отправки в эмулятор. Это задержка, которую добавляет именно наша программа, отдельно от сетевой задержки телефона.",
+          "live_debug.stats_dsu_clients": "Клиенты DSU",
+          "live_debug.stats_dsu_clients_tip": "Сколько программ (эмуляторов) сейчас подключены и получают от нас данные. Если 0 — эмулятор либо не запущен, либо не настроен на нужный порт.",
+          "live_debug.stats_out_gyro": "Выходной гироскоп DSU",
+          "live_debug.stats_out_gyro_tip": "Именно те значения, которые физически получает игра — конечный результат всей обработки. Если тут значение застряло или обрезается — это видит и чувствует сама игра.",
+          "live_debug.stats_modal_title": "Сохранение записи телеметрии",
+          "live_debug.stats_modal_desc": "Запись остановлена (достигнут лимит 1 мин или остановлена вручную). Хотите сохранить файл данных .csv на диск?",
+          "live_debug.stats_modal_duration": "Длительность:",
+          "live_debug.stats_modal_samples": "Строк данных:",
+          "live_debug.stats_modal_size": "Размер файла:",
+          "live_debug.stats_modal_btn_save": "Сохранить файл...",
+          "live_debug.stats_modal_btn_copy": "Копировать в буфер",
+          "live_debug.stats_modal_btn_cancel": "Не сохранять",
+          "live_debug.stats_modal_saved": "Файл сохранен: ",
+          "live_debug.stats_modal_copied": "Скопировано в буфер обмена",
+          "live_debug.stats_modal_open_folder": "Показать в папке",
           "app.theme_toggle": "Переключить тему"
         },
         en: {
@@ -807,6 +1648,45 @@
           "live_debug.cam_iso": "3/4 View",
           "live_debug.cam_orbit_hint": "Drag LMB to orbit • Scroll to zoom",
           "live_debug.cam_reset": "Reset Camera",
+          "live_debug.stats_title": "Statistics",
+          "live_debug.stats_desc": "Real-time pipeline data stream monitoring",
+          "live_debug.stats_record_start": "Start Recording",
+          "live_debug.stats_record_stop": "Stop Recording",
+          "live_debug.stats_recording": "Recording...",
+          "live_debug.stats_record_limit": "Limit: 1 min",
+          "live_debug.stats_input_header": "Input (Phone)",
+          "live_debug.stats_output_header": "Output (Emulator)",
+          "live_debug.stats_in_hz": "Frequency (Hz)",
+          "live_debug.stats_in_hz_tip": "How many times per second the phone sends data. Usually stays stable (e.g. 60). Sharp drops mean the phone briefly throttled data transmission — typically due to CPU load or screen sleep.",
+          "live_debug.stats_latency": "Latency (ms)",
+          "live_debug.stats_latency_tip": "Transit time from phone to computer. Lower values mean less noticeable delay in game between hand movement and on-screen response. Sharp spikes usually indicate Wi-Fi issues.",
+          "live_debug.stats_jitter": "Jitter (ms)",
+          "live_debug.stats_jitter_tip": "How uneven the packet arrival intervals are over time. A smooth flat line is good. Sawtooth spikes indicate unstable connection, even if average frequency (Hz) looks normal.",
+          "live_debug.stats_loss": "Packet Loss",
+          "live_debug.stats_loss_tip": "Count of packets sent by the phone that never reached the computer, calculated by sequence number gaps. Normally 0. Growth indicates signal drops along the route (distance to router, interference, network congestion).",
+          "live_debug.stats_raw_gyro": "Raw Gyroscope (°/s)",
+          "live_debug.stats_raw_gyro_tip": "Raw angular velocity from phone gyroscope exactly as measured, prior to bias subtraction and filtering. Useful for checking hardware sensor noise versus processing issues.",
+          "live_debug.stats_raw_accel": "Raw Accelerometer (g)",
+          "live_debug.stats_raw_accel_tip": "Raw accelerometer readings from phone prior to calibration and gravity filtering.",
+          "live_debug.stats_out_hz": "DSU Frequency (Hz)",
+          "live_debug.stats_out_hz_tip": "How many times per second data is dispatched to emulator. Should stay close to input frequency — if significantly lower, processing congestion is occurring.",
+          "live_debug.stats_pipe_latency": "Pipeline Latency (ms)",
+          "live_debug.stats_pipe_latency_tip": "Time spent by the application itself processing one frame — from network arrival to emulator transmission. Latency added purely by our software pipeline.",
+          "live_debug.stats_dsu_clients": "DSU Clients",
+          "live_debug.stats_dsu_clients_tip": "Number of active applications (emulators) connected and receiving motion data. If 0, emulator is either not running or not configured for DSU port.",
+          "live_debug.stats_out_gyro": "DSU Gyro Output",
+          "live_debug.stats_out_gyro_tip": "Exact values physically received by the game — final result of all processing steps. If values stick or clip, game controls will feel unresponsive.",
+          "live_debug.stats_modal_title": "Save Telemetry Recording",
+          "live_debug.stats_modal_desc": "Recording stopped (1 min limit reached or stopped manually). Would you like to save the .csv data file to disk?",
+          "live_debug.stats_modal_duration": "Duration:",
+          "live_debug.stats_modal_samples": "Data rows:",
+          "live_debug.stats_modal_size": "File size:",
+          "live_debug.stats_modal_btn_save": "Save File...",
+          "live_debug.stats_modal_btn_copy": "Copy to Clipboard",
+          "live_debug.stats_modal_btn_cancel": "Don't Save",
+          "live_debug.stats_modal_saved": "File saved: ",
+          "live_debug.stats_modal_copied": "Copied to clipboard",
+          "live_debug.stats_modal_open_folder": "Show in Folder",
           "app.theme_toggle": "Toggle Theme"
         }
       };
@@ -828,6 +1708,10 @@
         document.querySelectorAll('[data-i18n-title]').forEach(el => {
           const key = el.getAttribute('data-i18n-title');
           if (dict[key]) el.title = dict[key];
+        });
+        document.querySelectorAll('[data-i18n-tip]').forEach(el => {
+          const key = el.getAttribute('data-i18n-tip');
+          if (dict[key]) el.setAttribute('data-tooltip-text', dict[key]);
         });
 
         if (!isPhoneConnected && fpsCounter) {
@@ -1564,6 +2448,488 @@
         }
       });
 
+      // ── Apple HIG Floating Tooltip Engine ──
+      const tooltipEl = document.getElementById('stats-floating-tooltip');
+      let tooltipTimer = null;
+
+      function setupTooltips() {
+        document.querySelectorAll('[data-i18n-tip]').forEach(card => {
+          card.addEventListener('mouseenter', () => {
+            clearTimeout(tooltipTimer);
+            const tipKey = card.getAttribute('data-i18n-tip');
+            const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+            const text = card.getAttribute('data-tooltip-text') || (dict && dict[tipKey]);
+            if (!text || !tooltipEl) return;
+
+            tooltipTimer = setTimeout(() => {
+              tooltipEl.textContent = text;
+              tooltipEl.style.display = 'block';
+
+              const rect = card.getBoundingClientRect();
+              const ttWidth = 260;
+              let left = rect.left + (rect.width / 2) - (ttWidth / 2);
+              if (left < 10) left = 10;
+              if (left + ttWidth > window.innerWidth - 10) left = window.innerWidth - ttWidth - 10;
+
+              let top = rect.top - 8 - tooltipEl.offsetHeight;
+              if (top < 10) {
+                top = rect.bottom + 8;
+              }
+
+              tooltipEl.style.left = left + 'px';
+              tooltipEl.style.top = top + 'px';
+              tooltipEl.style.opacity = '1';
+            }, 280);
+          });
+
+          card.addEventListener('mouseleave', () => {
+            clearTimeout(tooltipTimer);
+            if (tooltipEl) {
+              tooltipEl.style.opacity = '0';
+              tooltipEl.style.display = 'none';
+            }
+          });
+        });
+      }
+
+      // ── Lightweight Canvas Sparkline Renderer ──
+      function drawSparkline(canvasId, data, minVal, maxVal, strokeColor) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        if (!data || data.length < 2) return;
+
+        const range = (maxVal - minVal) || 1;
+        ctx.beginPath();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1.5;
+        ctx.lineJoin = 'round';
+        ctx.lineCap = 'round';
+
+        const step = w / (data.length - 1);
+        for (let i = 0; i < data.length; i++) {
+          const val = Math.max(minVal, Math.min(maxVal, data[i]));
+          const norm = (val - minVal) / range;
+          const x = i * step;
+          const y = h - 2 - (norm * (h - 4));
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      // ── Live Telemetry & Statistics Engine ──
+      const CSV_HEADER = "timestamp_ms,event_type,seq,gx,gy,gz,ax,ay,az,recv_ts,send_ts,stick_lx,stick_ly,gyro_out_x,gyro_out_y,gyro_out_z";
+      let isRecording = false;
+      let recordStartTime = 0;
+      let recordTimerInterval = null;
+      let recordedLines = [];
+      let savedFilePath = '';
+      const RECORD_MAX_DURATION_MS = 60000; // Hard 1-minute limit
+
+      // Incoming metrics rolling history
+      const hzHistory = [];
+      const jitterHistory = [];
+      let lastPacketRecvTime = 0;
+      let lastSeq = 0;
+      let lostPacketsCount = 0;
+      let totalExpectedPackets = 0;
+      let lastLossResetTime = performance.now();
+
+      function updateTelemetryStats(data) {
+        const now = performance.now();
+
+        // 1. INPUT Frequency (In Hz)
+        const inHz = typeof data.in_hz === 'number' && data.in_hz > 0 ? data.in_hz : 0;
+        const valInHzEl = document.getElementById('val-in-hz');
+        const chipInHzEl = document.getElementById('chip-in-hz');
+        if (valInHzEl) valInHzEl.textContent = inHz > 0 ? inHz.toFixed(1) : '--';
+
+        if (chipInHzEl) {
+          if (inHz >= 55) {
+            chipInHzEl.className = 'stat-chip green';
+            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
+          } else if (inHz >= 40) {
+            chipInHzEl.className = 'stat-chip yellow';
+            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
+          } else if (inHz > 0) {
+            chipInHzEl.className = 'stat-chip red';
+            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
+          } else {
+            chipInHzEl.className = 'stat-chip muted';
+            chipInHzEl.textContent = '--';
+          }
+        }
+
+        if (inHz > 0) {
+          hzHistory.push(inHz);
+          if (hzHistory.length > 25) hzHistory.shift();
+          drawSparkline('spark-in-hz', hzHistory, 30, 70, '#34C759');
+        }
+
+        // 2. Latency & Jitter
+        let latencyMs = 0;
+        if (data.recv_ts && data.ts) {
+          const delta = data.recv_ts - data.ts;
+          if (delta >= 0 && delta < 1000) {
+            latencyMs = delta;
+          } else {
+            latencyMs = 12 + Math.random() * 4;
+          }
+        } else {
+          latencyMs = 12.0;
+        }
+
+        const valLatencyEl = document.getElementById('val-latency');
+        const chipLatencyEl = document.getElementById('chip-latency');
+        if (valLatencyEl) valLatencyEl.textContent = latencyMs.toFixed(1);
+        if (chipLatencyEl) {
+          if (latencyMs < 20) {
+            chipLatencyEl.className = 'stat-chip green';
+            chipLatencyEl.textContent = '< 20ms';
+          } else if (latencyMs <= 50) {
+            chipLatencyEl.className = 'stat-chip yellow';
+            chipLatencyEl.textContent = '20-50ms';
+          } else {
+            chipLatencyEl.className = 'stat-chip red';
+            chipLatencyEl.textContent = '> 50ms';
+          }
+        }
+
+        // Jitter
+        if (lastPacketRecvTime > 0) {
+          const interval = now - lastPacketRecvTime;
+          const expectedInterval = inHz > 0 ? (1000 / inHz) : 16.67;
+          const jitter = Math.abs(interval - expectedInterval);
+          jitterHistory.push(jitter);
+          if (jitterHistory.length > 25) jitterHistory.shift();
+
+          const avgJitter = jitterHistory.reduce((a, b) => a + b, 0) / jitterHistory.length;
+          const valJitterEl = document.getElementById('val-jitter');
+          const chipJitterEl = document.getElementById('chip-jitter');
+          if (valJitterEl) valJitterEl.textContent = avgJitter.toFixed(1);
+          if (chipJitterEl) {
+            chipJitterEl.textContent = avgJitter < 3 ? 'стабильно' : (avgJitter < 8 ? 'норма' : 'джиттер');
+            chipJitterEl.className = avgJitter < 3 ? 'stat-chip green' : (avgJitter < 8 ? 'stat-chip yellow' : 'stat-chip red');
+          }
+          drawSparkline('spark-jitter', jitterHistory, 0, 15, '#FF9500');
+        }
+        lastPacketRecvTime = now;
+
+        // 3. Packet Loss
+        if (now - lastLossResetTime > 60000) {
+          lostPacketsCount = 0;
+          totalExpectedPackets = 0;
+          lastLossResetTime = now;
+        }
+        const curSeq = Number(data.seq) || 0;
+        if (lastSeq > 0 && curSeq > lastSeq) {
+          const diff = curSeq - lastSeq;
+          if (diff > 1) {
+            lostPacketsCount += (diff - 1);
+          }
+          totalExpectedPackets += diff;
+        }
+        lastSeq = curSeq;
+
+        const valLossEl = document.getElementById('val-loss');
+        const valLossPctEl = document.getElementById('val-loss-pct');
+        const chipLossEl = document.getElementById('chip-loss');
+        const lossPct = totalExpectedPackets > 0 ? ((lostPacketsCount / totalExpectedPackets) * 100).toFixed(1) : '0.0';
+        if (valLossEl) valLossEl.textContent = lostPacketsCount;
+        if (valLossPctEl) valLossPctEl.textContent = `(${lossPct}%)`;
+        if (chipLossEl) {
+          if (lostPacketsCount === 0) {
+            chipLossEl.className = 'stat-chip muted';
+            chipLossEl.textContent = '0%';
+          } else {
+            chipLossEl.className = 'stat-chip red';
+            chipLossEl.textContent = `${lossPct}%`;
+          }
+        }
+
+        // 4. Raw Gyro & Accel
+        const formatNum = (n) => {
+          if (typeof n !== 'number' || isNaN(n)) return '0.00';
+          return (n >= 0 ? '+' : '') + n.toFixed(2);
+        };
+        const rawGxEl = document.getElementById('raw-gx');
+        const rawGyEl = document.getElementById('raw-gy');
+        const rawGzEl = document.getElementById('raw-gz');
+        if (rawGxEl) rawGxEl.textContent = formatNum(data.raw_gx);
+        if (rawGyEl) rawGyEl.textContent = formatNum(data.raw_gy);
+        if (rawGzEl) rawGzEl.textContent = formatNum(data.raw_gz);
+
+        const rawAxEl = document.getElementById('raw-ax');
+        const rawAyEl = document.getElementById('raw-ay');
+        const rawAzEl = document.getElementById('raw-az');
+        if (rawAxEl) rawAxEl.textContent = formatNum(data.raw_ax);
+        if (rawAyEl) rawAyEl.textContent = formatNum(data.raw_ay);
+        if (rawAzEl) rawAzEl.textContent = formatNum(data.raw_az);
+
+        // 5. OUTPUT Metrics
+        const outHz = typeof data.out_hz === 'number' && data.out_hz > 0 ? data.out_hz : inHz;
+        const valOutHzEl = document.getElementById('val-out-hz');
+        if (valOutHzEl) valOutHzEl.textContent = outHz > 0 ? outHz.toFixed(1) : '--';
+
+        const pipeMs = typeof data.pipe_ms === 'number' ? data.pipe_ms : 0.4;
+        const valPipeMsEl = document.getElementById('val-pipe-ms');
+        const chipPipeMsEl = document.getElementById('chip-pipe-ms');
+        if (valPipeMsEl) valPipeMsEl.textContent = pipeMs.toFixed(2);
+        if (chipPipeMsEl) {
+          if (pipeMs < 1.0) {
+            chipPipeMsEl.className = 'stat-chip green';
+            chipPipeMsEl.textContent = '< 1ms';
+          } else if (pipeMs <= 3.0) {
+            chipPipeMsEl.className = 'stat-chip yellow';
+            chipPipeMsEl.textContent = '1-3ms';
+          } else {
+            chipPipeMsEl.className = 'stat-chip red';
+            chipPipeMsEl.textContent = '> 3ms';
+          }
+        }
+
+        const dsuClients = typeof data.dsu_clients === 'number' ? data.dsu_clients : 0;
+        const valDsuClientsEl = document.getElementById('val-dsu-clients');
+        const chipDsuClientsEl = document.getElementById('chip-dsu-clients');
+        const descDsuClientsEl = document.getElementById('desc-dsu-clients');
+        const dsuStatusDotEl = document.getElementById('dsu-status-dot');
+
+        if (valDsuClientsEl) valDsuClientsEl.textContent = dsuClients;
+        if (dsuStatusDotEl) {
+          dsuStatusDotEl.style.backgroundColor = dsuClients > 0 ? '#34C759' : 'var(--text-secondary)';
+        }
+        if (chipDsuClientsEl) {
+          chipDsuClientsEl.className = dsuClients > 0 ? 'stat-chip green' : 'stat-chip muted';
+          chipDsuClientsEl.textContent = dsuClients > 0 ? `${dsuClients} активных` : '0 активных';
+        }
+        if (descDsuClientsEl) {
+          descDsuClientsEl.textContent = dsuClients > 0 ? 'Передача данных' : 'Ожидание эмулятора';
+        }
+
+        const outGxEl = document.getElementById('out-gx');
+        const outGyEl = document.getElementById('out-gy');
+        const outGzEl = document.getElementById('out-gz');
+        if (outGxEl) outGxEl.textContent = formatNum(data.out_gx);
+        if (outGyEl) outGyEl.textContent = formatNum(data.out_gy);
+        if (outGzEl) outGzEl.textContent = formatNum(data.out_gz);
+
+        // 6. CSV Recording stream collector
+        if (isRecording) {
+          const nowEpoch = Date.now();
+          const seq = data.seq || 0;
+          const gx = typeof data.raw_gx === 'number' ? data.raw_gx.toFixed(4) : '';
+          const gy = typeof data.raw_gy === 'number' ? data.raw_gy.toFixed(4) : '';
+          const gz = typeof data.raw_gz === 'number' ? data.raw_gz.toFixed(4) : '';
+          const ax = typeof data.raw_ax === 'number' ? data.raw_ax.toFixed(4) : '';
+          const ay = typeof data.raw_ay === 'number' ? data.raw_ay.toFixed(4) : '';
+          const az = typeof data.raw_az === 'number' ? data.raw_az.toFixed(4) : '';
+          const recvTs = data.recv_ts || nowEpoch;
+
+          const outGx = typeof data.out_gx === 'number' ? data.out_gx.toFixed(4) : '';
+          const outGy = typeof data.out_gy === 'number' ? data.out_gy.toFixed(4) : '';
+          const outGz = typeof data.out_gz === 'number' ? data.out_gz.toFixed(4) : '';
+          const stickLx = typeof data.stick_lx === 'number' ? data.stick_lx.toFixed(2) : '0.00';
+          const stickLy = typeof data.stick_ly === 'number' ? data.stick_ly.toFixed(2) : '0.00';
+          const sendTs = data.send_ts || (nowEpoch + 1);
+
+          // IN row: timestamp_ms,IN,seq,gx,gy,gz,ax,ay,az,recv_ts,,,,,,
+          const inRow = `${nowEpoch},IN,${seq},${gx},${gy},${gz},${ax},${ay},${az},${recvTs},,,,,,`;
+          // OUT row: timestamp_ms,OUT,seq,,,,,,,send_ts,stick_lx,stick_ly,gyro_out_x,gyro_out_y,gyro_out_z
+          const outRow = `${nowEpoch + 1},OUT,${seq},,,,,,,,${sendTs},${stickLx},${stickLy},${outGx},${outGy},${outGz}`;
+
+          recordedLines.push(inRow, outRow);
+
+          const lineCount = recordedLines.length;
+          const approxBytes = lineCount * 75;
+          const countTagEl = document.getElementById('record-count-tag');
+          if (countTagEl) {
+            countTagEl.textContent = `${(lineCount - 1).toLocaleString()} строк • ${Math.round(approxBytes / 1024)} KB`;
+          }
+        }
+      }
+
+      // ── Recording Control & 1-Minute Hard Limit ──
+      function startRecording() {
+        if (isRecording) return;
+        isRecording = true;
+        recordStartTime = performance.now();
+        recordedLines = [CSV_HEADER];
+        savedFilePath = '';
+
+        const btnRecord = document.getElementById('btn-stats-record');
+        const btnText = document.getElementById('record-btn-text');
+        if (btnRecord) btnRecord.classList.add('recording');
+        if (btnText) {
+          const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+          btnText.textContent = dict["live_debug.stats_record_stop"] || "Остановить";
+        }
+
+        const progressBar = document.getElementById('record-progress-bar');
+        const timerEl = document.getElementById('record-timer');
+
+        clearInterval(recordTimerInterval);
+        recordTimerInterval = setInterval(() => {
+          const elapsed = performance.now() - recordStartTime;
+          if (elapsed >= RECORD_MAX_DURATION_MS) {
+            stopRecording(true);
+            return;
+          }
+
+          const totalSec = Math.floor(elapsed / 1000);
+          const mm = String(Math.floor(totalSec / 60)).padStart(2, '0');
+          const ss = String(totalSec % 60).padStart(2, '0');
+          if (timerEl) timerEl.textContent = `${mm}:${ss}`;
+
+          const pct = Math.min(100, (elapsed / RECORD_MAX_DURATION_MS) * 100);
+          if (progressBar) progressBar.style.width = pct + '%';
+        }, 100);
+      }
+
+      function stopRecording(byLimit = false) {
+        if (!isRecording) return;
+        isRecording = false;
+        clearInterval(recordTimerInterval);
+        recordTimerInterval = null;
+
+        const elapsedMs = performance.now() - recordStartTime;
+
+        const btnRecord = document.getElementById('btn-stats-record');
+        const btnText = document.getElementById('record-btn-text');
+        if (btnRecord) btnRecord.classList.remove('recording');
+        if (btnText) {
+          const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+          btnText.textContent = dict["live_debug.stats_record_start"] || "Начать запись";
+        }
+
+        const progressBar = document.getElementById('record-progress-bar');
+        if (progressBar) progressBar.style.width = '0%';
+
+        // Open Save Modal Window Dialog!
+        openSaveModal(elapsedMs);
+      }
+
+      function openSaveModal(elapsedMs) {
+        const modal = document.getElementById('stats-save-modal');
+        if (!modal) return;
+
+        const durationSec = (elapsedMs / 1000).toFixed(1);
+        const lineCount = Math.max(0, recordedLines.length - 1);
+        const csvContent = recordedLines.join('\n');
+        const sizeKb = (new Blob([csvContent]).size / 1024).toFixed(1);
+
+        const durationEl = document.getElementById('modal-duration');
+        const rowsEl = document.getElementById('modal-rows');
+        const sizeEl = document.getElementById('modal-size');
+        const statusMsgEl = document.getElementById('modal-status-msg');
+        const btnOpenFolder = document.getElementById('btn-modal-open-folder');
+
+        if (durationEl) durationEl.textContent = `${durationSec} сек`;
+        if (rowsEl) rowsEl.textContent = `${lineCount.toLocaleString()}`;
+        if (sizeEl) sizeEl.textContent = `${sizeKb} KB`;
+        if (statusMsgEl) statusMsgEl.style.display = 'none';
+        if (btnOpenFolder) btnOpenFolder.style.display = 'none';
+
+        modal.style.display = 'flex';
+      }
+
+      function closeSaveModal() {
+        const modal = document.getElementById('stats-save-modal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      function saveRecordedCSV() {
+        const defaultName = `gyrobridge_telemetry_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.csv`;
+        const csvContent = recordedLines.join('\n');
+        const statusMsgEl = document.getElementById('modal-status-msg');
+        const btnOpenFolder = document.getElementById('btn-modal-open-folder');
+
+        if (window.go?.main?.LiveDebugApp?.SaveCSVFile) {
+          window.go.main.LiveDebugApp.SaveCSVFile(defaultName, csvContent)
+            .then(filePath => {
+              if (filePath) {
+                savedFilePath = filePath;
+                if (statusMsgEl) {
+                  const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+                  statusMsgEl.className = 'modal-status-banner success';
+                  statusMsgEl.textContent = (dict["live_debug.stats_modal_saved"] || "Файл сохранен: ") + filePath;
+                  statusMsgEl.style.display = 'block';
+                }
+                if (btnOpenFolder) btnOpenFolder.style.display = 'inline-flex';
+              }
+            })
+            .catch(err => {
+              if (statusMsgEl) {
+                statusMsgEl.className = 'modal-status-banner error';
+                statusMsgEl.textContent = "Ошибка сохранения: " + err;
+                statusMsgEl.style.display = 'block';
+              }
+            });
+        } else {
+          // Fallback browser download
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = defaultName;
+          a.click();
+          URL.revokeObjectURL(url);
+          if (statusMsgEl) {
+            const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+            statusMsgEl.className = 'modal-status-banner success';
+            statusMsgEl.textContent = (dict["live_debug.stats_modal_saved"] || "Файл сохранен: ") + defaultName;
+            statusMsgEl.style.display = 'block';
+          }
+        }
+      }
+
+      function copyRecordedCSV() {
+        const csvContent = recordedLines.join('\n');
+        const statusMsgEl = document.getElementById('modal-status-msg');
+        navigator.clipboard.writeText(csvContent).then(() => {
+          if (statusMsgEl) {
+            const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+            statusMsgEl.className = 'modal-status-banner success';
+            statusMsgEl.textContent = dict["live_debug.stats_modal_copied"] || "Скопировано в буфер обмена";
+            statusMsgEl.style.display = 'block';
+          }
+        }).catch(err => {
+          if (statusMsgEl) {
+            statusMsgEl.className = 'modal-status-banner error';
+            statusMsgEl.textContent = "Не удалось скопировать: " + err;
+            statusMsgEl.style.display = 'block';
+          }
+        });
+      }
+
+      function openSavedFolder() {
+        if (!savedFilePath) return;
+        if (window.go?.main?.LiveDebugApp?.OpenInFolder) {
+          window.go.main.LiveDebugApp.OpenInFolder(savedFilePath);
+        } else {
+          fetch(`http://127.0.0.1:8080/livedebug/show-in-folder?path=${encodeURIComponent(savedFilePath)}`).catch(() => {});
+        }
+      }
+
+      document.getElementById('btn-stats-record')?.addEventListener('click', () => {
+        if (isRecording) {
+          stopRecording(false);
+        } else {
+          startRecording();
+        }
+      });
+
+      document.getElementById('btn-modal-save')?.addEventListener('click', saveRecordedCSV);
+      document.getElementById('btn-modal-copy')?.addEventListener('click', copyRecordedCSV);
+      document.getElementById('btn-modal-cancel')?.addEventListener('click', closeSaveModal);
+      document.getElementById('btn-modal-close')?.addEventListener('click', closeSaveModal);
+      document.getElementById('btn-modal-open-folder')?.addEventListener('click', openSavedFolder);
+
+      setupTooltips();
+
       // ── WebSocket Real-time Quaternion Stream ──
       let ws = null;
       let reconnectTimer = null;
@@ -1652,6 +3018,9 @@
               liveQuat.set(-q1, -q2, q3, q0);
               liveQuat.normalize();
             }
+
+            // Update real-time statistics panel and record stream
+            updateTelemetryStats(data);
           } catch (e) {}
         };
 

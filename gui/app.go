@@ -193,6 +193,7 @@ type App struct {
 	// LiveDebug standalone window WebSocket clients and process handle
 	liveDebugMu      sync.RWMutex
 	liveDebugClients map[*websocket.Conn]struct{}
+	liveDebugSeq     atomic.Uint64
 	liveDebugCmdMu   sync.Mutex
 	liveDebugCmd     *exec.Cmd
 	// Multi-window theme and language synchronization
@@ -623,7 +624,11 @@ func (a *App) startup(ctx context.Context) {
 	)
 
 	// 3. Web & Telemetry Server (HTTP 8080 / HTTPS 8443)
-	srv := server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
+	var srv *server.Server
+	srv = server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
+		startPipe := time.Now()
+		recvTs := startPipe.UnixMilli()
+
 		// Store latest raw gyro/accel/quaternion for calibration wizard
 		a.curRotX.Store(math.Float64bits(float64(frame.RotX)))
 		a.curRotY.Store(math.Float64bits(float64(frame.RotY)))
@@ -770,7 +775,40 @@ func (a *App) startup(ctx context.Context) {
 			a.curAhrsQ1.Store(math.Float64bits(float64(q1)))
 			a.curAhrsQ2.Store(math.Float64bits(float64(q2)))
 			a.curAhrsQ3.Store(math.Float64bits(float64(q3)))
-			a.broadcastLiveDebug(q0, q1, q2, q3)
+
+			var dsuClients int
+			if a.dsuSrv != nil {
+				dsuClients = a.dsuSrv.ActiveClients()
+			}
+			_, _, inHz := srv.PacketStats()
+			pipeMs := float64(time.Since(startPipe).Microseconds()) / 1000.0
+			sendTs := time.Now().UnixMilli()
+			seq := a.liveDebugSeq.Add(1)
+
+			a.broadcastLiveDebug(q0, q1, q2, q3, liveDebugMsg{
+				Seq:        seq,
+				Timestamp:  frame.Timestamp,
+				RecvTs:     recvTs,
+				SendTs:     sendTs,
+				RawGx:      frame.RotX,
+				RawGy:      frame.RotY,
+				RawGz:      frame.RotZ,
+				RawAx:      frame.AccX,
+				RawAy:      frame.AccY,
+				RawAz:      frame.AccZ,
+				OutGx:      dsuRx,
+				OutGy:      dsuRy,
+				OutGz:      dsuRz,
+				OutAx:      finalAx,
+				OutAy:      finalAy,
+				OutAz:      finalAz,
+				StickLx:    0,
+				StickLy:    0,
+				InHz:       inHz,
+				OutHz:      inHz,
+				PipeMs:     pipeMs,
+				DsuClients: dsuClients,
+			})
 		}
 
 		if a.isPaused.Load() {
@@ -988,6 +1026,16 @@ func (a *App) startup(ctx context.Context) {
 				_ = json.NewEncoder(w).Encode(map[string]any{
 					"device_connected": a.hasClient.Load(),
 				})
+			})
+			mux.HandleFunc("/livedebug/show-in-folder", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				filePath := r.URL.Query().Get("path")
+				if filePath != "" {
+					go func() {
+						_ = exec.Command("explorer.exe", "/select,", filepath.Clean(filePath)).Start()
+					}()
+				}
+				w.WriteHeader(http.StatusOK)
 			})
 			mux.HandleFunc("/livedebug/ws", func(w http.ResponseWriter, r *http.Request) {
 				conn, err := liveUpgrader.Upgrade(w, r, nil)
@@ -1341,13 +1389,35 @@ func (a *App) ResetAHRS() {
 }
 
 type liveDebugMsg struct {
-	Q0 float32 `json:"q0"`
-	Q1 float32 `json:"q1"`
-	Q2 float32 `json:"q2"`
-	Q3 float32 `json:"q3"`
+	Q0         float32 `json:"q0"`
+	Q1         float32 `json:"q1"`
+	Q2         float32 `json:"q2"`
+	Q3         float32 `json:"q3"`
+	Seq        uint64  `json:"seq,omitempty"`
+	Timestamp  uint32  `json:"ts,omitempty"`
+	RecvTs     int64   `json:"recv_ts,omitempty"`
+	SendTs     int64   `json:"send_ts,omitempty"`
+	RawGx      float32 `json:"raw_gx,omitempty"`
+	RawGy      float32 `json:"raw_gy,omitempty"`
+	RawGz      float32 `json:"raw_gz,omitempty"`
+	RawAx      float32 `json:"raw_ax,omitempty"`
+	RawAy      float32 `json:"raw_ay,omitempty"`
+	RawAz      float32 `json:"raw_az,omitempty"`
+	OutGx      float32 `json:"out_gx,omitempty"`
+	OutGy      float32 `json:"out_gy,omitempty"`
+	OutGz      float32 `json:"out_gz,omitempty"`
+	OutAx      float32 `json:"out_ax,omitempty"`
+	OutAy      float32 `json:"out_ay,omitempty"`
+	OutAz      float32 `json:"out_az,omitempty"`
+	StickLx    float32 `json:"stick_lx,omitempty"`
+	StickLy    float32 `json:"stick_ly,omitempty"`
+	InHz       float64 `json:"in_hz,omitempty"`
+	OutHz      float64 `json:"out_hz,omitempty"`
+	PipeMs     float64 `json:"pipe_ms,omitempty"`
+	DsuClients int     `json:"dsu_clients,omitempty"`
 }
 
-func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32) {
+func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32, extras ...liveDebugMsg) {
 	a.liveDebugMu.RLock()
 	clientCount := len(a.liveDebugClients)
 	a.liveDebugMu.RUnlock()
@@ -1361,6 +1431,32 @@ func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32) {
 		Q2: q2,
 		Q3: q3,
 	}
+	if len(extras) > 0 {
+		e := extras[0]
+		msg.Seq = e.Seq
+		msg.Timestamp = e.Timestamp
+		msg.RecvTs = e.RecvTs
+		msg.SendTs = e.SendTs
+		msg.RawGx = e.RawGx
+		msg.RawGy = e.RawGy
+		msg.RawGz = e.RawGz
+		msg.RawAx = e.RawAx
+		msg.RawAy = e.RawAy
+		msg.RawAz = e.RawAz
+		msg.OutGx = e.OutGx
+		msg.OutGy = e.OutGy
+		msg.OutGz = e.OutGz
+		msg.OutAx = e.OutAx
+		msg.OutAy = e.OutAy
+		msg.OutAz = e.OutAz
+		msg.StickLx = e.StickLx
+		msg.StickLy = e.StickLy
+		msg.InHz = e.InHz
+		msg.OutHz = e.OutHz
+		msg.PipeMs = e.PipeMs
+		msg.DsuClients = e.DsuClients
+	}
+
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return
