@@ -1130,10 +1130,17 @@ if (btnScreenlock) {
   });
 }
 
-// Re-acquire WakeLock on visibility change (returning to browser)
+// Re-acquire WakeLock on visibility change (returning to browser) and notify server
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && wakeLockEnabled) {
-    requestWakeLock();
+  if (document.visibilityState === 'visible') {
+    if (wakeLockEnabled) requestWakeLock();
+    if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
+      try { ws.send(JSON.stringify({ type: 'visibility', visible: true })); } catch (e) {}
+    }
+  } else if (document.visibilityState === 'hidden') {
+    if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
+      try { ws.send(JSON.stringify({ type: 'visibility', visible: false })); } catch (e) {}
+    }
   }
 });
 

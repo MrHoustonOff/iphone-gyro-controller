@@ -3892,5 +3892,150 @@ em {
   background: rgba(120, 120, 128, 0.15);
 }
 
+/* ── Calibration Disconnect Window Alert & Blur ────────────────────────────── */
+body.cal-disconnect-window-alert {
+  box-shadow: inset 0 0 0 5px #ff3b30, inset 0 0 35px rgba(255, 59, 48, 0.45) !important;
+  animation: cal-window-alert-pulse 1.4s ease-in-out infinite alternate !important;
+}
+
+@keyframes cal-window-alert-pulse {
+  0% {
+    box-shadow: inset 0 0 0 5px #ff3b30, inset 0 0 25px rgba(255, 59, 48, 0.35) !important;
+  }
+  100% {
+    box-shadow: inset 0 0 0 6px #ff453a, inset 0 0 50px rgba(255, 59, 48, 0.7) !important;
+  }
+}
+
+body.cal-disconnect-window-alert .cal-modal {
+  border: 2px solid #ff3b30 !important;
+  box-shadow: 0 0 50px rgba(255, 59, 48, 0.35), var(--card-shadow) !important;
+}
+
+/* Modal Disconnect Warning Blur Overlay */
+.cal-disconnect-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 10, 14, 0.76);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  animation: calDisconnectFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes calDisconnectFadeIn {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+}
+
+.cal-disconnect-card {
+  max-width: 440px;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid rgba(255, 59, 48, 0.35);
+  border-radius: 20px;
+  padding: 32px 28px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.55), 0 0 35px rgba(255, 59, 48, 0.22);
+  animation: calDisconnectCardPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes calDisconnectCardPop {
+  from {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.cal-disconnect-icon-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(255, 59, 48, 0.12);
+  border: 1.5px solid rgba(255, 59, 48, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  color: #ff3b30;
+  box-shadow: 0 0 24px rgba(255, 59, 48, 0.2);
+}
+
+.cal-disconnect-icon-box svg {
+  width: 34px;
+  height: 34px;
+}
+
+.cal-disconnect-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 10px 0;
+  letter-spacing: -0.015em;
+}
+
+.cal-disconnect-desc {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin: 0 0 22px 0;
+  max-width: 360px;
+}
+
+.cal-disconnect-pulse-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 59, 48, 0.09);
+  border: 1px solid rgba(255, 59, 48, 0.2);
+  border-radius: 20px;
+  padding: 6px 14px;
+  margin-bottom: 24px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #ff453a;
+}
+
+.cal-disconnect-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff3b30;
+  box-shadow: 0 0 8px #ff3b30;
+  animation: calDisconnectDotBlink 1.2s infinite ease-in-out;
+}
+
+@keyframes calDisconnectDotBlink {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+.cal-disconnect-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+
 
 

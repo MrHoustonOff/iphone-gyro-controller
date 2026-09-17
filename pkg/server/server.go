@@ -61,6 +61,7 @@ type Server struct {
 	OnClientDisconnect func(remoteAddr string)
 	OnClientPause      func(isPaused bool)
 	OnClientDevice     func(device string)
+	OnClientVisibility func(visible bool)
 	GetIsPaused        func() bool
 
 	clientMu    sync.Mutex
@@ -343,6 +344,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				Type     string `json:"type"`
 				IsPaused bool   `json:"isPaused"`
 				Model    string `json:"model"`
+				Visible  *bool  `json:"visible"`
 			}
 			if err := json.Unmarshal(message, &ctrl); err == nil {
 				if ctrl.Type == "pause" && s.OnClientPause != nil {
@@ -351,6 +353,10 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 				}
 				if ctrl.Type == "device" && ctrl.Model != "" && s.OnClientDevice != nil {
 					s.OnClientDevice(ctrl.Model)
+					continue
+				}
+				if ctrl.Type == "visibility" && ctrl.Visible != nil && s.OnClientVisibility != nil {
+					s.OnClientVisibility(*ctrl.Visible)
 					continue
 				}
 			}

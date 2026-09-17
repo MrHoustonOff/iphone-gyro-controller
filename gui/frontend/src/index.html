@@ -1090,6 +1090,28 @@
       </div>
 
     </div><!-- .cal-modal -->
+
+    <!-- Calibration Disconnect Fullscreen Blur Overlay -->
+    <div id="cal-disconnect-overlay" class="cal-disconnect-overlay" style="display: none;" role="alertdialog" aria-modal="true">
+      <div class="cal-disconnect-card">
+        <div class="cal-disconnect-icon-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            <line x1="2" y1="2" x2="22" y2="22" stroke="#ff3b30" stroke-width="2.5"></line>
+          </svg>
+        </div>
+        <h3 class="cal-disconnect-title" data-i18n="calibration.disconnect_alert_title">Телефон отключен</h3>
+        <p class="cal-disconnect-desc" data-i18n="calibration.disconnect_alert_desc">Экран телефона выключился или заблокирован. Разблокируйте смартфон и держите экран включенным во время калибровки.</p>
+        <div class="cal-disconnect-pulse-badge">
+          <span class="cal-disconnect-dot"></span>
+          <span data-i18n="calibration.disconnect_waiting">Ожидание переподключения...</span>
+        </div>
+        <div class="cal-disconnect-actions">
+          <button type="button" class="btn-apple-secondary cal-btn-sm" id="btn-cancel-cal-disconnect" data-i18n="calibration.disconnect_btn_cancel">Отменить калибровку</button>
+        </div>
+      </div>
+    </div>
   </div><!-- #cal-overlay -->
 
   <script>
@@ -2436,17 +2458,69 @@
       }
     },
 
+    isDisconnectAlertActive: false,
+    wasInterruptedByDisconnect: false,
+
+    showDisconnectAlert() {
+      if (!this.isOpen || this.isDisconnectAlertActive) return;
+      this.isDisconnectAlertActive = true;
+
+      // Add prominent red outline to the whole window
+      document.body.classList.add('cal-disconnect-window-alert');
+
+      // If active capture was running, abort countdown/recording safely
+      if (this.isCapturing) {
+        this.wasInterruptedByDisconnect = true;
+        this.isCapturing = false;
+        this._resetCaptureTimer();
+        this._resetCaptureUI();
+        if (window.go?.main?.App) {
+          window.go.main.App.StopCapture(this.captureStep).catch(() => {});
+        }
+      }
+
+      const alertOverlay = document.getElementById('cal-disconnect-overlay');
+      if (alertOverlay) {
+        alertOverlay.style.display = 'flex';
+      }
+    },
+
+    hideDisconnectAlert() {
+      if (!this.isDisconnectAlertActive) return;
+      this.isDisconnectAlertActive = false;
+
+      document.body.classList.remove('cal-disconnect-window-alert');
+
+      const alertOverlay = document.getElementById('cal-disconnect-overlay');
+      if (alertOverlay) {
+        alertOverlay.style.display = 'none';
+      }
+
+      if (this.wasInterruptedByDisconnect) {
+        this.wasInterruptedByDisconnect = false;
+        const toastMsg = I18n.t('calibration.disconnect_reconnected_toast') || 'Телефон подключен. Нажмите «Запись», чтобы повторить шаг.';
+        if (typeof showToast === 'function') {
+          showToast(toastMsg);
+        }
+        this._resetCaptureUI();
+      }
+    },
+
     open() {
       if (typeof AppState !== 'undefined') {
         if (AppState.dismissFirstTimeDeviceAlert) AppState.dismissFirstTimeDeviceAlert();
         if (AppState.hideRecalHint) AppState.hideRecalHint(true);
       }
       this.isOpen = true;
+      this.hideDisconnectAlert();
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'flex';
       this.updateSubtitleWithDevice();
       this.showScreen('slots');
       this.renderSlotList();
+      if (AppState?.lastState?.status === 'offline') {
+        this.showDisconnectAlert();
+      }
     },
 
     openToSlot(slot) {
@@ -2455,15 +2529,20 @@
         if (AppState.hideRecalHint) AppState.hideRecalHint(true);
       }
       this.isOpen = true;
+      this.hideDisconnectAlert();
       this.targetSlot = slot;
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'flex';
       this.updateSubtitleWithDevice();
       this.startCaptureFlow(slot);
+      if (AppState?.lastState?.status === 'offline') {
+        this.showDisconnectAlert();
+      }
     },
 
     close() {
       this.isOpen = false;
+      this.hideDisconnectAlert();
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'none';
       this._resetCaptureTimer();
@@ -3294,6 +3373,7 @@
 
       // Close button
       document.getElementById('cal-close-btn')?.addEventListener('click', () => this.close());
+      document.getElementById('btn-cancel-cal-disconnect')?.addEventListener('click', () => this.close());
 
       // Start Capture button
       document.getElementById('btn-start-capture')?.addEventListener('click', () => {
@@ -3838,6 +3918,14 @@
         this.clearFirstTimeDeviceAlert(true);
       }
 
+      if (CalibrationWizard?.isOpen) {
+        if (isOffline) {
+          CalibrationWizard.showDisconnectAlert();
+        } else if (CalibrationWizard.isDisconnectAlertActive) {
+          CalibrationWizard.hideDisconnectAlert();
+        }
+      }
+
       if (isOffline) {
         this.hideRecalHint(true);
         this.targetPitch = 0;
@@ -4026,6 +4114,25 @@
       if (window.runtime && window.runtime.EventsOn) {
         window.runtime.EventsOn('state:change', (state) => {
           this.render(state);
+        });
+        window.runtime.EventsOn('device:connection-lost', () => {
+          if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
+            CalibrationWizard.showDisconnectAlert();
+          }
+        });
+        window.runtime.EventsOn('device:connected', () => {
+          if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
+            CalibrationWizard.hideDisconnectAlert();
+          }
+        });
+        window.runtime.EventsOn('device:visibility', (visible) => {
+          if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
+            if (!visible) {
+              CalibrationWizard.showDisconnectAlert();
+            } else {
+              CalibrationWizard.hideDisconnectAlert();
+            }
+          }
         });
       }
 

@@ -992,6 +992,9 @@ func (a *App) startup(ctx context.Context) {
 			a.connectedAt = time.Now()
 		}
 		a.emitStateChange()
+		if a.ctx != nil {
+			wailsRuntime.EventsEmit(a.ctx, "device:connected", true)
+		}
 		a.broadcastLiveDebugJSON(map[string]any{
 			"type":      "device_status",
 			"connected": true,
@@ -1005,6 +1008,11 @@ func (a *App) startup(ctx context.Context) {
 		_, clients, _ := srv.PacketStats()
 		if clients > 0 {
 			return
+		}
+
+		// Emit immediate disconnection event for active calibration/monitoring
+		if a.ctx != nil {
+			wailsRuntime.EventsEmit(a.ctx, "device:connection-lost", true)
 		}
 
 		if disconnectTimer != nil {
@@ -1023,6 +1031,12 @@ func (a *App) startup(ctx context.Context) {
 				})
 			}
 		})
+	}
+
+	srv.OnClientVisibility = func(visible bool) {
+		if a.ctx != nil {
+			wailsRuntime.EventsEmit(a.ctx, "device:visibility", visible)
+		}
 	}
 
 	srv.OnClientDevice = func(device string) {
