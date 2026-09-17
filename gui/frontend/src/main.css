@@ -1,4 +1,4 @@
-﻿/* ── Gyro Bridge Apple-Style Modular Design System ────────────────────────────
+/* ── Gyro Bridge Apple-Style Modular Design System ────────────────────────────
    Cupertino aesthetics: inset grouped cards, 1px subtle borders, bold typography,
    segmented controls, dark/light themes, zero emojis, fully responsive scaling,
    spacious two-column iOS setup wizard with large legible screenshots.
@@ -1630,7 +1630,7 @@ em {
   transform: rotate(180deg);
 }
 
-/* Floating Dropdown Menu (Overlays on top, creates main window scroll) */
+/* Floating Dropdown Menu (Overlays on top, opens UPWARDS above trigger on main screen) */
 .profile-dropdown-menu {
   position: absolute;
   top: calc(100% + 6px);
@@ -1663,8 +1663,25 @@ em {
   animation: dropdownSlideDown 0.15s ease-out;
 }
 
+/* Main screen profile dropdown opens UPWARDS (dropup) */
+#main-profile-dropdown-wrap .profile-dropdown-menu,
+.profile-dropdown-menu.dropup {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+#main-profile-dropdown-wrap .profile-dropdown-menu.show,
+.profile-dropdown-menu.dropup.show {
+  animation: dropdownSlideUp 0.15s ease-out;
+}
+
 @keyframes dropdownSlideDown {
   from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes dropdownSlideUp {
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -1683,10 +1700,24 @@ em {
   transition: all var(--transition-fast);
   color: var(--text);
   width: 100%;
+  position: relative;
+  user-select: none;
+}
+
+.profile-dropdown-item * {
+  pointer-events: none;
 }
 
 .profile-dropdown-item:hover {
   background: var(--surface-hover);
+}
+
+[data-theme="light"] .profile-dropdown-item:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.profile-dropdown-item:active {
+  transform: scale(0.985);
 }
 
 .profile-dropdown-item.active {

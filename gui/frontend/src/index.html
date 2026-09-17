@@ -1316,11 +1316,20 @@
     profiles: [null, null, null, null],
     activeSlot: 0,
     isDropdownOpen: false,
+    _lastProfilesJson: '',
+    _lastActiveSlot: -1,
 
     sync(state) {
       if (!state || !state.profiles) return;
+      const slot = (state.activeSlot >= 0 && state.activeSlot < 4) ? state.activeSlot : 0;
+      const pJson = JSON.stringify(state.profiles);
+      if (pJson === this._lastProfilesJson && slot === this._lastActiveSlot) {
+        return;
+      }
+      this._lastProfilesJson = pJson;
+      this._lastActiveSlot = slot;
       this.profiles = state.profiles;
-      this.activeSlot = (state.activeSlot >= 0 && state.activeSlot < 4) ? state.activeSlot : 0;
+      this.activeSlot = slot;
       this.render();
     },
 
@@ -1383,7 +1392,11 @@
             ${i === activeIdx ? '<span class="profile-item-check">✓</span>' : ''}
           `;
 
-          item.addEventListener('click', () => this.selectSlot(i));
+          item.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.selectSlot(i);
+          });
           menu.appendChild(item);
         }
       }
@@ -1412,9 +1425,12 @@
       this.closeDropdown();
       if (slot === this.activeSlot) return;
 
-      if (window.go?.main?.App) {
-        await window.go.main.App.SetActiveProfile(slot);
+      try {
+        if (window.go?.main?.App?.SetActiveProfile) {
+          await window.go.main.App.SetActiveProfile(slot);
+        }
         this.activeSlot = slot;
+        this._lastActiveSlot = slot;
         this.render();
 
         // Mini animation: ripple glow on dropdown trigger
@@ -1429,6 +1445,8 @@
         const profName = this.profiles[slot]?.name || `Слот ${slot + 1}`;
         const msg = (I18n.t('calibration.profile_switched') || 'Профиль применен') + `: ${profName}`;
         showToast(msg);
+      } catch (err) {
+        console.error('Failed to switch profile:', err);
       }
     },
 
