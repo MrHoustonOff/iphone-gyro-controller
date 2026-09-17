@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"strings"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -47,28 +48,40 @@ func runLiveDebug() {
 	subFS, _ := fs.Sub(assets, "frontend/src")
 
 	err := wails.Run(&options.App{
-		Title:     "GyroBridge - Live Debug",
-		Width:     1180,
-		Height:    760,
-		MinWidth:  860,
-		MinHeight: 560,
+		Title:            "GyroBridge - Live Debug",
+		Width:            1180,
+		Height:           760,
+		MinWidth:         860,
+		MinHeight:        560,
+		StartHidden:      true,
+		BackgroundColour: &options.RGBA{R: 6, G: 8, B: 13, A: 255},
 		AssetServer: &assetserver.Options{
 			Assets: assets,
-			Handler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				if r.URL.Path == "/" || r.URL.Path == "/index.html" {
-					if subFS != nil {
-						data, err := fs.ReadFile(subFS, "livedebug.html")
-						if err == nil {
-							w.Header().Set("Content-Type", "text/html; charset=utf-8")
-							w.WriteHeader(http.StatusOK)
-							w.Write(data)
-							return
+			Middleware: func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					p := strings.TrimPrefix(r.URL.Path, "/")
+					if p == "" || p == "index.html" || p == "index.htm" || p == "livedebug.html" {
+						if subFS != nil {
+							data, err := fs.ReadFile(subFS, "livedebug.html")
+							if err == nil {
+								w.Header().Set("Content-Type", "text/html; charset=utf-8")
+								w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+								w.WriteHeader(http.StatusOK)
+								w.Write(data)
+								return
+							}
 						}
 					}
-				}
-			}),
+					next.ServeHTTP(w, r)
+				})
+			},
 		},
-		OnStartup:  debugApp.startup,
+		OnStartup: debugApp.startup,
+		OnDomReady: func(ctx context.Context) {
+			wailsRuntime.WindowCenter(ctx)
+			wailsRuntime.WindowShow(ctx)
+			wailsRuntime.WindowUnminimise(ctx)
+		},
 		OnShutdown: debugApp.shutdown,
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId: "gyrobridge-livedebug-window-lock-uuid",
@@ -85,6 +98,7 @@ func runLiveDebug() {
 		Windows: &windows.Options{
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
+			Theme:                windows.Dark,
 		},
 	})
 

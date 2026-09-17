@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"gyrobridge/pkg/ca"
@@ -1113,10 +1114,17 @@ func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32) {
 	}
 }
 
+var (
+	modUser32                    = syscall.NewLazyDLL("user32.dll")
+	procAllowSetForegroundWindow = modUser32.NewProc("AllowSetForegroundWindow")
+)
+
 // OpenLiveDebugWindow opens the standalone 3D Live Debug desktop .exe window.
 func (a *App) OpenLiveDebugWindow() {
 	exePath, err := os.Executable()
 	if err == nil {
+		// ASFW_ANY (-1 = 0xFFFFFFFF) grants the spawned child process permission to activate into foreground
+		_, _, _ = procAllowSetForegroundWindow.Call(uintptr(0xFFFFFFFF))
 		cmd := exec.Command(exePath, "--livedebug")
 		if err := cmd.Start(); err == nil {
 			return

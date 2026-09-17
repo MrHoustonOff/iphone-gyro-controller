@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+    if (window.location.pathname.includes('livedebug') || window.location.search.includes('livedebug')) {
+      window.location.replace('livedebug.html');
+    }
+  </script>
   <title data-i18n="app.title">Gyro Bridge</title>
   <link rel="stylesheet" href="main.css">
   <script src="assets/three.min.js"></script>
