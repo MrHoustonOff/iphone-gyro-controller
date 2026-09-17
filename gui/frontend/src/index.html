@@ -485,7 +485,37 @@
 
   <!-- Apple Style Footer Bar -->
   <footer class="app-footer">
-    <span class="footer-link" id="link-live-debug" data-i18n="nav.live_debug" style="display: none;">Live Debug Window →</span>
+    <div class="footer-metrics" id="footer-metrics">
+      <!-- CPU Monitor Capsule -->
+      <div class="footer-metric-item" id="footer-metric-cpu" data-i18n-title="footer.cpu_tip">
+        <span class="footer-metric-label" data-i18n="footer.cpu">ЦП</span>
+        <span class="footer-metric-val" id="footer-cpu-val">0.0%</span>
+        <div class="footer-cpu-chart-wrap">
+          <canvas class="footer-cpu-canvas" id="footer-cpu-canvas" width="54" height="18"></canvas>
+        </div>
+      </div>
+
+      <!-- RAM Monitor Capsule -->
+      <div class="footer-metric-item" id="footer-metric-ram" data-i18n-title="footer.ram_tip">
+        <span class="footer-metric-label" data-i18n="footer.ram">ОЗУ</span>
+        <span class="footer-metric-val" id="footer-ram-val">-- MB</span>
+        <span class="footer-metric-sub" id="footer-ram-pct">(--%)</span>
+      </div>
+    </div>
+
+    <div class="footer-actions">
+      <button type="button" class="btn-footer-live-debug" id="link-live-debug" style="display: none;">
+        <svg class="footer-live-debug-icon" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+        <span class="footer-live-debug-text" id="footer-live-debug-text" data-i18n="nav.live_debug">Окно статистики и 3D просмотра</span>
+        <svg class="footer-live-debug-arrow" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+      </button>
+    </div>
   </footer>
 
   <!-- Subtle Notification Toast -->
@@ -3412,6 +3442,172 @@
     }
   };
 
+  // ── Process Resource Monitor (CPU / RAM) ──────────────────────────────────
+  const ResourceMonitor = {
+    cpuHistory: new Array(18).fill(0),
+    maxHistory: 18,
+    lastStats: null,
+
+    init() {
+      this.initCanvas();
+      window.addEventListener('resize', () => this.initCanvas());
+
+      // Listen for periodic updates from Go backend (resmon)
+      if (window.runtime && window.runtime.EventsOn) {
+        window.runtime.EventsOn('resource-stats', (stats) => {
+          this.update(stats);
+        });
+      }
+
+      // Initial query if available
+      if (window.go?.main?.App?.GetResourceStats) {
+        window.go.main.App.GetResourceStats().then((stats) => {
+          if (stats && (stats.ramMb > 0 || stats.cpuPercent > 0)) {
+            this.update(stats);
+          }
+        }).catch(() => {});
+      }
+    },
+
+    initCanvas() {
+      const canvas = document.getElementById('footer-cpu-canvas');
+      if (!canvas) return;
+      const dpr = window.devicePixelRatio || 1;
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.round(rect.width || 54);
+      const h = Math.round(rect.height || 18);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.scale(dpr, dpr);
+      }
+      this.draw();
+    },
+
+    update(stats) {
+      if (!stats) return;
+      this.lastStats = stats;
+
+      const cpuVal = typeof stats.cpuPercent === 'number' ? stats.cpuPercent : 0;
+      const ramMb = typeof stats.ramMb === 'number' ? stats.ramMb : 0;
+      const totalRamMb = typeof stats.totalRamMb === 'number' ? stats.totalRamMb : 0;
+      const ramPct = typeof stats.ramPercent === 'number' ? stats.ramPercent : 0;
+
+      // Update CPU text
+      const cpuValEl = document.getElementById('footer-cpu-val');
+      if (cpuValEl) {
+        cpuValEl.textContent = cpuVal < 10 ? cpuVal.toFixed(1) + '%' : Math.round(cpuVal) + '%';
+      }
+
+      // Add to rolling history
+      this.cpuHistory.push(cpuVal);
+      if (this.cpuHistory.length > this.maxHistory) {
+        this.cpuHistory.shift();
+      }
+      this.draw();
+
+      // Update RAM text
+      const ramValEl = document.getElementById('footer-ram-val');
+      const ramPctEl = document.getElementById('footer-ram-pct');
+      const itemRam = document.getElementById('footer-metric-ram');
+
+      if (ramValEl) {
+        if (ramMb >= 1024) {
+          ramValEl.textContent = (ramMb / 1024).toFixed(2) + ' GB';
+        } else {
+          ramValEl.textContent = Math.round(ramMb) + ' MB';
+        }
+      }
+      if (ramPctEl) {
+        ramPctEl.textContent = `(${ramPct.toFixed(1)}%)`;
+      }
+
+      if (itemRam && totalRamMb > 0) {
+        const totalStr = totalRamMb >= 1024 ? (totalRamMb / 1024).toFixed(1) + ' GB' : Math.round(totalRamMb) + ' MB';
+        const usedStr = ramMb >= 1024 ? (ramMb / 1024).toFixed(2) + ' GB' : ramMb.toFixed(1) + ' MB';
+        itemRam.title = `${usedStr} / ${totalStr} (${ramPct.toFixed(1)}%)`;
+      }
+    },
+
+    draw() {
+      const canvas = document.getElementById('footer-cpu-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+      if (w <= 0 || h <= 0) return;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const data = this.cpuHistory;
+      const n = data.length;
+      if (n < 2) return;
+
+      const maxVal = Math.max(10, ...data) * 1.15;
+      const minVal = 0;
+      const range = maxVal - minVal;
+
+      const pts = [];
+      for (let i = 0; i < n; i++) {
+        const x = (i / (n - 1)) * (w - 4) + 2;
+        const norm = (data[i] - minVal) / range;
+        const y = h - 2 - norm * (h - 4);
+        pts.push({ x, y });
+      }
+
+      // Draw subtle area fill gradient under the line
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, 'rgba(48, 176, 199, 0.35)');
+      grad.addColorStop(1, 'rgba(48, 176, 199, 0.0)');
+
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, h);
+      ctx.lineTo(pts[0].x, pts[0].y);
+      for (let i = 0; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) / 2;
+        const my = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+      ctx.lineTo(pts[pts.length - 1].x, h);
+      ctx.closePath();
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Draw smooth line
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 0; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) / 2;
+        const my = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
+      ctx.strokeStyle = '#30B0C7';
+      ctx.lineWidth = 1.5;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.shadowColor = 'rgba(48, 176, 199, 0.5)';
+      ctx.shadowBlur = 4;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // Draw running live head dot
+      const lastPt = pts[pts.length - 1];
+      ctx.beginPath();
+      ctx.arc(lastPt.x, lastPt.y, 2, 0, Math.PI * 2);
+      ctx.fillStyle = '#FFFFFF';
+      ctx.shadowColor = '#30B0C7';
+      ctx.shadowBlur = 4;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+  };
+
   // ── Bootstrap ───────────────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     ThemeManager.init();
@@ -3430,6 +3626,7 @@
       SetupWizard.init();
       CalibrationWizard.init();
       AppState.init();
+      ResourceMonitor.init();
     };
 
     pollWails = setInterval(() => {

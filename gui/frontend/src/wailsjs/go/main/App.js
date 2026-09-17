@@ -26,6 +26,10 @@ export function GetProfiles() {
   return window['go']['main']['App']['GetProfiles']();
 }
 
+export function GetResourceStats() {
+  return window['go']['main']['App']['GetResourceStats']();
+}
+
 export function GetState() {
   return window['go']['main']['App']['GetState']();
 }

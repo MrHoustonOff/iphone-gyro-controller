@@ -14,6 +14,8 @@ export function GetLanguages():Promise<Array<string>>;
 
 export function GetProfiles():Promise<Array<main.Profile>>;
 
+export function GetResourceStats():Promise<Record<string, any>>;
+
 export function GetState():Promise<main.AppState>;
 
 export function GetTheme():Promise<string>;

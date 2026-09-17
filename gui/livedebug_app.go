@@ -174,7 +174,7 @@ func runLiveDebug() {
 	debugApp := NewLiveDebugApp()
 
 	err := wails.Run(&options.App{
-		Title:            "GyroBridge - Live Debug",
+		Title:            "GyroBridge - Окно статистики и 3D просмотра",
 		Width:            1120,
 		Height:           720,
 		MinWidth:         820,

@@ -25,6 +25,8 @@ import (
 	"gyrobridge/pkg/server"
 	"gyrobridge/web"
 
+	"gyrobridge-gui/resmon"
+
 	"github.com/gorilla/websocket"
 	wailsRuntime "github.com/wailsapp/wails/v2/pkg/runtime"
 )
@@ -201,6 +203,9 @@ type App struct {
 	themeMu      sync.RWMutex
 	currentTheme string
 	currentLang  string
+	// Process resource monitor (CPU / RAM)
+	stopResmon   func()
+	lastResStats atomic.Pointer[map[string]any]
 }
 
 // StepCaptureLog stores the full recorded session of a calibration gesture step
@@ -1147,10 +1152,33 @@ func (a *App) startup(ctx context.Context) {
 			}
 		}
 	}()
+
+	// Process resource monitor (CPU / RAM)
+	a.stopResmon = resmon.RunLoop(1500*time.Millisecond, func(s resmon.Stats) {
+		ramPercent := 0.0
+		if s.TotalRAMBytes > 0 {
+			ramPercent = (float64(s.RAMBytes) / float64(s.TotalRAMBytes)) * 100.0
+		}
+		statsPayload := map[string]any{
+			"cpuPercent": s.CPUPercent,
+			"ramMb":      float64(s.RAMBytes) / (1024 * 1024),
+			"totalRamMb": float64(s.TotalRAMBytes) / (1024 * 1024),
+			"ramPercent": ramPercent,
+		}
+		a.lastResStats.Store(&statsPayload)
+		if a.ctx != nil {
+			wailsRuntime.EventsEmit(a.ctx, "resource-stats", statsPayload)
+		}
+	})
 }
 
 // shutdown is called when the Wails application terminates
 func (a *App) shutdown(ctx context.Context) {
+	if a.stopResmon != nil {
+		a.stopResmon()
+		a.stopResmon = nil
+	}
+
 	// Terminate child Live Debug process if running
 	a.liveDebugCmdMu.Lock()
 	if a.liveDebugCmd != nil && a.liveDebugCmd.Process != nil {
@@ -2206,5 +2234,18 @@ func (a *App) CopyCalibrationReport() string {
 
 	sb.WriteString("=== END OF REPORT ===\n")
 	return sb.String()
+}
+
+// GetResourceStats returns the most recent CPU and RAM snapshot for the process.
+func (a *App) GetResourceStats() map[string]any {
+	if p := a.lastResStats.Load(); p != nil {
+		return *p
+	}
+	return map[string]any{
+		"cpuPercent": 0.0,
+		"ramMb":      0.0,
+		"totalRamMb": 0.0,
+		"ramPercent": 0.0,
+	}
 }
 

@@ -200,10 +200,16 @@
     "stats_title": "Statistics",
     "status_offline": "offline",
     "status_online": "online",
-    "title": "3D Live Debug"
+    "title": "Statistics & 3D View Window"
+  },
+  "footer": {
+    "cpu": "CPU",
+    "ram": "RAM",
+    "cpu_tip": "Process CPU usage",
+    "ram_tip": "Process working set memory and percentage of total RAM"
   },
   "nav": {
-    "live_debug": "Live Debug Window →",
+    "live_debug": "Statistics & 3D View Window",
     "setup": "Initial Setup"
   },
   "qr": {

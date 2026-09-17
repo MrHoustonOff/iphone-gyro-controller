@@ -200,10 +200,16 @@
     "stats_title": "Статистика",
     "status_offline": "нет связи",
     "status_online": "в сети",
-    "title": "3D Live Debug"
+    "title": "Окно статистики и 3D просмотра"
+  },
+  "footer": {
+    "cpu": "ЦП",
+    "ram": "ОЗУ",
+    "cpu_tip": "Нагрузка на процессор текущим процессом",
+    "ram_tip": "Физическая память процесса (Working Set) и процент от общей RAM"
   },
   "nav": {
-    "live_debug": "Live Debug Window →",
+    "live_debug": "Окно статистики и 3D просмотра",
     "setup": "Начальная настройка"
   },
   "qr": {

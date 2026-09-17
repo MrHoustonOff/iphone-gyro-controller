@@ -663,6 +663,7 @@
       color: #8E8E93;
       letter-spacing: 0.04em;
       transition: transform 15s ease-in-out;
+      animation: oledBreathe 8s ease-in-out infinite;
     }
 
     .ss-dot {
@@ -680,6 +681,14 @@
       align-items: center;
       gap: 14px;
       cursor: pointer;
+      margin: auto 0;
+      animation: oledBreathe 8s ease-in-out infinite;
+      transition: opacity 0.25s ease;
+    }
+
+    .ss-center-lock.holding {
+      animation: none;
+      opacity: 1;
     }
 
     .ss-lock-circle {
@@ -734,33 +743,10 @@
       text-align: center;
     }
 
-    /* iOS-Style Swipe Up Lock Bar */
-    .ss-bottom-swipe {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-    }
-
-    .ss-swipe-bar {
-      width: 130px;
-      height: 5px;
-      border-radius: 3px;
-      background: rgba(255, 255, 255, 0.4);
-      animation: bounceBar 2s infinite ease-in-out;
-    }
-
-    @keyframes bounceBar {
-      0%, 100% { transform: translateY(0); opacity: 0.4; }
-      50% { transform: translateY(-6px); opacity: 0.8; }
-    }
-
-    .ss-swipe-txt {
-      font-size: 12px;
-      font-weight: 600;
-      color: #636366;
-      letter-spacing: 0.04em;
+    /* OLED Burn-in saving slow breathing opacity */
+    @keyframes oledBreathe {
+      0%, 100% { opacity: 0.25; }
+      50% { opacity: 0.78; }
     }
   </style>
 </head>
@@ -953,13 +939,7 @@
         <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
       </svg>
     </div>
-    <div class="ss-lock-caption" id="ss-lock-caption">Удерживайте 2 сек для разблокировки</div>
-  </div>
-
-  <!-- Bottom: iOS Swipe Up Lock Bar -->
-  <div class="ss-bottom-swipe" id="ss-bottom-swipe">
-    <div class="ss-swipe-bar"></div>
-    <div class="ss-swipe-txt" id="ss-swipe-txt">Смахните вверх</div>
+    <div class="ss-lock-caption" id="ss-lock-caption">Удерживайте 4 сек для разблокировки</div>
   </div>
 </div>
 
@@ -992,8 +972,7 @@ const I18N = {
     warn_btn: 'ВКЛЮЧИТЬ ДАТЧИКИ',
     warn_denied: 'Доступ отклонен в Safari. Перейдите в Настройки -> Safari -> Движение и ориентация.',
     footer_role: 'Клиент контроллера',
-    ss_caption: 'Удерживайте 2 сек для разблокировки',
-    ss_swipe: 'или смахните вверх',
+    ss_caption: 'Удерживайте 4 сек для разблокировки',
     level_status: 'ГОРИЗОНТ'
   },
   en: {
@@ -1018,8 +997,7 @@ const I18N = {
     warn_btn: 'ENABLE SENSORS',
     warn_denied: 'Access denied. Enable in iOS Settings -> Safari -> Motion & Orientation Access.',
     footer_role: 'Controller Client',
-    ss_caption: 'Hold for 2s to unlock',
-    ss_swipe: 'or swipe up',
+    ss_caption: 'Hold for 4s to unlock',
     level_status: 'LEVEL'
   }
 };
@@ -1036,7 +1014,6 @@ function setLanguage(lang) {
   document.getElementById('btn-grant-sensors').textContent = I18N[lang].warn_btn;
   document.getElementById('txt-footer-role').textContent = I18N[lang].footer_role;
   document.getElementById('ss-lock-caption').textContent = I18N[lang].ss_caption;
-  document.getElementById('ss-swipe-txt').textContent = I18N[lang].ss_swipe;
   const txtScreensaverMain = document.getElementById('txt-screensaver-main');
   if (txtScreensaverMain) txtScreensaverMain.textContent = I18N[lang].sub_screensaver_btn;
   updateWakeLockUI();
@@ -1171,14 +1148,13 @@ const btnScreensaver      = document.getElementById('btn-screensaver');
 const btnScreensaverMain  = document.getElementById('btn-screensaver-main');
 const ssLockProgress      = document.getElementById('ss-lock-progress');
 const ssCenterLock        = document.getElementById('ss-center-lock');
-const ssBottomSwipe       = document.getElementById('ss-bottom-swipe');
 const ssTopStatus         = document.getElementById('ss-top-status');
 const ssStatusLabel       = document.getElementById('ss-status-label');
 
 let isScreensaverActive = false;
 let holdTimer = null;
 let holdStartTime = 0;
-const HOLD_DURATION = 2000; // 2.0s hold to unlock
+const HOLD_DURATION = 4000; // 4.0s hold to unlock
 const CIRCLE_CIRCUMFERENCE = 251.2; // 2 * PI * 40
 
 function openScreensaver() {
@@ -1224,10 +1200,11 @@ function triggerWandering() {
   }, 20000);
 }
 
-// 1) Hold-to-Unlock Logic
+// 1) Hold-to-Unlock Logic (4.0s hold)
 function startHold(e) {
   e.preventDefault();
   holdStartTime = performance.now();
+  ssCenterLock.classList.add('holding');
   if (navigator.vibrate) navigator.vibrate(25);
 
   const step = () => {
@@ -1248,6 +1225,7 @@ function startHold(e) {
 
 function cancelHold() {
   holdStartTime = 0;
+  ssCenterLock.classList.remove('holding');
   if (holdTimer) cancelAnimationFrame(holdTimer);
   ssLockProgress.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
 }
@@ -1258,23 +1236,6 @@ ssCenterLock.addEventListener('touchcancel', cancelHold);
 ssCenterLock.addEventListener('mousedown', startHold);
 ssCenterLock.addEventListener('mouseup', cancelHold);
 ssCenterLock.addEventListener('mouseleave', cancelHold);
-
-// 2) Swipe-Up to Unlock Logic
-let touchStartY = 0;
-screensaverOverlay.addEventListener('touchstart', (e) => {
-  if (e.touches && e.touches[0]) {
-    touchStartY = e.touches[0].clientY;
-  }
-}, { passive: true });
-
-screensaverOverlay.addEventListener('touchend', (e) => {
-  if (e.changedTouches && e.changedTouches[0]) {
-    const deltaY = touchStartY - e.changedTouches[0].clientY;
-    if (deltaY > 110) { // Upward swipe threshold: >110px
-      closeScreensaver();
-    }
-  }
-}, { passive: true });
 
 // Prevent any touches on screensaver from bubbling to underlying UI
 screensaverOverlay.addEventListener('click', (e) => {
