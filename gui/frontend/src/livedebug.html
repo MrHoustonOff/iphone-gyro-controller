@@ -992,6 +992,16 @@
       font-family: var(--font-mono);
     }
 
+    .stat-vector-col {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 0 2px 0;
+    }
+
     .stat-vector-row {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
@@ -1005,16 +1015,15 @@
     .vec-item {
       display: inline-flex;
       align-items: center;
-      gap: 3px;
+      gap: 6px;
       min-width: 0;
-      overflow: hidden;
     }
 
     .vec-ax {
       font-size: 9px;
       font-weight: 800;
-      width: 14px;
-      height: 14px;
+      width: 15px;
+      height: 15px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1029,7 +1038,7 @@
       letter-spacing: -0.02em;
       white-space: nowrap;
       display: inline-block;
-      min-width: 38px;
+      min-width: 44px;
     }
 
     .stat-card[data-i18n-tip] {
@@ -1059,6 +1068,44 @@
     .stat-desc-inline {
       font-size: 11px;
       color: var(--text-secondary);
+    }
+
+    .dsu-status-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    [data-theme="light"] .dsu-status-wrap {
+      background: rgba(0, 0, 0, 0.04);
+    }
+
+    .dsu-status-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .dsu-pulse-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+      transition: background-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .dsu-pulse-dot.active {
+      background: #34C759;
+      box-shadow: 0 0 6px #34C759;
     }
 
     /* Floating Apple HIG Tooltip */
@@ -1487,10 +1534,13 @@
                 </div>
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
-              <div class="stat-vector-row" id="raw-gyro-vector">
-                <span class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="raw-gx">+0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="raw-gy">+0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="raw-gz">+0.00</span></span>
+              <div class="stat-vector-col" id="raw-gyro-vector">
+                <div class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="raw-gx">+0.00</span></div>
+                <div class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="raw-gy">+0.00</span></div>
+                <div class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="raw-gz">+0.00</span></div>
+              </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-raw-gyro"></canvas>
               </div>
             </div>
 
@@ -1502,10 +1552,13 @@
                 </div>
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
-              <div class="stat-vector-row" id="raw-accel-vector">
-                <span class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="raw-ax">+0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="raw-ay">-1.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="raw-az">+0.00</span></span>
+              <div class="stat-vector-col" id="raw-accel-vector">
+                <div class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="raw-ax">+0.00</span></div>
+                <div class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="raw-ay">-1.00</span></div>
+                <div class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="raw-az">+0.00</span></div>
+              </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-raw-accel"></canvas>
               </div>
             </div>
           </div>
@@ -1572,6 +1625,12 @@
                 </div>
                 <span class="stat-desc-inline" id="desc-dsu-clients" data-i18n="live_debug.dsu_desc_waiting">Ожидание эмулятора</span>
               </div>
+              <div class="stat-chart-wrap dsu-status-wrap">
+                <div class="dsu-status-box">
+                  <span class="dsu-pulse-dot" id="dsu-pulse-dot"></span>
+                  <span class="dsu-badge-title">Cemuhook DSU</span>
+                </div>
+              </div>
             </div>
 
             <!-- DSU Gyro Motion Output -->
@@ -1582,10 +1641,13 @@
                 </div>
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
-              <div class="stat-vector-row" id="out-gyro-vector">
-                <span class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="out-gx">+0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="out-gy">+0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="out-gz">+0.00</span></span>
+              <div class="stat-vector-col" id="out-gyro-vector">
+                <div class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="out-gx">+0.00</span></div>
+                <div class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="out-gy">+0.00</span></div>
+                <div class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="out-gz">+0.00</span></div>
+              </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-out-gyro"></canvas>
               </div>
             </div>
           </div>
@@ -2472,6 +2534,7 @@
         frameCount++;
         const now = performance.now();
         if (typeof flushCharts === 'function') flushCharts(now);
+        if (typeof flushUIText === 'function') flushUIText(now);
         if (now - lastFpsTime >= 1000) {
           const fps = Math.round((frameCount * 1000) / (now - lastFpsTime));
           if (fpsCounter && isPhoneConnected) fpsCounter.textContent = `${fps} fps`;
@@ -2934,6 +2997,111 @@
         drawAppleChart(canvasId, data, minVal, maxVal, strokeColor);
       }
 
+      // ── Apple HIG Multi-Line Motion Vector Chart (No fill, axis colors, live dots) ──
+      function drawAppleMultiLineChart(canvasId, seriesList, minVal, maxVal) {
+        const item = getChartContext(canvasId);
+        if (!item) return;
+        const { canvas: cvs, ctx } = item;
+
+        const dpr = window.devicePixelRatio || 1;
+        let dims = chartDimCache.get(canvasId);
+        if (!dims) {
+          const w = cvs.clientWidth || 160;
+          const h = cvs.clientHeight || 60;
+          dims = { w, h, targetW: Math.round(w * dpr), targetH: Math.round(h * dpr) };
+          chartDimCache.set(canvasId, dims);
+        }
+
+        const { w, h, targetW, targetH } = dims;
+        if (cvs.width !== targetW || cvs.height !== targetH) {
+          cvs.width = targetW;
+          cvs.height = targetH;
+        }
+
+        ctx.save();
+        ctx.scale(dpr, dpr);
+        ctx.clearRect(0, 0, w, h);
+
+        // Center zero-baseline guide line
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 4]);
+        ctx.beginPath();
+        ctx.moveTo(0, h / 2);
+        ctx.lineTo(w, h / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const padTop = 6;
+        const padBottom = 6;
+        const plotH = h - padTop - padBottom;
+        const range = (maxVal - minVal) || 1;
+
+        // Draw each colored line series without fill
+        seriesList.forEach(series => {
+          const { data, color } = series;
+          if (!data || data.length < 2) return;
+
+          const pts = [];
+          const step = w / (data.length - 1);
+          for (let i = 0; i < data.length; i++) {
+            const clamped = Math.max(minVal, Math.min(maxVal, data[i]));
+            const norm = (clamped - minVal) / range;
+            const x = i * step;
+            const y = h - padBottom - (norm * plotH);
+            pts.push({ x, y });
+          }
+
+          const path = new Path2D();
+          path.moveTo(pts[0].x, pts[0].y);
+
+          for (let i = 0; i < pts.length - 1; i++) {
+            const p0 = pts[i === 0 ? 0 : i - 1];
+            const p1 = pts[i];
+            const p2 = pts[i + 1];
+            const p3 = pts[i + 2 < pts.length ? i + 2 : i + 1];
+
+            const cp1x = p1.x + (p2.x - p0.x) / 6;
+            const cp1y = p1.y + (p2.y - p0.y) / 6;
+            const cp2x = p2.x - (p3.x - p1.x) / 6;
+            const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+            path.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+          }
+
+          // Ambient glow stroke (no fill!)
+          ctx.strokeStyle = hexToRgba(color, 0.28);
+          ctx.lineWidth = 3.6;
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+          ctx.stroke(path);
+
+          // Crisp core stroke
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.8;
+          ctx.stroke(path);
+
+          // Glowing live head indicator dot at latest point
+          const lastPt = pts[pts.length - 1];
+
+          ctx.beginPath();
+          ctx.arc(lastPt.x, lastPt.y, 4.0, 0, Math.PI * 2);
+          ctx.fillStyle = hexToRgba(color, 0.40);
+          ctx.fill();
+
+          ctx.beginPath();
+          ctx.arc(lastPt.x, lastPt.y, 2.0, 0, Math.PI * 2);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fill();
+          ctx.lineWidth = 1.2;
+          ctx.strokeStyle = color;
+          ctx.stroke();
+        });
+
+        ctx.restore();
+      }
+
       // ── Live Telemetry & Statistics Engine ──
       const CSV_HEADER = "timestamp_ms,event_type,seq,gx,gy,gz,ax,ay,az,recv_ts,send_ts,stick_lx,stick_ly,gyro_out_x,gyro_out_y,gyro_out_z";
       isRecording = false;
@@ -2944,7 +3112,7 @@
       const RECORD_MAX_DURATION_MS = 60000; // Hard 1-minute limit
       const MAX_CHART_SAMPLES = 36; // 36-sample rolling timeline
 
-      // Incoming metrics rolling history
+      // Single metric rolling histories
       const hzHistory = [];
       const latencyHistory = [];
       const jitterHistory = [];
@@ -2952,8 +3120,32 @@
       const outHzHistory = [];
       const pipeMsHistory = [];
 
-      // Pre-seed lossHistory with flat zero baseline so line is steady at 0
-      for (let i = 0; i < MAX_CHART_SAMPLES; i++) lossHistory.push(0);
+      // 3-Axis Vector motion histories
+      const rawGxHistory = [];
+      const rawGyHistory = [];
+      const rawGzHistory = [];
+
+      const rawAxHistory = [];
+      const rawAyHistory = [];
+      const rawAzHistory = [];
+
+      const outGxHistory = [];
+      const outGyHistory = [];
+      const outGzHistory = [];
+
+      // Pre-seed baseline histories so lines start smoothly
+      for (let i = 0; i < MAX_CHART_SAMPLES; i++) {
+        lossHistory.push(0);
+        rawGxHistory.push(0);
+        rawGyHistory.push(0);
+        rawGzHistory.push(0);
+        rawAxHistory.push(0);
+        rawAyHistory.push(-1.0);
+        rawAzHistory.push(0);
+        outGxHistory.push(0);
+        outGyHistory.push(0);
+        outGzHistory.push(0);
+      }
 
       let lastPacketRecvTime = 0;
       let lastSeq = 0;
@@ -2966,6 +3158,164 @@
       lastTelemetryData = null;
       lastRecordedElapsedMs = 0;
 
+      // Jitter window accumulator for honest time-series
+      let currentJitterWindowSum = 0;
+      let currentJitterWindowCount = 0;
+      let lastJitterSampleTime = 0;
+
+      // ── EMA Smoothing State (Variant 2) ──
+      const emaState = {
+        inHz: null,
+        latency: null,
+        jitter: null,
+        outHz: null,
+        pipeMs: null,
+        rawGx: null,
+        rawGy: null,
+        rawGz: null,
+        rawAx: null,
+        rawAy: null,
+        rawAz: null,
+        outGx: null,
+        outGy: null,
+        outGz: null,
+      };
+
+      function updateEMA(key, val, alpha = 0.20) {
+        if (typeof val !== 'number' || isNaN(val)) return 0;
+        if (emaState[key] === null) {
+          emaState[key] = val;
+        } else {
+          emaState[key] = alpha * val + (1 - alpha) * emaState[key];
+        }
+        return emaState[key];
+      }
+
+      let lastUITextFlushTime = 0;
+
+      function flushUIText(now) {
+        if (now - lastUITextFlushTime < 180) return; // 5.5 FPS calm readable text updates
+        lastUITextFlushTime = now;
+        const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+
+        // 1. In Hz
+        const inHz = emaState.inHz;
+        const valInHzEl = document.getElementById('val-in-hz');
+        const chipInHzEl = document.getElementById('chip-in-hz');
+        if (valInHzEl) valInHzEl.textContent = (isPhoneConnected && inHz && inHz > 0) ? inHz.toFixed(1) : '--';
+
+        if (chipInHzEl) {
+          if (!isPhoneConnected || !inHz || inHz <= 0) {
+            chipInHzEl.className = 'stat-chip muted';
+            chipInHzEl.textContent = '--';
+          } else if (inHz >= 55) {
+            chipInHzEl.className = 'stat-chip green';
+            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
+          } else if (inHz >= 40) {
+            chipInHzEl.className = 'stat-chip yellow';
+            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
+          } else {
+            chipInHzEl.className = 'stat-chip red';
+            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
+          }
+        }
+
+        // 2. Latency & Jitter
+        const lat = emaState.latency;
+        const valLatencyEl = document.getElementById('val-latency');
+        const chipLatencyEl = document.getElementById('chip-latency');
+        if (valLatencyEl) valLatencyEl.textContent = lat !== null ? lat.toFixed(1) : '12.0';
+        if (chipLatencyEl && lat !== null) {
+          if (lat < 20) {
+            chipLatencyEl.className = 'stat-chip green';
+            chipLatencyEl.textContent = '< 20ms';
+          } else if (lat <= 50) {
+            chipLatencyEl.className = 'stat-chip yellow';
+            chipLatencyEl.textContent = '20-50ms';
+          } else {
+            chipLatencyEl.className = 'stat-chip red';
+            chipLatencyEl.textContent = '> 50ms';
+          }
+        }
+
+        const jit = emaState.jitter;
+        const valJitterEl = document.getElementById('val-jitter');
+        const chipJitterEl = document.getElementById('chip-jitter');
+        if (valJitterEl) valJitterEl.textContent = jit !== null ? jit.toFixed(1) : '0.0';
+        if (chipJitterEl && jit !== null) {
+          chipJitterEl.textContent = jit < 4
+            ? (dict["live_debug.jitter_stable"] || "stable")
+            : (jit < 10 ? (dict["live_debug.jitter_normal"] || "normal") : (dict["live_debug.jitter_high"] || "jitter"));
+          chipJitterEl.className = jit < 4 ? 'stat-chip green' : (jit < 10 ? 'stat-chip yellow' : 'stat-chip red');
+        }
+
+        // 3. Packet Loss
+        const valLossEl = document.getElementById('val-loss');
+        const valLossPctEl = document.getElementById('val-loss-pct');
+        const chipLossEl = document.getElementById('chip-loss');
+        const lossPct = totalExpectedPackets > 0 ? ((lostPacketsCount / totalExpectedPackets) * 100).toFixed(1) : '0.0';
+        if (valLossEl) valLossEl.textContent = lostPacketsCount;
+        if (valLossPctEl) valLossPctEl.textContent = `(${lossPct}%)`;
+        if (chipLossEl) {
+          if (lostPacketsCount === 0) {
+            chipLossEl.className = 'stat-chip muted';
+            chipLossEl.textContent = '0%';
+          } else {
+            chipLossEl.className = 'stat-chip red';
+            chipLossEl.textContent = `${lossPct}%`;
+          }
+        }
+
+        // 4. Raw Gyro & Accel
+        const formatSigned = (n) => {
+          if (typeof n !== 'number' || isNaN(n)) return '+0.00';
+          return (n >= 0 ? '+' : '') + n.toFixed(2);
+        };
+
+        const rawGxEl = document.getElementById('raw-gx');
+        const rawGyEl = document.getElementById('raw-gy');
+        const rawGzEl = document.getElementById('raw-gz');
+        if (rawGxEl) rawGxEl.textContent = formatSigned(emaState.rawGx);
+        if (rawGyEl) rawGyEl.textContent = formatSigned(emaState.rawGy);
+        if (rawGzEl) rawGzEl.textContent = formatSigned(emaState.rawGz);
+
+        const rawAxEl = document.getElementById('raw-ax');
+        const rawAyEl = document.getElementById('raw-ay');
+        const rawAzEl = document.getElementById('raw-az');
+        if (rawAxEl) rawAxEl.textContent = formatSigned(emaState.rawAx);
+        if (rawAyEl) rawAyEl.textContent = formatSigned(emaState.rawAy);
+        if (rawAzEl) rawAzEl.textContent = formatSigned(emaState.rawAz);
+
+        // 5. Output Metrics
+        const outHz = emaState.outHz;
+        const valOutHzEl = document.getElementById('val-out-hz');
+        if (valOutHzEl) valOutHzEl.textContent = (isPhoneConnected && outHz && outHz > 0) ? outHz.toFixed(1) : '--';
+
+        const pMs = emaState.pipeMs;
+        const valPipeMsEl = document.getElementById('val-pipe-ms');
+        const chipPipeMsEl = document.getElementById('chip-pipe-ms');
+        if (valPipeMsEl) valPipeMsEl.textContent = pMs !== null ? pMs.toFixed(2) : '0.40';
+        if (chipPipeMsEl && pMs !== null) {
+          if (pMs < 1.0) {
+            chipPipeMsEl.className = 'stat-chip green';
+            chipPipeMsEl.textContent = '< 1ms';
+          } else if (pMs <= 3.0) {
+            chipPipeMsEl.className = 'stat-chip yellow';
+            chipPipeMsEl.textContent = '1-3ms';
+          } else {
+            chipPipeMsEl.className = 'stat-chip red';
+            chipPipeMsEl.textContent = '> 3ms';
+          }
+        }
+
+        const outGxEl = document.getElementById('out-gx');
+        const outGyEl = document.getElementById('out-gy');
+        const outGzEl = document.getElementById('out-gz');
+        if (outGxEl) outGxEl.textContent = formatSigned(emaState.outGx);
+        if (outGyEl) outGyEl.textContent = formatSigned(emaState.outGy);
+        if (outGzEl) outGzEl.textContent = formatSigned(emaState.outGz);
+      }
+
       let chartsDirty = false;
       let lastChartFlushTime = 0;
 
@@ -2977,19 +3327,75 @@
 
         if (hzHistory.length >= 2) drawAppleChart('spark-in-hz', hzHistory, 30, 80, '#34C759');
         if (latencyHistory.length >= 2) drawAppleChart('spark-latency', latencyHistory, 0, 50, '#0A84FF');
-        if (jitterHistory.length >= 2) drawAppleChart('spark-jitter', jitterHistory, 0, 15, '#FF9500');
+
+        // Honest calm Jitter time-series (0 to 30ms scale, calm Apple Teal)
+        if (jitterHistory.length >= 2) {
+          const maxJitter = Math.max(30, ...jitterHistory);
+          drawAppleChart('spark-jitter', jitterHistory, 0, maxJitter, '#30B0C7');
+        }
+
+        // Loss chart: 0 baseline is calm flat line; spikes jump upward
         if (lossHistory.length >= 2) {
           const maxLoss = Math.max(3, ...lossHistory);
           drawAppleChart('spark-loss', lossHistory, 0, maxLoss, '#FF3B30');
         }
+
+        // Raw Gyro multi-line motion chart (X: red, Y: green, Z: blue, no fill)
+        if (rawGxHistory.length >= 2) {
+          const maxG = Math.max(
+            20,
+            ...rawGxHistory.map(Math.abs),
+            ...rawGyHistory.map(Math.abs),
+            ...rawGzHistory.map(Math.abs)
+          );
+          drawAppleMultiLineChart('spark-raw-gyro', [
+            { data: rawGxHistory, color: '#FF3B30' },
+            { data: rawGyHistory, color: '#34C759' },
+            { data: rawGzHistory, color: '#007AFF' }
+          ], -maxG, maxG);
+        }
+
+        // Raw Accel multi-line motion chart (baseline gravity ~1g, range -2g to +2g)
+        if (rawAxHistory.length >= 2) {
+          const maxA = Math.max(
+            2.0,
+            ...rawAxHistory.map(Math.abs),
+            ...rawAyHistory.map(Math.abs),
+            ...rawAzHistory.map(Math.abs)
+          );
+          drawAppleMultiLineChart('spark-raw-accel', [
+            { data: rawAxHistory, color: '#FF3B30' },
+            { data: rawAyHistory, color: '#34C759' },
+            { data: rawAzHistory, color: '#007AFF' }
+          ], -maxA, maxA);
+        }
+
+        // Output metrics
         if (outHzHistory.length >= 2) drawAppleChart('spark-out-hz', outHzHistory, 30, 80, '#5E5CE6');
         if (pipeMsHistory.length >= 2) drawAppleChart('spark-pipe-ms', pipeMsHistory, 0, 3.5, '#30D158');
+
+        // DSU Out Gyro multi-line motion chart
+        if (outGxHistory.length >= 2) {
+          const maxOutG = Math.max(
+            20,
+            ...outGxHistory.map(Math.abs),
+            ...outGyHistory.map(Math.abs),
+            ...outGzHistory.map(Math.abs)
+          );
+          drawAppleMultiLineChart('spark-out-gyro', [
+            { data: outGxHistory, color: '#FF3B30' },
+            { data: outGyHistory, color: '#34C759' },
+            { data: outGzHistory, color: '#007AFF' }
+          ], -maxOutG, maxOutG);
+        }
       }
 
-      // Standalone timer to flush charts if 3D rendering is paused or phone is stationary
+      // Standalone timer to flush charts and text if 3D rendering is paused or phone is stationary
       setInterval(() => {
+        const now = performance.now();
+        if (typeof flushUIText === 'function') flushUIText(now);
         if (!isRendering && chartsDirty) {
-          flushCharts(performance.now());
+          flushCharts(now);
         }
       }, 100);
 
@@ -3007,26 +3413,7 @@
           inHz = lastValidInHz;
         }
 
-        const valInHzEl = document.getElementById('val-in-hz');
-        const chipInHzEl = document.getElementById('chip-in-hz');
-        if (valInHzEl) valInHzEl.textContent = (isPhoneConnected && inHz > 0) ? inHz.toFixed(1) : '--';
-
-        if (chipInHzEl) {
-          if (!isPhoneConnected || inHz <= 0) {
-            chipInHzEl.className = 'stat-chip muted';
-            chipInHzEl.textContent = '--';
-          } else if (inHz >= 55) {
-            chipInHzEl.className = 'stat-chip green';
-            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
-          } else if (inHz >= 40) {
-            chipInHzEl.className = 'stat-chip yellow';
-            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
-          } else {
-            chipInHzEl.className = 'stat-chip red';
-            chipInHzEl.textContent = Math.round(inHz) + ' Hz';
-          }
-        }
-
+        updateEMA('inHz', inHz, 0.25);
         if (inHz > 0) {
           hzHistory.push(inHz);
           if (hzHistory.length > MAX_CHART_SAMPLES) hzHistory.shift();
@@ -3046,43 +3433,28 @@
           latencyMs = 12.0;
         }
 
-        const valLatencyEl = document.getElementById('val-latency');
-        const chipLatencyEl = document.getElementById('chip-latency');
-        if (valLatencyEl) valLatencyEl.textContent = latencyMs.toFixed(1);
-        if (chipLatencyEl) {
-          if (latencyMs < 20) {
-            chipLatencyEl.className = 'stat-chip green';
-            chipLatencyEl.textContent = '< 20ms';
-          } else if (latencyMs <= 50) {
-            chipLatencyEl.className = 'stat-chip yellow';
-            chipLatencyEl.textContent = '20-50ms';
-          } else {
-            chipLatencyEl.className = 'stat-chip red';
-            chipLatencyEl.textContent = '> 50ms';
-          }
-        }
+        updateEMA('latency', latencyMs, 0.20);
         latencyHistory.push(latencyMs);
         if (latencyHistory.length > MAX_CHART_SAMPLES) latencyHistory.shift();
         chartsDirty = true;
 
-        // Jitter
+        // Jitter: honest smoothed packet arrival interval tracking
         if (lastPacketRecvTime > 0) {
           const interval = now - lastPacketRecvTime;
           const expectedInterval = inHz > 0 ? (1000 / inHz) : 16.67;
-          const jitter = Math.abs(interval - expectedInterval);
-          jitterHistory.push(jitter);
-          if (jitterHistory.length > MAX_CHART_SAMPLES) jitterHistory.shift();
-          chartsDirty = true;
+          const rawJitter = Math.abs(interval - expectedInterval);
+          const smoothJ = updateEMA('jitter', rawJitter, 0.18);
 
-          const avgJitter = jitterHistory.reduce((a, b) => a + b, 0) / jitterHistory.length;
-          const valJitterEl = document.getElementById('val-jitter');
-          const chipJitterEl = document.getElementById('chip-jitter');
-          if (valJitterEl) valJitterEl.textContent = avgJitter.toFixed(1);
-          if (chipJitterEl) {
-            chipJitterEl.textContent = avgJitter < 3
-              ? (dict["live_debug.jitter_stable"] || "stable")
-              : (avgJitter < 8 ? (dict["live_debug.jitter_normal"] || "normal") : (dict["live_debug.jitter_high"] || "jitter"));
-            chipJitterEl.className = avgJitter < 3 ? 'stat-chip green' : (avgJitter < 8 ? 'stat-chip yellow' : 'stat-chip red');
+          currentJitterWindowSum += smoothJ;
+          currentJitterWindowCount++;
+          if (now - lastJitterSampleTime >= 80) {
+            const avgWindowJ = currentJitterWindowSum / (currentJitterWindowCount || 1);
+            jitterHistory.push(avgWindowJ);
+            if (jitterHistory.length > MAX_CHART_SAMPLES) jitterHistory.shift();
+            currentJitterWindowSum = 0;
+            currentJitterWindowCount = 0;
+            lastJitterSampleTime = now;
+            chartsDirty = true;
           }
         }
         lastPacketRecvTime = now;
@@ -3115,45 +3487,42 @@
         if (lossHistory.length > MAX_CHART_SAMPLES) lossHistory.shift();
         chartsDirty = true;
 
-        const valLossEl = document.getElementById('val-loss');
-        const valLossPctEl = document.getElementById('val-loss-pct');
-        const chipLossEl = document.getElementById('chip-loss');
-        const lossPct = totalExpectedPackets > 0 ? ((lostPacketsCount / totalExpectedPackets) * 100).toFixed(1) : '0.0';
-        if (valLossEl) valLossEl.textContent = lostPacketsCount;
-        if (valLossPctEl) valLossPctEl.textContent = `(${lossPct}%)`;
-        if (chipLossEl) {
-          if (lostPacketsCount === 0) {
-            chipLossEl.className = 'stat-chip muted';
-            chipLossEl.textContent = '0%';
-          } else {
-            chipLossEl.className = 'stat-chip red';
-            chipLossEl.textContent = `${lossPct}%`;
-          }
+        // 4. Raw Gyro & Accel: EMA smoothed values and multi-line rolling history
+        const rawGx = typeof data.raw_gx === 'number' ? data.raw_gx : 0;
+        const rawGy = typeof data.raw_gy === 'number' ? data.raw_gy : 0;
+        const rawGz = typeof data.raw_gz === 'number' ? data.raw_gz : 0;
+        updateEMA('rawGx', rawGx, 0.35);
+        updateEMA('rawGy', rawGy, 0.35);
+        updateEMA('rawGz', rawGz, 0.35);
+
+        rawGxHistory.push(rawGx);
+        rawGyHistory.push(rawGy);
+        rawGzHistory.push(rawGz);
+        if (rawGxHistory.length > MAX_CHART_SAMPLES) {
+          rawGxHistory.shift();
+          rawGyHistory.shift();
+          rawGzHistory.shift();
         }
 
-        // 4. Raw Gyro & Accel: Fixed width with +/- sign and tabular numbers
-        const formatNum = (n) => {
-          if (typeof n !== 'number' || isNaN(n)) return '+0.00';
-          return (n >= 0 ? '+' : '') + n.toFixed(2);
-        };
-        const rawGxEl = document.getElementById('raw-gx');
-        const rawGyEl = document.getElementById('raw-gy');
-        const rawGzEl = document.getElementById('raw-gz');
-        if (rawGxEl) rawGxEl.textContent = formatNum(data.raw_gx);
-        if (rawGyEl) rawGyEl.textContent = formatNum(data.raw_gy);
-        if (rawGzEl) rawGzEl.textContent = formatNum(data.raw_gz);
+        const rawAx = typeof data.raw_ax === 'number' ? data.raw_ax : 0;
+        const rawAy = typeof data.raw_ay === 'number' ? data.raw_ay : 0;
+        const rawAz = typeof data.raw_az === 'number' ? data.raw_az : 0;
+        updateEMA('rawAx', rawAx, 0.35);
+        updateEMA('rawAy', rawAy, 0.35);
+        updateEMA('rawAz', rawAz, 0.35);
 
-        const rawAxEl = document.getElementById('raw-ax');
-        const rawAyEl = document.getElementById('raw-ay');
-        const rawAzEl = document.getElementById('raw-az');
-        if (rawAxEl) rawAxEl.textContent = formatNum(data.raw_ax);
-        if (rawAyEl) rawAyEl.textContent = formatNum(data.raw_ay);
-        if (rawAzEl) rawAzEl.textContent = formatNum(data.raw_az);
+        rawAxHistory.push(rawAx);
+        rawAyHistory.push(rawAy);
+        rawAzHistory.push(rawAz);
+        if (rawAxHistory.length > MAX_CHART_SAMPLES) {
+          rawAxHistory.shift();
+          rawAyHistory.shift();
+          rawAzHistory.shift();
+        }
 
         // 5. OUTPUT Metrics
         const outHz = typeof data.out_hz === 'number' && data.out_hz > 0 ? data.out_hz : inHz;
-        const valOutHzEl = document.getElementById('val-out-hz');
-        if (valOutHzEl) valOutHzEl.textContent = (isPhoneConnected && outHz > 0) ? outHz.toFixed(1) : '--';
+        updateEMA('outHz', outHz, 0.25);
         if (outHz > 0) {
           outHzHistory.push(outHz);
           if (outHzHistory.length > MAX_CHART_SAMPLES) outHzHistory.shift();
@@ -3161,34 +3530,40 @@
         }
 
         const pipeMs = typeof data.pipe_ms === 'number' ? data.pipe_ms : 0.4;
-        const valPipeMsEl = document.getElementById('val-pipe-ms');
-        const chipPipeMsEl = document.getElementById('chip-pipe-ms');
-        if (valPipeMsEl) valPipeMsEl.textContent = pipeMs.toFixed(2);
-        if (chipPipeMsEl) {
-          if (pipeMs < 1.0) {
-            chipPipeMsEl.className = 'stat-chip green';
-            chipPipeMsEl.textContent = '< 1ms';
-          } else if (pipeMs <= 3.0) {
-            chipPipeMsEl.className = 'stat-chip yellow';
-            chipPipeMsEl.textContent = '1-3ms';
-          } else {
-            chipPipeMsEl.className = 'stat-chip red';
-            chipPipeMsEl.textContent = '> 3ms';
-          }
-        }
+        updateEMA('pipeMs', pipeMs, 0.20);
         pipeMsHistory.push(pipeMs);
         if (pipeMsHistory.length > MAX_CHART_SAMPLES) pipeMsHistory.shift();
         chartsDirty = true;
+
+        const outGx = typeof data.out_gx === 'number' ? data.out_gx : 0;
+        const outGy = typeof data.out_gy === 'number' ? data.out_gy : 0;
+        const outGz = typeof data.out_gz === 'number' ? data.out_gz : 0;
+        updateEMA('outGx', outGx, 0.35);
+        updateEMA('outGy', outGy, 0.35);
+        updateEMA('outGz', outGz, 0.35);
+
+        outGxHistory.push(outGx);
+        outGyHistory.push(outGy);
+        outGzHistory.push(outGz);
+        if (outGxHistory.length > MAX_CHART_SAMPLES) {
+          outGxHistory.shift();
+          outGyHistory.shift();
+          outGzHistory.shift();
+        }
 
         const dsuClients = typeof data.dsu_clients === 'number' ? data.dsu_clients : 0;
         const valDsuClientsEl = document.getElementById('val-dsu-clients');
         const chipDsuClientsEl = document.getElementById('chip-dsu-clients');
         const descDsuClientsEl = document.getElementById('desc-dsu-clients');
         const dsuStatusDotEl = document.getElementById('dsu-status-dot');
+        const dsuPulseDotEl = document.getElementById('dsu-pulse-dot');
 
         if (valDsuClientsEl) valDsuClientsEl.textContent = dsuClients;
         if (dsuStatusDotEl) {
           dsuStatusDotEl.style.backgroundColor = dsuClients > 0 ? '#34C759' : 'var(--text-secondary)';
+        }
+        if (dsuPulseDotEl) {
+          dsuPulseDotEl.classList.toggle('active', dsuClients > 0);
         }
         if (chipDsuClientsEl) {
           chipDsuClientsEl.className = dsuClients > 0 ? 'stat-chip green' : 'stat-chip muted';
@@ -3201,12 +3576,10 @@
             : (dict["live_debug.dsu_desc_waiting"] || "Waiting for emulator");
         }
 
-        const outGxEl = document.getElementById('out-gx');
-        const outGyEl = document.getElementById('out-gy');
-        const outGzEl = document.getElementById('out-gz');
-        if (outGxEl) outGxEl.textContent = formatNum(data.out_gx);
-        if (outGyEl) outGyEl.textContent = formatNum(data.out_gy);
-        if (outGzEl) outGzEl.textContent = formatNum(data.out_gz);
+        // Trigger immediate flush if first frame
+        if (!lastUITextFlushTime) {
+          flushUIText(now);
+        }
 
         // 6. CSV Recording stream collector
         if (isRecording) {
