@@ -39,8 +39,17 @@ export namespace main {
 	    rawAccX: number;
 	    rawAccY: number;
 	    rawAccZ: number;
+	    qx: number;
+	    qy: number;
+	    qz: number;
+	    qw: number;
 	    profiles: Profile[];
 	    activeSlot: number;
+	    activeMatrix: number[][];
+	    ahrsQ0: number;
+	    ahrsQ1: number;
+	    ahrsQ2: number;
+	    ahrsQ3: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppState(source);
@@ -68,8 +77,17 @@ export namespace main {
 	        this.rawAccX = source["rawAccX"];
 	        this.rawAccY = source["rawAccY"];
 	        this.rawAccZ = source["rawAccZ"];
+	        this.qx = source["qx"];
+	        this.qy = source["qy"];
+	        this.qz = source["qz"];
+	        this.qw = source["qw"];
 	        this.profiles = this.convertValues(source["profiles"], Profile);
 	        this.activeSlot = source["activeSlot"];
+	        this.activeMatrix = source["activeMatrix"];
+	        this.ahrsQ0 = source["ahrsQ0"];
+	        this.ahrsQ1 = source["ahrsQ1"];
+	        this.ahrsQ2 = source["ahrsQ2"];
+	        this.ahrsQ3 = source["ahrsQ3"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -98,6 +116,8 @@ export namespace main {
 	    confidence: number;
 	    sampleCount: number;
 	    peakSpeed: number;
+	    vector: number[];
+	    errorCode: string;
 	    errorMsg: string;
 	
 	    static createFrom(source: any = {}) {
@@ -113,7 +133,36 @@ export namespace main {
 	        this.confidence = source["confidence"];
 	        this.sampleCount = source["sampleCount"];
 	        this.peakSpeed = source["peakSpeed"];
+	        this.vector = source["vector"];
+	        this.errorCode = source["errorCode"];
 	        this.errorMsg = source["errorMsg"];
+	    }
+	}
+	
+	export class ValidationResult {
+	    success: boolean;
+	    errorCode: string;
+	    errorMsg: string;
+	    matrix: number[][];
+	    det: number;
+	    pitchAxis: string;
+	    yawAxis: string;
+	    rollAxis: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new ValidationResult(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.success = source["success"];
+	        this.errorCode = source["errorCode"];
+	        this.errorMsg = source["errorMsg"];
+	        this.matrix = source["matrix"];
+	        this.det = source["det"];
+	        this.pitchAxis = source["pitchAxis"];
+	        this.yawAxis = source["yawAxis"];
+	        this.rollAxis = source["rollAxis"];
 	    }
 	}
 

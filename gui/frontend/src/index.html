@@ -6,6 +6,7 @@
   <title data-i18n="app.title">Gyro Bridge</title>
   <link rel="stylesheet" href="main.css">
   <script src="assets/three.min.js"></script>
+  <script src="assets/GLTFLoader.js"></script>
 </head>
 <body>
 
@@ -448,9 +449,11 @@
           <span class="cal-title" id="cal-modal-title" data-i18n="calibration.title">Калибровка осей</span>
           <span class="cal-subtitle" id="cal-modal-subtitle" data-i18n="calibration.subtitle">Настройка соответствия осей телефона и геймпада</span>
         </div>
-        <button type="button" class="cal-close-btn" id="cal-close-btn" aria-label="Close">
-          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" class="cal-close-btn" id="cal-close-btn" aria-label="Close">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
       </div>
 
       <!-- ── Screen A: Slot Selection ──────────────────────────────────── -->
@@ -463,99 +466,148 @@
 
       <!-- ── Screen B: Step-by-Step Gesture Capture ────────────────────── -->
       <div class="cal-screen" id="cal-screen-capture" style="display:none;">
-        <!-- Step Progress Indicator Bar -->
+        <!-- Step Progress Indicator Bar (4 pills: Покой, Кивок, Крен, Проверка) -->
         <div class="cal-wizard-steps">
           <div class="cal-step-pill active" id="step-pill-0">
             <span class="step-num">1</span>
-            <span class="step-name">Вперёд (Pitch)</span>
+            <span class="step-name" data-i18n="calibration.step_pill_rest">Покой</span>
           </div>
           <div class="cal-step-connector"></div>
           <div class="cal-step-pill" id="step-pill-1">
             <span class="step-num">2</span>
-            <span class="step-name">Вправо (Roll)</span>
+            <span class="step-name" data-i18n="calibration.step_pill_pitch">Кивок</span>
           </div>
           <div class="cal-step-connector"></div>
           <div class="cal-step-pill" id="step-pill-2">
             <span class="step-num">3</span>
-            <span class="step-name">Поворот (Yaw)</span>
+            <span class="step-name" data-i18n="calibration.step_pill_roll">Крен</span>
           </div>
           <div class="cal-step-connector"></div>
           <div class="cal-step-pill" id="step-pill-3">
             <span class="step-num">4</span>
-            <span class="step-name">Проверка</span>
+            <span class="step-name" data-i18n="calibration.step_pill_confirm">Проверка</span>
           </div>
         </div>
 
         <div class="cal-capture-layout">
           <!-- Left: Detailed Instructions + Capture Controls + Result Feedback -->
           <div class="cal-capture-left">
+            <!-- 1. Top Persistent 3-Axis Telemetry & Status Strip -->
+            <div class="cal-axes-strip" id="cal-axes-strip">
+              <!-- Axis X -->
+              <div class="axis-meter-capsule" id="axis-capsule-0">
+                <div class="capsule-top">
+                  <span class="capsule-letter">X</span>
+                  <span class="capsule-tag" id="axis-tag-0">—</span>
+                </div>
+                <div class="capsule-bottom">
+                  <span class="capsule-val" id="axis-val-0">0°/s</span>
+                  <div class="capsule-meter-track">
+                    <div class="capsule-meter-fill" id="axis-fill-0"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Axis Y -->
+              <div class="axis-meter-capsule" id="axis-capsule-1">
+                <div class="capsule-top">
+                  <span class="capsule-letter">Y</span>
+                  <span class="capsule-tag" id="axis-tag-1">—</span>
+                </div>
+                <div class="capsule-bottom">
+                  <span class="capsule-val" id="axis-val-1">0.00g</span>
+                  <div class="capsule-meter-track">
+                    <div class="capsule-meter-fill" id="axis-fill-1"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Axis Z -->
+              <div class="axis-meter-capsule" id="axis-capsule-2">
+                <div class="capsule-top">
+                  <span class="capsule-letter">Z</span>
+                  <span class="capsule-tag" id="axis-tag-2">—</span>
+                </div>
+                <div class="capsule-bottom">
+                  <span class="capsule-val" id="axis-val-2">0°/s</span>
+                  <div class="capsule-meter-track">
+                    <div class="capsule-meter-fill" id="axis-fill-2"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 2. Step Headline and Instructions -->
             <div class="cal-step-info-card">
-              <h3 class="cal-step-headline" id="cal-step-title">Шаг 1: Наклон вперёд</h3>
+              <h3 class="cal-step-headline" id="cal-step-title">Шаг 1 из 3: Калибровка покоя («Статика»)</h3>
               <p class="cal-step-instruction" id="cal-step-desc">
-                Держите телефон вертикально перед собой экраном к себе. Нажмите <strong>Начать запись</strong> и плавно наклоните верхний край телефона <strong>вперёд</strong> (в сторону экрана монитора).
+                Положите телефон неподвижно на стол (желательно в том же хвате и ориентации, в которых будете играть) и нажмите <strong>Зафиксировать покой</strong>. Будет замерено и устранено нулевое смещение гироскопа.
               </p>
             </div>
 
-            <!-- Capture Action Card -->
-            <div class="cal-capture-action-card" id="cal-capture-action-card">
-              <!-- Live State Badge -->
-              <div class="cal-motion-status-bar" id="cal-motion-status-bar">
-                <span class="status-pulse-dot" id="cal-status-dot"></span>
-                <span class="status-text-main" id="cal-status-text">Готов к записи жеста</span>
-                <span class="speed-badge" id="cal-speed-badge" style="display:none;">0°/с</span>
-              </div>
+            <!-- 3. Unified Non-Jumping Action Box (Single Card with cross-fading phases) -->
+            <div class="cal-action-container" id="cal-action-container">
+              <!-- Phase 1: Recording Controls -->
+              <div class="cal-action-phase" id="cal-phase-capture">
+                <!-- Live State Status Bar -->
+                <div class="cal-motion-status-bar" id="cal-motion-status-bar">
+                  <span class="status-pulse-dot" id="cal-status-dot"></span>
+                  <span class="status-text-main" id="cal-status-text">Готов к записи</span>
+                  <span class="speed-badge" id="cal-speed-badge" style="display:none;">0°/с</span>
+                </div>
 
-              <!-- Animated Progress Bar (Active during recording) -->
-              <div class="cal-timer-container" id="cal-timer-container" style="display:none;">
-                <div class="cal-timer-countdown" id="cal-timer-countdown">2.5с</div>
-                <div class="cal-progress-track">
-                  <div class="cal-progress-bar" id="cal-progress-bar"></div>
+                <!-- Animated Progress Bar (Active during recording) -->
+                <div class="cal-timer-container" id="cal-timer-container" style="display:none;">
+                  <div class="cal-timer-countdown" id="cal-timer-countdown">2.0с</div>
+                  <div class="cal-progress-track">
+                    <div class="cal-progress-bar" id="cal-progress-bar"></div>
+                  </div>
+                </div>
+
+                <!-- Main Action Button -->
+                <div class="cal-trigger-row" id="cal-trigger-row">
+                  <button type="button" class="btn-apple-primary btn-capture-action" id="btn-start-capture">
+                    <svg class="capture-play-icon" viewBox="0 0 24 24">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <span id="btn-capture-text">Зафиксировать покой (1.5 сек)</span>
+                  </button>
                 </div>
               </div>
 
-              <!-- Trigger Buttons -->
-              <div class="cal-trigger-row" id="cal-trigger-row">
-                <button type="button" class="btn-apple-primary btn-capture-action" id="btn-start-capture">
-                  <svg class="capture-play-icon" viewBox="0 0 24 24">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                  </svg>
-                  <span id="btn-capture-text" data-i18n="calibration.capture_btn_start">Начать запись (2.5 сек)</span>
-                </button>
-              </div>
-            </div>
+              <!-- Phase 2: Result Feedback (Fades in without container shift) -->
+              <div class="cal-action-phase" id="cal-phase-result" style="display:none;">
+                <div class="result-header-row">
+                  <div class="result-badge-icon" id="result-icon">✓</div>
+                  <div class="result-headline">
+                    <strong id="result-title">Жест успешно распознан!</strong>
+                    <span class="result-subtext" id="result-subtext">Ось +Y • Точность: 98%</span>
+                  </div>
+                </div>
 
-            <!-- Result Feedback Box (Appears when capture completes) -->
-            <div class="cal-result-card" id="cal-result-card" style="display:none;">
-              <div class="result-header-row">
-                <div class="result-badge-icon" id="result-icon">✓</div>
-                <div class="result-headline">
-                  <strong id="result-title">Жест успешно распознан!</strong>
-                  <span class="result-subtext" id="result-subtext">Ось +X • Точность: 98%</span>
+                <div class="result-actions-row" id="cal-result-actions">
+                  <button type="button" class="btn-cal-next" id="btn-next-step">Следующий шаг →</button>
+                  <button type="button" class="btn-cal-retry" id="btn-retry-step">Повторить</button>
                 </div>
               </div>
-
-              <div class="result-actions-row">
-                <button type="button" class="btn-apple-primary" id="btn-next-step" data-i18n="calibration.capture_step_next">Следующий шаг →</button>
-                <button type="button" class="btn-apple-secondary cal-btn-sm" id="btn-retry-step" data-i18n="calibration.capture_btn_retry">Повторить попытку</button>
-              </div>
-            </div>
-
-            <!-- Navigation footer -->
-            <div class="cal-nav-row">
-              <button type="button" class="btn-apple-secondary cal-btn-sm" id="cal-capture-back" data-i18n="calibration.btn_back">← Назад</button>
-              <button type="button" class="cal-link-button" id="cal-jump-manual" data-i18n="calibration.confirm_no">Настроить вручную →</button>
             </div>
           </div>
 
-          <!-- Right: 3D Scene Viewport (Monitor + Phone Animated Demonstration) -->
-          <div class="cal-3d-panel" id="cal-3d-panel">
-            <div class="cal-3d-badge">
-              <span class="badge-dot"></span>
-              <span id="cal-3d-badge-text">3D-демонстрация жеста</span>
+          <!-- Right: 3D Scene Viewport (Apple Keynote Studio Showcase) -->
+          <div class="cal-3d-wrapper">
+            <div class="cal-3d-panel" id="cal-3d-panel">
+              <canvas id="cal-3d-canvas" class="cal-3d-canvas"></canvas>
+              <div class="cal-3d-caption" id="cal-3d-caption">Положите телефон на стол в игровом хвате</div>
             </div>
-            <canvas id="cal-3d-canvas" class="cal-3d-canvas"></canvas>
-            <div class="cal-3d-caption" id="cal-3d-caption">Наклоните телефон вперед к монитору</div>
+            <div class="cal-3d-disclaimer" data-i18n="calibration.view_disclaimer">Ориентация модели может отличаться от реального хвата</div>
           </div>
+        </div>
+
+        <!-- Dedicated Wizard Footer (Pinned underneath both columns) -->
+        <div class="cal-wizard-footer">
+          <button type="button" class="btn-apple-secondary cal-btn-sm" id="cal-capture-back" data-i18n="calibration.btn_back">← Назад</button>
+          <button type="button" class="cal-link-button" id="cal-jump-manual" data-i18n="calibration.confirm_no">Настроить вручную →</button>
+          <button type="button" class="btn-wizard-forward" id="cal-capture-forward" disabled data-i18n="calibration.btn_next">Далее →</button>
         </div>
       </div>
 
@@ -575,27 +627,31 @@
               <div class="matrix-card-title">Вычисленная матрица ориентации:</div>
               <div class="matrix-chips-row" id="matrix-chips-row">
                 <span class="matrix-chip" id="chip-pitch">Pitch: +X</span>
-                <span class="matrix-chip" id="chip-roll">Roll: +Z</span>
                 <span class="matrix-chip" id="chip-yaw">Yaw: +Y</span>
+                <span class="matrix-chip" id="chip-roll">Roll: +Z</span>
               </div>
-              <div class="matrix-det-status" id="confirm-det-status">Определитель: det = +1.00 (Корректно)</div>
+              <div class="matrix-det-status" id="confirm-det-status" data-i18n="calibration.matrix_det_ok">Определитель матрицы: det = -1 (Корректно)</div>
             </div>
 
             <div class="cal-confirm-btns">
               <button type="button" class="btn-apple-primary btn-lg" id="btn-confirm-yes" data-i18n="calibration.confirm_yes">Всё верно — Сохранить</button>
               <button type="button" class="btn-apple-secondary" id="btn-confirm-no" data-i18n="calibration.confirm_no">Настроить вручную</button>
-              <button type="button" class="cal-link-button" id="btn-confirm-restart">Начать калибровку заново</button>
+              <button type="button" class="cal-link-button" id="btn-confirm-restart" data-i18n="calibration.confirm_restart">Начать калибровку заново</button>
             </div>
           </div>
 
-          <div class="cal-3d-panel" id="cal-3d-panel-confirm">
-            <div class="cal-3d-badge live">
-              <span class="badge-dot pulse"></span>
-              <span>Живой отклик сенсоров</span>
+          <div class="cal-3d-wrapper">
+            <div class="cal-3d-panel" id="cal-3d-panel-confirm">
+              <canvas id="cal-3d-canvas-confirm" class="cal-3d-canvas"></canvas>
+              <div class="cal-3d-caption">Покрутите телефон в руках</div>
             </div>
-            <canvas id="cal-3d-canvas-confirm" class="cal-3d-canvas"></canvas>
-            <div class="cal-3d-caption">Покрутите телефон в руках</div>
+            <div class="cal-3d-disclaimer" data-i18n="calibration.view_disclaimer">Ориентация модели может отличаться от реального хвата</div>
           </div>
+        </div>
+
+        <div class="cal-wizard-footer">
+          <button type="button" class="btn-apple-secondary cal-btn-sm" id="cal-confirm-back" data-i18n="calibration.btn_back">← Назад</button>
+          <div></div>
         </div>
       </div>
 
@@ -611,11 +667,11 @@
             </div>
 
             <div class="cal-manual-grid">
-              <!-- Pitch / Forward -->
+              <!-- Pitch / Forward (RotX) -->
               <div class="cal-manual-row">
                 <span class="cal-manual-label" data-i18n="calibration.manual_axis_forward">Вперед / Pitch</span>
                 <select class="cal-axis-select" id="man-pitch-axis">
-                  <option value="0">Ось X</option>
+                  <option value="0" selected>Ось X</option>
                   <option value="1">Ось Y</option>
                   <option value="2">Ось Z</option>
                 </select>
@@ -625,21 +681,7 @@
                 </label>
               </div>
 
-              <!-- Roll / Right -->
-              <div class="cal-manual-row">
-                <span class="cal-manual-label" data-i18n="calibration.manual_axis_right">Вправо / Roll</span>
-                <select class="cal-axis-select" id="man-roll-axis">
-                  <option value="0">Ось X</option>
-                  <option value="1">Ось Y</option>
-                  <option value="2" selected>Ось Z</option>
-                </select>
-                <label class="cal-invert-label">
-                  <input type="checkbox" id="man-roll-inv">
-                  <span data-i18n="calibration.manual_inverted">Инверт.</span>
-                </label>
-              </div>
-
-              <!-- Yaw / Up -->
+              <!-- Yaw / Up (RotY) -->
               <div class="cal-manual-row">
                 <span class="cal-manual-label" data-i18n="calibration.manual_axis_up">Вверх / Yaw</span>
                 <select class="cal-axis-select" id="man-yaw-axis">
@@ -652,11 +694,25 @@
                   <span data-i18n="calibration.manual_inverted">Инверт.</span>
                 </label>
               </div>
+
+              <!-- Roll / Right (RotZ) -->
+              <div class="cal-manual-row">
+                <span class="cal-manual-label" data-i18n="calibration.manual_axis_right">Вправо / Roll</span>
+                <select class="cal-axis-select" id="man-roll-axis">
+                  <option value="0">Ось X</option>
+                  <option value="1">Ось Y</option>
+                  <option value="2" selected>Ось Z</option>
+                </select>
+                <label class="cal-invert-label">
+                  <input type="checkbox" id="man-roll-inv">
+                  <span data-i18n="calibration.manual_inverted">Инверт.</span>
+                </label>
+              </div>
             </div>
 
             <div class="cal-manual-status" id="cal-manual-status">
-              <span class="status-dot-sm" id="cal-manual-dot"></span>
-              <span id="cal-manual-status-text">Определитель матрицы: det = +1 (Корректно)</span>
+              <span class="status-dot-sm ok" id="cal-manual-dot"></span>
+              <span id="cal-manual-status-text" data-i18n="calibration.matrix_det_ok">Определитель матрицы: det = +1 (Корректно)</span>
             </div>
 
             <div class="cal-nav-row">
@@ -665,13 +721,12 @@
             </div>
           </div>
 
-          <div class="cal-3d-panel" id="cal-3d-panel-manual">
-            <div class="cal-3d-badge live">
-              <span class="badge-dot pulse"></span>
-              <span>Живой отклик (ручной)</span>
+          <div class="cal-3d-wrapper">
+            <div class="cal-3d-panel" id="cal-3d-panel-manual">
+              <canvas id="cal-3d-canvas-manual" class="cal-3d-canvas"></canvas>
+              <div class="cal-3d-caption">Покрутите телефон для проверки</div>
             </div>
-            <canvas id="cal-3d-canvas-manual" class="cal-3d-canvas"></canvas>
-            <div class="cal-3d-caption">Покрутите телефон для проверки</div>
+            <div class="cal-3d-disclaimer" data-i18n="calibration.view_disclaimer">Ориентация модели может отличаться от реального хвата</div>
           </div>
         </div>
       </div>
@@ -767,6 +822,10 @@
         if (sunIcon) sunIcon.style.display = 'none';
         if (moonIcon) moonIcon.style.display = 'block';
       }
+
+      if (typeof Scene3D !== 'undefined' && Scene3D.updateTheme) {
+        Scene3D.updateTheme(theme);
+      }
     }
   };
 
@@ -829,6 +888,13 @@
         this.applyDOM();
         if (typeof SetupWizard !== 'undefined') {
           SetupWizard.updateI18n();
+        }
+        if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
+          if (CalibrationWizard.currentScreen === 'capture') {
+            CalibrationWizard._updateStepUI();
+          } else if (CalibrationWizard.currentScreen === 'slots') {
+            CalibrationWizard.renderSlotList();
+          }
         }
         if (AppState.lastState) {
           AppState.render(AppState.lastState);
@@ -1104,9 +1170,9 @@
             }
             return '?';
           };
-          currentDescEl.textContent = `Оси: P: ${axisName(0)} • R: ${axisName(1)} • Y: ${axisName(2)}`;
+          currentDescEl.textContent = `Оси: P: ${axisName(0)} • Y: ${axisName(1)} • R: ${axisName(2)}`;
         } else {
-          currentDescEl.textContent = 'Оси: Pitch +X • Roll +Z • Yaw +Y';
+          currentDescEl.textContent = 'Оси: Pitch -X • Yaw -Y • Roll +Z';
         }
       }
     },
@@ -1131,9 +1197,69 @@
     }
   };
 
-  // ── Three.js 3D Viewport (Computer Monitor + Smartphone) ───────────────────
+  // ── Three.js 3D Viewport (Apple Keynote Studio Showcase - Nintendo Gamepad) ──
   const Scene3D = {
     activeScenes: {},
+    cachedModel: null,
+    loadPromise: null,
+
+    // Preloads and returns the cached centered gamepad model template
+    loadGamepadModel() {
+      if (this.cachedModel) return Promise.resolve(this.cachedModel);
+      if (this.loadPromise) return this.loadPromise;
+
+      this.loadPromise = new Promise((resolve, reject) => {
+        if (!window.THREE || !window.THREE.GLTFLoader) {
+          const err = new Error('GLTFLoader is not loaded');
+          console.error(err);
+          reject(err);
+          return;
+        }
+
+        const loader = new THREE.GLTFLoader();
+        loader.load(
+          'assets/models/gamepad.glb',
+          (gltf) => {
+            const raw = gltf.scene;
+
+            // 1. Orient model FIRST: rotate -90 degrees around Y so grips point toward camera (+Z)
+            raw.rotation.y = -Math.PI * 0.5;
+            raw.updateMatrixWorld(true);
+
+            // 2. Scale to fit viewport heroically (~2.05 units wide)
+            const box = new THREE.Box3().setFromObject(raw);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            const targetScale = 2.05 / maxDim;
+            raw.scale.set(targetScale, targetScale, targetScale);
+            raw.updateMatrixWorld(true);
+
+            // 3. Center geometry precisely at origin (0, 0, 0) in world space
+            const finalBox = new THREE.Box3().setFromObject(raw);
+            const center = finalBox.getCenter(new THREE.Vector3());
+            raw.position.sub(center);
+
+            const wrapper = new THREE.Group();
+            wrapper.add(raw);
+            this.cachedModel = wrapper;
+            resolve(wrapper);
+          },
+          undefined,
+          (err) => {
+            console.error('Failed to load assets/models/gamepad.glb:', err);
+            reject(err);
+          }
+        );
+      });
+
+      return this.loadPromise;
+    },
+
+    updateTheme(theme) {
+      Object.values(this.activeScenes).forEach(s => {
+        if (s && s.applyTheme) s.applyTheme(theme);
+      });
+    },
 
     mount(canvasId, options = {}) {
       if (!window.THREE) {
@@ -1156,132 +1282,181 @@
 
       const scene = new THREE.Scene();
 
-      // Camera positioned with slight downward tilt
-      const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
-      camera.position.set(0, 0.45, 4.3);
-      camera.lookAt(0, 0.1, 0);
+      // Apple Studio Keynote Lighting Themes
+      // Controller color is classic Nintendo dark charcoal gray (0x282a30) across both themes
+      const THEME_LIGHTING = {
+        dark: {
+          ambientIntensity: 0.85,
+          keyIntensity: 1.25,
+          fillColor: 0x8eb6ff,
+          fillIntensity: 0.45,
+          rimColor: 0x007aff,   // Vibrant Apple electric-blue rim accent on dark background
+          rimIntensity: 0.85,
+          bounceIntensity: 0.25,
+        },
+        light: {
+          ambientIntensity: 0.95,
+          keyIntensity: 1.15,
+          fillColor: 0xc8ddff,
+          fillIntensity: 0.40,
+          rimColor: 0x409cff,   // Subtle sky-blue rim accent on light studio background
+          rimIntensity: 0.50,
+          bounceIntensity: 0.20,
+        }
+      };
+
+      const curPreset = isDark() ? THEME_LIGHTING.dark : THEME_LIGHTING.light;
+
+      // Camera: centered on gamepad (0, 0, 0), slightly elevated looking down (~22° angle)
+      // Low FOV (27°) and zoomed out ~2x (orbitHRadius = 7.6, orbitY = 3.2)
+      const camera = new THREE.PerspectiveCamera(27, 1, 0.2, 50);
+      const camTarget = new THREE.Vector3(0, 0, 0);
+      const orbitHRadius = 7.6;
+      const orbitY = 3.2;
+      let currentCamAngle = 0;
+
+      camera.position.set(camTarget.x, orbitY, camTarget.z + orbitHRadius);
+      camera.lookAt(camTarget);
 
       // Studio Lighting
-      const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
+      const ambLight = new THREE.AmbientLight(0xffffff, curPreset.ambientIntensity);
       scene.add(ambLight);
 
-      const mainLight = new THREE.DirectionalLight(0xffffff, 0.9);
-      mainLight.position.set(2, 4, 3);
+      // Key light: main top-front-right highlight
+      const mainLight = new THREE.DirectionalLight(0xffffff, curPreset.keyIntensity);
+      mainLight.position.set(3, 7, 4);
       scene.add(mainLight);
 
-      const rimLight = new THREE.DirectionalLight(0x007aff, 0.7);
-      rimLight.position.set(-2.5, 1.5, -2);
+      // Fill light: soft cool fill
+      const fillLight = new THREE.DirectionalLight(curPreset.fillColor, curPreset.fillIntensity);
+      fillLight.position.set(-3, 5, 3);
+      scene.add(fillLight);
+
+      // Bounce light: underside definition
+      const bounceLight = new THREE.DirectionalLight(0x3a455a, curPreset.bounceIntensity);
+      bounceLight.position.set(0, -4, 2);
+      scene.add(bounceLight);
+
+      // Rim light: edge silhouette sculpting
+      const rimLight = new THREE.DirectionalLight(curPreset.rimColor, curPreset.rimIntensity);
+      rimLight.position.set(-2.5, 4.5, -4);
       scene.add(rimLight);
 
-      // 1. MONITOR MODEL (Positioned in the background)
-      const monitorGroup = new THREE.Group();
-      monitorGroup.position.set(0, 0.4, -1.25);
-      monitorGroup.rotation.x = -0.12;
+      // High-precision symmetrical grid floor with visible circular radial fading (затухание по кругу)
+      function createRadialGridTexture(isDarkMode) {
+        const size = 1024;
+        const center = size / 2; // 512
+        const step = 64; // 8 divisions each side, exactly divides 512!
+        const cvs = document.createElement('canvas');
+        cvs.width = size;
+        cvs.height = size;
+        const ctx = cvs.getContext('2d');
 
-      // Monitor frame
-      const monFrameMat = new THREE.MeshStandardMaterial({
-        color: isDark() ? 0x1c1c1e : 0xd1d1d6,
-        roughness: 0.4,
-        metalness: 0.3
+        // 1. Draw regular grid lines strictly symmetrically from center
+        ctx.strokeStyle = isDarkMode ? 'rgba(148, 163, 184, 0.38)' : 'rgba(100, 116, 139, 0.42)';
+        ctx.lineWidth = 1.8;
+
+        ctx.beginPath();
+        for (let offset = step; offset < center; offset += step) {
+          ctx.moveTo(center + offset, 0); ctx.lineTo(center + offset, size);
+          ctx.moveTo(center - offset, 0); ctx.lineTo(center - offset, size);
+          ctx.moveTo(0, center + offset); ctx.lineTo(size, center + offset);
+          ctx.moveTo(0, center - offset); ctx.lineTo(size, center - offset);
+        }
+        ctx.stroke();
+
+        // 2. Draw the exact center axes passing directly through origin (0, 0)
+        ctx.strokeStyle = isDarkMode ? 'rgba(56, 189, 248, 0.65)' : 'rgba(2, 132, 199, 0.65)';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(center, 0); ctx.lineTo(center, size);
+        ctx.moveTo(0, center); ctx.lineTo(size, center);
+        ctx.stroke();
+
+        // 3. Apply pronounced circular radial fade mask (clearly visible in camera viewport)
+        ctx.globalCompositeOperation = 'destination-in';
+        const grad = ctx.createRadialGradient(center, center, 0, center, center, center * 0.72);
+        grad.addColorStop(0.0, 'rgba(0,0,0,1)');
+        grad.addColorStop(0.20, 'rgba(0,0,0,0.95)');
+        grad.addColorStop(0.48, 'rgba(0,0,0,0.55)');
+        grad.addColorStop(0.72, 'rgba(0,0,0,0.18)');
+        grad.addColorStop(0.90, 'rgba(0,0,0,0.02)');
+        grad.addColorStop(1.0, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, size, size);
+
+        const tex = new THREE.CanvasTexture(cvs);
+        tex.anisotropy = 4;
+        return tex;
+      }
+
+      let gridTex = createRadialGridTexture(isDark());
+      const gridMat = new THREE.MeshBasicMaterial({
+        map: gridTex,
+        transparent: true,
+        depthWrite: false,
+        opacity: isDark() ? 0.85 : 0.75
       });
-      const monFrame = new THREE.Mesh(new THREE.BoxGeometry(2.35, 1.45, 0.08), monFrameMat);
-      monitorGroup.add(monFrame);
+      // 6.4 x 6.4 plane: circular fade boundary (radius ~2.3 units) is 100% visible inside viewport without clipping
+      const gridFloor = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), gridMat);
+      gridFloor.rotation.x = -Math.PI / 2;
+      gridFloor.position.y = -0.65;
+      scene.add(gridFloor);
 
-      // Monitor glowing screen (desktop wallpaper look)
-      const monScreenMat = new THREE.MeshStandardMaterial({
-        color: isDark() ? 0x07111e : 0xe8f0fe,
-        emissive: isDark() ? 0x051025 : 0xc0d8ff,
-        emissiveIntensity: 0.4,
-        roughness: 0.5
+      // Gamepad Group: the single interactive hero object in the scene
+      const gamepadGroup = new THREE.Group();
+      scene.add(gamepadGroup);
+
+      // Apple soft-touch frosted ultra-matte material: iconic dark gray Nintendo Switch controller
+      const appleGamepadMaterial = new THREE.MeshStandardMaterial({
+        color: 0x282a30,        // Classic Nintendo dark charcoal slate
+        roughness: 0.92,        // Ultra-matte soft-touch finish
+        metalness: 0.0,         // Pure dielectric matte polycarbonate
       });
-      const monScreen = new THREE.Mesh(new THREE.PlaneGeometry(2.23, 1.33), monScreenMat);
-      monScreen.position.z = 0.045;
-      monitorGroup.add(monScreen);
 
-      // Monitor stand neck & base
-      const standMat = new THREE.MeshStandardMaterial({ color: 0x2c2c2e, roughness: 0.3, metalness: 0.5 });
-      const standLeg = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.65, 0.06), standMat);
-      standLeg.position.set(0, -0.68, 0);
-      monitorGroup.add(standLeg);
-
-      const standBase = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.035, 0.52), standMat);
-      standBase.position.set(0, -1.0, 0.15);
-      standBase.rotation.x = 0.12;
-      monitorGroup.add(standBase);
-
-      scene.add(monitorGroup);
-
-      // 2. SMARTPHONE MODEL (Held in front of monitor)
-      const phoneGroup = new THREE.Group();
-      phoneGroup.position.set(0, 0.05, 0.3);
-
-      // Phone body
-      const phoneBodyMat = new THREE.MeshStandardMaterial({
-        color: isDark() ? 0x222225 : 0xe5e5ea,
-        roughness: 0.3,
-        metalness: 0.35
+      // Load or instantiate the 3D gamepad model
+      let isModelLoaded = false;
+      Scene3D.loadGamepadModel().then((template) => {
+        if (!renderer) return; // Scene already destroyed
+        const clone = template.clone(true);
+        clone.traverse((child) => {
+          if (child.isMesh) {
+            child.material = appleGamepadMaterial;
+            child.castShadow = false;
+            child.receiveShadow = false;
+          }
+        });
+        gamepadGroup.add(clone);
+        isModelLoaded = true;
+      }).catch((err) => {
+        console.warn('Fallback: Gamepad model load error, creating fallback mesh:', err);
+        const fallbackMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(1.6, 0.4, 1.0),
+          appleGamepadMaterial
+        );
+        gamepadGroup.add(fallbackMesh);
+        isModelLoaded = true;
       });
-      const phoneBody = new THREE.Mesh(new THREE.BoxGeometry(0.86, 1.72, 0.09), phoneBodyMat);
-      phoneGroup.add(phoneBody);
-
-      // Front glass screen
-      const phoneScreenMat = new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.1, metalness: 0.2 });
-      const phoneScreen = new THREE.Mesh(new THREE.PlaneGeometry(0.80, 1.62), phoneScreenMat);
-      phoneScreen.position.z = 0.046;
-      phoneGroup.add(phoneScreen);
-
-      // Dynamic Island notch
-      const notch = new THREE.Mesh(new THREE.PlaneGeometry(0.25, 0.065), new THREE.MeshBasicMaterial({ color: 0x1c1c1e }));
-      notch.position.set(0, 0.68, 0.048);
-      phoneGroup.add(notch);
-
-      // Home indicator bar
-      const homeBar = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.02), new THREE.MeshBasicMaterial({ color: 0x8e8e93 }));
-      homeBar.position.set(0, -0.72, 0.048);
-      phoneGroup.add(homeBar);
-
-      // Back camera bump (distinguishes front from back)
-      const camBump = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.035), phoneBodyMat);
-      camBump.position.set(-0.22, 0.6, -0.05);
-      phoneGroup.add(camBump);
-
-      // Orientation blue reference dot in top-right corner
-      const dot = new THREE.Mesh(new THREE.CircleGeometry(0.038, 16), new THREE.MeshBasicMaterial({ color: 0x007aff }));
-      dot.position.set(0.3, 0.68, 0.048);
-      phoneGroup.add(dot);
-
-      // 3. CURVED 3D DIRECTION ARROW (Instructional guide)
-      const arrowGroup = new THREE.Group();
-      const arrowTubeMat = new THREE.MeshBasicMaterial({ color: 0x00d2ff });
-      const arrowTube = new THREE.Mesh(new THREE.TorusGeometry(0.55, 0.022, 8, 24, Math.PI * 0.5), arrowTubeMat);
-      arrowTube.rotation.z = Math.PI * 0.25;
-      arrowGroup.add(arrowTube);
-
-      const arrowHead = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.16, 12), arrowTubeMat);
-      arrowHead.position.set(0.38, 0.38, 0);
-      arrowHead.rotation.z = -Math.PI * 0.25;
-      arrowGroup.add(arrowHead);
-
-      arrowGroup.position.set(0, 0.2, 0.3);
-      arrowGroup.visible = false;
-      scene.add(arrowGroup);
-
-      scene.add(phoneGroup);
 
       // Runtime State
       let mode = options.mode || 'demo'; // 'demo' | 'live'
-      let demoStep = options.demoStep || 0; // 0=forward, 1=right, 2=yaw
+      let demoStep = options.demoStep || 0; // 0=rest, 1=pitch, 2=roll
       let animId = null;
       let animTime = 0;
       let liveQuat = new THREE.Quaternion();
       let currentQuat = new THREE.Quaternion();
       let activeMatrix = null;
 
+      let curW = 0;
+      let curH = 0;
       function resize() {
         if (!canvas.parentElement) return;
-        const w = canvas.parentElement.clientWidth;
-        const h = canvas.parentElement.clientHeight;
-        if (w === 0 || h === 0) return;
+        const w = Math.floor(canvas.parentElement.clientWidth);
+        const h = Math.floor(canvas.parentElement.clientHeight);
+        if (w <= 0 || h <= 0) return;
+        if (Math.abs(w - curW) < 2 && Math.abs(h - curH) < 2) return;
+        curW = w;
+        curH = h;
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
@@ -1293,42 +1468,69 @@
 
       function animate() {
         animId = requestAnimationFrame(animate);
-        animTime += 0.026;
+        animTime += 0.024;
 
         if (mode === 'demo') {
-          arrowGroup.visible = true;
-          // Smooth forward-and-back demonstration gesture
-          const cycle = (Math.sin(animTime * 2.2) + 1) / 2; // 0..1
-          const ease = cycle * cycle * (3 - 2 * cycle);
-
           if (demoStep === 0) {
-            // Step 1: Tilt forward toward monitor (Pitch)
-            phoneGroup.quaternion.setFromEuler(new THREE.Euler(-0.75 * ease, 0, 0, 'XYZ'));
-            arrowGroup.rotation.set(0, 0, -Math.PI * 0.5);
-            arrowGroup.position.set(0.65, 0.15, 0.2);
-          } else if (demoStep === 1) {
-            // Step 2: Roll right (Roll)
-            phoneGroup.quaternion.setFromEuler(new THREE.Euler(0, 0, -0.75 * ease, 'XYZ'));
-            arrowGroup.rotation.set(0, 0, 0);
-            arrowGroup.position.set(0, 0.95, 0.2);
-          } else if (demoStep === 2) {
-            // Step 3: Turn right (Yaw)
-            phoneGroup.quaternion.setFromEuler(new THREE.Euler(0, -0.85 * ease, 0, 'XYZ'));
-            arrowGroup.rotation.set(Math.PI * 0.5, 0, 0);
-            arrowGroup.position.set(0, 0.95, 0.2);
+            // Step 0: Rest / Stillness (Покой на столе) — camera completely stationary
+            currentCamAngle = 0;
+            gamepadGroup.quaternion.set(0, 0, 0, 1);
+          } else {
+            // Camera slowed down by 1.5x (0.35 / 1.5 = 0.2333)
+            const targetCamAngle = Math.sin(animTime * 0.2333) * (Math.PI * 0.25);
+            currentCamAngle += (targetCamAngle - currentCamAngle) * 0.04;
+
+            // Demo gesture animation
+            const cycle = (Math.sin(animTime * 2.2) + 1) / 2; // 0..1
+            const ease = cycle * cycle * (3 - 2 * cycle);
+
+            if (demoStep === 1) {
+              // Step 1: Tilt forward (Pitch / "Кивни")
+              gamepadGroup.quaternion.setFromEuler(new THREE.Euler(-0.45 * ease, 0, 0, 'XYZ'));
+            } else if (demoStep === 2) {
+              // Step 2: Bank sideways (Roll / "Самолётик")
+              gamepadGroup.quaternion.setFromEuler(new THREE.Euler(0, 0, -0.45 * ease, 'XYZ'));
+            }
           }
         } else {
-          arrowGroup.visible = false;
+          // Smoothly glide camera back to neutral center in live mode
+          currentCamAngle += (0 - currentCamAngle) * 0.04;
+
           // Live motion tracking
           currentQuat.slerp(liveQuat, 0.18);
-          phoneGroup.quaternion.copy(currentQuat);
+          gamepadGroup.quaternion.copy(currentQuat);
         }
+
+        // Apply orbit camera position
+        const camX = camTarget.x + Math.sin(currentCamAngle) * orbitHRadius;
+        const camZ = camTarget.z + Math.cos(currentCamAngle) * orbitHRadius;
+        camera.position.set(camX, orbitY, camZ);
+        camera.lookAt(camTarget);
 
         renderer.render(scene, camera);
       }
       animate();
 
+      function applyThemeMaterials(theme) {
+        const p = (theme === 'light') ? THEME_LIGHTING.light : THEME_LIGHTING.dark;
+        ambLight.intensity = p.ambientIntensity;
+        mainLight.intensity = p.keyIntensity;
+        fillLight.color.setHex(p.fillColor);
+        fillLight.intensity = p.fillIntensity;
+        rimLight.color.setHex(p.rimColor);
+        rimLight.intensity = p.rimIntensity;
+        bounceLight.intensity = p.bounceIntensity;
+        if (gridTex) gridTex.dispose();
+        gridTex = createRadialGridTexture(theme === 'dark');
+        gridMat.map = gridTex;
+        gridMat.opacity = (theme === 'dark') ? 0.75 : 0.65;
+        gridMat.needsUpdate = true;
+      }
+
       const instance = {
+        applyTheme(theme) {
+          applyThemeMaterials(theme);
+        },
         setMode(newMode, step = 0) {
           mode = newMode;
           demoStep = step;
@@ -1339,23 +1541,27 @@
         },
         updateFromState(state) {
           if (mode !== 'live' || !state) return;
-          const p = (state.pitch || 0) * Math.PI / 180;
-          const r = (state.roll || 0) * Math.PI / 180;
-          const y = (state.yaw || 0) * Math.PI / 180;
 
-          if (activeMatrix) {
-            const e = new THREE.Euler(p, y, r, 'YXZ');
-            const v = new THREE.Vector3(e.x, e.y, e.z);
-            const rx = activeMatrix[0][0]*v.x + activeMatrix[0][1]*v.y + activeMatrix[0][2]*v.z;
-            const ry = activeMatrix[1][0]*v.x + activeMatrix[1][1]*v.y + activeMatrix[1][2]*v.z;
-            const rz = activeMatrix[2][0]*v.x + activeMatrix[2][1]*v.y + activeMatrix[2][2]*v.z;
-            liveQuat.setFromEuler(new THREE.Euler(rx, ry, rz, 'XYZ'));
-          } else {
-            liveQuat.setFromEuler(new THREE.Euler(p, y, r, 'YXZ'));
+          const q0 = Number(state.ahrsQ0);
+          const q1 = Number(state.ahrsQ1);
+          const q2 = Number(state.ahrsQ2);
+          const q3 = Number(state.ahrsQ3);
+
+          if (!isNaN(q0) && !isNaN(q1) && !isNaN(q2) && !isNaN(q3) &&
+              (q0 !== 0 || q1 !== 0 || q2 !== 0 || q3 !== 0)) {
+            // Three.js coordinates: -q1 (pitch down/up), -q2 (yaw CW/CCW), q3 (roll right/left), q0 (w)
+            // Matches PadTest.exe orientation display convention: (-Q1, -Q2, Q3, Q0)
+            liveQuat.set(-q1, -q2, q3, q0);
+            liveQuat.normalize();
           }
         },
         destroy() {
-          if (animId) cancelAnimationFrame(animId);
+          if (animId) {
+            cancelAnimationFrame(animId);
+            animId = null;
+          }
+          if (gridTex) gridTex.dispose();
+          if (gridMat) gridMat.dispose();
           resizeObs.disconnect();
           renderer.dispose();
         }
@@ -1380,32 +1586,44 @@
   // ── Calibration Wizard Controller ───────────────────────────────────────────
   const CalibrationWizard = {
     targetSlot: 0,
+    isOpen: false,
     currentScreen: 'slots', // 'slots' | 'capture' | 'confirm' | 'manual' | 'save'
-    captureStep: 0,         // 0=forward, 1=right, 2=yaw
-    capturedAxes: [],       // [{axisIdx, sign}, {axisIdx, sign}, {axisIdx, sign}]
+    captureStep: 0,         // 0=rest, 1=pitch, 2=roll
+    capturedVectors: [],    // [[ux, uy, uz], [rx, ry, rz], [fx, fy, fz]]
+    lockedAxes: {},         // { [axisIdx]: { role: 'up'|'pitch'|'roll', name: '+Y', confidence: 0.98 } }
     builtMatrix: null,
     isCapturing: false,
     timerInterval: null,
 
     STEPS_CONFIG: [
       {
+        titleKey: 'calibration.step0_title',
+        descKey: 'calibration.step0_desc',
+        caption: 'Положите телефон на стол в игровом хвате',
+        btnKey: 'calibration.step0_btn',
+        durationMs: 1600,
+        isRest: true
+      },
+      {
         titleKey: 'calibration.step1_title',
         descKey: 'calibration.step1_desc',
-        caption: 'Наклоните верхний край телефона вперед к монитору'
+        caption: 'Наклоните вперёд (кивок)',
+        btnKey: 'calibration.step1_btn',
+        durationMs: 2400,
+        isRest: false
       },
       {
         titleKey: 'calibration.step2_title',
         descKey: 'calibration.step2_desc',
-        caption: 'Наклоните телефон вправо (крен)'
-      },
-      {
-        titleKey: 'calibration.step3_title',
-        descKey: 'calibration.step3_desc',
-        caption: 'Поверните телефон вправо (как руль)'
+        caption: 'Накрените вправо (крен)',
+        btnKey: 'calibration.step2_btn',
+        durationMs: 2400,
+        isRest: false
       }
     ],
 
     open() {
+      this.isOpen = true;
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'flex';
       this.showScreen('slots');
@@ -1413,6 +1631,7 @@
     },
 
     openToSlot(slot) {
+      this.isOpen = true;
       this.targetSlot = slot;
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'flex';
@@ -1420,11 +1639,15 @@
     },
 
     close() {
+      this.isOpen = false;
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'none';
       this._resetCaptureTimer();
       ['cal-3d-canvas', 'cal-3d-canvas-confirm', 'cal-3d-canvas-manual'].forEach(id => Scene3D.destroy(id));
       this.currentScreen = 'slots';
+      if (window.go?.main?.App) {
+        window.go.main.App.ClearPreview().catch(() => {});
+      }
     },
 
     showScreen(screen) {
@@ -1439,9 +1662,23 @@
         this._updateStepUI();
         Scene3D.mount('cal-3d-canvas', { mode: 'demo', demoStep: this.captureStep });
       } else if (screen === 'confirm') {
+        for (let i = 0; i < 4; i++) {
+          const pill = document.getElementById(`step-pill-${i}`);
+          if (pill) {
+            pill.classList.remove('active', 'completed');
+            if (i < 3) pill.classList.add('completed');
+            else if (i === 3) pill.classList.add('active');
+          }
+        }
         this._renderConfirmDetails();
         const s = Scene3D.mount('cal-3d-canvas-confirm', { mode: 'live' });
         if (s && this.builtMatrix) s.setMatrix(this.builtMatrix);
+        if (window.go?.main?.App) {
+          if (this.builtMatrix) {
+            window.go.main.App.PreviewMatrix(this.builtMatrix).catch(() => {});
+          }
+          window.go.main.App.ResetAHRS().catch(() => {});
+        }
       } else if (screen === 'manual') {
         const s = Scene3D.mount('cal-3d-canvas-manual', { mode: 'live' });
         this._buildManualMatrix();
@@ -1455,6 +1692,7 @@
         }
       }
     },
+
 
     renderSlotList() {
       const list = document.getElementById('cal-slot-list');
@@ -1499,15 +1737,17 @@
     startCaptureFlow(slot) {
       this.targetSlot = slot;
       this.captureStep = 0;
-      this.capturedAxes = [];
+      this.capturedVectors = [];
+      this.lockedAxes = {};
       this.showScreen('capture');
+      this.updateTelemetry(AppState.lastState);
     },
 
     _updateStepUI() {
       const cfg = this.STEPS_CONFIG[this.captureStep];
       if (!cfg) return;
 
-      // 1. Progress Pills
+      // 1. Progress Pills (4 total: Rest, Pitch, Roll, Confirm)
       for (let i = 0; i < 4; i++) {
         const pill = document.getElementById(`step-pill-${i}`);
         if (pill) {
@@ -1528,35 +1768,116 @@
 
       // 3. Reset capture UI
       this._resetCaptureUI();
+      this.updateTelemetry(AppState.lastState);
 
-      // 4. Update 3D scene demo
+      // 4. Update global forward button in footer: always visible, disabled if step not passed yet
+      const btnForward = document.getElementById('cal-capture-forward');
+      if (btnForward) {
+        btnForward.style.display = 'inline-flex';
+        if (this.captureStep === 0) {
+          btnForward.textContent = I18n.t('calibration.btn_next') || 'Далее →';
+          btnForward.disabled = !this.capturedVectors[0];
+        } else if (this.captureStep === 1) {
+          btnForward.textContent = I18n.t('calibration.btn_next') || 'Далее →';
+          btnForward.disabled = !this.capturedVectors[1];
+        } else if (this.captureStep === 2) {
+          btnForward.textContent = I18n.t('calibration.btn_to_confirm') || 'Перейти к проверке →';
+          btnForward.disabled = !(this.builtMatrix || this.capturedVectors[2]);
+        }
+      }
+
+      // 5. Update 3D scene demo
       const s = Scene3D.get('cal-3d-canvas');
       if (s) s.setMode('demo', this.captureStep);
+    },
+
+    _showPhase(phase) {
+      const pCapture = document.getElementById('cal-phase-capture');
+      const pResult = document.getElementById('cal-phase-result');
+      if (phase === 'capture') {
+        if (pCapture) {
+          pCapture.style.display = 'flex';
+          pCapture.classList.remove('fade-in');
+          void pCapture.offsetWidth;
+          pCapture.classList.add('fade-in');
+        }
+        if (pResult) pResult.style.display = 'none';
+      } else {
+        if (pCapture) pCapture.style.display = 'none';
+        if (pResult) {
+          pResult.style.display = 'flex';
+          pResult.classList.remove('fade-in');
+          void pResult.offsetWidth;
+          pResult.classList.add('fade-in');
+        }
+      }
+    },
+
+    updateTelemetry(state) {
+      if (!state) return;
+      const vals = [state.rawRotX || 0, state.rawRotY || 0, state.rawRotZ || 0];
+
+      for (let i = 0; i < 3; i++) {
+        const capsule = document.getElementById(`axis-capsule-${i}`);
+        const tag = document.getElementById(`axis-tag-${i}`);
+        const valEl = document.getElementById(`axis-val-${i}`);
+        const fillEl = document.getElementById(`axis-fill-${i}`);
+        if (!capsule || !tag || !valEl || !fillEl) continue;
+
+        const locked = this.lockedAxes[i];
+        if (locked && locked.status === 'predicted') {
+          capsule.classList.remove('locked');
+          capsule.classList.add('predicted');
+          const roleName = I18n.t(`calibration.axis_${locked.role}`) || locked.role;
+          const pct = Math.round((locked.confidence || 0.5) * 100);
+          const predLabel = (I18n.t('calibration.axis_predicted') || '{n}% • Прогноз').replace('{n}', pct);
+          tag.textContent = `~ ${roleName}: ${locked.name}`;
+          valEl.textContent = predLabel;
+          fillEl.style.width = `${pct}%`;
+        } else if (locked) {
+          capsule.classList.remove('predicted');
+          capsule.classList.add('locked');
+          const roleName = I18n.t(`calibration.axis_${locked.role}`) || locked.role;
+          tag.textContent = `+ ${roleName}: ${locked.name}`;
+          valEl.textContent = `${Math.round((locked.confidence || 0.95) * 100)}%`;
+          fillEl.style.width = '100%';
+        } else {
+          capsule.classList.remove('locked', 'predicted');
+          tag.textContent = '—';
+          const v = vals[i];
+          valEl.textContent = `${v >= 0 ? '+' : ''}${Math.round(v)}°/с`;
+          const fillPct = Math.min(100, Math.round((Math.abs(v) / 120) * 100));
+          fillEl.style.width = `${fillPct}%`;
+        }
+      }
     },
 
     _resetCaptureUI() {
       this.isCapturing = false;
       this._resetCaptureTimer();
+      this._showPhase('capture');
 
-      const actionCard = document.getElementById('cal-capture-action-card');
-      const resultCard = document.getElementById('cal-result-card');
+      const btnStart = document.getElementById('btn-start-capture');
+      const btnText = document.getElementById('btn-capture-text');
       const timerContainer = document.getElementById('cal-timer-container');
-      const triggerRow = document.getElementById('cal-trigger-row');
       const statusText = document.getElementById('cal-status-text');
       const statusDot = document.getElementById('cal-status-dot');
       const speedBadge = document.getElementById('cal-speed-badge');
 
-      if (actionCard) actionCard.style.display = 'block';
-      if (resultCard) resultCard.style.display = 'none';
       if (timerContainer) timerContainer.style.display = 'none';
-      if (triggerRow) triggerRow.style.display = 'block';
-
-      if (statusText) statusText.textContent = 'Готов к записи жеста';
-      if (statusDot) statusDot.className = 'status-pulse-dot';
       if (speedBadge) speedBadge.style.display = 'none';
 
-      const btnStart = document.getElementById('btn-start-capture');
-      if (btnStart) btnStart.disabled = false;
+      if (statusText) statusText.textContent = I18n.t('calibration.ready') || 'Готов к записи';
+      if (statusDot) statusDot.className = 'status-pulse-dot';
+
+      if (btnStart) {
+        btnStart.classList.remove('counting-down', 'recording');
+        btnStart.disabled = false;
+      }
+      const cfg = this.STEPS_CONFIG[this.captureStep];
+      if (btnText && cfg) {
+        btnText.textContent = I18n.t(cfg.btnKey);
+      }
     },
 
     _resetCaptureTimer() {
@@ -1570,7 +1891,9 @@
       if (this.isCapturing) return;
       this.isCapturing = true;
 
+      const cfg = this.STEPS_CONFIG[this.captureStep];
       const btnStart = document.getElementById('btn-start-capture');
+      const btnText = document.getElementById('btn-capture-text');
       const timerContainer = document.getElementById('cal-timer-container');
       const progressBar = document.getElementById('cal-progress-bar');
       const timerCountdown = document.getElementById('cal-timer-countdown');
@@ -1578,18 +1901,37 @@
       const statusDot = document.getElementById('cal-status-dot');
       const speedBadge = document.getElementById('cal-speed-badge');
 
-      if (btnStart) btnStart.disabled = true;
+      if (btnStart) {
+        btnStart.classList.add('counting-down');
+        btnStart.disabled = true;
+      }
 
-      // 1. Brief countdown 3.. 2.. 1..
+      // 1. Prominent countdown directly on the button: 3.. 2.. 1..
       if (statusDot) statusDot.className = 'status-pulse-dot countdown';
-      for (let c = 2; c >= 1; c--) {
-        if (statusText) statusText.textContent = `Приготовьтесь: ${c}...`;
-        await new Promise(r => setTimeout(r, 600));
+      if (statusText) statusText.textContent = I18n.t('calibration.preparing') || 'Приготовьтесь...';
+
+      for (let c = 3; c >= 1; c--) {
+        const txt = `${c}...`;
+        if (btnText) btnText.textContent = txt;
+        await new Promise(r => setTimeout(r, 650));
         if (!this.isCapturing) return;
       }
 
       // 2. Start recording in Go backend
-      if (statusText) statusText.textContent = 'НАКЛОНЯЙТЕ ТЕЛЕФОН СЕЙЧАС!';
+      if (btnStart) {
+        btnStart.classList.remove('counting-down');
+        btnStart.classList.add('recording');
+        const recText = cfg.isRest
+          ? (I18n.t('calibration.btn_recording_rest') || 'ИЗМЕРЕНИЕ ГРАВИТАЦИИ...')
+          : (I18n.t('calibration.btn_recording') || 'ИДЁТ ЗАПИСЬ ЖЕСТА...');
+        if (btnText) btnText.textContent = recText;
+      }
+
+      if (statusText) {
+        statusText.textContent = cfg.isRest
+          ? (I18n.t('calibration.status_recording_rest') || 'Телефон должен лежать неподвижно...')
+          : (I18n.t('calibration.status_recording') || 'Наклоняйте телефон сейчас!');
+      }
       if (statusDot) statusDot.className = 'status-pulse-dot active';
       if (timerContainer) timerContainer.style.display = 'block';
       if (speedBadge) speedBadge.style.display = 'inline-block';
@@ -1598,7 +1940,7 @@
         await window.go.main.App.StartCapture();
       }
 
-      const totalDurationMs = 2400;
+      const totalDurationMs = cfg.durationMs || 2400;
       const startTime = Date.now();
 
       this.timerInterval = setInterval(() => {
@@ -1609,7 +1951,6 @@
         if (progressBar) progressBar.style.width = `${progress}%`;
         if (timerCountdown) timerCountdown.textContent = `${remaining}с`;
 
-        // Live speed monitor from AppState
         if (AppState.lastState) {
           const rx = AppState.lastState.rawRotX || 0;
           const ry = AppState.lastState.rawRotY || 0;
@@ -1628,43 +1969,170 @@
     async _finishCapture() {
       this.isCapturing = false;
 
-      let result = { success: false, errorMsg: 'Нет соединения' };
+      let result = { success: false, errorMsg: I18n.t('calibration.no_signal') || 'Нет соединения' };
       if (window.go?.main?.App) {
-        result = await window.go.main.App.StopCapture();
+        result = await window.go.main.App.StopCapture(this.captureStep);
       }
 
-      const actionCard = document.getElementById('cal-capture-action-card');
-      const resultCard = document.getElementById('cal-result-card');
       const resultIcon = document.getElementById('result-icon');
       const resultTitle = document.getElementById('result-title');
       const resultSubtext = document.getElementById('result-subtext');
       const btnNext = document.getElementById('btn-next-step');
-
-      if (actionCard) actionCard.style.display = 'none';
-      if (resultCard) resultCard.style.display = 'block';
+      const btnRetry = document.getElementById('btn-retry-step');
+      const btnForward = document.getElementById('cal-capture-forward');
 
       if (result.success) {
-        // Success
-        this.capturedAxes[this.captureStep] = { axisIdx: result.axisIdx, sign: result.sign };
+        if (this.captureStep === 0) {
+          this.capturedVectors[0] = [0, 0, 0];
+          if (resultIcon) {
+            resultIcon.textContent = '✓';
+            resultIcon.className = 'result-badge-icon success';
+          }
+          if (resultTitle) {
+            resultTitle.textContent = I18n.t('calibration.capture_success_title') || 'Покой зафиксирован!';
+          }
+          if (resultSubtext) {
+            resultSubtext.innerHTML = renderMarkdown(result.axisName || 'Смещение гироскопа устранено');
+          }
+          if (btnNext) {
+            btnNext.style.display = 'inline-flex';
+            btnNext.textContent = I18n.t('calibration.btn_next_step') || 'Следующий шаг →';
+          }
+          if (btnForward) {
+            btnForward.style.display = 'inline-flex';
+            btnForward.textContent = I18n.t('calibration.btn_next') || 'Далее →';
+            btnForward.disabled = false;
+          }
+          if (btnRetry) {
+            btnRetry.textContent = I18n.t('calibration.btn_retry') || 'Повторить';
+          }
+          this._showPhase('result');
+          return;
+        }
 
-        if (resultIcon) {
-          resultIcon.textContent = '✓';
-          resultIcon.className = 'result-badge-icon success';
+        if (this.captureStep === 1) {
+          this.capturedVectors[1] = result.vector;
+          this.lockedAxes[result.axisIdx] = {
+            role: 'pitch',
+            name: result.axisName,
+            confidence: result.confidence,
+            status: 'locked'
+          };
+          this.updateTelemetry(AppState.lastState);
+
+          if (resultIcon) {
+            resultIcon.textContent = '✓';
+            resultIcon.className = 'result-badge-icon success';
+          }
+          if (resultTitle) {
+            resultTitle.textContent = I18n.t('calibration.capture_success_title') || 'Жест успешно распознан!';
+          }
+          if (resultSubtext) {
+            const pct = Math.round((result.confidence || 0.95) * 100);
+            const spd = Math.round(result.peakSpeed || 80);
+            const tmpl = I18n.t('calibration.res_gesture') || 'Ось: **{axis}** • Точность: **{pct}%** • Скорость: **{spd}°/с**';
+            resultSubtext.innerHTML = renderMarkdown(tmpl.replace('{axis}', result.axisName).replace('{pct}', pct).replace('{spd}', spd));
+          }
+          if (btnNext) {
+            btnNext.style.display = 'inline-flex';
+            btnNext.textContent = I18n.t('calibration.btn_next_step') || 'Следующий шаг →';
+          }
+          if (btnForward) {
+            btnForward.style.display = 'inline-flex';
+            btnForward.textContent = I18n.t('calibration.btn_next') || 'Далее →';
+            btnForward.disabled = false;
+          }
+          if (btnRetry) {
+            btnRetry.textContent = I18n.t('calibration.btn_retry') || 'Повторить';
+          }
+          this._showPhase('result');
+          return;
         }
-        if (resultTitle) {
-          resultTitle.textContent = I18n.t('calibration.capture_success_title') || 'Жест успешно распознан!';
-        }
-        if (resultSubtext) {
-          const pct = Math.round((result.confidence || 0.95) * 100);
-          const spd = Math.round(result.peakSpeed || 80);
-          resultSubtext.innerHTML = `Ось: <strong>${result.axisName}</strong> • Точность: <strong>${pct}%</strong> • Скорость: <strong>${spd}°/с</strong>`;
-        }
-        if (btnNext) {
-          btnNext.style.display = 'inline-flex';
-          btnNext.textContent = (this.captureStep === 2) ? 'Перейти к проверке →' : 'Следующий шаг →';
+
+        // Step 2 (Roll) completed: we have both Pitch and Roll, run validation!
+        if (this.captureStep === 2) {
+          this.capturedVectors[2] = result.vector;
+          this.lockedAxes[result.axisIdx] = {
+            role: 'roll',
+            name: result.axisName,
+            confidence: result.confidence,
+            status: 'locked'
+          };
+          this.updateTelemetry(AppState.lastState);
+
+          let valRes = { success: true };
+          if (window.go?.main?.App) {
+            valRes = await window.go.main.App.ValidateCalibration(
+              this.capturedVectors[1], // Pitch
+              this.capturedVectors[2]  // Roll
+            );
+          }
+
+          if (valRes.success) {
+            this.builtMatrix = valRes.matrix;
+
+            // Lock calculated Yaw axis in telemetry strip
+            const axes = ['X', 'Y', 'Z'];
+            for (let ax = 0; ax < 3; ax++) {
+              if (!this.lockedAxes[ax]) {
+                const yawName = valRes.yawAxis || `+${axes[ax]}`;
+                this.lockedAxes[ax] = {
+                  role: 'yaw',
+                  name: yawName,
+                  confidence: 1.0,
+                  status: 'locked'
+                };
+              }
+            }
+            this.updateTelemetry(AppState.lastState);
+
+            if (resultIcon) {
+              resultIcon.textContent = '✓';
+              resultIcon.className = 'result-badge-icon success';
+            }
+            if (resultTitle) {
+              resultTitle.textContent = I18n.t('calibration.capture_success_title') || 'Калибровка завершена!';
+            }
+            if (resultSubtext) {
+              const tmpl = I18n.t('calibration.res_all_done') || 'Калибровка завершена: P: **{p}** • Y: **{y}** • R: **{r}**';
+              resultSubtext.innerHTML = renderMarkdown(
+                tmpl.replace('{p}', valRes.pitchAxis)
+                    .replace('{y}', valRes.yawAxis)
+                    .replace('{r}', valRes.rollAxis)
+              );
+            }
+            if (btnNext) {
+              btnNext.style.display = 'inline-flex';
+              btnNext.textContent = I18n.t('calibration.btn_to_confirm') || 'Перейти к проверке →';
+            }
+            if (btnForward) {
+              btnForward.style.display = 'inline-flex';
+              btnForward.textContent = I18n.t('calibration.btn_to_confirm') || 'Перейти к проверке →';
+              btnForward.disabled = false;
+            }
+            if (btnRetry) {
+              btnRetry.textContent = I18n.t('calibration.btn_retry') || 'Повторить';
+            }
+            this._showPhase('result');
+            return;
+          } else {
+            if (resultIcon) {
+              resultIcon.textContent = '!';
+              resultIcon.className = 'result-badge-icon error';
+            }
+            if (resultTitle) {
+              resultTitle.textContent = I18n.t('calibration.capture_fail_title') || 'Ошибка калибровки';
+            }
+            if (resultSubtext) {
+              resultSubtext.innerHTML = renderMarkdown(valRes.errorMsg || 'Оси не согласуются друг с другом.');
+            }
+            if (btnNext) btnNext.style.display = 'none';
+            if (btnRetry) btnRetry.textContent = I18n.t('calibration.btn_retry') || 'Повторить';
+            this._showPhase('result');
+            return;
+          }
         }
       } else {
-        // Ambiguous / Too weak
         if (resultIcon) {
           resultIcon.textContent = '!';
           resultIcon.className = 'result-badge-icon error';
@@ -1673,11 +2141,11 @@
           resultTitle.textContent = I18n.t('calibration.capture_fail_title') || 'Движение не распознано';
         }
         if (resultSubtext) {
-          resultSubtext.textContent = result.errorMsg || 'Слишком слабое движение. Наклоните телефон энергичнее.';
+          resultSubtext.innerHTML = renderMarkdown(result.errorMsg || 'Ошибка записи движения');
         }
-        if (btnNext) {
-          btnNext.style.display = 'none';
-        }
+        if (btnNext) btnNext.style.display = 'none';
+        if (btnRetry) btnRetry.textContent = I18n.t('calibration.btn_retry') || 'Повторить';
+        this._showPhase('result');
       }
     },
 
@@ -1686,40 +2154,8 @@
         this.captureStep++;
         this._updateStepUI();
       } else {
-        // All 3 axes captured — construct matrix and proceed to confirmation
-        this.builtMatrix = this._buildMatrix();
         this.showScreen('confirm');
       }
-    },
-
-    _buildMatrix() {
-      // capturedAxes: [0]=Pitch, [1]=Roll, [2]=Yaw
-      const mat = [[0,0,0],[0,0,0],[0,0,0]];
-
-      if (this.capturedAxes.length >= 2) {
-        const ax0 = this.capturedAxes[0];
-        const ax1 = this.capturedAxes[1];
-        mat[0][ax0.axisIdx] = ax0.sign;
-        mat[1][ax1.axisIdx] = ax1.sign;
-
-        // Automatically determine 3rd axis via right-handed cross product to guarantee det = +1!
-        const used = new Set([ax0.axisIdx, ax1.axisIdx]);
-        let ax2Idx = 0;
-        for (let i = 0; i < 3; i++) {
-          if (!used.has(i)) ax2Idx = i;
-        }
-
-        // Test sign +1 or -1 for row 2 to yield det = +1
-        mat[2][ax2Idx] = 1;
-        if (Math.abs(this._det3(mat) - 1.0) > 0.05) {
-          mat[2][ax2Idx] = -1;
-        }
-      } else {
-        // Default identity
-        mat[0][0] = 1; mat[1][2] = 1; mat[2][1] = 1;
-      }
-
-      return mat;
     },
 
     _det3(m) {
@@ -1730,7 +2166,7 @@
 
     _renderConfirmDetails() {
       const axes = ['X', 'Y', 'Z'];
-      const m = this.builtMatrix || [[1,0,0],[0,0,1],[0,1,0]];
+      const m = this.builtMatrix || [[1,0,0],[0,1,0],[0,0,-1]];
       const axisStr = (row) => {
         for (let c = 0; c < 3; c++) {
           if (m[row][c] > 0.5) return `+${axes[c]}`;
@@ -1740,34 +2176,36 @@
       };
 
       const chipP = document.getElementById('chip-pitch');
-      const chipR = document.getElementById('chip-roll');
       const chipY = document.getElementById('chip-yaw');
+      const chipR = document.getElementById('chip-roll');
       if (chipP) chipP.textContent = `Pitch: ${axisStr(0)}`;
-      if (chipR) chipR.textContent = `Roll: ${axisStr(1)}`;
-      if (chipY) chipY.textContent = `Yaw: ${axisStr(2)}`;
+      if (chipY) chipY.textContent = `Yaw: ${axisStr(1)}`;
+      if (chipR) chipR.textContent = `Roll: ${axisStr(2)}`;
 
       const det = this._det3(m);
       const detStatus = document.getElementById('confirm-det-status');
       if (detStatus) {
-        detStatus.textContent = `Определитель матрицы: det = ${det > 0 ? '+1.00 (Корректно)' : '-1.00 (Ошибка)'}`;
+        detStatus.textContent = (Math.abs(det + 1.0) < 0.05)
+          ? I18n.t('calibration.matrix_det_ok')
+          : I18n.t('calibration.matrix_det_err');
       }
     },
 
     _buildManualMatrix() {
       const pitchAxis = parseInt(document.getElementById('man-pitch-axis')?.value || '0', 10);
-      const rollAxis  = parseInt(document.getElementById('man-roll-axis')?.value  || '2', 10);
       const yawAxis   = parseInt(document.getElementById('man-yaw-axis')?.value   || '1', 10);
+      const rollAxis  = parseInt(document.getElementById('man-roll-axis')?.value  || '2', 10);
       const pitchInv  = document.getElementById('man-pitch-inv')?.checked ? -1 : 1;
-      const rollInv   = document.getElementById('man-roll-inv')?.checked  ? -1 : 1;
       const yawInv    = document.getElementById('man-yaw-inv')?.checked   ? -1 : 1;
+      const rollInv   = document.getElementById('man-roll-inv')?.checked  ? -1 : 1;
 
       const mat = [[0,0,0],[0,0,0],[0,0,0]];
-      mat[0][pitchAxis] = pitchInv;
-      mat[1][rollAxis]  = rollInv;
-      mat[2][yawAxis]   = yawInv;
+      mat[0][pitchAxis] = pitchInv; // Row 0 = Pitch (RotX)
+      mat[1][yawAxis]   = yawInv;   // Row 1 = Yaw (RotY)
+      mat[2][rollAxis]  = rollInv;  // Row 2 = Roll (RotZ)
 
       const det = this._det3(mat);
-      const isValid = (Math.abs(det - 1.0) < 0.05);
+      const isValid = (Math.abs(det + 1.0) < 0.05);
 
       const statusEl = document.getElementById('cal-manual-status-text');
       const dotEl = document.getElementById('cal-manual-dot');
@@ -1775,8 +2213,8 @@
 
       if (statusEl) {
         statusEl.textContent = isValid
-          ? 'Определитель матрицы: det = +1 (Корректно)'
-          : 'Ошибка: зеркальное отражение (det = -1). Поменяйте оси или инверсию.';
+          ? I18n.t('calibration.matrix_det_ok')
+          : I18n.t('calibration.manual_invalid');
       }
       if (dotEl) dotEl.className = 'status-dot-sm' + (isValid ? ' ok' : ' error');
       if (nextBtn) nextBtn.disabled = !isValid;
@@ -1785,6 +2223,9 @@
         this.builtMatrix = mat;
         const s = Scene3D.get('cal-3d-canvas-manual');
         if (s) s.setMatrix(mat);
+        if (window.go?.main?.App) {
+          window.go.main.App.PreviewMatrix(mat).catch(() => {});
+        }
       }
     },
 
@@ -1826,12 +2267,64 @@
         this.nextStep();
       });
 
-      // Capture back
+      // Capture back: returns to previous step or closes wizard if at step 0
       document.getElementById('cal-capture-back')?.addEventListener('click', () => {
         this._resetCaptureTimer();
-        this.showScreen('slots');
-        this.renderSlotList();
+        if (this.captureStep > 0) {
+          this.captureStep--;
+          this._updateStepUI();
+        } else {
+          this.close();
+        }
       });
+
+      // Capture forward: navigates to next step or confirm screen
+      document.getElementById('cal-capture-forward')?.addEventListener('click', () => {
+        if (this.captureStep === 0) {
+          this.captureStep = 1;
+          this._updateStepUI();
+        } else if (this.captureStep === 1) {
+          this.captureStep = 2;
+          this._updateStepUI();
+        } else {
+          if (!this.builtMatrix && this.capturedVectors[1] && this.capturedVectors[2]) {
+            if (window.go?.main?.App) {
+              window.go.main.App.ValidateCalibration(this.capturedVectors[1], this.capturedVectors[2]).then(valRes => {
+                if (valRes.success) this.builtMatrix = valRes.matrix;
+                this.showScreen('confirm');
+              });
+              return;
+            }
+          }
+          this.showScreen('confirm');
+        }
+      });
+
+      // Step pills click navigation
+      for (let i = 0; i < 4; i++) {
+        const pill = document.getElementById(`step-pill-${i}`);
+        if (!pill) continue;
+        pill.addEventListener('click', () => {
+          if (i === 0) {
+            this.captureStep = 0;
+            this.showScreen('capture');
+          } else if (i === 1) {
+            if (this.capturedVectors[0]) {
+              this.captureStep = 1;
+              this.showScreen('capture');
+            }
+          } else if (i === 2) {
+            if (this.capturedVectors[1]) {
+              this.captureStep = 2;
+              this.showScreen('capture');
+            }
+          } else if (i === 3) {
+            if (this.builtMatrix || (this.capturedVectors[1] && this.capturedVectors[2])) {
+              this.showScreen('confirm');
+            }
+          }
+        });
+      }
 
       // Jump to manual setup
       document.getElementById('cal-jump-manual')?.addEventListener('click', () => {
@@ -1852,6 +2345,47 @@
       document.getElementById('btn-confirm-restart')?.addEventListener('click', () => {
         this.startCaptureFlow(this.targetSlot);
       });
+
+      // Confirm back: returns to step 2 (Roll) in capture screen
+      document.getElementById('cal-confirm-back')?.addEventListener('click', () => {
+        this.captureStep = 2;
+        this.showScreen('capture');
+      });
+
+      // Copy Calibration Full Report helper
+      const copyCalReportHandler = async (btn) => {
+        try {
+          let report = '';
+          if (window.go?.main?.App?.CopyCalibrationReport) {
+            report = await window.go.main.App.CopyCalibrationReport();
+          } else if (window['go']?.['main']?.['App']?.['CopyCalibrationReport']) {
+            report = await window['go']['main']['App']['CopyCalibrationReport']();
+          }
+          if (!report) report = 'No calibration report data available';
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(report);
+          } else {
+            const ta = document.createElement('textarea');
+            ta.value = report;
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+          if (btn) {
+            const orig = btn.textContent;
+            btn.textContent = 'Отчет скопирован!';
+            setTimeout(() => { btn.textContent = orig; }, 1800);
+          }
+          showToast('Полный отчет теста скопирован в буфер обмена!');
+        } catch (err) {
+          console.error('Copy report failed:', err);
+          showToast('Ошибка копирования: ' + err);
+        }
+      };
+
 
       // Manual controls changes
       ['man-pitch-axis','man-roll-axis','man-yaw-axis','man-pitch-inv','man-roll-inv','man-yaw-inv'].forEach(id => {
@@ -2053,6 +2587,11 @@
         this._calCaptureCb(state);
       }
 
+      // Feed 3-axis telemetry strip in calibration wizard
+      if (CalibrationWizard.isOpen && CalibrationWizard.currentScreen === 'capture') {
+        CalibrationWizard.updateTelemetry(state);
+      }
+
       // Feed Three.js confirm/manual scenes with live orientation
       const confirmScene = Scene3D.get('cal-3d-canvas-confirm');
       if (confirmScene) confirmScene.updateFromState(state);
@@ -2100,6 +2639,7 @@
       document.getElementById('link-live-debug')?.addEventListener('click', () => {
         showToast(I18n.currentLang === 'ru' ? 'Live Debug в разработке' : 'Live Debug coming soon');
       });
+
 
       // Listen for real-time state changes from Wails backend
       if (window.runtime && window.runtime.EventsOn) {

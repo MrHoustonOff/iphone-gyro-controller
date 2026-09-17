@@ -17,6 +17,7 @@
   --text-tertiary: #636366;
 
   /* Button Tokens */
+  --apple-blue: #0A84FF;
   --btn-primary-bg: #FFFFFF;
   --btn-primary-text: #000000;
   --btn-primary-hover: #E5E5EA;
@@ -65,6 +66,7 @@
   --text-secondary: #6C6C70;
   --text-tertiary: #AEAEB2;
 
+  --apple-blue: #0071E3;
   --btn-primary-bg: #000000;
   --btn-primary-text: #FFFFFF;
   --btn-primary-hover: #1C1C1E;
@@ -1753,6 +1755,13 @@ em {
   color: var(--text-tertiary);
   background: transparent;
   transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cal-step-pill:hover {
+  background: var(--surface-hover);
+  color: var(--text);
 }
 
 .cal-step-pill .step-num {
@@ -1830,16 +1839,151 @@ em {
   line-height: 1.5;
 }
 
-/* Capture Action Card */
-.cal-capture-action-card {
+/* ── Live 3-Axis Telemetry & Status Strip ── */
+.cal-axes-strip {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.axis-meter-capsule {
   display: flex;
   flex-direction: column;
-  gap: 14px;
-  padding: 18px;
+  gap: 5px;
+  padding: 8px 10px;
+  background: var(--surface-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.axis-meter-capsule.locked {
+  background: rgba(48, 209, 88, 0.1);
+  border-color: rgba(48, 209, 88, 0.38);
+  box-shadow: 0 0 12px rgba(48, 209, 88, 0.15);
+}
+
+.axis-meter-capsule.predicted {
+  background: rgba(255, 149, 0, 0.1);
+  border-color: rgba(255, 149, 0, 0.4);
+  box-shadow: 0 0 12px rgba(255, 149, 0, 0.15);
+}
+
+.capsule-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.capsule-letter {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.capsule-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-hover);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.axis-meter-capsule.locked .capsule-tag {
+  background: rgba(48, 209, 88, 0.22);
+  color: #30D158;
+}
+
+.axis-meter-capsule.predicted .capsule-tag {
+  background: rgba(255, 149, 0, 0.22);
+  color: #FF9500;
+}
+
+.capsule-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.capsule-val {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.axis-meter-capsule.locked .capsule-val {
+  color: #30D158;
+  font-weight: 700;
+}
+
+.axis-meter-capsule.predicted .capsule-val {
+  color: #FF9500;
+  font-weight: 700;
+}
+
+.capsule-meter-track {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.capsule-meter-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--apple-blue);
+  border-radius: var(--radius-pill);
+  transition: width 0.06s linear;
+}
+
+.axis-meter-capsule.locked .capsule-meter-fill {
+  background: #30D158;
+}
+
+.axis-meter-capsule.predicted .capsule-meter-fill {
+  background: #FF9500;
+}
+
+/* ── Unified Non-Jumping Action Box ── */
+.cal-action-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 154px;
+  padding: 16px 18px;
   background: var(--surface-hover);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  text-align: left;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transition: border-color 0.2s ease;
+}
+
+.cal-action-phase {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.cal-action-phase.fade-in {
+  animation: phaseFadeIn 0.2s ease-out;
+}
+
+@keyframes phaseFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .cal-motion-status-bar {
@@ -1926,9 +2070,30 @@ em {
   justify-content: center;
   gap: 8px;
   width: 100%;
-  padding: 14px 20px;
+  padding: 13px 20px;
   font-size: 15px;
   font-weight: 600;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-capture-action.counting-down {
+  background: linear-gradient(135deg, #FF9500, #E07000) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 24px rgba(255, 149, 0, 0.5) !important;
+  border-color: #FFB340 !important;
+  animation: pulseOrangeBtn 0.75s infinite alternate !important;
+}
+
+.btn-capture-action.recording {
+  background: linear-gradient(135deg, #30D158, #24A143) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 24px rgba(48, 209, 88, 0.5) !important;
+  border-color: #5CE67F !important;
+}
+
+@keyframes pulseOrangeBtn {
+  from { filter: brightness(1); transform: scale(1); }
+  to   { filter: brightness(1.16); transform: scale(1.018); }
 }
 
 .capture-play-icon {
@@ -1937,24 +2102,7 @@ em {
   fill: currentColor;
 }
 
-/* Result Card */
-.cal-result-card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px;
-  background: var(--surface-hover);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  animation: resultCardIn 0.22s ease-out;
-  text-align: left;
-}
-
-@keyframes resultCardIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
+/* ── Result Feedback Phase ── */
 .result-header-row {
   display: flex;
   align-items: center;
@@ -1962,8 +2110,8 @@ em {
 }
 
 .result-badge-icon {
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -1975,61 +2123,145 @@ em {
 
 .result-badge-icon.success {
   background: rgba(48, 209, 88, 0.15);
-  border: 1px solid rgba(48, 209, 88, 0.35);
+  border: 1px solid rgba(48, 209, 88, 0.4);
   color: #30D158;
 }
 
 .result-badge-icon.error {
   background: rgba(255, 149, 0, 0.15);
-  border: 1px solid rgba(255, 149, 0, 0.35);
+  border: 1px solid rgba(255, 149, 0, 0.4);
   color: #FF9500;
 }
 
 .result-headline {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   text-align: left;
 }
 
 .result-headline strong {
   font-size: 14px;
+  font-weight: 700;
   color: var(--text);
 }
 
 .result-subtext {
   font-size: 12px;
   color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.result-subtext strong {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .result-actions-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 2px;
+  width: 100%;
 }
 
-.result-actions-row button {
+.btn-cal-next {
+  flex: 2;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  background: #0071E3 !important;
+  color: #FFFFFF !important;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 113, 227, 0.45);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-cal-next:hover {
+  background: #0077ED !important;
+  box-shadow: 0 6px 18px rgba(0, 113, 227, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-cal-next:active {
+  transform: scale(0.98);
+}
+
+.btn-cal-retry {
   flex: 1;
+  height: 46px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.btn-cal-retry:hover {
+  background: var(--surface-hover);
+  border-color: var(--text-secondary);
+}
+
+.btn-cal-retry:active {
+  transform: scale(0.98);
 }
 
 /* ── 3D Viewport Panel ───────────────────────────────────────────────────── */
+.cal-3d-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 380px;
+}
+
 .cal-3d-panel {
+  flex: 1;
   border-radius: var(--radius-lg);
   overflow: hidden;
   position: relative;
-  min-height: 380px;
-  background: radial-gradient(ellipse at 50% 35%, #181c28 0%, #080a10 100%);
+  min-height: 340px;
+  background: radial-gradient(ellipse at 50% 45%, #1d212d 0%, #0a0b10 100%);
   border: 1px solid var(--border);
-  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+}
+
+.cal-3d-disclaimer {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.35;
+  padding: 0 6px;
+  user-select: none;
 }
 
 [data-theme="light"] .cal-3d-panel {
-  background: radial-gradient(ellipse at 50% 35%, #eef4ff 0%, #dae2ee 100%);
+  background: radial-gradient(ellipse at 50% 45%, #ffffff 0%, #e1e6ef 100%);
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.04);
 }
 
 .cal-3d-canvas {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100% !important;
+  height: 100% !important;
   display: block;
 }
 
@@ -2297,14 +2529,85 @@ em {
   font-size: 13px;
 }
 
+/* Dedicated Wizard Footer: anchored under both columns without floating */
+.cal-wizard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.cal-wizard-footer #cal-jump-manual {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Compact Forward Button in Calibration Wizard */
+.btn-wizard-forward {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  background: var(--apple-blue, #0071E3);
+  color: #ffffff !important;
+  border: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 113, 227, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-left: auto;
+}
+
+.btn-wizard-forward:hover:not(:disabled) {
+  background: #0077ED;
+  box-shadow: 0 4px 12px rgba(0, 113, 227, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-wizard-forward:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-wizard-forward:disabled {
+  background: var(--surface-card, rgba(255, 255, 255, 0.05)) !important;
+  color: var(--text-tertiary, #666666) !important;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.1)) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
 /* Responsive */
-@media (max-width: 680px) {
+@media (max-width: 720px) {
   .cal-capture-layout {
     grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .cal-capture-left {
+    order: 1;
+  }
+  .cal-3d-wrapper {
+    order: 2;
+    min-height: 250px;
   }
   .cal-3d-panel {
-    min-height: 240px;
-    order: -1;
+    min-height: 220px;
+  }
+  .cal-wizard-footer {
+    order: 3;
+    margin-top: 16px;
   }
   .profiles-tabs {
     grid-template-columns: repeat(2, 1fr);

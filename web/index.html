@@ -2,6 +2,9 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>GyroBridge</title>
   <style>
@@ -214,7 +217,7 @@
 <body>
 
 <div class="app-wrap">
-  <h1 class="header-title">GyroBridge</h1>
+  <h1 class="header-title">GyroBridge <span style="display:inline-block; font-size:12px; font-weight:700; background:#38bdf8; color:#070b14; padding:2px 8px; border-radius:8px; margin-left:6px; vertical-align:middle;">v3.3-DIAG</span></h1>
 
   <!-- 1. Permission Request Button -->
   <button id="btn-perm" class="btn btn-perm">
@@ -233,6 +236,32 @@
     <span id="icon-stream" style="font-size: 16px; line-height: 1;">●</span>
     <span id="txt-stream">ПОДКЛЮЧЕНИЕ...</span>
   </button>
+
+  <!-- 4. Diagnostic & Live Sensor Debug Panel -->
+  <div id="debug-panel" style="width:100%; margin-top:6px; padding:12px 14px; background:#0f172a; border:2px solid #38bdf8; border-radius:14px; font-family:monospace; font-size:12px; color:#e2e8f0; text-align:left; box-sizing:border-box;">
+    <div style="font-size:13px; font-weight:800; color:#38bdf8; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">
+      ВЕРСИЯ: v3.3-DIAGNOSTIC
+    </div>
+    <div style="font-size:11px; opacity:0.8; margin-bottom:8px;">
+      Сборка: 2026-09-16 07:45 | URL: <span id="dbg-url-info" style="color:#facc15;">-</span>
+    </div>
+    <div style="background:#1e293b; padding:8px 10px; border-radius:8px; margin-bottom:8px; line-height:1.4;">
+      <div style="color:#94a3b8; font-size:11px; font-weight:700; margin-bottom:2px;">СЫРОЙ ГИРОСКОП (device):</div>
+      <div>X (beta,  кивок): <span id="dbg-raw-x" style="color:#4ade80; font-weight:700;">0.00</span> °/s</div>
+      <div>Y (gamma, наклон): <span id="dbg-raw-y" style="color:#38bdf8; font-weight:700;">0.00</span> °/s</div>
+      <div>Z (alpha, компас): <span id="dbg-raw-z" style="color:#f472b6; font-weight:700;">0.00</span> °/s</div>
+    </div>
+    <div style="background:#1e293b; padding:8px 10px; border-radius:8px; margin-bottom:10px; line-height:1.4;">
+      <div style="color:#94a3b8; font-size:11px; font-weight:700; margin-bottom:2px;">ПЕРЕДАЕТСЯ В ПРИЛОЖЕНИЕ (ПК):</div>
+      <div>X: <span id="dbg-dsu-p" style="color:#4ade80; font-weight:700;">0.00</span> | Y: <span id="dbg-dsu-y" style="color:#38bdf8; font-weight:700;">0.00</span> | Z: <span id="dbg-dsu-r" style="color:#f472b6; font-weight:700;">0.00</span> °/s</div>
+    </div>
+    <button id="dbg-btn-refresh" type="button" style="width:100%; min-height:40px; background:#dc2626; color:#ffffff; font-weight:800; border:none; border-radius:8px; font-size:12px; cursor:pointer;">
+      СБРОСИТЬ КЭШ И ОБНОВИТЬ
+    </button>
+    <button id="dbg-btn-copy20" type="button" style="width:100%; min-height:40px; margin-top:8px; background:#2563eb; color:#ffffff; font-weight:800; border:none; border-radius:8px; font-size:12px; cursor:pointer;">
+      СКОПИРОВАТЬ 20 ЗАПИСЕЙ В БУФЕР
+    </button>
+  </div>
 </div>
 
 <!-- Auto-Calibration Modal -->
@@ -296,6 +325,63 @@ const modalMsg      = document.getElementById('modal-msg');
 let isPaused = false;
 let isConnected = false;
 let isSamplingCalib = false;
+
+const dbgUrlInfo    = document.getElementById('dbg-url-info');
+const dbgRawX       = document.getElementById('dbg-raw-x');
+const dbgRawY       = document.getElementById('dbg-raw-y');
+const dbgRawZ       = document.getElementById('dbg-raw-z');
+const dbgDsuP       = document.getElementById('dbg-dsu-p');
+const dbgDsuY       = document.getElementById('dbg-dsu-y');
+const dbgDsuR       = document.getElementById('dbg-dsu-r');
+const dbgBtnRefresh = document.getElementById('dbg-btn-refresh');
+
+if (dbgUrlInfo) {
+  dbgUrlInfo.textContent = window.location.search || '(нет параметров)';
+}
+
+if (dbgBtnRefresh) {
+  dbgBtnRefresh.addEventListener('click', () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = window.location.origin + window.location.pathname + '?t=' + Date.now();
+  });
+}
+
+const webLogFrames = [];
+const dbgBtnCopy20 = document.getElementById('dbg-btn-copy20');
+if (dbgBtnCopy20) {
+  dbgBtnCopy20.addEventListener('click', async () => {
+    if (webLogFrames.length === 0) {
+      alert('Нет записей кадров (подвигайте телефон)');
+      return;
+    }
+    const lines = ["# Recent " + webLogFrames.length + " frames from phone browser:"];
+    lines.push("idx,ts,rawX,rawY,rawZ,dsuP,dsuY,dsuR,accX,accY,accZ");
+    webLogFrames.forEach((f, i) => {
+      lines.push(`${i+1},${f.ts},${f.rawX.toFixed(4)},${f.rawY.toFixed(4)},${f.rawZ.toFixed(4)},${f.p.toFixed(4)},${f.y.toFixed(4)},${f.r.toFixed(4)},${f.ax.toFixed(4)},${f.ay.toFixed(4)},${f.az.toFixed(4)}`);
+    });
+    const text = lines.join("\n");
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      const orig = dbgBtnCopy20.textContent;
+      dbgBtnCopy20.textContent = 'СКОПИРОВАНО 20 ЗАПИСЕЙ!';
+      setTimeout(() => { dbgBtnCopy20.textContent = orig; }, 1800);
+    } catch (e) {
+      alert('Не удалось скопировать: ' + e);
+    }
+  });
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Gyro Bias & ZUPT (Zero-Velocity Update)
@@ -528,10 +614,10 @@ function onOrientation(e) {
   const qy = -sA * sB * cC + cA * cB * sC;
   const qz = sA * cB * cC - cA * sB * sC;
 
-  // SO(3) mapping for screen up: Pitch = +X, Yaw = +Z, Roll = -Y
+  // Direct device orientation quaternion
   outQx = qx;
-  outQy = qz;
-  outQz = -qy;
+  outQy = qy;
+  outQz = qz;
   outQw = qw;
 
   if (outQw < 0) {
@@ -541,27 +627,33 @@ function onOrientation(e) {
   if (performance.now() - lastMotionTime > 200) sendFrame();
 }
 
+// Single source of truth for reading physical device sensor channels.
+// W3C spec: beta = rotation around X, gamma = rotation around Y, alpha = rotation around Z.
+function readRawGyro(e) {
+  if (!e.rotationRate) return { x: 0, y: 0, z: 0 };
+  return {
+    x: e.rotationRate.beta  || 0, // X: rotation around physical X axis (forward/back nod)
+    y: e.rotationRate.gamma || 0, // Y: rotation around physical Y axis (left/right tilt)
+    z: e.rotationRate.alpha || 0  // Z: rotation around physical Z axis (spin on table)
+  };
+}
+
+function readRawAccel(e) {
+  const a = e.accelerationIncludingGravity || e.acceleration;
+  if (!a) return { x: 0, y: 0, z: 0 };
+  return {
+    x: a.x != null ? a.x / G_CONST : 0,
+    y: a.y != null ? a.y / G_CONST : 0,
+    z: a.z != null ? a.z / G_CONST : 0
+  };
+}
+
 function onMotion(e) {
   lastMotionTime = performance.now();
   onFirstSensorData();
 
-  let rx = 0, ry = 0, rz = 0;
-  if (e.rotationRate) {
-    rx = e.rotationRate.beta  || 0;
-    ry = e.rotationRate.gamma || 0;
-    rz = e.rotationRate.alpha || 0;
-  }
-  rawGyr = { x: rx, y: ry, z: rz };
-
-  const a = e.accelerationIncludingGravity || e.acceleration;
-  let ax = 0, ay = 0, az = 0;
-  if (a) {
-    ax = (a.x != null ? a.x / G_CONST : 0);
-    ay = (a.y != null ? a.y / G_CONST : 0);
-    az = (a.z != null ? a.z / G_CONST : 0);
-  }
-  const accSign = isIOS ? -1 : 1;
-  rawAcc = { x: ax * accSign, y: ay * accSign, z: az * accSign };
+  rawGyr = readRawGyro(e);
+  rawAcc = readRawAccel(e);
 
   updateZUPT(rawAcc.x, rawAcc.y, rawAcc.z);
 
@@ -571,20 +663,29 @@ function onMotion(e) {
     return;
   }
 
-  const [cx, cy, cz] = applyBias(rx, ry, rz);
+  const [cx, cy, cz] = applyBias(rawGyr.x, rawGyr.y, rawGyr.z);
 
-  // Screen Up mapping:
-  // Pitch = +X (nose up/down)
-  // Yaw   = +Z (spinning on table)
-  // Roll  = -Y (tilting sideways)
+  // Send true raw sensor frame in physical device coordinates (X, Y, Z):
+  // cx = rotation rate around device X axis (pitch / nodding)
+  // cy = rotation rate around device Y axis (roll / tilting)
+  // cz = rotation rate around device Z axis (yaw / compass)
   dsuPitch = cx;
-  dsuYaw   = cz;
-  dsuRoll  = -cy;
+  dsuYaw   = cy;
+  dsuRoll  = cz;
 
-  // Accel: normal force along Z points UP (into Y in DSU!)
+  // Raw device acceleration (X, Y, Z):
   dsuAccX = rawAcc.x;
-  dsuAccY = rawAcc.z;
-  dsuAccZ = -rawAcc.y;
+  dsuAccY = rawAcc.y;
+  dsuAccZ = rawAcc.z;
+
+  if (dbgRawX) {
+    dbgRawX.textContent = rawGyr.x.toFixed(1);
+    dbgRawY.textContent = rawGyr.y.toFixed(1);
+    dbgRawZ.textContent = rawGyr.z.toFixed(1);
+    dbgDsuP.textContent = dsuPitch.toFixed(1);
+    dbgDsuY.textContent = dsuYaw.toFixed(1);
+    dbgDsuR.textContent = dsuRoll.toFixed(1);
+  }
 
   sendFrame();
 }
@@ -605,6 +706,20 @@ function sendFrame() {
   binView.setFloat32(40, dsuAccZ,  true);
   binView.setUint16(44,  isPaused ? 1 : 0, true);
   ws.send(binBuffer);
+
+  webLogFrames.push({
+    ts: (Date.now() & 0xFFFFFFFF) >>> 0,
+    p: dsuPitch,
+    y: dsuYaw,
+    r: dsuRoll,
+    ax: dsuAccX,
+    ay: dsuAccY,
+    az: dsuAccZ,
+    rawX: (typeof rawGyr !== 'undefined' && rawGyr) ? rawGyr.x : 0,
+    rawY: (typeof rawGyr !== 'undefined' && rawGyr) ? rawGyr.y : 0,
+    rawZ: (typeof rawGyr !== 'undefined' && rawGyr) ? rawGyr.z : 0
+  });
+  if (webLogFrames.length > 20) webLogFrames.shift();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -58,21 +59,54 @@ type AppState struct {
 	RawAccX       float64 `json:"rawAccX"` // Acceleration X in g
 	RawAccY       float64 `json:"rawAccY"` // Acceleration Y in g
 	RawAccZ       float64 `json:"rawAccZ"` // Acceleration Z in g
+	// Raw sensor orientation quaternion (live, latest sample from device)
+	Qx            float64 `json:"qx"`
+	Qy            float64 `json:"qy"`
+	Qz            float64 `json:"qz"`
+	Qw            float64 `json:"qw"`
 	// Profile system
-	Profiles      []Profile `json:"profiles"`
-	ActiveSlot    int       `json:"activeSlot"` // -1 = none (identity matrix)
+	Profiles      []Profile    `json:"profiles"`
+	ActiveSlot    int          `json:"activeSlot"`   // -1 = none (identity matrix)
+	ActiveMatrix  [3][3]float64 `json:"activeMatrix"` // currently applied calibration matrix (or preview during wizard)
+	// Madgwick AHRS quaternion computed from calibrated gyro/accel (matching PadTest conventions).
+	// Use these (not raw Qx/Qy/Qz/Qw) for 3D rendering.
+	// Q0=w, Q1=x, Q2=y, Q3=z. Apply PadTest negate to get display: (-Q1, -Q2, Q3, Q0).
+	AhrsQ0 float64 `json:"ahrsQ0"`
+	AhrsQ1 float64 `json:"ahrsQ1"`
+	AhrsQ2 float64 `json:"ahrsQ2"`
+	AhrsQ3 float64 `json:"ahrsQ3"`
+}
+
+// captureSample holds raw 60 Hz gyro and accel readings
+type captureSample struct {
+	rot [3]float64 // RotX, RotY, RotZ in °/s
+	acc [3]float64 // AccX, AccY, AccZ in g
 }
 
 // CaptureResult represents the computed result of a calibration gesture
 type CaptureResult struct {
-	Success     bool    `json:"success"`
-	AxisIdx     int     `json:"axisIdx"`     // 0=X, 1=Y, 2=Z
-	Sign        float64 `json:"sign"`        // +1.0 or -1.0
-	AxisName    string  `json:"axisName"`    // "+X", "-Y", etc.
-	Confidence  float64 `json:"confidence"`  // 0.0 to 1.0
-	SampleCount int     `json:"sampleCount"`
-	PeakSpeed   float64 `json:"peakSpeed"`   // peak speed in °/s
-	ErrorMsg    string  `json:"errorMsg"`
+	Success     bool       `json:"success"`
+	AxisIdx     int        `json:"axisIdx"`     // 0=X, 1=Y, 2=Z
+	Sign        float64    `json:"sign"`        // +1.0 or -1.0
+	AxisName    string     `json:"axisName"`    // "+X", "-Y", etc.
+	Confidence  float64    `json:"confidence"`  // 0.0 to 1.0
+	SampleCount int        `json:"sampleCount"`
+	PeakSpeed   float64    `json:"peakSpeed"`   // peak speed in °/s
+	Vector      [3]float64 `json:"vector"`      // Normalized 3D direction vector
+	ErrorCode   string     `json:"errorCode"`
+	ErrorMsg    string     `json:"errorMsg"`
+}
+
+// ValidationResult represents the 3-tier foolproof verification of all 3 calibration gestures
+type ValidationResult struct {
+	Success   bool          `json:"success"`
+	ErrorCode string        `json:"errorCode"`
+	ErrorMsg  string        `json:"errorMsg"`
+	Matrix    [3][3]float64 `json:"matrix"`
+	Det       float64       `json:"det"`
+	PitchAxis string        `json:"pitchAxis"`
+	YawAxis   string        `json:"yawAxis"`
+	RollAxis  string        `json:"rollAxis"`
 }
 
 // App struct manages desktop backend and GyroBridge services
@@ -94,6 +128,10 @@ type App struct {
 	curAccX     atomic.Uint64
 	curAccY     atomic.Uint64
 	curAccZ     atomic.Uint64
+	curQx       atomic.Uint64
+	curQy       atomic.Uint64
+	curQz       atomic.Uint64
+	curQw       atomic.Uint64
 	connectedAt time.Time
 	clientAddr  string
 	primaryIP   string
@@ -106,7 +144,11 @@ type App struct {
 	// Calibration capture buffer (buffered directly at 60 Hz from WebSocket)
 	isCapturing   atomic.Bool
 	captureMu     sync.Mutex
-	captureBuffer [][3]float64
+	captureBuffer []captureSample
+	calVectors    [3][3]float64
+	// Gyroscope stationary zero-bias correction (§2 of spec)
+	biasMu        sync.RWMutex
+	gyroBias      [3]float64
 	// Profile system
 	profilesMu   sync.RWMutex
 	profiles     [4]Profile // exactly 4 slots, always
@@ -115,11 +157,63 @@ type App struct {
 	// Active calibration matrix (applied to frames before DSU forwarding)
 	matrixMu     sync.RWMutex
 	activeMatrix [3][3]float64 // identity by default
+	// Live preview matrix during calibration wizard confirm/manual screens
+	previewMu     sync.RWMutex
+	previewMatrix [3][3]float64
+	usePreview    bool
+	// Madgwick AHRS filter matching PadTest.exe exactly for 3D viewport synchronization
+	ahrs *MadgwickAHRS
+	// Latest AHRS quaternion stored atomically for lock-free read by GetState.
+	// Q0=w, Q1=x, Q2=y, Q3=z (same as AHRS return values).
+	curAhrsQ0 atomic.Uint64
+	curAhrsQ1 atomic.Uint64
+	curAhrsQ2 atomic.Uint64
+	curAhrsQ3 atomic.Uint64
+	// Buffer of last 20 raw frames from mobile device for diagnostics
+	recentFramesMu sync.Mutex
+	recentFrames   []RawLogFrame
+	// Full calibration session report buffer
+	calLogMu     sync.Mutex
+	calStepLogs  map[int]StepCaptureLog
+	calValResult ValidationResult
+}
+
+// StepCaptureLog stores the full recorded session of a calibration gesture step
+type StepCaptureLog struct {
+	Step      int             `json:"step"`
+	Samples   []captureSample `json:"samples"`
+	Result    CaptureResult   `json:"result"`
+	Timestamp time.Time       `json:"timestamp"`
+}
+
+// RawLogFrame holds exact raw telemetry frame fields for debug logging
+type RawLogFrame struct {
+	Timestamp uint32  `json:"ts"`
+	RotX      float32 `json:"rotX"`
+	RotY      float32 `json:"rotY"`
+	RotZ      float32 `json:"rotZ"`
+	AccX      float32 `json:"accX"`
+	AccY      float32 `json:"accY"`
+	AccZ      float32 `json:"accZ"`
+	Qx        float32 `json:"qx"`
+	Qy        float32 `json:"qy"`
+	Qz        float32 `json:"qz"`
+	Qw        float32 `json:"qw"`
 }
 
 // identity3x3 returns the 3x3 identity matrix
 func identity3x3() [3][3]float64 {
 	return [3][3]float64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}
+}
+
+// defaultMatrix3x3 returns the canonical portrait orientation matrix for Cemuhook DSU:
+// Pitch = +X, Yaw = +Y, Roll = -Z (det = -1.0)
+func defaultMatrix3x3() [3][3]float64 {
+	return [3][3]float64{
+		{1, 0, 0},
+		{0, 1, 0},
+		{0, 0, -1},
+	}
 }
 
 // applyMatrix multiplies a 3x3 matrix by a column vector [x, y, z]
@@ -128,6 +222,130 @@ func applyMatrix(m [3][3]float64, x, y, z float64) (float64, float64, float64) {
 	ry := m[1][0]*x + m[1][1]*y + m[1][2]*z
 	rz := m[2][0]*x + m[2][1]*y + m[2][2]*z
 	return rx, ry, rz
+}
+
+// matMul multiplies two 3x3 matrices: c = a * b
+func matMul(a, b [3][3]float64) [3][3]float64 {
+	var c [3][3]float64
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			c[i][j] = a[i][0]*b[0][j] + a[i][1]*b[1][j] + a[i][2]*b[2][j]
+		}
+	}
+	return c
+}
+
+// matTranspose returns the transpose of a 3x3 matrix
+func matTranspose(a [3][3]float64) [3][3]float64 {
+	return [3][3]float64{
+		{a[0][0], a[1][0], a[2][0]},
+		{a[0][1], a[1][1], a[2][1]},
+		{a[0][2], a[1][2], a[2][2]},
+	}
+}
+
+// quatToMatrix converts a unit quaternion (qx, qy, qz, qw) to a 3x3 SO(3) rotation matrix
+func quatToMatrix(qx, qy, qz, qw float64) [3][3]float64 {
+	norm := math.Sqrt(qx*qx + qy*qy + qz*qz + qw*qw)
+	if norm > 1e-9 {
+		qx /= norm
+		qy /= norm
+		qz /= norm
+		qw /= norm
+	} else {
+		return [3][3]float64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}}
+	}
+
+	xx := qx * qx
+	yy := qy * qy
+	zz := qz * qz
+	xy := qx * qy
+	xz := qx * qz
+	yz := qy * qz
+	wx := qw * qx
+	wy := qw * qy
+	wz := qw * qz
+
+	return [3][3]float64{
+		{1 - 2*(yy+zz), 2 * (xy - wz), 2 * (xz + wy)},
+		{2 * (xy + wz), 1 - 2*(xx+zz), 2 * (yz - wx)},
+		{2 * (xz - wy), 2 * (yz + wx), 1 - 2*(xx+yy)},
+	}
+}
+
+// matrixToQuat converts a 3x3 SO(3) rotation matrix to a unit quaternion (qx, qy, qz, qw)
+func matrixToQuat(m [3][3]float64) (qx, qy, qz, qw float64) {
+	tr := m[0][0] + m[1][1] + m[2][2]
+	if tr > 0 {
+		s := 0.5 / math.Sqrt(tr+1.0)
+		qw = 0.25 / s
+		qx = (m[2][1] - m[1][2]) * s
+		qy = (m[0][2] - m[2][0]) * s
+		qz = (m[1][0] - m[0][1]) * s
+	} else if m[0][0] > m[1][1] && m[0][0] > m[2][2] {
+		s := 2.0 * math.Sqrt(math.Max(0, 1.0+m[0][0]-m[1][1]-m[2][2]))
+		if s > 1e-9 {
+			qw = (m[2][1] - m[1][2]) / s
+			qx = 0.25 * s
+			qy = (m[0][1] + m[1][0]) / s
+			qz = (m[0][2] + m[2][0]) / s
+		} else {
+			qw = 1
+		}
+	} else if m[1][1] > m[2][2] {
+		s := 2.0 * math.Sqrt(math.Max(0, 1.0+m[1][1]-m[0][0]-m[2][2]))
+		if s > 1e-9 {
+			qw = (m[0][2] - m[2][0]) / s
+			qx = (m[0][1] + m[1][0]) / s
+			qy = 0.25 * s
+			qz = (m[1][2] + m[2][1]) / s
+		} else {
+			qw = 1
+		}
+	} else {
+		s := 2.0 * math.Sqrt(math.Max(0, 1.0+m[2][2]-m[0][0]-m[1][1]))
+		if s > 1e-9 {
+			qw = (m[1][0] - m[0][1]) / s
+			qx = (m[0][2] + m[2][0]) / s
+			qy = (m[1][2] + m[2][1]) / s
+			qz = 0.25 * s
+		} else {
+			qw = 1
+		}
+	}
+
+	norm := math.Sqrt(qx*qx + qy*qy + qz*qz + qw*qw)
+	if norm > 1e-9 {
+		qx /= norm
+		qy /= norm
+		qz /= norm
+		qw /= norm
+	}
+	if qw < 0 {
+		qx, qy, qz, qw = -qx, -qy, -qz, -qw
+	}
+	return qx, qy, qz, qw
+}
+
+// matrixToEuler extracts intuitive (Pitch, Roll, Yaw) in degrees from an SO(3) controller rotation matrix
+func matrixToEuler(m [3][3]float64) (pitch, roll, yaw float64) {
+	// Pitch: forward/backward tilt
+	sinp := -m[1][2]
+	if sinp >= 1.0 {
+		pitch = 90.0
+	} else if sinp <= -1.0 {
+		pitch = -90.0
+	} else {
+		pitch = math.Asin(sinp) * 180.0 / math.Pi
+	}
+
+	// Roll: left/right tilt (positive = tilt right)
+	roll = math.Atan2(m[1][0], m[1][1]) * 180.0 / math.Pi
+
+	// Yaw: spin around vertical axis (positive = turn right)
+	yaw = math.Atan2(m[0][2], m[2][2]) * 180.0 / math.Pi
+
+	return pitch, roll, yaw
 }
 
 // NewApp creates a new App application struct
@@ -141,7 +359,7 @@ func NewApp() *App {
 	primaryIP := pairing.GetPrimaryIP(lanIPs)
 
 	setupURL := fmt.Sprintf("http://%s:%d/ca.mobileconfig", primaryIP, HTTPPort)
-	appURL := fmt.Sprintf("https://%s:%d", primaryIP, HTTPSPort)
+	appURL := fmt.Sprintf("https://%s:%d/?t=%d", primaryIP, HTTPSPort, time.Now().Unix())
 
 	// Pre-generate Gamepad QR code PNG for instant display on start
 	qrBytes, err := pairing.GenerateQRPNG(appURL, 240)
@@ -172,16 +390,18 @@ func NewApp() *App {
 		qrCodePNG:    qrBase64,
 		setupQRPNG:   setupQRBase64,
 		activeSlot:   -1,
-		activeMatrix: identity3x3(),
+		activeMatrix: defaultMatrix3x3(),
 		profilesDir:  profilesDir,
+		calStepLogs:  make(map[int]StepCaptureLog),
+		ahrs:         NewMadgwickAHRS(0.0),
 	}
 
-	// Initialize 4 empty slots
+	// Initialize 4 empty slots with default portrait matrix
 	for i := range app.profiles {
 		app.profiles[i] = Profile{
 			Slot:   i,
 			Name:   "",
-			Matrix: identity3x3(),
+			Matrix: defaultMatrix3x3(),
 			Active: false,
 		}
 	}
@@ -192,17 +412,21 @@ func NewApp() *App {
 	return app
 }
 
+const CurrentProfileSchemaVersion = 2
+
 // loadProfiles reads profiles.json from disk
 func (a *App) loadProfiles() {
 	path := filepath.Join(a.profilesDir, "profiles.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return // first run — empty profiles is fine
+		return // first run — default profiles are fine
 	}
 
 	var stored struct {
-		Profiles   [4]Profile `json:"profiles"`
-		ActiveSlot int        `json:"activeSlot"`
+		SchemaVersion int        `json:"schemaVersion"`
+		Profiles      [4]Profile `json:"profiles"`
+		ActiveSlot    int        `json:"activeSlot"`
+		GyroBias      [3]float64 `json:"gyroBias"`
 	}
 	if err := json.Unmarshal(data, &stored); err != nil {
 		return
@@ -211,9 +435,27 @@ func (a *App) loadProfiles() {
 	a.profilesMu.Lock()
 	defer a.profilesMu.Unlock()
 
+	// If schema version is outdated, reset all profiles to canonical defaults (§5 of spec)
+	if stored.SchemaVersion != CurrentProfileSchemaVersion {
+		for i := 0; i < 4; i++ {
+			a.profiles[i] = Profile{
+				Slot:   i,
+				Name:   "",
+				Matrix: defaultMatrix3x3(),
+				Active: false,
+			}
+		}
+		a.activeSlot = -1
+		return
+	}
+
 	for i := 0; i < 4; i++ {
 		a.profiles[i] = stored.Profiles[i]
 		a.profiles[i].Slot = i // ensure slot index is canonical
+		// Validate matrix: Cemuhook DSU requires det(M) ≈ -1.0
+		if math.Abs(det3x3(a.profiles[i].Matrix)+1.0) > 0.05 {
+			a.profiles[i].Matrix = defaultMatrix3x3()
+		}
 	}
 	a.activeSlot = stored.ActiveSlot
 
@@ -224,9 +466,13 @@ func (a *App) loadProfiles() {
 		a.matrixMu.Unlock()
 		a.profiles[a.activeSlot].Active = true
 	}
+
+	a.biasMu.Lock()
+	a.gyroBias = stored.GyroBias
+	a.biasMu.Unlock()
 }
 
-// saveProfiles writes profiles.json to disk
+// saveProfiles writes profiles.json to disk with schemaVersion 2
 func (a *App) saveProfiles() {
 	if err := os.MkdirAll(a.profilesDir, 0755); err != nil {
 		return
@@ -234,13 +480,19 @@ func (a *App) saveProfiles() {
 	path := filepath.Join(a.profilesDir, "profiles.json")
 
 	a.profilesMu.RLock()
+	a.biasMu.RLock()
 	stored := struct {
-		Profiles   [4]Profile `json:"profiles"`
-		ActiveSlot int        `json:"activeSlot"`
+		SchemaVersion int        `json:"schemaVersion"`
+		Profiles      [4]Profile `json:"profiles"`
+		ActiveSlot    int        `json:"activeSlot"`
+		GyroBias      [3]float64 `json:"gyroBias"`
 	}{
-		Profiles:   a.profiles,
-		ActiveSlot: a.activeSlot,
+		SchemaVersion: CurrentProfileSchemaVersion,
+		Profiles:      a.profiles,
+		ActiveSlot:    a.activeSlot,
+		GyroBias:      a.gyroBias,
 	}
+	a.biasMu.RUnlock()
 	a.profilesMu.RUnlock()
 
 	data, err := json.MarshalIndent(stored, "", "  ")
@@ -278,28 +530,74 @@ func (a *App) startup(ctx context.Context) {
 
 	// 3. Web & Telemetry Server (HTTP 8080 / HTTPS 8443)
 	srv := server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
-		// Store latest raw gyro/accel for calibration wizard
+		// Store latest raw gyro/accel/quaternion for calibration wizard
 		a.curRotX.Store(math.Float64bits(float64(frame.RotX)))
 		a.curRotY.Store(math.Float64bits(float64(frame.RotY)))
 		a.curRotZ.Store(math.Float64bits(float64(frame.RotZ)))
 		a.curAccX.Store(math.Float64bits(float64(frame.AccX)))
 		a.curAccY.Store(math.Float64bits(float64(frame.AccY)))
 		a.curAccZ.Store(math.Float64bits(float64(frame.AccZ)))
+		a.curQx.Store(math.Float64bits(float64(frame.Qx)))
+		a.curQy.Store(math.Float64bits(float64(frame.Qy)))
+		a.curQz.Store(math.Float64bits(float64(frame.Qz)))
+		a.curQw.Store(math.Float64bits(float64(frame.Qw)))
+
+		// Record raw frame in rolling 20-frame debug buffer
+		a.recentFramesMu.Lock()
+		a.recentFrames = append(a.recentFrames, RawLogFrame{
+			Timestamp: frame.Timestamp,
+			RotX:      frame.RotX,
+			RotY:      frame.RotY,
+			RotZ:      frame.RotZ,
+			AccX:      frame.AccX,
+			AccY:      frame.AccY,
+			AccZ:      frame.AccZ,
+			Qx:        frame.Qx,
+			Qy:        frame.Qy,
+			Qz:        frame.Qz,
+			Qw:        frame.Qw,
+		})
+		if len(a.recentFrames) > 20 {
+			a.recentFrames = a.recentFrames[len(a.recentFrames)-20:]
+		}
+		a.recentFramesMu.Unlock()
 
 		// If calibration gesture recording is active, capture every 60 Hz frame
 		if a.isCapturing.Load() {
 			a.captureMu.Lock()
-			a.captureBuffer = append(a.captureBuffer, [3]float64{float64(frame.RotX), float64(frame.RotY), float64(frame.RotZ)})
+			a.captureBuffer = append(a.captureBuffer, captureSample{
+				rot: [3]float64{float64(frame.RotX), float64(frame.RotY), float64(frame.RotZ)},
+				acc: [3]float64{float64(frame.AccX), float64(frame.AccY), float64(frame.AccZ)},
+			})
 			a.captureMu.Unlock()
 		}
 
-		// Apply calibration matrix to the frame before forwarding to DSU
-		a.matrixMu.RLock()
-		mat := a.activeMatrix
-		a.matrixMu.RUnlock()
+		// Apply active or preview calibration matrix to the frame
+		a.previewMu.RLock()
+		usePrev := a.usePreview
+		prevMat := a.previewMatrix
+		a.previewMu.RUnlock()
+
+		var mat [3][3]float64
+		if usePrev {
+			mat = prevMat
+		} else {
+			a.matrixMu.RLock()
+			mat = a.activeMatrix
+			a.matrixMu.RUnlock()
+		}
+
+		// Subtract gyro zero-bias before applying calibration matrix M (§1, §2 of spec)
+		a.biasMu.RLock()
+		bx, by, bz := a.gyroBias[0], a.gyroBias[1], a.gyroBias[2]
+		a.biasMu.RUnlock()
+
+		rawRx := float64(frame.RotX) - bx
+		rawRy := float64(frame.RotY) - by
+		rawRz := float64(frame.RotZ) - bz
 
 		// Apply matrix to rotation rate and acceleration
-		rx, ry, rz := applyMatrix(mat, float64(frame.RotX), float64(frame.RotY), float64(frame.RotZ))
+		rx, ry, rz := applyMatrix(mat, rawRx, rawRy, rawRz)
 		ax, ay, az := applyMatrix(mat, float64(frame.AccX), float64(frame.AccY), float64(frame.AccZ))
 
 		corrected := frame
@@ -310,11 +608,30 @@ func (a *App) startup(ctx context.Context) {
 		corrected.AccY = float32(ay)
 		corrected.AccZ = float32(az)
 
-		// Recompute Euler angles from quaternion (quaternion reflects physical orientation, unaffected by axis reorder)
-		p, r, y := server.QuaternionToEuler(frame.Qx, frame.Qy, frame.Qz, frame.Qw)
-		a.curPitch.Store(math.Float64bits(p))
-		a.curRoll.Store(math.Float64bits(r))
-		a.curYaw.Store(math.Float64bits(y))
+		// Deadband for tiny stationary gyro noise (< 0.25 deg/s) to ensure 0.000% stationary drift.
+		// Note: corrected frame sent to DSU is unaffected to preserve analog precision in games.
+		gyroSpeed := math.Sqrt(rx*rx + ry*ry + rz*rz)
+		var ahrsRx, ahrsRy, ahrsRz float32
+		if gyroSpeed >= 0.25 {
+			ahrsRx = corrected.RotX
+			ahrsRy = corrected.RotY
+			ahrsRz = corrected.RotZ
+		}
+
+		// Update Madgwick AHRS filter. Runs on calibrated (post-M) gyro/accel so its
+		// quaternion output is already in DSU space matching PadTest conventions.
+		// Store in separate ahrs fields - do NOT write curQx/Qy/Qz/Qw (those hold raw phone quat).
+		if a.ahrs != nil {
+			q0, q1, q2, q3 := a.ahrs.Update(ahrsRx, ahrsRy, ahrsRz, corrected.AccX, corrected.AccY, corrected.AccZ, time.Now())
+			p, r, y := a.ahrs.GetEulerAngles()
+			a.curPitch.Store(math.Float64bits(p))
+			a.curRoll.Store(math.Float64bits(r))
+			a.curYaw.Store(math.Float64bits(y))
+			a.curAhrsQ0.Store(math.Float64bits(float64(q0)))
+			a.curAhrsQ1.Store(math.Float64bits(float64(q1)))
+			a.curAhrsQ2.Store(math.Float64bits(float64(q2)))
+			a.curAhrsQ3.Store(math.Float64bits(float64(q3)))
+		}
 
 		if a.isPaused.Load() {
 			return // Muted during pause
@@ -445,6 +762,17 @@ func (a *App) GetState() AppState {
 		profilesList[i].Active = (i == activeSlot)
 	}
 
+	// Determine which matrix is currently effective: preview during wizard, or saved active matrix.
+	a.previewMu.RLock()
+	usePrev := a.usePreview
+	effectiveMat := a.previewMatrix
+	a.previewMu.RUnlock()
+	if !usePrev {
+		a.matrixMu.RLock()
+		effectiveMat = a.activeMatrix
+		a.matrixMu.RUnlock()
+	}
+
 	return AppState{
 		Status:        status,
 		IsPaused:      a.isPaused.Load(),
@@ -466,8 +794,17 @@ func (a *App) GetState() AppState {
 		RawAccX:       math.Float64frombits(a.curAccX.Load()),
 		RawAccY:       math.Float64frombits(a.curAccY.Load()),
 		RawAccZ:       math.Float64frombits(a.curAccZ.Load()),
+		Qx:            math.Float64frombits(a.curQx.Load()),
+		Qy:            math.Float64frombits(a.curQy.Load()),
+		Qz:            math.Float64frombits(a.curQz.Load()),
+		Qw:            math.Float64frombits(a.curQw.Load()),
 		Profiles:      profilesList,
 		ActiveSlot:    activeSlot,
+		ActiveMatrix:  effectiveMat,
+		AhrsQ0:        math.Float64frombits(a.curAhrsQ0.Load()),
+		AhrsQ1:        math.Float64frombits(a.curAhrsQ1.Load()),
+		AhrsQ2:        math.Float64frombits(a.curAhrsQ2.Load()),
+		AhrsQ3:        math.Float64frombits(a.curAhrsQ3.Load()),
 	}
 }
 
@@ -506,19 +843,19 @@ func (a *App) GetProfiles() []Profile {
 }
 
 // SaveProfile overwrites a profile slot (slot 0-3) with the given name and matrix.
-// The matrix must be a valid signed-permutation matrix with determinant +1.
+// The matrix must be a valid signed-permutation matrix with determinant -1.
 func (a *App) SaveProfile(slot int, name string, matrix [3][3]float64) string {
 	if slot < 0 || slot > 3 {
 		return "invalid slot"
 	}
 
-	// Validate matrix: determinant must be +1
+	// Validate matrix: determinant must be -1 (Cemuhook DSU left-handed parity convention)
 	det := matrix[0][0]*(matrix[1][1]*matrix[2][2]-matrix[1][2]*matrix[2][1]) -
 		matrix[0][1]*(matrix[1][0]*matrix[2][2]-matrix[1][2]*matrix[2][0]) +
 		matrix[0][2]*(matrix[1][0]*matrix[2][1]-matrix[1][1]*matrix[2][0])
 
-	if math.Abs(det-1.0) > 0.01 {
-		return fmt.Sprintf("invalid matrix: determinant is %.4f, must be +1.0", det)
+	if math.Abs(det+1.0) > 0.05 {
+		return fmt.Sprintf("invalid matrix: determinant is %.4f, must be -1.0", det)
 	}
 
 	a.profilesMu.Lock()
@@ -529,6 +866,16 @@ func (a *App) SaveProfile(slot int, name string, matrix [3][3]float64) string {
 		Active: (slot == a.activeSlot),
 	}
 	a.profilesMu.Unlock()
+
+	// If this slot is currently active, push the new matrix into the live path immediately.
+	if slot == a.activeSlot {
+		a.matrixMu.Lock()
+		a.activeMatrix = matrix
+		a.matrixMu.Unlock()
+		if a.ahrs != nil {
+			a.ahrs.Reset()
+		}
+	}
 
 	a.saveProfiles()
 	a.emitStateChange()
@@ -559,25 +906,109 @@ func (a *App) SetActiveProfile(slot int) string {
 		a.activeMatrix = a.profiles[slot].Matrix
 		a.profilesMu.RUnlock()
 	} else {
-		a.activeMatrix = identity3x3()
+		a.activeMatrix = defaultMatrix3x3()
 	}
 	a.matrixMu.Unlock()
+
+	if a.ahrs != nil {
+		a.ahrs.Reset()
+	}
 
 	a.saveProfiles()
 	a.emitStateChange()
 	return "ok"
 }
 
-// StartCapture begins buffering raw 60 Hz gyro frames for calibration
+// StartCapture begins buffering raw 60 Hz gyro and accel frames for calibration
+
+// PreviewMatrix temporarily overrides the active calibration matrix for the 3D viewport.
+// Call this when the calibration wizard shows the confirm or manual screen so the user
+// can see exactly how the candidate matrix behaves before saving.
+func (a *App) PreviewMatrix(matrix [3][3]float64) {
+	a.previewMu.Lock()
+	a.previewMatrix = matrix
+	a.usePreview = true
+	a.previewMu.Unlock()
+	if a.ahrs != nil {
+		a.ahrs.Reset()
+	}
+}
+
+// ClearPreview removes the temporary preview matrix and reverts to the saved activeMatrix.
+// Call this when the calibration wizard is closed or cancelled.
+func (a *App) ClearPreview() {
+	a.previewMu.Lock()
+	a.usePreview = false
+	a.previewMu.Unlock()
+	if a.ahrs != nil {
+		a.ahrs.Reset()
+	}
+}
+
+// ResetAHRS zeroes the 3D orientation filter
+func (a *App) ResetAHRS() {
+	if a.ahrs != nil {
+		a.ahrs.Reset()
+	}
+}
+
 func (a *App) StartCapture() {
 	a.captureMu.Lock()
-	a.captureBuffer = make([][3]float64, 0, 200)
+	a.captureBuffer = make([]captureSample, 0, 300)
 	a.captureMu.Unlock()
 	a.isCapturing.Store(true)
 }
 
-// StopCapture stops buffering and analyzes the captured gyro frames
-func (a *App) StopCapture() CaptureResult {
+// writeDebugCSV appends a capture session block to gyro_debug_capture.csv in profilesDir.
+// Each session is separated by a blank line and starts with a header and a metadata row.
+func (a *App) writeDebugCSV(step int, samples []captureSample, result CaptureResult) {
+	path := filepath.Join(a.profilesDir, "gyro_debug_capture.csv")
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	ts := time.Now().Format("2006-01-02 15:04:05")
+	fmt.Fprintf(f, "\n# Session: %s  step=%d  samples=%d  success=%v  axisIdx=%d  axisName=%s  confidence=%.3f  peakSpeed=%.2f\n",
+		ts, step, len(samples), result.Success, result.AxisIdx, result.AxisName, result.Confidence, result.PeakSpeed)
+	fmt.Fprintln(f, "idx,rotX,rotY,rotZ,accX,accY,accZ,speed")
+	for i, s := range samples {
+		speed := math.Sqrt(s.rot[0]*s.rot[0] + s.rot[1]*s.rot[1] + s.rot[2]*s.rot[2])
+		fmt.Fprintf(f, "%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+			i, s.rot[0], s.rot[1], s.rot[2],
+			s.acc[0], s.acc[1], s.acc[2], speed)
+	}
+
+	a.calLogMu.Lock()
+	if a.calStepLogs == nil {
+		a.calStepLogs = make(map[int]StepCaptureLog)
+	}
+	samplesCopy := make([]captureSample, len(samples))
+	copy(samplesCopy, samples)
+	a.calStepLogs[step] = StepCaptureLog{
+		Step:      step,
+		Samples:   samplesCopy,
+		Result:    result,
+		Timestamp: time.Now(),
+	}
+	a.calLogMu.Unlock()
+}
+
+// getI18nMsg returns localized message or fallback
+func (a *App) getI18nMsg(key string) string {
+	if a.i18nMgr != nil {
+		return a.i18nMgr.Get(a.i18nMgr.BaseLanguage(), key)
+	}
+	return key
+}
+
+// StopCapture stops buffering and analyzes the captured gyro frames for the given gesture step.
+// step 0: Stillness / "Покой" — phone motionless on desk (~1.5s) to calibrate zero-bias
+// step 1: Pitch     / "Кивни" — tilt phone forward/back (nod gesture, target RotX < 0)
+// step 2: Roll      / "Самолётик" — bank phone left/right (wing gesture, target RotZ > 0)
+// Yaw is computed automatically in ValidateCalibration with det = -1.0.
+func (a *App) StopCapture(step int) CaptureResult {
 	a.isCapturing.Store(false)
 	a.captureMu.Lock()
 	samples := a.captureBuffer
@@ -585,113 +1016,390 @@ func (a *App) StopCapture() CaptureResult {
 	a.captureMu.Unlock()
 
 	if len(samples) < 5 {
-		return CaptureResult{
-			Success:  false,
-			ErrorMsg: "Слишком мало данных. Убедитесь, что телефон подключен.",
+		res := CaptureResult{
+			Success:   false,
+			ErrorCode: "error_too_few_samples",
+			ErrorMsg:  a.getI18nMsg("calibration.error_too_few_samples"),
 		}
+		a.writeDebugCSV(step, samples, res)
+		return res
 	}
 
+	// ── Step 0: Stillness / Bias Calibration (§2 of spec) ──
+	if step == 0 {
+		if len(samples) < 20 {
+			res := CaptureResult{
+				Success:   false,
+				ErrorCode: "error_too_few_samples",
+				ErrorMsg:  a.getI18nMsg("calibration.error_too_few_samples"),
+			}
+			a.writeDebugCSV(step, samples, res)
+			return res
+		}
+
+		var sumX, sumY, sumZ float64
+		var peakSpeed float64
+		for _, s := range samples {
+			sumX += s.rot[0]
+			sumY += s.rot[1]
+			sumZ += s.rot[2]
+			spd := math.Sqrt(s.rot[0]*s.rot[0] + s.rot[1]*s.rot[1] + s.rot[2]*s.rot[2])
+			if spd > peakSpeed {
+				peakSpeed = spd
+			}
+		}
+		n := float64(len(samples))
+		bX := sumX / n
+		bY := sumY / n
+		bZ := sumZ / n
+
+		// Compute variance to verify phone was not shaken or moved during rest
+		var varSum float64
+		for _, s := range samples {
+			dx := s.rot[0] - bX
+			dy := s.rot[1] - bY
+			dz := s.rot[2] - bZ
+			varSum += dx*dx + dy*dy + dz*dz
+		}
+		stdDev := math.Sqrt(varSum / n)
+
+		if stdDev > 2.5 || peakSpeed > 6.0 {
+			res := CaptureResult{
+				Success:     false,
+				ErrorCode:   "error_moved_during_rest",
+				ErrorMsg:    a.getI18nMsg("calibration.error_moved_during_rest"),
+				SampleCount: len(samples),
+				PeakSpeed:   peakSpeed,
+			}
+			a.writeDebugCSV(step, samples, res)
+			return res
+		}
+
+		// Store verified zero-bias
+		a.biasMu.Lock()
+		a.gyroBias = [3]float64{bX, bY, bZ}
+		a.biasMu.Unlock()
+
+		res := CaptureResult{
+			Success:     true,
+			AxisIdx:     -1,
+			Sign:        1.0,
+			AxisName:    fmt.Sprintf("Bias: %.2f, %.2f, %.2f", bX, bY, bZ),
+			Confidence:  1.0,
+			SampleCount: len(samples),
+			PeakSpeed:   peakSpeed,
+		}
+		a.writeDebugCSV(step, samples, res)
+		return res
+	}
+
+	// ── Step 1 & 2: Dynamic gestures (Pitch / Roll) ──
+	// Subtract calibrated bias first (§1 of spec)
+	a.biasMu.RLock()
+	bx, by, bz := a.gyroBias[0], a.gyroBias[1], a.gyroBias[2]
+	a.biasMu.RUnlock()
+
+	for i := range samples {
+		samples[i].rot[0] -= bx
+		samples[i].rot[1] -= by
+		samples[i].rot[2] -= bz
+	}
+
+	axisNames := []string{"X", "Y", "Z"}
+
 	var peakSpeed float64
-	var activeSamples [][3]float64
+	var activeCount int
+	var energy [3]float64
+	var peakVal [3]float64
+
 	for _, s := range samples {
-		speed := math.Sqrt(s[0]*s[0] + s[1]*s[1] + s[2]*s[2])
+		speed := math.Sqrt(s.rot[0]*s.rot[0] + s.rot[1]*s.rot[1] + s.rot[2]*s.rot[2])
 		if speed > peakSpeed {
 			peakSpeed = speed
 		}
 		if speed >= 10.0 { // movement threshold in °/s
-			activeSamples = append(activeSamples, [3]float64{s[0] / speed, s[1] / speed, s[2] / speed})
+			activeCount++
+			for i := 0; i < 3; i++ {
+				energy[i] += s.rot[i] * s.rot[i]
+				if math.Abs(s.rot[i]) > math.Abs(peakVal[i]) {
+					peakVal[i] = s.rot[i]
+				}
+			}
 		}
 	}
 
-	if len(activeSamples) < 5 || peakSpeed < 18.0 {
-		return CaptureResult{
+	if activeCount < 3 || peakSpeed < 12.0 {
+		res := CaptureResult{
 			Success:     false,
 			SampleCount: len(samples),
 			PeakSpeed:   peakSpeed,
-			ErrorMsg:    "Движение слишком слабое. Наклоните телефон энергичнее.",
+			ErrorCode:   "error_too_weak",
+			ErrorMsg:    a.getI18nMsg("calibration.error_too_weak"),
 		}
+		a.writeDebugCSV(step, samples, res)
+		return res
 	}
 
-	// Compute mean normalized direction
-	var mean [3]float64
-	for _, v := range activeSamples {
-		mean[0] += v[0]
-		mean[1] += v[1]
-		mean[2] += v[2]
-	}
-	meanMag := math.Sqrt(mean[0]*mean[0] + mean[1]*mean[1] + mean[2]*mean[2])
-	if meanMag < 0.001 {
-		return CaptureResult{
+	totalEnergy := energy[0] + energy[1] + energy[2]
+	if totalEnergy < 1e-3 {
+		res := CaptureResult{
 			Success:     false,
 			SampleCount: len(samples),
 			PeakSpeed:   peakSpeed,
-			ErrorMsg:    "Движение взаимно компенсировалось. Наклоняйте только в одну сторону.",
+			ErrorCode:   "error_too_weak",
+			ErrorMsg:    a.getI18nMsg("calibration.error_too_weak"),
 		}
-	}
-	d := [3]float64{mean[0] / meanMag, mean[1] / meanMag, mean[2] / meanMag}
-
-	// 6 candidate axes
-	candidates := [][3]float64{
-		{1, 0, 0}, {-1, 0, 0},
-		{0, 1, 0}, {0, -1, 0},
-		{0, 0, 1}, {0, 0, -1},
+		a.writeDebugCSV(step, samples, res)
+		return res
 	}
 
-	bestScore := -2.0
-	secondScore := -2.0
-	bestCand := candidates[0]
-
-	for _, c := range candidates {
-		dot := d[0]*c[0] + d[1]*c[1] + d[2]*c[2]
-		if dot > bestScore {
-			secondScore = bestScore
-			bestScore = dot
-			bestCand = c
-		} else if dot > secondScore {
-			secondScore = dot
-		}
-	}
-
-	confidence := bestScore - secondScore
+	// Find dominant axis by energy
 	axisIdx := 0
-	sign := 1.0
-	for i := 0; i < 3; i++ {
-		if bestCand[i] != 0 {
+	maxEnergy := energy[0]
+	for i := 1; i < 3; i++ {
+		if energy[i] > maxEnergy {
+			maxEnergy = energy[i]
 			axisIdx = i
-			sign = bestCand[i]
-			break
+		}
+	}
+	secondEnergy := 0.0
+	for i := 0; i < 3; i++ {
+		if i != axisIdx && energy[i] > secondEnergy {
+			secondEnergy = energy[i]
 		}
 	}
 
-	axisNames := []string{"X", "Y", "Z"}
+	confidence := 0.0
+	if maxEnergy > 1e-6 {
+		confidence = (maxEnergy - secondEnergy) / maxEnergy
+	}
+
+	// Determine gesture sign from the first significant half-wave of motion
+	maxPeakOnAxis := math.Abs(peakVal[axisIdx])
+	threshold := math.Max(8.0, 0.25*maxPeakOnAxis)
+	sign := 1.0
+	firstSign := 0.0
+	for _, s := range samples {
+		v := s.rot[axisIdx]
+		if firstSign == 0 {
+			if math.Abs(v) >= threshold {
+				if v >= 0 {
+					firstSign = 1.0
+				} else {
+					firstSign = -1.0
+				}
+			}
+		} else {
+			if (firstSign > 0 && v < -5.0) || (firstSign < 0 && v > 5.0) {
+				break // End of first half-wave
+			}
+		}
+	}
+	if firstSign != 0 {
+		sign = firstSign
+	} else if peakVal[axisIdx] < 0 {
+		sign = -1.0
+	}
+
 	signStr := "+"
 	if sign < 0 {
 		signStr = "-"
 	}
 	name := signStr + axisNames[axisIdx]
 
-	if confidence < 0.20 {
-		return CaptureResult{
+	// Ambiguity check
+	if maxPeakOnAxis < 10.0 || confidence < 0.15 {
+		res := CaptureResult{
 			Success:     false,
 			AxisIdx:     axisIdx,
 			Sign:        sign,
 			AxisName:    name,
 			Confidence:  confidence,
-			SampleCount: len(activeSamples),
+			SampleCount: activeCount,
 			PeakSpeed:   peakSpeed,
-			ErrorMsg:    "Движение неоднозначно (наклон по диагонали). Наклоните строго по одной оси.",
+			ErrorCode:   "error_ambiguous",
+			ErrorMsg:    a.getI18nMsg("calibration.error_ambiguous"),
 		}
+		a.writeDebugCSV(step, samples, res)
+		return res
 	}
 
-	return CaptureResult{
+	// Build canonical row vector according to formula in §3.1:
+	// row_k = target_sign * detected_sign * e_{detected_axis}
+	var d [3]float64
+	if step == 1 {
+		// Pitch step: target RotX < 0 when nodding forward -> target = -1.0
+		targetPitchSign := -1.0
+		d[axisIdx] = targetPitchSign * sign
+		a.calVectors[0] = d
+		a.calVectors[1] = [3]float64{0, 0, 0}
+	} else if step == 2 {
+		// Roll step: target RotZ > 0 when banking right -> target = +1.0
+		targetRollSign := +1.0
+		d[axisIdx] = targetRollSign * sign
+
+		// Verify it's a different physical axis from Pitch
+		pitchAxIdx := -1
+		for i := 0; i < 3; i++ {
+			if math.Abs(a.calVectors[0][i]) > 0.5 {
+				pitchAxIdx = i
+				break
+			}
+		}
+		if pitchAxIdx >= 0 && pitchAxIdx == axisIdx {
+			res := CaptureResult{
+				Success:     false,
+				AxisIdx:     axisIdx,
+				Sign:        sign,
+				AxisName:    name,
+				Confidence:  confidence,
+				SampleCount: activeCount,
+				PeakSpeed:   peakSpeed,
+				Vector:      d,
+				ErrorCode:   "error_grip_changed",
+				ErrorMsg:    a.getI18nMsg("calibration.error_grip_changed"),
+			}
+			a.writeDebugCSV(step, samples, res)
+			return res
+		}
+		a.calVectors[1] = d
+	}
+
+	res := CaptureResult{
 		Success:     true,
 		AxisIdx:     axisIdx,
 		Sign:        sign,
 		AxisName:    name,
 		Confidence:  confidence,
-		SampleCount: len(activeSamples),
+		SampleCount: activeCount,
 		PeakSpeed:   peakSpeed,
+		Vector:      d,
 	}
+	a.writeDebugCSV(step, samples, res)
+	return res
+}
+
+// ValidateCalibration builds the calibration matrix from the 2 captured gesture vectors: Pitch and Roll.
+// Yaw is computed as Pitch x Roll with det = -1.0 (Cemuhook DSU left-handed parity convention, §3.3).
+func (a *App) ValidateCalibration(pitch, roll [3]float64) ValidationResult {
+	norm := func(v [3]float64) [3]float64 {
+		m := math.Sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
+		if m < 1e-6 {
+			return v
+		}
+		return [3]float64{v[0] / m, v[1] / m, v[2] / m}
+	}
+
+	// Snap each vector to nearest cardinal axis (±X, ±Y, or ±Z)
+	snap := func(v [3]float64) [3]float64 {
+		ax := 0
+		maxVal := math.Abs(v[0])
+		if math.Abs(v[1]) > maxVal {
+			ax = 1
+			maxVal = math.Abs(v[1])
+		}
+		if math.Abs(v[2]) > maxVal {
+			ax = 2
+		}
+		var res [3]float64
+		if v[ax] >= 0 {
+			res[ax] = 1.0
+		} else {
+			res[ax] = -1.0
+		}
+		return res
+	}
+
+	getAxisIdx := func(v [3]float64) int {
+		for i := 0; i < 3; i++ {
+			if math.Abs(v[i]) > 0.5 {
+				return i
+			}
+		}
+		return -1
+	}
+
+	pitchRow := snap(norm(pitch))
+	rollRow  := snap(norm(roll))
+
+	idxP := getAxisIdx(pitchRow)
+	idxR := getAxisIdx(rollRow)
+
+	// Tier 2: Pitch and Roll must activate different physical axes
+	if idxP < 0 || idxR < 0 || idxP == idxR {
+		res := ValidationResult{
+			Success:   false,
+			ErrorCode: "error_grip_changed",
+			ErrorMsg:  a.getI18nMsg("calibration.error_grip_changed"),
+		}
+		a.calLogMu.Lock()
+		a.calValResult = res
+		a.calLogMu.Unlock()
+		return res
+	}
+
+	// Tier 3: Compute canonical Cemuhook DSU calibration matrix.
+	// Cross product for Yaw:
+	yawRow := [3]float64{
+		pitchRow[1]*rollRow[2] - pitchRow[2]*rollRow[1],
+		pitchRow[2]*rollRow[0] - pitchRow[0]*rollRow[2],
+		pitchRow[0]*rollRow[1] - pitchRow[1]*rollRow[0],
+	}
+
+	var mat [3][3]float64
+	mat[0] = pitchRow
+	mat[1] = yawRow
+	mat[2] = rollRow
+
+	// Cemuhook DSU is left-handed parity convention -> det(M) must be -1.0 (§3.3)
+	if det3x3(mat) > 0 {
+		yawRow = [3]float64{-yawRow[0], -yawRow[1], -yawRow[2]}
+		mat[1] = yawRow
+	}
+
+	det := det3x3(mat)
+	if math.Abs(det+1.0) > 0.05 {
+		res := ValidationResult{
+			Success:   false,
+			ErrorCode: "error_invalid_determinant",
+			ErrorMsg:  a.getI18nMsg("calibration.error_invalid_determinant"),
+		}
+		a.calLogMu.Lock()
+		a.calValResult = res
+		a.calLogMu.Unlock()
+		return res
+	}
+
+	formatAxis := func(v [3]float64) string {
+		axes := []string{"X", "Y", "Z"}
+		for i := 0; i < 3; i++ {
+			if v[i] > 0.5 {
+				return "+" + axes[i]
+			} else if v[i] < -0.5 {
+				return "-" + axes[i]
+			}
+		}
+		return "?"
+	}
+
+	res := ValidationResult{
+		Success:   true,
+		Matrix:    mat,
+		Det:       det,
+		PitchAxis: formatAxis(mat[0]),
+		YawAxis:   formatAxis(mat[1]),
+		RollAxis:  formatAxis(mat[2]),
+	}
+	a.calLogMu.Lock()
+	a.calValResult = res
+	a.calLogMu.Unlock()
+	return res
+}
+
+func det3x3(m [3][3]float64) float64 {
+	return m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1]) -
+		m[0][1]*(m[1][0]*m[2][2]-m[1][2]*m[2][0]) +
+		m[0][2]*(m[1][0]*m[2][1]-m[1][1]*m[2][0])
 }
 
 // GetLanguages returns available languages
@@ -719,3 +1427,93 @@ func (a *App) ValidateSync() []string {
 	}
 	return nil
 }
+
+// CopyLast20Frames returns the last 20 raw frames formatted as CSV text for clipboard
+func (a *App) CopyLast20Frames() string {
+	a.recentFramesMu.Lock()
+	defer a.recentFramesMu.Unlock()
+
+	if len(a.recentFrames) == 0 {
+		return "No frames received from phone yet"
+	}
+
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("# Recent %d raw frames from phone:\n", len(a.recentFrames)))
+	sb.WriteString("idx,ts,rotX,rotY,rotZ,accX,accY,accZ,qx,qy,qz,qw\n")
+	for i, f := range a.recentFrames {
+		sb.WriteString(fmt.Sprintf("%d,%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+			i+1, f.Timestamp, f.RotX, f.RotY, f.RotZ, f.AccX, f.AccY, f.AccZ, f.Qx, f.Qy, f.Qz, f.Qw))
+	}
+	return sb.String()
+}
+
+// CopyCalibrationReport returns a detailed text report of the last calibration session:
+// raw samples from each 2.5s step, algorithm decisions, and final matrix verdict.
+func (a *App) CopyCalibrationReport() string {
+	a.calLogMu.Lock()
+	defer a.calLogMu.Unlock()
+
+	var sb strings.Builder
+	sb.WriteString("=== GYROBRIDGE CALIBRATION FULL REPORT ===\n")
+	sb.WriteString(fmt.Sprintf("Generated: %s\n\n", time.Now().Format("2006-01-02 15:04:05")))
+
+	// Final Verdict
+	val := a.calValResult
+	sb.WriteString("--- FINAL VERDICT & MATRIX ---\n")
+	sb.WriteString(fmt.Sprintf("Validation Success: %v\n", val.Success))
+	if !val.Success && val.ErrorCode != "" {
+		sb.WriteString(fmt.Sprintf("Error: [%s] %s\n", val.ErrorCode, val.ErrorMsg))
+	}
+	sb.WriteString(fmt.Sprintf("Determinant: %.4f\n", val.Det))
+	sb.WriteString(fmt.Sprintf("Pitch Axis (Row 0): %s\n", val.PitchAxis))
+	sb.WriteString(fmt.Sprintf("Yaw Axis   (Row 1): %s\n", val.YawAxis))
+	sb.WriteString(fmt.Sprintf("Roll Axis  (Row 2): %s\n", val.RollAxis))
+	sb.WriteString("Matrix:\n")
+	for row := 0; row < 3; row++ {
+		sb.WriteString(fmt.Sprintf("  [%8.4f, %8.4f, %8.4f]\n",
+			val.Matrix[row][0], val.Matrix[row][1], val.Matrix[row][2]))
+	}
+	sb.WriteString("\n")
+
+	// Static Gyro Bias
+	a.biasMu.RLock()
+	bias := a.gyroBias
+	a.biasMu.RUnlock()
+	sb.WriteString(fmt.Sprintf("Static Gyro Bias: [%.4f, %.4f, %.4f] deg/s\n\n", bias[0], bias[1], bias[2]))
+
+	// Steps (0 = Rest/Stillness, 1 = Pitch, 2 = Roll)
+	stepNames := map[int]string{
+		0: "STEP 0: REST / STILLNESS BIAS (Калибровка покоя)",
+		1: "STEP 1: PITCH (Кивок вперед)",
+		2: "STEP 2: ROLL (Крен вправо)",
+	}
+
+	for step := 0; step < 3; step++ {
+		log, exists := a.calStepLogs[step]
+		name := stepNames[step]
+		sb.WriteString(fmt.Sprintf("--- %s ---\n", name))
+		if !exists || len(log.Samples) == 0 {
+			sb.WriteString("No samples recorded for this step.\n\n")
+			continue
+		}
+		sb.WriteString(fmt.Sprintf("Algorithm Result: Success=%v, DetectedAxis=%s (index %d), Sign=%+.1f, Confidence=%.1f%%, PeakSpeed=%.2f deg/s, SamplesCount=%d\n",
+			log.Result.Success, log.Result.AxisName, log.Result.AxisIdx, log.Result.Sign, log.Result.Confidence*100, log.Result.PeakSpeed, len(log.Samples)))
+		sb.WriteString(fmt.Sprintf("Detected Vector: [%.1f, %.1f, %.1f]\n",
+			log.Result.Vector[0], log.Result.Vector[1], log.Result.Vector[2]))
+		if log.Result.ErrorCode != "" {
+			sb.WriteString(fmt.Sprintf("Error: [%s] %s\n", log.Result.ErrorCode, log.Result.ErrorMsg))
+		}
+		sb.WriteString("RAW SAMPLES (2.5 sec at 60 Hz):\n")
+		sb.WriteString("idx,rotX,rotY,rotZ,accX,accY,accZ,speed\n")
+		for i, s := range log.Samples {
+			speed := math.Sqrt(s.rot[0]*s.rot[0] + s.rot[1]*s.rot[1] + s.rot[2]*s.rot[2])
+			sb.WriteString(fmt.Sprintf("%d,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",
+				i+1, s.rot[0], s.rot[1], s.rot[2], s.acc[0], s.acc[1], s.acc[2], speed))
+		}
+		sb.WriteString("\n")
+	}
+
+	sb.WriteString("=== END OF REPORT ===\n")
+	return sb.String()
+}
+
