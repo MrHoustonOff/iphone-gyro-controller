@@ -1,5 +1,37 @@
 export namespace main {
 	
+	export class AppSettings {
+	    theme: string;
+	    lang: string;
+	    activeSlot: number;
+	    firstLaunchDone: boolean;
+	    hideAuthor: boolean;
+	    dsuPort: number;
+	    httpPort: number;
+	    httpsPort: number;
+	    gyroDeadzone: number;
+	    stillnessHint: boolean;
+	    disconnectAlert: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new AppSettings(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.theme = source["theme"];
+	        this.lang = source["lang"];
+	        this.activeSlot = source["activeSlot"];
+	        this.firstLaunchDone = source["firstLaunchDone"];
+	        this.hideAuthor = source["hideAuthor"];
+	        this.dsuPort = source["dsuPort"];
+	        this.httpPort = source["httpPort"];
+	        this.httpsPort = source["httpsPort"];
+	        this.gyroDeadzone = source["gyroDeadzone"];
+	        this.stillnessHint = source["stillnessHint"];
+	        this.disconnectAlert = source["disconnectAlert"];
+	    }
+	}
 	export class Profile {
 	    slot: number;
 	    name: string;

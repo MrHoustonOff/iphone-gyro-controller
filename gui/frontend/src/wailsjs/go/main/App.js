@@ -14,6 +14,10 @@ export function CopyLast20Frames() {
   return window['go']['main']['App']['CopyLast20Frames']();
 }
 
+export function GetAppSettings() {
+  return window['go']['main']['App']['GetAppSettings']();
+}
+
 export function GetHideAuthor() {
   return window['go']['main']['App']['GetHideAuthor']();
 }
@@ -64,6 +68,10 @@ export function PreviewMatrix(arg1) {
 
 export function ResetAHRS() {
   return window['go']['main']['App']['ResetAHRS']();
+}
+
+export function SaveAppSettings(arg1) {
+  return window['go']['main']['App']['SaveAppSettings'](arg1);
 }
 
 export function SaveProfile(arg1, arg2, arg3, arg4, arg5) {

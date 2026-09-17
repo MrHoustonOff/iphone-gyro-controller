@@ -210,6 +210,28 @@ type App struct {
 	// Process resource monitor (CPU / RAM)
 	stopResmon   func()
 	lastResStats atomic.Pointer[map[string]any]
+	// Advanced configuration settings
+	dsuPort          int
+	httpPort         int
+	httpsPort        int
+	gyroDeadzoneBits atomic.Uint64
+	stillnessHint    atomic.Bool
+	disconnectAlert  atomic.Bool
+}
+
+// AppSettings holds configurable parameters exposed in the settings window
+type AppSettings struct {
+	Theme           string  `json:"theme"`
+	Lang            string  `json:"lang"`
+	ActiveSlot      int     `json:"activeSlot"`
+	FirstLaunchDone bool    `json:"firstLaunchDone"`
+	HideAuthor      bool    `json:"hideAuthor"`
+	DSUPort         int     `json:"dsuPort"`
+	HTTPPort        int     `json:"httpPort"`
+	HTTPSPort       int     `json:"httpsPort"`
+	GyroDeadzone    float64 `json:"gyroDeadzone"`
+	StillnessHint   bool    `json:"stillnessHint"`
+	DisconnectAlert bool    `json:"disconnectAlert"`
 }
 
 // StepCaptureLog stores the full recorded session of a calibration gesture step
@@ -465,6 +487,9 @@ func NewApp() *App {
 	app := &App{
 		i18nMgr:      mgr,
 		primaryIP:    primaryIP,
+		dsuPort:      26760,
+		httpPort:     HTTPPort,
+		httpsPort:    HTTPSPort,
 		setupURL:     setupURL,
 		gamepadURL:   appURL,
 		qrCodePNG:    qrBase64,
@@ -473,10 +498,13 @@ func NewApp() *App {
 		activeMatrix: defaultMatrix3x3(),
 		profilesDir:  profilesDir,
 		calStepLogs:  make(map[int]StepCaptureLog),
-		ahrs:         NewMadgwickAHRS(0.0), // Pure gyro integration with 0.28 deg/s stationary deadband (zero phantom roll/drift on table)
+		ahrs:         NewMadgwickAHRS(0.0), // Pure gyro integration with stationary deadband
 		currentTheme: "dark",
 		currentLang:  "ru",
 	}
+	app.gyroDeadzoneBits.Store(math.Float64bits(0.20))
+	app.stillnessHint.Store(true)
+	app.disconnectAlert.Store(true)
 	app.deviceName.Store("Controller")
 
 	// Initialize 6 empty slots with default portrait matrix
@@ -496,8 +524,9 @@ func NewApp() *App {
 
 	// Load persisted settings and profiles
 	app.loadSettings()
+	app.rebuildURLsAndQRCodes()
 	app.loadProfiles()
-	app.logEvent("INFO", "GyroBridge initialized: IP=%s, Theme=%s, Lang=%s", primaryIP, app.currentTheme, app.currentLang)
+	app.logEvent("INFO", "GyroBridge initialized: IP=%s, Theme=%s, Lang=%s, DSU=%d, HTTP=%d, HTTPS=%d", primaryIP, app.currentTheme, app.currentLang, app.dsuPort, app.httpPort, app.httpsPort)
 
 	return app
 }
@@ -542,11 +571,17 @@ func (a *App) loadSettings() {
 		return
 	}
 	var s struct {
-		Theme           string `json:"theme"`
-		Lang            string `json:"lang"`
-		ActiveSlot      int    `json:"activeSlot"`
-		FirstLaunchDone bool   `json:"firstLaunchDone"`
-		HideAuthor      bool   `json:"hideAuthor"`
+		Theme           string  `json:"theme"`
+		Lang            string  `json:"lang"`
+		ActiveSlot      int     `json:"activeSlot"`
+		FirstLaunchDone bool    `json:"firstLaunchDone"`
+		HideAuthor      bool    `json:"hideAuthor"`
+		DSUPort         int     `json:"dsuPort"`
+		HTTPPort        int     `json:"httpPort"`
+		HTTPSPort       int     `json:"httpsPort"`
+		GyroDeadzone    float64 `json:"gyroDeadzone"`
+		StillnessHint   *bool   `json:"stillnessHint"`
+		DisconnectAlert *bool   `json:"disconnectAlert"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
@@ -569,6 +604,25 @@ func (a *App) loadSettings() {
 		a.activeSlot = s.ActiveSlot
 	}
 	a.profilesMu.Unlock()
+
+	if s.DSUPort >= 1024 && s.DSUPort <= 65535 {
+		a.dsuPort = s.DSUPort
+	}
+	if s.HTTPPort >= 1024 && s.HTTPPort <= 65535 {
+		a.httpPort = s.HTTPPort
+	}
+	if s.HTTPSPort >= 1024 && s.HTTPSPort <= 65535 {
+		a.httpsPort = s.HTTPSPort
+	}
+	if s.GyroDeadzone > 0 {
+		a.gyroDeadzoneBits.Store(math.Float64bits(s.GyroDeadzone))
+	}
+	if s.StillnessHint != nil {
+		a.stillnessHint.Store(*s.StillnessHint)
+	}
+	if s.DisconnectAlert != nil {
+		a.disconnectAlert.Store(*s.DisconnectAlert)
+	}
 }
 
 // saveSettings persists theme, language, activeSlot, and preferences to settings.json
@@ -592,18 +646,36 @@ func (a *App) saveSettings() {
 	slot := a.activeSlot
 	a.profilesMu.RUnlock()
 
-	s := struct {
-		Theme           string `json:"theme"`
-		Lang            string `json:"lang"`
-		ActiveSlot      int    `json:"activeSlot"`
-		FirstLaunchDone bool   `json:"firstLaunchDone"`
-		HideAuthor      bool   `json:"hideAuthor"`
-	}{
+	dsuP := a.dsuPort
+	if dsuP == 0 {
+		dsuP = 26760
+	}
+	httpP := a.httpPort
+	if httpP == 0 {
+		httpP = HTTPPort
+	}
+	httpsP := a.httpsPort
+	if httpsP == 0 {
+		httpsP = HTTPSPort
+	}
+
+	deadzone := math.Float64frombits(a.gyroDeadzoneBits.Load())
+	if deadzone == 0 && a.gyroDeadzoneBits.Load() == 0 {
+		deadzone = 0.20
+	}
+
+	s := AppSettings{
 		Theme:           theme,
 		Lang:            lang,
 		ActiveSlot:      slot,
 		FirstLaunchDone: firstLaunchDone,
 		HideAuthor:      hideAuthor,
+		DSUPort:         dsuP,
+		HTTPPort:        httpP,
+		HTTPSPort:       httpsP,
+		GyroDeadzone:    deadzone,
+		StillnessHint:   a.stillnessHint.Load(),
+		DisconnectAlert: a.disconnectAlert.Load(),
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -747,8 +819,8 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.caMgr = caMgr
 
-	// 2. DSU Server (UDP 26760)
-	dsuSrv := dsu.NewServer(dsu.DefaultPort)
+	// 2. DSU Server (UDP default 26760)
+	dsuSrv := dsu.NewServer(a.dsuPort)
 	if err := dsuSrv.Start(); err != nil {
 		fmt.Printf("[-] DSU start error: %v\n", err)
 	}
@@ -759,9 +831,9 @@ func (a *App) startup(ctx context.Context) {
 		accFilterInit bool
 	)
 
-	// 3. Web & Telemetry Server (HTTP 8080 / HTTPS 8443)
+	// 3. Web & Telemetry Server (HTTP / HTTPS)
 	var srv *server.Server
-	srv = server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
+	srv = server.NewServer(caMgr, a.httpPort, a.httpsPort, web.IndexHTML, func(frame server.MotionFrame) {
 		startPipe := time.Now()
 		recvTs := startPipe.UnixMilli()
 		a.lastMotionRecvTs.Store(recvTs)
@@ -853,12 +925,20 @@ func (a *App) startup(ctx context.Context) {
 
 		// 1. Gyroscope deadband with soft-knee attenuation.
 		// Electronic MEMS sensor noise is ~0.05-0.15 deg/s on desk.
-		// Deadband of 0.25 deg/s completely eliminates stationary gyro trembling in PadTest and games.
-		// For movements above 0.25 deg/s, a linear soft ramp ensures smooth, zero-cliff analog feel.
-		const gyroDeadband = 0.25
+		// Deadband completely eliminates stationary gyro trembling in PadTest and games.
+		// For movements above deadband, a linear soft ramp ensures smooth, zero-cliff analog feel.
+		gyroDeadband := math.Float64frombits(a.gyroDeadzoneBits.Load())
 		var ahrsRx, ahrsRy, ahrsRz float32
 		var dsuRx, dsuRy, dsuRz float32
-		if gyroSpeed >= gyroDeadband {
+		if gyroDeadband <= 0 {
+			ahrsRx = float32(rx)
+			ahrsRy = float32(ry)
+			ahrsRz = float32(rz)
+
+			dsuRx = float32(rx)
+			dsuRy = -float32(ry)
+			dsuRz = float32(rz)
+		} else if gyroSpeed >= gyroDeadband {
 			scale := float32((gyroSpeed - gyroDeadband) / gyroSpeed)
 			ahrsRx = float32(rx) * scale
 			ahrsRy = float32(ry) * scale
@@ -1790,6 +1870,141 @@ func (a *App) SetWindowTheme(theme string) {
 	} else if theme == "light" {
 		wailsRuntime.WindowSetLightTheme(a.ctx)
 	}
+}
+
+func (a *App) rebuildURLsAndQRCodes() {
+	if a.primaryIP == "" {
+		return
+	}
+	hPort := a.httpPort
+	if hPort == 0 {
+		hPort = HTTPPort
+	}
+	hsPort := a.httpsPort
+	if hsPort == 0 {
+		hsPort = HTTPSPort
+	}
+
+	setupURL := fmt.Sprintf("http://%s:%d/ca.mobileconfig", a.primaryIP, hPort)
+	appURL := fmt.Sprintf("https://%s:%d/?t=%d", a.primaryIP, hsPort, time.Now().Unix())
+
+	qrBytes, err := pairing.GenerateQRPNG(appURL, 240)
+	if err == nil {
+		a.qrCodePNG = "data:image/png;base64," + base64.StdEncoding.EncodeToString(qrBytes)
+	}
+
+	setupQRBytes, err := pairing.GenerateQRPNG(setupURL, 240)
+	if err == nil {
+		a.setupQRPNG = "data:image/png;base64," + base64.StdEncoding.EncodeToString(setupQRBytes)
+	}
+
+	a.setupURL = setupURL
+	a.gamepadURL = appURL
+}
+
+// GetAppSettings returns all current application settings
+func (a *App) GetAppSettings() AppSettings {
+	a.themeMu.RLock()
+	theme := a.currentTheme
+	lang := a.currentLang
+	firstLaunch := a.firstLaunchDone
+	hideAuthor := a.hideAuthor
+	a.themeMu.RUnlock()
+
+	a.profilesMu.RLock()
+	slot := a.activeSlot
+	a.profilesMu.RUnlock()
+
+	dsuP := a.dsuPort
+	if dsuP == 0 {
+		dsuP = 26760
+	}
+	httpP := a.httpPort
+	if httpP == 0 {
+		httpP = HTTPPort
+	}
+	httpsP := a.httpsPort
+	if httpsP == 0 {
+		httpsP = HTTPSPort
+	}
+
+	deadzone := math.Float64frombits(a.gyroDeadzoneBits.Load())
+
+	return AppSettings{
+		Theme:           theme,
+		Lang:            lang,
+		ActiveSlot:      slot,
+		FirstLaunchDone: firstLaunch,
+		HideAuthor:      hideAuthor,
+		DSUPort:         dsuP,
+		HTTPPort:        httpP,
+		HTTPSPort:       httpsP,
+		GyroDeadzone:    deadzone,
+		StillnessHint:   a.stillnessHint.Load(),
+		DisconnectAlert: a.disconnectAlert.Load(),
+	}
+}
+
+// SaveAppSettings validates, applies and persists settings
+func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
+	if s.DSUPort < 1024 || s.DSUPort > 65535 {
+		return nil, fmt.Errorf("DSU port must be between 1024 and 65535")
+	}
+	if s.HTTPPort < 1024 || s.HTTPPort > 65535 {
+		return nil, fmt.Errorf("HTTP port must be between 1024 and 65535")
+	}
+	if s.HTTPSPort < 1024 || s.HTTPSPort > 65535 {
+		return nil, fmt.Errorf("HTTPS port must be between 1024 and 65535")
+	}
+	if s.HTTPPort == s.HTTPSPort || s.HTTPPort == s.DSUPort || s.HTTPSPort == s.DSUPort {
+		return nil, fmt.Errorf("DSU, HTTP and HTTPS ports must be different")
+	}
+
+	dsuRestarted := false
+	if s.DSUPort != a.dsuPort && a.dsuSrv != nil {
+		a.dsuSrv.Stop()
+		newDsu := dsu.NewServer(s.DSUPort)
+		if err := newDsu.Start(); err != nil {
+			oldDsu := dsu.NewServer(a.dsuPort)
+			_ = oldDsu.Start()
+			a.dsuSrv = oldDsu
+			return nil, fmt.Errorf("failed to bind DSU port %d: %w", s.DSUPort, err)
+		}
+		a.dsuSrv = newDsu
+		a.dsuPort = s.DSUPort
+		dsuRestarted = true
+	} else if a.dsuPort == 0 {
+		a.dsuPort = s.DSUPort
+	}
+
+	if s.HTTPPort != a.httpPort || s.HTTPSPort != a.httpsPort {
+		a.httpPort = s.HTTPPort
+		a.httpsPort = s.HTTPSPort
+		a.rebuildURLsAndQRCodes()
+	}
+
+	if s.GyroDeadzone >= 0 {
+		a.gyroDeadzoneBits.Store(math.Float64bits(s.GyroDeadzone))
+	}
+	a.stillnessHint.Store(s.StillnessHint)
+	a.disconnectAlert.Store(s.DisconnectAlert)
+
+	a.themeMu.Lock()
+	if s.Theme == "dark" || s.Theme == "light" {
+		a.currentTheme = s.Theme
+	}
+	if s.Lang == "ru" || s.Lang == "en" {
+		a.currentLang = s.Lang
+	}
+	a.themeMu.Unlock()
+
+	a.saveSettings()
+	a.emitStateChange()
+
+	return map[string]any{
+		"success":      true,
+		"dsuRestarted": dsuRestarted,
+	}, nil
 }
 
 func (a *App) broadcastLiveDebugJSON(v any) {

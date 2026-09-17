@@ -601,19 +601,217 @@
           </div>
         </div>
 
-        <!-- Settings (TODO) Module -->
+        <!-- Settings Module -->
         <div class="settings-module" id="view-settings" style="display: none;">
           <div class="settings-card-inner">
             <h2 class="setup-headline" data-i18n="settings_modal.title">Настройки</h2>
-            <p class="setup-subhead" data-i18n="settings_modal.subtitle">Параметры приложения и конфигурация</p>
+            <p class="setup-subhead" data-i18n="settings_modal.subtitle">Конфигурация серверов, портов и фильтрации для опытных пользователей</p>
 
-            <div class="settings-wip-card">
-              <span class="settings-wip-badge" data-i18n="settings_modal.wip_badge">В разработке</span>
-              <p class="settings-wip-desc" data-i18n="settings_modal.wip_desc">Раздел настроек находится в разработке. В будущих обновлениях здесь появятся параметры автозапуска, тонкая фильтрация и выбор сетевых интерфейсов.</p>
+            <div class="settings-sections-wrap">
+              <!-- Group 1: Network & Servers -->
+              <div class="settings-section">
+                <div class="settings-section-header" data-i18n="settings_modal.group_network">Сетевые порты и серверы</div>
+                <div class="settings-grouped-card">
+                  <!-- DSU Port -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.dsu_port">Порт DSU (Cemuhook)</span>
+                        <span class="setting-infotip" data-i18n-title="settings_modal.dsu_port_tip" title="UDP-порт сервера протокола Cemuhook DSU. К нему подключаются игры и эмуляторы (Cemu, RPCS3, Ryujinx, Dolphin и др.). По умолчанию: 26760.">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </span>
+                      </div>
+                      <span class="setting-desc" data-i18n="settings_modal.dsu_port_desc">UDP порт для эмуляторов (по умолчанию: 26760)</span>
+                    </div>
+                    <div class="setting-control">
+                      <input type="number" id="setting-dsu-port" class="setting-input-num" min="1024" max="65535" step="1" value="26760">
+                    </div>
+                  </div>
+
+                  <!-- HTTP Port -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.http_port">Порт HTTP (Сопряжение)</span>
+                        <span class="setting-infotip" data-i18n-title="settings_modal.http_port_tip" title="Порт TCP веб-сервера для начального сопряжения смартфона и скачивания профилей сертификатов iOS. По умолчанию: 8080.">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </span>
+                      </div>
+                      <span class="setting-desc" data-i18n="settings_modal.http_port_desc">TCP порт веб-сервера сопряжения (по умолчанию: 8080)</span>
+                    </div>
+                    <div class="setting-control">
+                      <input type="number" id="setting-http-port" class="setting-input-num" min="1024" max="65535" step="1" value="8080">
+                    </div>
+                  </div>
+
+                  <!-- HTTPS Port -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.https_port">Порт HTTPS (Контроллер)</span>
+                        <span class="setting-infotip" data-i18n-title="settings_modal.https_port_tip" title="Защищенный TLS порт веб-контроллера. Браузер Safari требует обязательный HTTPS для доступа к гироскопу. По умолчанию: 8443.">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </span>
+                      </div>
+                      <span class="setting-desc" data-i18n="settings_modal.https_port_desc">Шлюз TLS/WSS для веб-приложения (по умолчанию: 8443)</span>
+                    </div>
+                    <div class="setting-control">
+                      <input type="number" id="setting-https-port" class="setting-input-num" min="1024" max="65535" step="1" value="8443">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Group 2: Sensor & Safety Filters -->
+              <div class="settings-section">
+                <div class="settings-section-header" data-i18n="settings_modal.group_sensor">Сенсор и фильтрация шума</div>
+                <div class="settings-grouped-card">
+                  <!-- Gyro Deadzone -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.gyro_deadzone">Порог шума гироскопа (Deadzone)</span>
+                        <span class="setting-infotip" data-i18n-title="settings_modal.gyro_deadzone_tip" title="Фильтрует микрошумы сенсора телефона в состоянии покоя, устраняя паразитную дрожь прицела в играх.">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </span>
+                      </div>
+                      <span class="setting-desc" data-i18n="settings_modal.gyro_deadzone_desc">Подавление шума сенсора в покое</span>
+                    </div>
+                    <div class="setting-control">
+                      <select id="setting-gyro-deadzone" class="setting-select">
+                        <option value="0.00" data-i18n="settings_modal.deadzone_off">Отключен (0.00°/s) - чистый сигнал</option>
+                        <option value="0.05" data-i18n="settings_modal.deadzone_low">Низкий (0.05°/s)</option>
+                        <option value="0.10" data-i18n="settings_modal.deadzone_medium">Средний (0.10°/s)</option>
+                        <option value="0.20" data-i18n="settings_modal.deadzone_default">Стандартный (0.20°/s) - оптимум</option>
+                        <option value="0.35" data-i18n="settings_modal.deadzone_high">Высокий (0.35°/s)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <!-- Stillness Hint Toggle -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.stillness_hint">Подсказка о калибровке неподвижности</span>
+                        <span class="setting-infotip" data-i18n-title="settings_modal.stillness_hint_tip" title="Показывать всплывающую подсказку рекалибровки, если телефон неподвижно лежит на столе с сильным наклоном (>10 градусов).">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </span>
+                      </div>
+                      <span class="setting-desc" data-i18n="settings_modal.stillness_hint_desc">Предупреждать при наклоне > 10° на столе</span>
+                    </div>
+                    <div class="setting-control">
+                      <label class="apple-toggle">
+                        <input type="checkbox" id="setting-stillness-hint" checked>
+                        <span class="apple-toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- Disconnect Blur Alert Toggle -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.disconnect_alert">Предупреждение об отключении</span>
+                        <span class="setting-infotip" data-i18n-title="settings_modal.disconnect_alert_tip" title="Окрашивать окно в красный цвет и показывать размытие с предупреждением, если экран телефона выключился во время калибровки.">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </span>
+                      </div>
+                      <span class="setting-desc" data-i18n="settings_modal.disconnect_alert_desc">Красная рамка и размытие при выключении экрана</span>
+                    </div>
+                    <div class="setting-control">
+                      <label class="apple-toggle">
+                        <input type="checkbox" id="setting-disconnect-alert" checked>
+                        <span class="apple-toggle-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Group 3: Interface & Appearance -->
+              <div class="settings-section">
+                <div class="settings-section-header" data-i18n="settings_modal.group_appearance">Интерфейс и оформление</div>
+                <div class="settings-grouped-card">
+                  <!-- Theme -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.theme">Тема оформления</span>
+                        <span class="setting-infotip" data-i18n-title="settings_modal.theme_tip" title="Выбор цветовой темы оформления интерфейса GyroBridge (тёмная или светлая).">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </span>
+                      </div>
+                      <span class="setting-desc" data-i18n="settings_modal.theme_desc">Цветовая схема приложения</span>
+                    </div>
+                    <div class="setting-control">
+                      <div class="settings-segmented-group" id="setting-theme-segmented" role="group" aria-label="Theme">
+                        <button type="button" class="settings-seg-btn" data-val="dark" data-i18n="settings_modal.theme_dark">Тёмная</button>
+                        <button type="button" class="settings-seg-btn" data-val="light" data-i18n="settings_modal.theme_light">Светлая</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Language -->
+                  <div class="setting-row">
+                    <div class="setting-info">
+                      <div class="setting-label-row">
+                        <span class="setting-label" data-i18n="settings_modal.language">Язык интерфейса</span>
+                        <span class="setting-infotip" data-i18n-title="settings_modal.language_tip" title="Выбор основного языка интерфейса приложения GyroBridge.">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                          </svg>
+                        </span>
+                      </div>
+                      <span class="setting-desc" data-i18n="settings_modal.language_desc">Язык меню и сообщений</span>
+                    </div>
+                    <div class="setting-control">
+                      <div class="settings-segmented-group" id="setting-lang-segmented" role="group" aria-label="Language">
+                        <button type="button" class="settings-seg-btn" data-val="ru">Русский</button>
+                        <button type="button" class="settings-seg-btn" data-val="en">English</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
+            <!-- Settings Footer Controls -->
             <div class="settings-footer-row">
-              <button type="button" class="btn-apple-secondary" id="btn-settings-close" data-i18n="settings_modal.btn_close">Закрыть</button>
+              <button type="button" class="btn-apple-secondary btn-settings-reset" id="btn-settings-reset" data-i18n="settings_modal.btn_reset" data-i18n-title="settings_modal.btn_reset_tip" title="Восстановить все сетевые порты и параметры сенсора к заводским значениям по умолчанию.">Сбросить по умолчанию</button>
+              <div class="settings-footer-actions">
+                <button type="button" class="btn-apple-secondary" id="btn-settings-close" data-i18n="settings_modal.btn_cancel">Отмена</button>
+                <button type="button" class="btn-apple-primary" id="btn-settings-save" data-i18n="settings_modal.btn_save">Сохранить</button>
+              </div>
             </div>
           </div>
         </div>
@@ -1198,6 +1396,10 @@
         Scene3D.updateTheme(theme);
       }
 
+      document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-val') === theme);
+      });
+
       if (broadcast) {
         if (window.go && window.go.main && window.go.main.App && window.go.main.App.SetTheme) {
           window.go.main.App.SetTheme(theme);
@@ -1255,6 +1457,9 @@
       // Update segmented control buttons
       document.getElementById('btn-lang-ru')?.classList.toggle('active', this.currentLang === 'ru');
       document.getElementById('btn-lang-en')?.classList.toggle('active', this.currentLang === 'en');
+      document.querySelectorAll('#setting-lang-segmented .settings-seg-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-val') === this.currentLang);
+      });
     },
 
     async setLanguage(lang, broadcast = true) {
@@ -1622,22 +1827,74 @@
     }
   };
 
-  // ── Settings (TODO) Module Manager ─────────────────────────────────────────
+  // ── Settings Module Manager ────────────────────────────────────────────────
   const SettingsManager = {
     isOpen: false,
     initialized: false,
+    currentSettings: null,
 
-    init() {
+    async init() {
       if (this.initialized) return;
       this.initialized = true;
 
+      // Header button toggle
       document.getElementById('btn-header-settings')?.addEventListener('click', () => {
         this.toggle();
       });
 
+      // Close / Cancel button
       document.getElementById('btn-settings-close')?.addEventListener('click', () => {
         this.close();
       });
+
+      // Reset to defaults button
+      document.getElementById('btn-settings-reset')?.addEventListener('click', () => {
+        this.resetToDefaults();
+      });
+
+      // Save button
+      document.getElementById('btn-settings-save')?.addEventListener('click', async () => {
+        await this.save();
+      });
+
+      // Theme segmented control clicks
+      document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+
+      // Language segmented control clicks
+      document.querySelectorAll('#setting-lang-segmented .settings-seg-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('#setting-lang-segmented .settings-seg-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+        });
+      });
+
+      // Clear input error on typing
+      ['setting-dsu-port', 'setting-http-port', 'setting-https-port'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', (e) => {
+          e.target.classList.remove('error');
+        });
+      });
+
+      // Load initial settings silently on startup
+      await this.fetchSettings();
+    },
+
+    async fetchSettings() {
+      try {
+        if (window.go?.main?.App?.GetAppSettings) {
+          const s = await window.go.main.App.GetAppSettings();
+          if (s) {
+            this.currentSettings = s;
+          }
+        }
+      } catch (err) {
+        console.warn('GetAppSettings error:', err);
+      }
     },
 
     toggle() {
@@ -1648,7 +1905,7 @@
       }
     },
 
-    open() {
+    async open() {
       this.isOpen = true;
       if (typeof HelpManager !== 'undefined' && HelpManager.isOpen) HelpManager.close(false);
       if (typeof WelcomeManager !== 'undefined' && WelcomeManager.isOpen) WelcomeManager.close(false);
@@ -1675,6 +1932,205 @@
       if (vSettings) vSettings.style.display = 'flex';
 
       document.getElementById('btn-header-settings')?.classList.add('active');
+
+      await this.populateUI();
+    },
+
+    async populateUI() {
+      // Refresh current settings from backend
+      await this.fetchSettings();
+      const s = this.currentSettings || {
+        dsuPort: 26760,
+        httpPort: 8080,
+        httpsPort: 8443,
+        gyroDeadzone: 0.20,
+        stillnessHint: true,
+        disconnectAlert: true,
+        theme: ThemeManager.theme || 'dark',
+        lang: I18n.currentLang || 'ru'
+      };
+
+      const dsuInput = document.getElementById('setting-dsu-port');
+      if (dsuInput) {
+        dsuInput.value = s.dsuPort || 26760;
+        dsuInput.classList.remove('error');
+      }
+
+      const httpInput = document.getElementById('setting-http-port');
+      if (httpInput) {
+        httpInput.value = s.httpPort || 8080;
+        httpInput.classList.remove('error');
+      }
+
+      const httpsInput = document.getElementById('setting-https-port');
+      if (httpsInput) {
+        httpsInput.value = s.httpsPort || 8443;
+        httpsInput.classList.remove('error');
+      }
+
+      const deadzoneSelect = document.getElementById('setting-gyro-deadzone');
+      if (deadzoneSelect) {
+        const dzVal = (s.gyroDeadzone !== undefined) ? Number(s.gyroDeadzone).toFixed(2) : '0.20';
+        let matched = false;
+        for (const opt of deadzoneSelect.options) {
+          if (Math.abs(parseFloat(opt.value) - parseFloat(dzVal)) < 0.02) {
+            opt.selected = true;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched && deadzoneSelect.options.length > 0) {
+          deadzoneSelect.value = '0.20';
+        }
+      }
+
+      const stillnessCheckbox = document.getElementById('setting-stillness-hint');
+      if (stillnessCheckbox) {
+        stillnessCheckbox.checked = (s.stillnessHint !== false);
+      }
+
+      const disconnectCheckbox = document.getElementById('setting-disconnect-alert');
+      if (disconnectCheckbox) {
+        disconnectCheckbox.checked = (s.disconnectAlert !== false);
+      }
+
+      // Theme segmented control
+      const activeTheme = s.theme || ThemeManager.theme || 'dark';
+      document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-val') === activeTheme);
+      });
+
+      // Lang segmented control
+      const activeLang = s.lang || I18n.currentLang || 'ru';
+      document.querySelectorAll('#setting-lang-segmented .settings-seg-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-val') === activeLang);
+      });
+    },
+
+    resetToDefaults() {
+      const dsuInput = document.getElementById('setting-dsu-port');
+      if (dsuInput) {
+        dsuInput.value = 26760;
+        dsuInput.classList.remove('error');
+      }
+
+      const httpInput = document.getElementById('setting-http-port');
+      if (httpInput) {
+        httpInput.value = 8080;
+        httpInput.classList.remove('error');
+      }
+
+      const httpsInput = document.getElementById('setting-https-port');
+      if (httpsInput) {
+        httpsInput.value = 8443;
+        httpsInput.classList.remove('error');
+      }
+
+      const deadzoneSelect = document.getElementById('setting-gyro-deadzone');
+      if (deadzoneSelect) {
+        deadzoneSelect.value = '0.20';
+      }
+
+      const stillnessCheckbox = document.getElementById('setting-stillness-hint');
+      if (stillnessCheckbox) {
+        stillnessCheckbox.checked = true;
+      }
+
+      const disconnectCheckbox = document.getElementById('setting-disconnect-alert');
+      if (disconnectCheckbox) {
+        disconnectCheckbox.checked = true;
+      }
+    },
+
+    async save() {
+      const dsuEl = document.getElementById('setting-dsu-port');
+      const httpEl = document.getElementById('setting-http-port');
+      const httpsEl = document.getElementById('setting-https-port');
+
+      const dsuPort = parseInt(dsuEl?.value || '0', 10);
+      const httpPort = parseInt(httpEl?.value || '0', 10);
+      const httpsPort = parseInt(httpsEl?.value || '0', 10);
+
+      // Validate port ranges (1024 - 65535)
+      let hasRangeError = false;
+      if (isNaN(dsuPort) || dsuPort < 1024 || dsuPort > 65535) {
+        dsuEl?.classList.add('error');
+        hasRangeError = true;
+      }
+      if (isNaN(httpPort) || httpPort < 1024 || httpPort > 65535) {
+        httpEl?.classList.add('error');
+        hasRangeError = true;
+      }
+      if (isNaN(httpsPort) || httpsPort < 1024 || httpsPort > 65535) {
+        httpsEl?.classList.add('error');
+        hasRangeError = true;
+      }
+
+      if (hasRangeError) {
+        showToast(I18n.t('settings_modal.err_port_range') || 'Порт должен быть в диапазоне от 1024 до 65535');
+        return;
+      }
+
+      // Validate ports must be distinct
+      if (dsuPort === httpPort || dsuPort === httpsPort || httpPort === httpsPort) {
+        if (dsuPort === httpPort) {
+          dsuEl?.classList.add('error');
+          httpEl?.classList.add('error');
+        }
+        if (dsuPort === httpsPort) {
+          dsuEl?.classList.add('error');
+          httpsEl?.classList.add('error');
+        }
+        if (httpPort === httpsPort) {
+          httpEl?.classList.add('error');
+          httpsEl?.classList.add('error');
+        }
+        showToast(I18n.t('settings_modal.err_ports_duplicate') || 'Порты DSU, HTTP и HTTPS не должны совпадать');
+        return;
+      }
+
+      const gyroDeadzone = parseFloat(document.getElementById('setting-gyro-deadzone')?.value || '0.20');
+      const stillnessHint = !!document.getElementById('setting-stillness-hint')?.checked;
+      const disconnectAlert = !!document.getElementById('setting-disconnect-alert')?.checked;
+      const selectedTheme = document.querySelector('#setting-theme-segmented .settings-seg-btn.active')?.getAttribute('data-val') || ThemeManager.theme || 'dark';
+      const selectedLang = document.querySelector('#setting-lang-segmented .settings-seg-btn.active')?.getAttribute('data-val') || I18n.currentLang || 'ru';
+
+      const payload = {
+        theme: selectedTheme,
+        lang: selectedLang,
+        activeSlot: (AppState.lastState && AppState.lastState.activeSlot >= 0) ? AppState.lastState.activeSlot : 0,
+        firstLaunchDone: true,
+        hideAuthor: false,
+        dsuPort: dsuPort,
+        httpPort: httpPort,
+        httpsPort: httpsPort,
+        gyroDeadzone: isNaN(gyroDeadzone) ? 0.20 : gyroDeadzone,
+        stillnessHint: stillnessHint,
+        disconnectAlert: disconnectAlert
+      };
+
+      try {
+        if (window.go?.main?.App?.SaveAppSettings) {
+          await window.go.main.App.SaveAppSettings(payload);
+        }
+        this.currentSettings = payload;
+
+        // Apply theme if changed
+        if (ThemeManager.theme !== selectedTheme) {
+          ThemeManager.apply(selectedTheme, true);
+        }
+
+        // Apply language if changed
+        if (I18n.currentLang !== selectedLang) {
+          await I18n.setLanguage(selectedLang);
+        }
+
+        showToast(I18n.t('settings_modal.saved_toast') || 'Настройки успешно сохранены!');
+        this.close();
+      } catch (err) {
+        console.error('SaveAppSettings error:', err);
+        showToast((I18n.t('stats.stats_modal_save_err') || 'Ошибка сохранения: ') + err);
+      }
     },
 
     close(renderState = true) {
@@ -2463,6 +2919,7 @@
 
     showDisconnectAlert() {
       if (!this.isOpen || this.isDisconnectAlertActive) return;
+      if (SettingsManager.currentSettings && SettingsManager.currentSettings.disconnectAlert === false) return;
       this.isDisconnectAlertActive = true;
 
       // Add prominent red outline to the whole window
@@ -3801,6 +4258,7 @@
 
     showRecalHint() {
       if (this._recalHintShown) return;
+      if (SettingsManager.currentSettings && SettingsManager.currentSettings.stillnessHint === false) return;
       this._recalHintShown = true;
       const el = document.getElementById('level-recal-hint');
       const calBtn = document.getElementById('btn-open-calibration');

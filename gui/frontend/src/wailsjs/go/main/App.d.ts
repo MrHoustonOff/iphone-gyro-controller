@@ -8,6 +8,8 @@ export function CopyCalibrationReport():Promise<string>;
 
 export function CopyLast20Frames():Promise<string>;
 
+export function GetAppSettings():Promise<main.AppSettings>;
+
 export function GetHideAuthor():Promise<boolean>;
 
 export function GetLang():Promise<string>;
@@ -33,6 +35,8 @@ export function OpenLiveDebugWindow():Promise<void>;
 export function PreviewMatrix(arg1:any):Promise<void>;
 
 export function ResetAHRS():Promise<void>;
+
+export function SaveAppSettings(arg1:main.AppSettings):Promise<Record<string, any>>;
 
 export function SaveProfile(arg1:number,arg2:string,arg3:string,arg4:string,arg5:any):Promise<string>;
 
