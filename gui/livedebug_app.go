@@ -35,7 +35,7 @@ func (a *LiveDebugApp) startup(ctx context.Context) {
 		defer ticker.Stop()
 		consecutiveFails := 0
 		for range ticker.C {
-			resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/livedebug/recenter", HTTPPort))
+			resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/livedebug/ping", HTTPPort))
 			if err != nil {
 				consecutiveFails++
 				if consecutiveFails >= 2 {
@@ -63,6 +63,18 @@ func (a *LiveDebugApp) ResetAHRS() {
 			resp.Body.Close()
 		}
 	}()
+}
+
+// SetWindowTheme sets the native window title bar theme for the debug window.
+func (a *LiveDebugApp) SetWindowTheme(theme string) {
+	if a.ctx == nil {
+		return
+	}
+	if theme == "dark" {
+		wailsRuntime.WindowSetDarkTheme(a.ctx)
+	} else if theme == "light" {
+		wailsRuntime.WindowSetLightTheme(a.ctx)
+	}
 }
 
 // runLiveDebug initializes and runs the dedicated Live Debug window instance.

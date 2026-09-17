@@ -805,19 +805,29 @@
     theme: localStorage.getItem('gb_theme') || 'dark',
 
     init() {
-      this.apply(this.theme);
+      this.apply(this.theme, true);
       document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
         this.toggle();
       });
+
+      if (window.runtime && window.runtime.EventsOn) {
+        window.runtime.EventsOn('theme-sync', (newTheme) => {
+          if (newTheme && this.theme !== newTheme) {
+            this.theme = newTheme;
+            localStorage.setItem('gb_theme', newTheme);
+            this.apply(newTheme, false);
+          }
+        });
+      }
     },
 
     toggle() {
       this.theme = (this.theme === 'dark') ? 'light' : 'dark';
       localStorage.setItem('gb_theme', this.theme);
-      this.apply(this.theme);
+      this.apply(this.theme, true);
     },
 
-    apply(theme) {
+    apply(theme, broadcast = true) {
       document.documentElement.setAttribute('data-theme', theme);
       const sunIcon = document.getElementById('icon-theme-sun');
       const moonIcon = document.getElementById('icon-theme-moon');
@@ -832,6 +842,14 @@
 
       if (typeof Scene3D !== 'undefined' && Scene3D.updateTheme) {
         Scene3D.updateTheme(theme);
+      }
+
+      if (broadcast) {
+        if (window.go && window.go.main && window.go.main.App && window.go.main.App.SetTheme) {
+          window.go.main.App.SetTheme(theme);
+        } else {
+          fetch('http://127.0.0.1:8080/livedebug/theme?value=' + encodeURIComponent(theme), { method: 'POST' }).catch(() => {});
+        }
       }
     }
   };
@@ -883,7 +901,7 @@
       document.getElementById('btn-lang-en')?.classList.toggle('active', this.currentLang === 'en');
     },
 
-    async setLanguage(lang) {
+    async setLanguage(lang, broadcast = true) {
       try {
         let jsonStr = '';
         if (window.go && window.go.main && window.go.main.App) {
@@ -906,15 +924,30 @@
         if (AppState.lastState) {
           AppState.render(AppState.lastState);
         }
+
+        if (broadcast) {
+          if (window.go && window.go.main && window.go.main.App && window.go.main.App.SetLang) {
+            window.go.main.App.SetLang(lang);
+          } else {
+            fetch('http://127.0.0.1:8080/livedebug/lang?value=' + encodeURIComponent(lang), { method: 'POST' }).catch(() => {});
+          }
+        }
       } catch (err) {
         console.error('Failed to set language:', err);
       }
     },
 
     async init() {
-      document.getElementById('btn-lang-ru')?.addEventListener('click', () => this.setLanguage('ru'));
-      document.getElementById('btn-lang-en')?.addEventListener('click', () => this.setLanguage('en'));
-      await this.setLanguage(this.currentLang);
+      document.getElementById('btn-lang-ru')?.addEventListener('click', () => this.setLanguage('ru', true));
+      document.getElementById('btn-lang-en')?.addEventListener('click', () => this.setLanguage('en', true));
+      if (window.runtime && window.runtime.EventsOn) {
+        window.runtime.EventsOn('lang-sync', (newLang) => {
+          if (newLang && this.currentLang !== newLang) {
+            this.setLanguage(newLang, false);
+          }
+        });
+      }
+      await this.setLanguage(this.currentLang, true);
     }
   };
 

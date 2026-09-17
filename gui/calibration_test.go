@@ -266,9 +266,43 @@ func TestLiveDebug_AssetsAndBroadcast(t *testing.T) {
 	if !strings.Contains(content, "/livedebug/ws") {
 		t.Fatal("livedebug.html missing /livedebug/ws endpoint connection")
 	}
+	if !strings.Contains(content, "model-segmented") {
+		t.Fatal("livedebug.html missing model-segmented control")
+	}
+	if !strings.Contains(content, "btn-recenter") {
+		t.Fatal("livedebug.html missing btn-recenter button")
+	}
 
 	// Verify broadcast with zero clients does not panic
-	app := &App{}
+	app := &App{
+		currentTheme: "dark",
+		currentLang:  "ru",
+	}
 	app.broadcastLiveDebug(1, 0, 0, 0)
+	app.broadcastLiveDebugJSON(map[string]string{"type": "theme", "theme": "light"})
+}
+
+func TestLiveDebug_ThemeAndLangSync(t *testing.T) {
+	app := &App{
+		currentTheme: "dark",
+		currentLang:  "ru",
+	}
+
+	if app.GetTheme() != "dark" {
+		t.Fatalf("expected initial theme dark, got %s", app.GetTheme())
+	}
+	if app.GetLang() != "ru" {
+		t.Fatalf("expected initial lang ru, got %s", app.GetLang())
+	}
+
+	app.SetTheme("light")
+	if app.GetTheme() != "light" {
+		t.Fatalf("expected theme light after SetTheme, got %s", app.GetTheme())
+	}
+
+	app.SetLang("en")
+	if app.GetLang() != "en" {
+		t.Fatalf("expected lang en after SetLang, got %s", app.GetLang())
+	}
 }
 

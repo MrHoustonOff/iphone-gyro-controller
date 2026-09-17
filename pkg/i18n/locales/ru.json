@@ -105,12 +105,16 @@
     "eco_desc": "Приостанавливать рендеринг при неактивном окне",
     "eco_mode": "Экономия ресурсов",
     "model_cube": "Кубик",
+    "model_desc": "Выбор объекта отображения",
     "model_gamepad": "Геймпад",
     "model_select": "3D-модель",
     "paused_hint": "Кликните для возобновления",
     "paused_title": "Рендеринг приостановлен",
     "recenter": "Центрировать",
+    "recenter_desc": "Мгновенно сбрасывает виртуальное положение к исходному",
     "recenter_hint": "Пробел",
+    "status_offline": "нет связи",
+    "status_online": "в сети",
     "title": "3D Live Debug"
   },
   "nav": {

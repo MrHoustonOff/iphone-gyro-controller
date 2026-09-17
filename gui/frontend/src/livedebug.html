@@ -6,9 +6,9 @@
   <title data-i18n="live_debug.title">3D Live Debug</title>
   <link rel="stylesheet" href="main.css">
   <style>
-    /* ── Live Debug Specialized Layout Extensions ────────────────────────────── */
+    /* ── Authentic Apple HIG Desktop Window Layout ───────────────────────────── */
     body {
-      background: var(--bg);
+      background-color: var(--bg);
       color: var(--text);
       overflow: hidden;
       height: 100vh;
@@ -20,29 +20,53 @@
     }
 
     .app-header {
-      height: 52px;
-      padding: 0 16px;
+      height: 64px;
+      min-height: 64px;
+      padding: 0 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: var(--surface);
+      background-color: var(--surface);
       border-bottom: 1px solid var(--border);
       z-index: 100;
       flex-shrink: 0;
+      transition: background-color var(--transition-theme), border-color var(--transition-theme);
     }
 
     .header-left, .header-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
-    /* ── Split 50/50 Workspace ── */
+    .brand-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: var(--radius-pill);
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      color: var(--apple-blue);
+    }
+
+    /* ── Split 50/50 Workspace ────────────────────────────────────────────────── */
     .split-workspace {
       display: flex;
       flex: 1;
       width: 100vw;
-      height: calc(100vh - 52px);
+      height: calc(100vh - 64px);
       overflow: hidden;
     }
 
@@ -50,25 +74,38 @@
     .left-controls {
       width: 50%;
       height: 100%;
-      padding: 24px;
+      padding: clamp(20px, 3.5vh, 32px) clamp(20px, 3.5vw, 36px);
       overflow-y: auto;
+      overflow-x: hidden;
       display: flex;
       flex-direction: column;
       gap: 16px;
       border-right: 1px solid var(--border);
-      background: var(--bg);
+      background-color: var(--bg);
       box-sizing: border-box;
+      transition: background-color var(--transition-theme), border-color var(--transition-theme);
     }
 
-    .control-card {
-      background: var(--surface);
+    .controls-inner {
+      width: 100%;
+      max-width: 480px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin: 0 auto;
+    }
+
+    /* Apple Inset Grouped Card */
+    .apple-group-card {
+      background-color: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 18px 20px;
+      padding: 18px 22px;
       box-shadow: var(--card-shadow);
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
+      transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme);
     }
 
     .control-row {
@@ -81,28 +118,31 @@
     .control-info {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      gap: 4px;
+      flex: 1;
+      min-width: 0;
     }
 
     .control-title {
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 600;
+      letter-spacing: -0.01em;
       color: var(--text);
       line-height: 1.3;
     }
 
     .control-desc {
-      font-size: 12px;
+      font-size: 12.5px;
       color: var(--text-secondary);
-      line-height: 1.4;
+      line-height: 1.45;
     }
 
-    /* Standard Apple Toggle Switch */
+    /* Standard Apple iOS Toggle Switch */
     .apple-switch {
       position: relative;
       display: inline-block;
-      width: 46px;
-      height: 26px;
+      width: 48px;
+      height: 28px;
       flex-shrink: 0;
     }
 
@@ -125,14 +165,14 @@
     .apple-slider:before {
       position: absolute;
       content: "";
-      height: 20px;
-      width: 20px;
+      height: 22px;
+      width: 22px;
       left: 2px;
       bottom: 2px;
       background-color: #FFFFFF;
       transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
     }
 
     input:checked + .apple-slider {
@@ -144,24 +184,24 @@
       transform: translateX(20px);
     }
 
-    /* Action Buttons */
+    /* Apple Recenter Pill Action Button */
     .btn-recenter-action {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
+      gap: 10px;
       width: 100%;
-      padding: 10px 16px;
+      padding: 11px 18px;
       background: var(--btn-primary-bg);
       color: var(--btn-primary-text);
       border: none;
       border-radius: var(--radius-pill);
       font-family: var(--font-sans);
-      font-size: 13px;
+      font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: all var(--transition-fast);
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
     }
 
     .btn-recenter-action:hover {
@@ -173,20 +213,23 @@
       transform: translateY(0);
     }
 
-    .key-hint-badge {
-      font-size: 10.5px;
+    .apple-kbd {
+      font-family: var(--font-mono);
+      font-size: 11px;
       font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.15);
+      padding: 2px 7px;
+      border-radius: 5px;
+      background: rgba(0, 0, 0, 0.14);
       color: inherit;
+      border: 1px solid rgba(0, 0, 0, 0.12);
     }
 
-    [data-theme="dark"] .key-hint-badge {
-      background: rgba(0, 0, 0, 0.2);
+    [data-theme="dark"] .apple-kbd {
+      background: rgba(0, 0, 0, 0.24);
+      border-color: rgba(0, 0, 0, 0.2);
     }
 
-    /* ── Right 3D Viewport (50%) ── */
+    /* ── Right 3D Viewport (50%) ──────────────────────────────────────────────── */
     .right-viewport {
       position: relative;
       width: 50%;
@@ -195,7 +238,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: transparent;
+      background-color: var(--bg);
+      transition: background-color var(--transition-theme);
     }
 
     #livedebug-canvas {
@@ -206,12 +250,12 @@
     }
 
     #livedebug-canvas.blurred {
-      filter: blur(14px) brightness(0.7);
-      transform: scale(0.98);
+      filter: blur(16px) brightness(0.72);
+      transform: scale(0.985);
       pointer-events: none;
     }
 
-    /* Eco Paused Overlay */
+    /* Eco Paused Frosted Glass Overlay */
     .eco-overlay {
       position: absolute;
       inset: 0;
@@ -219,16 +263,16 @@
       display: none;
       align-items: center;
       justify-content: center;
-      background: rgba(0, 0, 0, 0.45);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
+      background: rgba(0, 0, 0, 0.42);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       cursor: pointer;
       opacity: 0;
       transition: opacity 0.22s ease;
     }
 
     [data-theme="light"] .eco-overlay {
-      background: rgba(255, 255, 255, 0.55);
+      background: rgba(242, 242, 247, 0.55);
     }
 
     .eco-overlay.visible {
@@ -237,12 +281,12 @@
     }
 
     .eco-card {
-      background: var(--surface);
+      background-color: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      padding: 20px 24px;
+      border-radius: var(--radius-xl);
+      padding: 22px 28px;
       text-align: center;
-      max-width: 280px;
+      max-width: 300px;
       box-shadow: var(--card-shadow);
       transition: transform var(--transition-fast);
     }
@@ -252,50 +296,51 @@
     }
 
     .eco-icon {
-      width: 36px;
-      height: 36px;
+      width: 34px;
+      height: 34px;
       margin: 0 auto 10px;
       color: var(--text-secondary);
     }
 
     .eco-title {
-      font-size: 14px;
+      font-size: 14.5px;
       font-weight: 700;
+      letter-spacing: -0.01em;
       color: var(--text);
-      margin-bottom: 4px;
+      margin-bottom: 5px;
     }
 
     .eco-hint {
       display: inline-block;
-      font-size: 11.5px;
+      font-size: 12px;
       color: var(--apple-blue);
       font-weight: 600;
-      margin-top: 6px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Header Bar -->
+  <!-- Apple Header Bar -->
   <header class="app-header">
     <div class="header-left">
       <div class="brand-title">
-        <span data-i18n="live_debug.title">3D Live Debug</span>
+        <span>GyroBridge</span>
+        <span class="brand-badge">Live Debug</span>
       </div>
-      <div class="status-capsule">
+      <div class="status-capsule online" id="status-capsule">
         <span class="status-dot" id="status-dot"></span>
-        <span id="fps-counter">60 fps</span>
+        <span id="fps-counter" class="status-text">60 fps</span>
       </div>
     </div>
 
     <div class="header-right">
-      <!-- RU / EN Segmented Switcher -->
+      <!-- Apple RU / EN Segmented Control -->
       <div class="segmented-control" id="lang-control">
-        <button type="button" class="segmented-btn" id="lang-ru" data-lang="ru">RU</button>
-        <button type="button" class="segmented-btn" id="lang-en" data-lang="en">EN</button>
+        <button type="button" class="segmented-btn" id="lang-ru">RU</button>
+        <button type="button" class="segmented-btn" id="lang-en">EN</button>
       </div>
 
-      <!-- Theme Switcher Button -->
+      <!-- Apple Theme Switcher Button -->
       <button type="button" class="btn-icon" id="btn-theme-toggle" data-i18n-title="app.theme_toggle" title="Переключить тему">
         <svg id="icon-theme-sun" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="4"></circle>
@@ -320,42 +365,49 @@
 
     <!-- Left Controls Panel (50%) -->
     <aside class="left-controls">
+      <div class="controls-inner">
 
-      <!-- 3D Model Switcher -->
-      <section class="control-card">
-        <div class="control-row">
-          <div class="control-info">
-            <span class="control-title" data-i18n="live_debug.model_select">3D-модель</span>
+        <!-- 3D Model Picker -->
+        <section class="apple-group-card">
+          <div class="control-row">
+            <div class="control-info">
+              <span class="control-title" data-i18n="live_debug.model_select">3D-модель</span>
+              <span class="control-desc" data-i18n="live_debug.model_desc">Выбор объекта отображения</span>
+            </div>
+            <div class="segmented-control" id="model-segmented">
+              <button type="button" class="segmented-btn active" id="btn-model-gamepad" data-i18n="live_debug.model_gamepad">Геймпад</button>
+              <button type="button" class="segmented-btn" id="btn-model-cube" data-i18n="live_debug.model_cube">Кубик</button>
+            </div>
           </div>
-          <div class="segmented-control" id="model-segmented">
-            <button type="button" class="segmented-btn active" id="btn-model-gamepad" data-i18n="live_debug.model_gamepad">Геймпад</button>
-            <button type="button" class="segmented-btn" id="btn-model-cube" data-i18n="live_debug.model_cube">Кубик</button>
+        </section>
+
+        <!-- Resource Saving (Apple Toggle Switch) -->
+        <section class="apple-group-card">
+          <div class="control-row">
+            <div class="control-info">
+              <span class="control-title" data-i18n="live_debug.eco_mode">Экономия ресурсов</span>
+              <span class="control-desc" data-i18n="live_debug.eco_desc">Приостанавливать рендеринг при неактивном окне</span>
+            </div>
+            <label class="apple-switch">
+              <input type="checkbox" id="eco-toggle" checked>
+              <span class="apple-slider"></span>
+            </label>
           </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- Eco-Mode Switch -->
-      <section class="control-card">
-        <div class="control-row">
-          <div class="control-info">
-            <span class="control-title" data-i18n="live_debug.eco_mode">Экономия ресурсов</span>
-            <span class="control-desc" data-i18n="live_debug.eco_desc">Приостанавливать рендеринг при неактивном окне</span>
+        <!-- Calibration Recenter Action -->
+        <section class="apple-group-card">
+          <div class="control-info" style="margin-bottom: 2px;">
+            <span class="control-title" data-i18n="live_debug.recenter">Центрировать</span>
+            <span class="control-desc" data-i18n="live_debug.recenter_desc">Мгновенно сбрасывает виртуальное положение к исходному</span>
           </div>
-          <label class="apple-switch">
-            <input type="checkbox" id="eco-toggle" checked>
-            <span class="apple-slider"></span>
-          </label>
-        </div>
-      </section>
+          <button type="button" class="btn-recenter-action" id="btn-recenter">
+            <kbd class="apple-kbd" data-i18n="live_debug.recenter_hint">Пробел</kbd>
+            <span data-i18n="live_debug.recenter">Центрировать</span>
+          </button>
+        </section>
 
-      <!-- Recenter Button -->
-      <section class="control-card">
-        <button type="button" class="btn-recenter-action" id="btn-recenter">
-          <span class="key-hint-badge" data-i18n="live_debug.recenter_hint">Пробел</span>
-          <span data-i18n="live_debug.recenter">Центрировать</span>
-        </button>
-      </section>
-
+      </div>
     </aside>
 
     <!-- Right 3D Viewport (50%) -->
@@ -388,27 +440,35 @@
         ru: {
           "live_debug.title": "3D Live Debug",
           "live_debug.model_select": "3D-модель",
+          "live_debug.model_desc": "Выбор объекта отображения",
           "live_debug.model_gamepad": "Геймпад",
           "live_debug.model_cube": "Кубик",
           "live_debug.eco_mode": "Экономия ресурсов",
           "live_debug.eco_desc": "Приостанавливать рендеринг при неактивном окне",
           "live_debug.recenter": "Центрировать",
+          "live_debug.recenter_desc": "Мгновенно сбрасывает виртуальное положение к исходному",
           "live_debug.recenter_hint": "Пробел",
           "live_debug.paused_title": "Рендеринг приостановлен",
           "live_debug.paused_hint": "Кликните для возобновления",
+          "live_debug.status_online": "в сети",
+          "live_debug.status_offline": "нет связи",
           "app.theme_toggle": "Переключить тему"
         },
         en: {
           "live_debug.title": "3D Live Debug",
           "live_debug.model_select": "3D Model",
+          "live_debug.model_desc": "Select orientation model",
           "live_debug.model_gamepad": "Gamepad",
           "live_debug.model_cube": "Cube",
           "live_debug.eco_mode": "Resource Saving",
           "live_debug.eco_desc": "Pause rendering when window is inactive",
           "live_debug.recenter": "Recenter",
+          "live_debug.recenter_desc": "Instantly resets virtual orientation to neutral baseline",
           "live_debug.recenter_hint": "Space",
           "live_debug.paused_title": "Rendering paused",
           "live_debug.paused_hint": "Click to resume",
+          "live_debug.status_online": "online",
+          "live_debug.status_offline": "offline",
           "app.theme_toggle": "Toggle Theme"
         }
       };
@@ -433,13 +493,18 @@
         });
       }
 
-      document.getElementById('lang-ru')?.addEventListener('click', () => applyLang('ru'));
-      document.getElementById('lang-en')?.addEventListener('click', () => applyLang('en'));
+      function setLangAndSync(lang) {
+        applyLang(lang);
+        fetch('http://127.0.0.1:8080/livedebug/lang?value=' + encodeURIComponent(lang), { method: 'POST' }).catch(() => {});
+      }
+
+      document.getElementById('lang-ru')?.addEventListener('click', () => setLangAndSync('ru'));
+      document.getElementById('lang-en')?.addEventListener('click', () => setLangAndSync('en'));
 
       // ── Theme Manager ──
       let currentTheme = localStorage.getItem('gb_theme') || 'dark';
 
-      function applyTheme(theme) {
+      function applyTheme(theme, broadcast = false) {
         currentTheme = theme;
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('gb_theme', theme);
@@ -454,16 +519,19 @@
           if (moonIcon) moonIcon.style.display = 'block';
         }
 
+        if (window.go?.main?.LiveDebugApp?.SetWindowTheme) {
+          try { window.go.main.LiveDebugApp.SetWindowTheme(theme); } catch (e) {}
+        }
+
         update3DTheme(theme);
+
+        if (broadcast) {
+          fetch('http://127.0.0.1:8080/livedebug/theme?value=' + encodeURIComponent(theme), { method: 'POST' }).catch(() => {});
+        }
       }
 
       document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
-        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-      });
-
-      window.addEventListener('storage', (e) => {
-        if (e.key === 'gb_theme' && e.newValue) applyTheme(e.newValue);
-        if (e.key === 'gb_lang' && e.newValue) applyLang(e.newValue);
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark', true);
       });
 
       // ── DOM Elements ──
@@ -473,6 +541,7 @@
       const ecoToggle = document.getElementById('eco-toggle');
       const fpsCounter = document.getElementById('fps-counter');
       const statusDot = document.getElementById('status-dot');
+      const statusCapsule = document.getElementById('status-capsule');
       const btnRecenter = document.getElementById('btn-recenter');
       const btnModelGamepad = document.getElementById('btn-model-gamepad');
       const btnModelCube = document.getElementById('btn-model-cube');
@@ -485,7 +554,7 @@
 
       const scene = new THREE.Scene();
 
-      // Camera: zoomed back for spacious view
+      // Camera: spacious Apple Keynote framing
       const camera = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
       const camTarget = new THREE.Vector3(0, 0, 0);
       const orbitHRadius = 9.8;
@@ -493,12 +562,12 @@
       camera.position.set(camTarget.x, orbitY, camTarget.z + orbitHRadius);
       camera.lookAt(camTarget);
 
-      // Studio Keynote Lighting
-      const ambLight = new THREE.AmbientLight(0xffffff, 0.85);
+      // Studio Lighting
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.90);
       scene.add(ambLight);
 
-      const mainLight = new THREE.DirectionalLight(0xffffff, 1.25);
-      mainLight.position.set(3, 9, 4);
+      const mainLight = new THREE.DirectionalLight(0xffffff, 1.30);
+      mainLight.position.set(3.5, 9.5, 4.5);
       mainLight.castShadow = true;
       mainLight.shadow.mapSize.width = 1024;
       mainLight.shadow.mapSize.height = 1024;
@@ -511,73 +580,80 @@
       mainLight.shadow.bias = -0.001;
       scene.add(mainLight);
 
-      const fillLight = new THREE.DirectionalLight(0x8eb6ff, 0.45);
-      fillLight.position.set(-3, 6, 3);
+      const fillLight = new THREE.DirectionalLight(0x8eb6ff, 0.50);
+      fillLight.position.set(-3.5, 6, 3.5);
       scene.add(fillLight);
 
-      const rimLight = new THREE.DirectionalLight(0x007aff, 0.85);
-      rimLight.position.set(0, -3, -5);
+      const rimLight = new THREE.DirectionalLight(0x007aff, 0.90);
+      rimLight.position.set(0, -2, -5);
       scene.add(rimLight);
 
-      // Floor Radial Grid Texture (Lowered to y = -1.4 so it never clips)
-      const FLOOR_Y = -1.4;
+      // Floor Radial Grid Texture (Lowered to y = -1.6 for comfortable clearance)
+      const FLOOR_Y = -1.6;
 
       function createRadialGridTexture(isDark) {
-        const size = 512;
+        const size = 1024;
         const cvs = document.createElement('canvas');
-        cvs.width = size; cvs.height = size;
+        cvs.width = size;
+        cvs.height = size;
         const ctx = cvs.getContext('2d');
         const center = size / 2;
 
-        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
-        ctx.lineWidth = 1.0;
-        for (let r = 24; r < center; r += 24) {
+        // 1. Concentric distance rings
+        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.24)' : 'rgba(0, 0, 0, 0.16)';
+        ctx.lineWidth = 1.8;
+        for (let r = 48; r < center; r += 48) {
           ctx.beginPath();
           ctx.arc(center, center, r, 0, Math.PI * 2);
           ctx.stroke();
         }
 
-        const rings = [center * 0.38, center * 0.68, center * 0.94];
-        ctx.lineWidth = 1.4;
-        ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.32)' : 'rgba(71, 85, 105, 0.28)';
-        rings.forEach(r => {
+        // 2. High-contrast Key Highlight Rings
+        const highlightRings = [center * 0.35, center * 0.65, center * 0.90];
+        ctx.lineWidth = 3.0;
+        ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.90)' : 'rgba(0, 113, 227, 0.80)';
+        highlightRings.forEach(r => {
           ctx.beginPath();
           ctx.arc(center, center, r, 0, Math.PI * 2);
           ctx.stroke();
         });
 
-        const step = 24;
-        ctx.lineWidth = 0.8;
-        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
+        // 3. Diagonal 45-degree angle guides
+        ctx.lineWidth = 1.4;
+        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(0, 0, 0, 0.12)';
+        const diagDist = center * 0.95;
+        const diagCos = Math.cos(Math.PI / 4) * diagDist;
+        const diagSin = Math.sin(Math.PI / 4) * diagDist;
+
         ctx.beginPath();
-        for (let offset = step; offset < center; offset += step) {
-          ctx.moveTo(center + offset, 0); ctx.lineTo(center + offset, size);
-          ctx.moveTo(center - offset, 0); ctx.lineTo(center - offset, size);
-          ctx.moveTo(0, center + offset); ctx.lineTo(size, center + offset);
-          ctx.moveTo(0, center - offset); ctx.lineTo(size, center - offset);
-        }
+        ctx.moveTo(center - diagCos, center - diagSin);
+        ctx.lineTo(center + diagCos, center + diagSin);
+        ctx.moveTo(center - diagCos, center + diagSin);
+        ctx.lineTo(center + diagCos, center - diagSin);
         ctx.stroke();
 
-        ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.65)' : 'rgba(0, 122, 255, 0.55)';
-        ctx.lineWidth = 2.0;
+        // 4. Bold Cartesian Crosshairs / Coordinate Axes
+        ctx.lineWidth = 3.6;
+        ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 1.0)' : 'rgba(0, 113, 227, 0.95)';
         ctx.beginPath();
-        ctx.moveTo(center, 0); ctx.lineTo(center, size);
-        ctx.moveTo(0, center); ctx.lineTo(size, center);
+        ctx.moveTo(center, center - center * 0.95);
+        ctx.lineTo(center, center + center * 0.95);
+        ctx.moveTo(center - center * 0.95, center);
+        ctx.lineTo(center + center * 0.95, center);
         ctx.stroke();
 
+        // 5. Smooth radial edge falloff mask
         ctx.globalCompositeOperation = 'destination-in';
-        const grad = ctx.createRadialGradient(center, center, 0, center, center, center * 0.72);
+        const grad = ctx.createRadialGradient(center, center, 0, center, center, center * 0.98);
         grad.addColorStop(0.0, 'rgba(0,0,0,1)');
-        grad.addColorStop(0.20, 'rgba(0,0,0,0.95)');
-        grad.addColorStop(0.48, 'rgba(0,0,0,0.55)');
-        grad.addColorStop(0.72, 'rgba(0,0,0,0.18)');
-        grad.addColorStop(0.90, 'rgba(0,0,0,0.02)');
+        grad.addColorStop(0.72, 'rgba(0,0,0,1)');
+        grad.addColorStop(0.90, 'rgba(0,0,0,0.65)');
         grad.addColorStop(1.0, 'rgba(0,0,0,0)');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, size, size);
 
         const tex = new THREE.CanvasTexture(cvs);
-        tex.anisotropy = 4;
+        tex.anisotropy = 8;
         return tex;
       }
 
@@ -586,34 +662,41 @@
         map: gridTex,
         transparent: true,
         depthWrite: false,
-        opacity: (currentTheme === 'dark') ? 0.85 : 0.65
+        opacity: 1.0
       });
-      const gridFloor = new THREE.Mesh(new THREE.PlaneGeometry(8.0, 8.0), gridMat);
+      const gridFloor = new THREE.Mesh(new THREE.PlaneGeometry(9.2, 9.2), gridMat);
       gridFloor.rotation.x = -Math.PI / 2;
       gridFloor.position.y = FLOOR_Y;
+      gridFloor.renderOrder = 2;
       scene.add(gridFloor);
 
-      // Realistic Soft Shadow Receiver Plane on Floor
-      const shadowMat = new THREE.ShadowMaterial({ opacity: 0.35 });
-      const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(8.0, 8.0), shadowMat);
+      // Realistic Soft Shadow Receiver Plane (Rendered under luminous grid lines)
+      const shadowMat = new THREE.ShadowMaterial({
+        opacity: (currentTheme === 'dark') ? 0.40 : 0.22,
+        transparent: true
+      });
+      const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(9.2, 9.2), shadowMat);
       shadowPlane.rotation.x = -Math.PI / 2;
-      shadowPlane.position.y = FLOOR_Y + 0.005;
+      shadowPlane.position.y = FLOOR_Y - 0.002;
       shadowPlane.receiveShadow = true;
+      shadowPlane.renderOrder = 1;
       scene.add(shadowPlane);
 
       function update3DTheme(theme) {
         const isDark = (theme === 'dark');
-        ambLight.intensity = isDark ? 0.85 : 0.95;
-        mainLight.intensity = isDark ? 1.25 : 1.15;
+        ambLight.intensity = isDark ? 0.90 : 1.0;
+        mainLight.intensity = isDark ? 1.30 : 1.20;
         fillLight.color.setHex(isDark ? 0x8eb6ff : 0xc8ddff);
-        fillLight.intensity = isDark ? 0.45 : 0.40;
+        fillLight.intensity = isDark ? 0.50 : 0.42;
         rimLight.color.setHex(isDark ? 0x007aff : 0x409cff);
-        rimLight.intensity = isDark ? 0.85 : 0.55;
+        rimLight.intensity = isDark ? 0.90 : 0.60;
+
+        shadowMat.opacity = isDark ? 0.40 : 0.22;
+        shadowMat.needsUpdate = true;
 
         if (gridTex) gridTex.dispose();
         gridTex = createRadialGridTexture(isDark);
         gridMat.map = gridTex;
-        gridMat.opacity = isDark ? 0.85 : 0.65;
         gridMat.needsUpdate = true;
       }
 
@@ -666,13 +749,13 @@
         );
       }
 
-      // ── Model 2: Colorful Labeled Orientation Cube ──
+      // ── Model 2: Labeled Orientation Cube ──
       const cubeGroup = new THREE.Group();
       cubeGroup.visible = false;
       scene.add(cubeGroup);
 
       function createFaceTexture(text, bgColor) {
-        const size = 256;
+        const size = 512;
         const cvs = document.createElement('canvas');
         cvs.width = size; cvs.height = size;
         const ctx = cvs.getContext('2d');
@@ -683,29 +766,29 @@
 
         // Subtle inner border
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-        ctx.lineWidth = 8;
-        ctx.strokeRect(6, 6, size - 12, size - 12);
+        ctx.lineWidth = 14;
+        ctx.strokeRect(10, 10, size - 20, size - 20);
 
         // Center Text
         ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 44px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+        ctx.font = 'bold 80px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(text, size / 2, size / 2);
 
         const tex = new THREE.CanvasTexture(cvs);
-        tex.anisotropy = 4;
+        tex.anisotropy = 8;
         return tex;
       }
 
       // Cube faces: Right (+X), Left (-X), Top (+Y), Down (-Y), Front (+Z), Back (-Z)
       const cubeMaterials = [
-        new THREE.MeshStandardMaterial({ map: createFaceTexture('RIGHT', '#E53935'), roughness: 0.6 }), // +X Red
-        new THREE.MeshStandardMaterial({ map: createFaceTexture('LEFT', '#8E24AA'), roughness: 0.6 }),  // -X Purple
-        new THREE.MeshStandardMaterial({ map: createFaceTexture('TOP', '#43A047'), roughness: 0.6 }),   // +Y Green
-        new THREE.MeshStandardMaterial({ map: createFaceTexture('DOWN', '#546E7A'), roughness: 0.6 }),  // -Y Slate
-        new THREE.MeshStandardMaterial({ map: createFaceTexture('FRONT', '#1E88E5'), roughness: 0.6 }), // +Z Blue
-        new THREE.MeshStandardMaterial({ map: createFaceTexture('BACK', '#FB8C00'), roughness: 0.6 }),  // -Z Orange
+        new THREE.MeshStandardMaterial({ map: createFaceTexture('RIGHT', '#E53935'), roughness: 0.6 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTexture('LEFT', '#8E24AA'), roughness: 0.6 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTexture('TOP', '#43A047'), roughness: 0.6 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTexture('DOWN', '#546E7A'), roughness: 0.6 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTexture('FRONT', '#1E88E5'), roughness: 0.6 }),
+        new THREE.MeshStandardMaterial({ map: createFaceTexture('BACK', '#FB8C00'), roughness: 0.6 }),
       ];
 
       const cubeMesh = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 1.6), cubeMaterials);
@@ -849,9 +932,24 @@
 
       // Initial Theme, Lang, and Render Setup
       applyLang(currentLang);
-      applyTheme(currentTheme);
+      applyTheme(currentTheme, false);
       startRendering();
       window.focus();
+
+      // Immediate HTTP sync fetch on startup
+      fetch('http://127.0.0.1:8080/livedebug/theme')
+        .then(r => r.json())
+        .then(d => {
+          if (d && d.theme && d.theme !== currentTheme) applyTheme(d.theme, false);
+        })
+        .catch(() => {});
+
+      fetch('http://127.0.0.1:8080/livedebug/lang')
+        .then(r => r.json())
+        .then(d => {
+          if (d && d.lang && d.lang !== currentLang) applyLang(d.lang);
+        })
+        .catch(() => {});
 
       // ── Recenter Action ──
       function doRecenter() {
@@ -884,13 +982,19 @@
       let reconnectTimer = null;
 
       function updateStatus(connected) {
-        if (!statusDot) return;
+        if (!statusDot || !statusCapsule) return;
         if (connected) {
+          statusCapsule.className = 'status-capsule online';
           statusDot.style.background = 'var(--dot-online)';
           statusDot.style.boxShadow = '0 0 8px var(--dot-online)';
         } else {
+          statusCapsule.className = 'status-capsule offline';
           statusDot.style.background = 'var(--dot-offline)';
           statusDot.style.boxShadow = '0 0 8px var(--dot-offline)';
+          if (fpsCounter) {
+            const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
+            fpsCounter.textContent = dict["live_debug.status_offline"] || "offline";
+          }
         }
       }
 
@@ -918,7 +1022,7 @@
           try {
             const data = JSON.parse(event.data);
 
-            // If main application signaled shutdown, terminate child window
+            // Shutdown signal from parent application
             if (data.action === 'shutdown') {
               if (window.runtime?.Quit) {
                 window.runtime.Quit();
@@ -928,6 +1032,26 @@
               return;
             }
 
+            // Sync frame on connection
+            if (data.type === 'sync') {
+              if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
+              if (data.lang && data.lang !== currentLang) applyLang(data.lang);
+              return;
+            }
+
+            // Broadcasted theme change from main window
+            if (data.type === 'theme') {
+              if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
+              return;
+            }
+
+            // Broadcasted language change from main window
+            if (data.type === 'lang') {
+              if (data.lang && data.lang !== currentLang) applyLang(data.lang);
+              return;
+            }
+
+            // Telemetry quaternion frame
             const q0 = Number(data.q0);
             const q1 = Number(data.q1);
             const q2 = Number(data.q2);

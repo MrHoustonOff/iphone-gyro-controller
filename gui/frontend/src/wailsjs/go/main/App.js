@@ -14,6 +14,10 @@ export function CopyLast20Frames() {
   return window['go']['main']['App']['CopyLast20Frames']();
 }
 
+export function GetLang() {
+  return window['go']['main']['App']['GetLang']();
+}
+
 export function GetLanguages() {
   return window['go']['main']['App']['GetLanguages']();
 }
@@ -24,6 +28,10 @@ export function GetProfiles() {
 
 export function GetState() {
   return window['go']['main']['App']['GetState']();
+}
+
+export function GetTheme() {
+  return window['go']['main']['App']['GetTheme']();
 }
 
 export function GetTranslations(arg1) {
@@ -48,6 +56,18 @@ export function SaveProfile(arg1, arg2, arg3) {
 
 export function SetActiveProfile(arg1) {
   return window['go']['main']['App']['SetActiveProfile'](arg1);
+}
+
+export function SetLang(arg1) {
+  return window['go']['main']['App']['SetLang'](arg1);
+}
+
+export function SetTheme(arg1) {
+  return window['go']['main']['App']['SetTheme'](arg1);
+}
+
+export function SetWindowTheme(arg1) {
+  return window['go']['main']['App']['SetWindowTheme'](arg1);
 }
 
 export function StartCapture() {

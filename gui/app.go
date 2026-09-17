@@ -191,6 +191,10 @@ type App struct {
 	liveDebugClients map[*websocket.Conn]struct{}
 	liveDebugCmdMu   sync.Mutex
 	liveDebugCmd     *exec.Cmd
+	// Multi-window theme and language synchronization
+	themeMu      sync.RWMutex
+	currentTheme string
+	currentLang  string
 }
 
 // StepCaptureLog stores the full recorded session of a calibration gesture step
@@ -409,6 +413,8 @@ func NewApp() *App {
 		profilesDir:  profilesDir,
 		calStepLogs:  make(map[int]StepCaptureLog),
 		ahrs:         NewMadgwickAHRS(0.0),
+		currentTheme: "dark",
+		currentLang:  "ru",
 	}
 
 	// Initialize 4 empty slots with default portrait matrix
@@ -758,18 +764,76 @@ func (a *App) startup(ctx context.Context) {
 				}
 				http.NotFound(w, r)
 			})
-			mux.HandleFunc("/livedebug/recenter", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/livedebug/ping", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
-				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "*")
 				if r.Method == http.MethodOptions {
 					w.WriteHeader(http.StatusOK)
 					return
 				}
-				a.ResetAHRS()
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				w.Write([]byte(`{"status":"ok"}`))
+			})
+			mux.HandleFunc("/livedebug/recenter", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "*")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+				if r.Method == http.MethodPost {
+					a.ResetAHRS()
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				w.Write([]byte(`{"status":"ok"}`))
+			})
+			mux.HandleFunc("/livedebug/theme", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "*")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+				val := r.URL.Query().Get("value")
+				if val != "" {
+					a.SetTheme(val)
+				}
+				a.themeMu.RLock()
+				curT := a.currentTheme
+				a.themeMu.RUnlock()
+				if curT == "" {
+					curT = "dark"
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]string{"theme": curT})
+			})
+			mux.HandleFunc("/livedebug/lang", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "*")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+				val := r.URL.Query().Get("value")
+				if val != "" {
+					a.SetLang(val)
+				}
+				a.themeMu.RLock()
+				curL := a.currentLang
+				a.themeMu.RUnlock()
+				if curL == "" {
+					curL = "ru"
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]string{"lang": curL})
 			})
 			mux.HandleFunc("/livedebug/ws", func(w http.ResponseWriter, r *http.Request) {
 				conn, err := liveUpgrader.Upgrade(w, r, nil)
@@ -782,6 +846,24 @@ func (a *App) startup(ctx context.Context) {
 				}
 				a.liveDebugClients[conn] = struct{}{}
 				a.liveDebugMu.Unlock()
+
+				// Send immediate initial theme and language sync frame
+				a.themeMu.RLock()
+				curT := a.currentTheme
+				curL := a.currentLang
+				a.themeMu.RUnlock()
+				if curT == "" {
+					curT = "dark"
+				}
+				if curL == "" {
+					curL = "ru"
+				}
+				syncBytes, _ := json.Marshal(map[string]string{
+					"type":  "sync",
+					"theme": curT,
+					"lang":  curL,
+				})
+				_ = conn.WriteMessage(websocket.TextMessage, syncBytes)
 
 				go func(c *websocket.Conn) {
 					defer func() {
@@ -1114,6 +1196,97 @@ func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32) {
 		return
 	}
 
+	a.liveDebugMu.Lock()
+	defer a.liveDebugMu.Unlock()
+	for conn := range a.liveDebugClients {
+		_ = conn.SetWriteDeadline(time.Now().Add(50 * time.Millisecond))
+		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+			conn.Close()
+			delete(a.liveDebugClients, conn)
+		}
+	}
+}
+
+// SetTheme updates theme on backend, broadcasts to Live Debug window, and emits event to main window.
+func (a *App) SetTheme(theme string) {
+	if theme == "" {
+		return
+	}
+	a.themeMu.Lock()
+	a.currentTheme = theme
+	a.themeMu.Unlock()
+
+	a.broadcastLiveDebugJSON(map[string]string{
+		"type":  "theme",
+		"theme": theme,
+	})
+
+	if a.ctx != nil {
+		wailsRuntime.EventsEmit(a.ctx, "theme-sync", theme)
+		if theme == "dark" {
+			wailsRuntime.WindowSetDarkTheme(a.ctx)
+		} else if theme == "light" {
+			wailsRuntime.WindowSetLightTheme(a.ctx)
+		}
+	}
+}
+
+// SetLang updates language on backend, broadcasts to Live Debug window, and emits event to main window.
+func (a *App) SetLang(lang string) {
+	if lang == "" {
+		return
+	}
+	a.themeMu.Lock()
+	a.currentLang = lang
+	a.themeMu.Unlock()
+
+	a.broadcastLiveDebugJSON(map[string]string{
+		"type": "lang",
+		"lang": lang,
+	})
+
+	if a.ctx != nil {
+		wailsRuntime.EventsEmit(a.ctx, "lang-sync", lang)
+	}
+}
+
+// GetTheme returns the current synchronized theme.
+func (a *App) GetTheme() string {
+	a.themeMu.RLock()
+	defer a.themeMu.RUnlock()
+	if a.currentTheme == "" {
+		return "dark"
+	}
+	return a.currentTheme
+}
+
+// GetLang returns the current synchronized language.
+func (a *App) GetLang() string {
+	a.themeMu.RLock()
+	defer a.themeMu.RUnlock()
+	if a.currentLang == "" {
+		return "ru"
+	}
+	return a.currentLang
+}
+
+// SetWindowTheme sets the native window title bar theme.
+func (a *App) SetWindowTheme(theme string) {
+	if a.ctx == nil {
+		return
+	}
+	if theme == "dark" {
+		wailsRuntime.WindowSetDarkTheme(a.ctx)
+	} else if theme == "light" {
+		wailsRuntime.WindowSetLightTheme(a.ctx)
+	}
+}
+
+func (a *App) broadcastLiveDebugJSON(v any) {
+	data, err := json.Marshal(v)
+	if err != nil {
+		return
+	}
 	a.liveDebugMu.Lock()
 	defer a.liveDebugMu.Unlock()
 	for conn := range a.liveDebugClients {
