@@ -101,6 +101,18 @@
     "pause": "ПАУЗА",
     "resume": "ВОЗОБНОВИТЬ"
   },
+  "live_debug": {
+    "eco_desc": "Приостанавливать рендеринг при неактивном окне",
+    "eco_mode": "Экономия ресурсов",
+    "model_cube": "Кубик",
+    "model_gamepad": "Геймпад",
+    "model_select": "3D-модель",
+    "paused_hint": "Кликните для возобновления",
+    "paused_title": "Рендеринг приостановлен",
+    "recenter": "Центрировать",
+    "recenter_hint": "Пробел",
+    "title": "3D Live Debug"
+  },
   "nav": {
     "live_debug": "Live Debug Window →",
     "setup": "Начальная настройка"

@@ -186,9 +186,11 @@ type App struct {
 	calLogMu     sync.Mutex
 	calStepLogs  map[int]StepCaptureLog
 	calValResult ValidationResult
-	// LiveDebug standalone window WebSocket clients
+	// LiveDebug standalone window WebSocket clients and process handle
 	liveDebugMu      sync.RWMutex
 	liveDebugClients map[*websocket.Conn]struct{}
+	liveDebugCmdMu   sync.Mutex
+	liveDebugCmd     *exec.Cmd
 }
 
 // StepCaptureLog stores the full recorded session of a calibration gesture step
@@ -828,6 +830,14 @@ func (a *App) startup(ctx context.Context) {
 
 // shutdown is called when the Wails application terminates
 func (a *App) shutdown(ctx context.Context) {
+	// Terminate child Live Debug process if running
+	a.liveDebugCmdMu.Lock()
+	if a.liveDebugCmd != nil && a.liveDebugCmd.Process != nil {
+		_ = a.liveDebugCmd.Process.Kill()
+		a.liveDebugCmd = nil
+	}
+	a.liveDebugCmdMu.Unlock()
+
 	if a.srv != nil {
 		a.srv.Stop()
 	}
@@ -836,6 +846,7 @@ func (a *App) shutdown(ctx context.Context) {
 	}
 	a.liveDebugMu.Lock()
 	for conn := range a.liveDebugClients {
+		_ = conn.WriteMessage(websocket.TextMessage, []byte(`{"action":"shutdown"}`))
 		conn.Close()
 	}
 	a.liveDebugClients = make(map[*websocket.Conn]struct{})
@@ -1127,6 +1138,9 @@ func (a *App) OpenLiveDebugWindow() {
 		_, _, _ = procAllowSetForegroundWindow.Call(uintptr(0xFFFFFFFF))
 		cmd := exec.Command(exePath, "--livedebug")
 		if err := cmd.Start(); err == nil {
+			a.liveDebugCmdMu.Lock()
+			a.liveDebugCmd = cmd
+			a.liveDebugCmdMu.Unlock()
 			return
 		}
 	}

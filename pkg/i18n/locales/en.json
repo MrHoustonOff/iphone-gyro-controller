@@ -101,6 +101,18 @@
     "pause": "PAUSE",
     "resume": "RESUME"
   },
+  "live_debug": {
+    "eco_desc": "Pause rendering when window is inactive",
+    "eco_mode": "Resource Saving",
+    "model_cube": "Cube",
+    "model_gamepad": "Gamepad",
+    "model_select": "3D Model",
+    "paused_hint": "Click to resume",
+    "paused_title": "Rendering paused",
+    "recenter": "Recenter",
+    "recenter_hint": "Space",
+    "title": "3D Live Debug"
+  },
   "nav": {
     "live_debug": "Live Debug Window →",
     "setup": "Initial Setup"

@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -26,6 +27,29 @@ func NewLiveDebugApp() *LiveDebugApp {
 
 func (a *LiveDebugApp) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Window hierarchy watchdog: if main core server shuts down, close debug window too
+	go func() {
+		client := &http.Client{Timeout: 800 * time.Millisecond}
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+		consecutiveFails := 0
+		for range ticker.C {
+			resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/livedebug/recenter", HTTPPort))
+			if err != nil {
+				consecutiveFails++
+				if consecutiveFails >= 2 {
+					if a.ctx != nil {
+						wailsRuntime.Quit(a.ctx)
+					}
+					return
+				}
+			} else {
+				consecutiveFails = 0
+				resp.Body.Close()
+			}
+		}
+	}()
 }
 
 func (a *LiveDebugApp) shutdown(ctx context.Context) {
