@@ -112,15 +112,16 @@ jobs:
         shell: powershell
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
-        with:
-          name: GyroBridge ${{ github.ref_name }}
-          body_path: RELEASE_NOTES_COMPOSED.md
-          files: |
-            gui/build/bin/GyroBridge.exe
-            gui/build/bin/GyroBridge-windows-amd64.exe
-            gui/build/bin/GyroBridge-windows-arm64.exe
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          try { gh release delete ${{ github.ref_name }} --yes } catch { }
+          gh release create ${{ github.ref_name }} `
+            --title "GyroBridge ${{ github.ref_name }}" `
+            --notes-file RELEASE_NOTES_COMPOSED.md `
+            gui/build/bin/GyroBridge.exe `
+            gui/build/bin/GyroBridge-windows-amd64.exe `
+            gui/build/bin/GyroBridge-windows-arm64.exe `
             gui/build/bin/SHA256SUMS.txt
-          draft: false
-          prerelease: false
+        shell: powershell
