@@ -413,7 +413,7 @@ func NewApp() *App {
 		activeMatrix: defaultMatrix3x3(),
 		profilesDir:  profilesDir,
 		calStepLogs:  make(map[int]StepCaptureLog),
-		ahrs:         NewMadgwickAHRS(0.104), // Beta=0.104 matching PadTest exactly for 1:1 viewport synchronization
+		ahrs:         NewMadgwickAHRS(0.0), // Pure gyro integration with 0.28 deg/s stationary deadband (zero phantom roll/drift on table)
 		currentTheme: "dark",
 		currentLang:  "ru",
 	}
