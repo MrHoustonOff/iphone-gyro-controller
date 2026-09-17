@@ -354,6 +354,11 @@
       transform: scale(0.96);
       background: var(--surface-hover);
     }
+    .btn-sub-action.active {
+      background: rgba(10, 132, 255, 0.12);
+      border-color: rgba(10, 132, 255, 0.35);
+      color: var(--apple-blue);
+    }
     .btn-sub-action svg {
       width: 16px;
       height: 16px;
@@ -744,14 +749,6 @@
     </div>
 
     <div class="header-controls">
-      <!-- Screen WakeLock Button -->
-      <button class="header-btn" id="btn-wakelock" title="Блокировка сна экрана">
-        <svg viewBox="0 0 24 24">
-          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-        </svg>
-      </button>
-
       <!-- Screensaver / Anti-Touch Shield Button -->
       <button class="header-btn" id="btn-screensaver" title="Скринсейвер и защита от тыков">
         <svg viewBox="0 0 24 24">
@@ -862,7 +859,7 @@
       <div class="conn-hint" id="conn-hint">Нажмите для подключения к ПК по WebSocket</div>
     </button>
 
-    <!-- Secondary Quick Actions (Reconnect & Recenter/Tare) -->
+    <!-- Secondary Quick Actions (Reconnect & Screen Lock) -->
     <div class="conn-sub-bar">
       <button class="btn-sub-action" id="btn-toggle-socket">
         <svg viewBox="0 0 24 24">
@@ -872,16 +869,12 @@
         <span id="txt-sub-socket">Разорвать связь</span>
       </button>
 
-      <button class="btn-sub-action" id="btn-tare">
+      <button class="btn-sub-action active" id="btn-screenlock">
         <svg viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"></circle>
-          <circle cx="12" cy="12" r="3"></circle>
-          <line x1="12" y1="2" x2="12" y2="5"></line>
-          <line x1="12" y1="19" x2="12" y2="22"></line>
-          <line x1="2" y1="12" x2="5" y2="12"></line>
-          <line x1="19" y1="12" x2="22" y2="12"></line>
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
-        <span id="txt-sub-tare">Центрировать</span>
+        <span id="txt-sub-screenlock">Скринлок: Вкл</span>
       </button>
     </div>
   </section>
@@ -951,7 +944,8 @@ const I18N = {
     hint_disconnected: 'Нажмите для повторной попытки подключения по WebSocket',
     sub_disconnect: 'Разорвать связь',
     sub_connect: 'Переподключить',
-    sub_tare: 'Центрировать',
+    sub_screenlock_on: 'Скринлок: Вкл',
+    sub_screenlock_off: 'Скринлок: Выкл',
     warn_title: 'Требуется доступ к датчикам',
     warn_desc: 'Браузер блокирует доступ к гироскопу. Нажмите кнопку ниже, чтобы разрешить отслеживание движений.',
     warn_btn: 'ВКЛЮЧИТЬ ДАТЧИКИ',
@@ -975,7 +969,8 @@ const I18N = {
     hint_disconnected: 'Tap to reconnect to PC via WebSocket',
     sub_disconnect: 'Disconnect',
     sub_connect: 'Reconnect',
-    sub_tare: 'Center / Tare',
+    sub_screenlock_on: 'Screen Lock: ON',
+    sub_screenlock_off: 'Screen Lock: OFF',
     warn_title: 'Sensor Access Required',
     warn_desc: 'Motion sensors are restricted by the browser. Tap the button below to enable gyro tracking.',
     warn_btn: 'ENABLE SENSORS',
@@ -997,10 +992,10 @@ function setLanguage(lang) {
   document.getElementById('txt-warn-title').textContent = I18N[lang].warn_title;
   document.getElementById('txt-warn-desc').textContent = I18N[lang].warn_desc;
   document.getElementById('btn-grant-sensors').textContent = I18N[lang].warn_btn;
-  document.getElementById('txt-sub-tare').textContent = I18N[lang].sub_tare;
   document.getElementById('txt-footer-role').textContent = I18N[lang].footer_role;
   document.getElementById('ss-lock-caption').textContent = I18N[lang].ss_caption;
   document.getElementById('ss-swipe-txt').textContent = I18N[lang].ss_swipe;
+  updateWakeLockUI();
   updateConnectionUI();
 }
 
@@ -1063,22 +1058,33 @@ document.getElementById('device-model-label').textContent = deviceModel;
 // ─────────────────────────────────────────────────────────────────────────────
 let wakeLock = null;
 let wakeLockEnabled = true;
-const btnWakeLock = document.getElementById('btn-wakelock');
+const btnScreenlock = document.getElementById('btn-screenlock');
+const txtSubScreenlock = document.getElementById('txt-sub-screenlock');
+
+function updateWakeLockUI() {
+  const t = I18N[currentLang];
+  if (btnScreenlock) {
+    btnScreenlock.classList.toggle('active', wakeLockEnabled);
+  }
+  if (txtSubScreenlock) {
+    txtSubScreenlock.textContent = wakeLockEnabled ? t.sub_screenlock_on : t.sub_screenlock_off;
+  }
+}
 
 async function requestWakeLock() {
   if (!wakeLockEnabled) return;
   try {
     if ('wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
-      btnWakeLock.classList.add('active');
+      updateWakeLockUI();
       wakeLock.addEventListener('release', () => {
         if (wakeLockEnabled) {
-          btnWakeLock.classList.remove('active');
+          updateWakeLockUI();
         }
       });
     }
   } catch (err) {
-    btnWakeLock.classList.remove('active');
+    updateWakeLockUI();
   }
 }
 
@@ -1087,17 +1093,21 @@ function releaseWakeLock() {
     wakeLock.release().catch(() => {});
     wakeLock = null;
   }
-  btnWakeLock.classList.remove('active');
+  updateWakeLockUI();
 }
 
-btnWakeLock.addEventListener('click', () => {
-  wakeLockEnabled = !wakeLockEnabled;
-  if (wakeLockEnabled) {
-    requestWakeLock();
-  } else {
-    releaseWakeLock();
-  }
-});
+if (btnScreenlock) {
+  btnScreenlock.addEventListener('click', () => {
+    if (navigator.vibrate) navigator.vibrate(20);
+    wakeLockEnabled = !wakeLockEnabled;
+    if (wakeLockEnabled) {
+      requestWakeLock();
+    } else {
+      releaseWakeLock();
+    }
+    updateWakeLockUI();
+  });
+}
 
 // Re-acquire WakeLock on visibility change (returning to browser)
 document.addEventListener('visibilitychange', () => {
@@ -1488,8 +1498,8 @@ function updateHUDLevel(pitch, roll, yaw) {
   if (!bubble || !yawGroup) return;
 
   const maxR = 40.0;
-  // Pitch: tilt forward (pitch > 0) -> bubble moves up (-Y)
-  const offsetY = Math.max(-maxR, Math.min(maxR, -pitch * 0.9));
+  // Pitch: tilt forward (pitch > 0) -> bubble moves forward/down (+Y) per user preference
+  const offsetY = Math.max(-maxR, Math.min(maxR, pitch * 0.9));
   // Roll: tilt right (roll > 0) -> bubble moves right (+X)
   const offsetX = Math.max(-maxR, Math.min(maxR, roll * 0.9));
 
@@ -1575,13 +1585,6 @@ setInterval(() => {
     }
   }
 }, 1000);
-
-// Tare Heading (Recenter Button)
-document.getElementById('btn-tare').addEventListener('click', () => {
-  if (navigator.vibrate) navigator.vibrate(25);
-  zeroYawOffset = curAlpha;
-  updateHUDLevel(curBeta, curGamma, curAlpha);
-});
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 8. Sensor Permission Warning & Activation Handler
