@@ -237,42 +237,46 @@ func defaultMatrix3x3() [3][3]float64 {
 }
 
 // computeAccMatrix builds the accelerometer alignment matrix so that resting gravity
-// is guaranteed to map exactly to AccZ = -|g|, with AccX = 0 and AccY = 0 in Cemuhook DSU.
+// is guaranteed to map exactly to AccY = -|g|, with AccX = 0 and AccZ = 0 in Cemuhook DSU.
+// In Cemuhook DSU / PadTest, the vertical axis of the gamepad is Y (Green axis pointing UP).
+// When the controller is resting flat on a table, gravity points down along -AccY.
 func computeAccMatrix(calGravity [3]float64) [3][3]float64 {
 	gx, gy, gz := calGravity[0], calGravity[1], calGravity[2]
 	gNorm := math.Sqrt(gx*gx + gy*gy + gz*gz)
 	if gNorm < 0.3 {
 		// Default: phone sitting flat on table, screen up -> Phone Acc = [0, 0, -1.0]
+		// Maps Phone Z to AccY so resting gravity lands on AccY = -1.0g
 		return [3][3]float64{
 			{1, 0, 0},
-			{0, 1, 0},
 			{0, 0, 1},
+			{0, -1, 0},
 		}
 	}
 
 	// Unit resting gravity vector pointing down in phone frame
 	uG := [3]float64{gx / gNorm, gy / gNorm, gz / gNorm}
 
-	// We want Row 2 = -uG so that Row 2 · uG = -1.0 (pointing along -AccZ)
-	row2 := [3]float64{-uG[0], -uG[1], -uG[2]}
+	// In Cemuhook DSU, resting gravity points along -AccY (Row 1).
+	// We want Row 1 = -uG so that Row 1 · uG = -1.0
+	row1 := [3]float64{-uG[0], -uG[1], -uG[2]}
 
-	// Pick a reference direction for Row 0 (lateral axis) orthogonal to row2
+	// Pick a reference direction for Row 0 (lateral X axis, pitch) orthogonal to row1
 	ref := [3]float64{1, 0, 0}
 	if math.Abs(uG[0]) > 0.8 {
-		ref = [3]float64{0, 1, 0}
+		ref = [3]float64{0, 0, 1}
 	}
 
-	// Gram-Schmidt for Row 0: ref - (ref · row2) * row2
-	dot := ref[0]*row2[0] + ref[1]*row2[1] + ref[2]*row2[2]
-	row0 := [3]float64{ref[0] - dot*row2[0], ref[1] - dot*row2[1], ref[2] - dot*row2[2]}
+	// Gram-Schmidt for Row 0: ref - (ref · row1) * row1
+	dot := ref[0]*row1[0] + ref[1]*row1[1] + ref[2]*row1[2]
+	row0 := [3]float64{ref[0] - dot*row1[0], ref[1] - dot*row1[1], ref[2] - dot*row1[2]}
 	r0Norm := math.Sqrt(row0[0]*row0[0] + row0[1]*row0[1] + row0[2]*row0[2])
 	row0 = [3]float64{row0[0] / r0Norm, row0[1] / r0Norm, row0[2] / r0Norm}
 
-	// Row 1 = row2 x row0 (completes right-handed orthogonal triad)
-	row1 := [3]float64{
-		row2[1]*row0[2] - row2[2]*row0[1],
-		row2[2]*row0[0] - row2[0]*row0[2],
-		row2[0]*row0[1] - row2[1]*row0[0],
+	// Row 2 = row0 x row1 (Z axis, longitudinal, roll)
+	row2 := [3]float64{
+		row0[1]*row1[2] - row0[2]*row1[1],
+		row0[2]*row1[0] - row0[0]*row1[2],
+		row0[0]*row1[1] - row0[1]*row1[0],
 	}
 
 	return [3][3]float64{row0, row1, row2}
@@ -1812,18 +1816,14 @@ func (a *App) ValidateCalibration(pitch, roll [3]float64) ValidationResult {
 	mat[1] = yawRow
 	mat[2] = rollRow
 
-	// For landscape orientation where Pitch is on Phone Z and Roll is on Phone X:
-	// Cross product produces opposite sign to physical clockwise rotation in Cemuhook DSU.
-	if pitchRow[2] != 0 && rollRow[0] != 0 {
-		yawRow = [3]float64{-yawRow[0], -yawRow[1], -yawRow[2]}
-		mat[1] = yawRow
-	} else if det3x3(mat) > 0 {
+	// Cemuhook DSU is left-handed parity convention -> det(M) must be -1.0 (§3.3)
+	if det3x3(mat) > 0 {
 		yawRow = [3]float64{-yawRow[0], -yawRow[1], -yawRow[2]}
 		mat[1] = yawRow
 	}
 
 	det := det3x3(mat)
-	if math.Abs(math.Abs(det)-1.0) > 0.05 {
+	if math.Abs(det+1.0) > 0.05 {
 		res := ValidationResult{
 			Success:   false,
 			ErrorCode: "error_invalid_determinant",

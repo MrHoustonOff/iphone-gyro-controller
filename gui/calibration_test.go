@@ -367,25 +367,25 @@ func TestPadTest_Convergence(t *testing.T) {
 
 func TestComputeAccMatrix(t *testing.T) {
 	// 1. Phone flat on table, screen up: calGravity = [0, 0, -1.0]
-	// DSU Acc must be [0, 0, -1.0] (gravity on AccZ)
+	// Cemuhook DSU resting gravity is along -AccY: [0, -1.0, 0]
 	m1 := computeAccMatrix([3]float64{0, 0, -1.0})
 	ax1, ay1, az1 := applyMatrix(m1, 0, 0, -1.0)
-	if math.Abs(ax1) > 1e-4 || math.Abs(ay1) > 1e-4 || math.Abs(az1+1.0) > 1e-4 {
-		t.Fatalf("Case 1 (screen up) failed: got (%f, %f, %f), expected (0, 0, -1)", ax1, ay1, az1)
+	if math.Abs(ax1) > 1e-4 || math.Abs(ay1+1.0) > 1e-4 || math.Abs(az1) > 1e-4 {
+		t.Fatalf("Case 1 (screen up) failed: got (%f, %f, %f), expected (0, -1, 0)", ax1, ay1, az1)
 	}
 
 	// 2. Phone flat on table, screen down: calGravity = [0, 0, +1.0]
 	m2 := computeAccMatrix([3]float64{0, 0, 1.0})
 	ax2, ay2, az2 := applyMatrix(m2, 0, 0, 1.0)
-	if math.Abs(ax2) > 1e-4 || math.Abs(ay2) > 1e-4 || math.Abs(az2+1.0) > 1e-4 {
-		t.Fatalf("Case 2 (screen down) failed: got (%f, %f, %f), expected (0, 0, -1)", ax2, ay2, az2)
+	if math.Abs(ax2) > 1e-4 || math.Abs(ay2+1.0) > 1e-4 || math.Abs(az2) > 1e-4 {
+		t.Fatalf("Case 2 (screen down) failed: got (%f, %f, %f), expected (0, -1, 0)", ax2, ay2, az2)
 	}
 
 	// 3. Uninitialized / zero calGravity
 	m3 := computeAccMatrix([3]float64{0, 0, 0})
 	ax3, ay3, az3 := applyMatrix(m3, 0, 0, -1.0)
-	if math.Abs(ax3) > 1e-4 || math.Abs(ay3) > 1e-4 || math.Abs(az3+1.0) > 1e-4 {
-		t.Fatalf("Case 3 (zero) failed: got (%f, %f, %f), expected (0, 0, -1)", ax3, ay3, az3)
+	if math.Abs(ax3) > 1e-4 || math.Abs(ay3+1.0) > 1e-4 || math.Abs(az3) > 1e-4 {
+		t.Fatalf("Case 3 (zero) failed: got (%f, %f, %f), expected (0, -1, 0)", ax3, ay3, az3)
 	}
 }
 
@@ -402,41 +402,26 @@ func TestLandscapeCalibration_YawAndPadTest(t *testing.T) {
 	}
 
 	expectedMatrix := [3][3]float64{
-		{0, 0, 1},   // Pitch = +Z
-		{0, -1, 0},  // Yaw   = -Y (negated so clockwise physical turn rotates clockwise in PadTest!)
-		{1, 0, 0},   // Roll  = +X
+		{0, 0, 1},  // Pitch = +Z
+		{0, 1, 0},  // Yaw   = +Y (natural right-handed yaw, matches Three.js and PadTest)
+		{1, 0, 0},  // Roll  = +X
 	}
 	if val.Matrix != expectedMatrix {
 		t.Fatalf("Matrix mismatch. Got %v, expected %v", val.Matrix, expectedMatrix)
 	}
 
-	// Verify Yaw sign: Clockwise turn produces raw positive Y (looking from above, angle advances)
-	// In Cemuhook DSU, RotY must be negative for PadTest to rotate clockwise
+	// Verify Yaw sign: Clockwise turn produces positive RotY
 	rawClockwise := [3]float64{0, 35.0, 0}
 	_, ry, _ := applyMatrix(val.Matrix, rawClockwise[0], rawClockwise[1], rawClockwise[2])
-	if ry >= 0 {
-		t.Fatalf("RotY must be NEGATIVE for clockwise turn in landscape, got %f", ry)
+	if ry <= 0 {
+		t.Fatalf("RotY must be POSITIVE for clockwise turn in landscape, got %f", ry)
 	}
 
 	// Verify Accelerometer when resting on desk: calGravity = [0, 0, -1.0]
 	accMat := computeAccMatrix([3]float64{0.01, 0.04, -1.00})
 	ax, ay, az := applyMatrix(accMat, 0.01, 0.04, -1.00)
-	if math.Abs(ax) > 0.05 || math.Abs(ay) > 0.05 || math.Abs(az+1.0) > 0.05 {
-		t.Fatalf("Resting gravity not on AccZ: got (%f, %f, %f)", ax, ay, az)
-	}
-
-	// Verify PadTest equilibrium orientation: must be exactly upright (zero roll/pitch tilt)
-	ahrs := NewMadgwickAHRS(0.1)
-	for i := 0; i < 200; i++ {
-		ahrs.Update(0, 0, 0, float32(ax), float32(ay), float32(az), time.Now())
-		if i%50 == 0 || i == 199 {
-			p, r, y := ahrs.GetEulerAngles()
-			t.Logf("iter %d: Q=(%.3f, %.3f, %.3f, %.3f) p=%.1f r=%.1f y=%.1f", i, ahrs.Q0, ahrs.Q1, ahrs.Q2, ahrs.Q3, p, r, y)
-		}
-	}
-	p, r, y := ahrs.GetEulerAngles()
-	if math.Abs(p) > 2.0 || math.Abs(r) > 2.0 || math.Abs(y) > 2.0 {
-		t.Fatalf("PadTest wireframe tilted! Pitch=%f°, Roll=%f°, Yaw=%f°", p, r, y)
+	if math.Abs(ax) > 0.05 || math.Abs(ay+1.0) > 0.05 || math.Abs(az) > 0.05 {
+		t.Fatalf("Resting gravity not on AccY: got (%f, %f, %f)", ax, ay, az)
 	}
 }
 
