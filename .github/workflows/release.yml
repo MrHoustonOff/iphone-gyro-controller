@@ -91,17 +91,17 @@ jobs:
           }
 
           $notes = Get-Content RELEASE_NOTES.md -Raw
-          $vtSection = @"
-
----
-
-### Security & VirusTotal Reports
-- **Windows x86_64 (`GyroBridge.exe`)**: [VirusTotal Scan Report](https://www.virustotal.com/gui/file/$amd64Hash)  
-  SHA-256: ``$amd64Hash``
-- **Windows ARM64 (`GyroBridge-windows-arm64.exe`)**: [VirusTotal Scan Report](https://www.virustotal.com/gui/file/$arm64Hash)  
-  SHA-256: ``$arm64Hash``
-"@
-          $fullNotes = $notes + $vtSection
+          $vtLines = @(
+            "",
+            "---",
+            "",
+            "### Security & VirusTotal Reports",
+            "- **Windows x86_64 (``GyroBridge.exe``)**: [VirusTotal Scan Report](https://www.virustotal.com/gui/file/$amd64Hash)",
+            "  SHA-256: ``$amd64Hash``",
+            "- **Windows ARM64 (``GyroBridge-windows-arm64.exe``)**: [VirusTotal Scan Report](https://www.virustotal.com/gui/file/$arm64Hash)",
+            "  SHA-256: ``$arm64Hash``"
+          )
+          $fullNotes = $notes + [Environment]::NewLine + ($vtLines -join [Environment]::NewLine)
           Set-Content -Path RELEASE_NOTES_COMPOSED.md -Value $fullNotes -Encoding UTF8
         shell: powershell
 
