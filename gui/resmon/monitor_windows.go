@@ -4,6 +4,8 @@ package resmon
 
 import (
 	"os"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	"unsafe"
@@ -85,7 +87,7 @@ func newPlatformMonitor() (Monitor, error) {
 	return m, nil
 }
 
-// getProcessTreePIDs collects rootPID and all descendant child PIDs.
+// getProcessTreePIDs collects rootPID and all descendant child PIDs belonging to GyroBridge.
 func getProcessTreePIDs(rootPID uint32) []uint32 {
 	snap, err := syscall.CreateToolhelp32Snapshot(syscall.TH32CS_SNAPPROCESS, 0)
 	if err != nil {
@@ -100,8 +102,15 @@ func getProcessTreePIDs(rootPID uint32) []uint32 {
 		return []uint32{rootPID}
 	}
 
+	exePath, _ := os.Executable()
+	ourExeName := strings.ToLower(filepath.Base(exePath))
+
 	childrenOf := make(map[uint32][]uint32)
+	exeNameOf := make(map[uint32]string)
+
 	for {
+		name := strings.ToLower(syscall.UTF16ToString(entry.ExeFile[:]))
+		exeNameOf[entry.ProcessID] = name
 		childrenOf[entry.ParentProcessID] = append(childrenOf[entry.ParentProcessID], entry.ProcessID)
 		if err := syscall.Process32Next(snap, &entry); err != nil {
 			break
@@ -120,8 +129,12 @@ func getProcessTreePIDs(rootPID uint32) []uint32 {
 		for _, child := range childrenOf[curr] {
 			if !visited[child] {
 				visited[child] = true
-				treePIDs = append(treePIDs, child)
-				queue = append(queue, child)
+				childName := exeNameOf[child]
+				// Only track our own executable instances (e.g. main app and --livedebug child process)
+				if ourExeName == "" || childName == ourExeName || strings.HasPrefix(childName, "gyrobridge") {
+					treePIDs = append(treePIDs, child)
+					queue = append(queue, child)
+				}
 			}
 		}
 	}
@@ -201,11 +214,8 @@ func (m *windowsMonitor) Sample() Stats {
 			if delta > 0 {
 				totalCPUDeltaNanos += delta
 			}
-		} else {
-			if nowCPU > 0 {
-				totalCPUDeltaNanos += nowCPU
-			}
 		}
+		// Newly discovered process: establish baseline without false cumulative delta spike
 	}
 
 	wallDeltaNanos := now.Sub(m.lastWall).Nanoseconds()

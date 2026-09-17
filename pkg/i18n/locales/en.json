@@ -136,8 +136,6 @@
     "resume": "RESUME"
   },
   "footer": {
-    "cpu": "CPU",
-    "cpu_tip": "Process CPU usage",
     "ram": "RAM",
     "ram_tip": "Process working set memory and percentage of total RAM"
   },
@@ -225,8 +223,11 @@
     "title": "Statistics & 3D View Window"
   },
   "nav": {
+    "help": "Help",
     "live_debug": "Statistics & 3D View Window",
-    "setup": "Initial Setup"
+    "settings": "Settings",
+    "setup": "Initial Setup",
+    "stats": "Stats & 3D View"
   },
   "qr": {
     "copied": "Copied!",
@@ -236,18 +237,20 @@
     "url": "Connection URL"
   },
   "setup": {
-    "android_desc": "Direct connection without certificate installation",
-    "android_hint": "No certificate installation needed on Android. Scan the QR code, and if your browser warns about the local self-signed certificate, simply tap `Advanced` → `Proceed to site (unsafe)` or confirm trust.",
-    "android_title": "Android",
-    "btn_back": "← Back",
+    "android_desc": "No certificate installation needed on Android. Open the controller address directly in Chrome.",
+    "android_hint": "Tap the chip or scan the QR code above to copy the link.",
+    "android_title": "Android (Chrome)",
+    "btn_back": "Back",
     "btn_close": "Close",
     "btn_finish": "Finish",
-    "btn_next": "Next →",
+    "btn_next": "Next",
     "disclosure_body_1": "**What am I installing?** A small security certificate, generated right on your own PC — nothing about it ever leaves your local network. It just tells your phone \"trust this one connection\" so it can talk to your computer over Wi-Fi. It can't see or touch anything else — not your other apps, not other websites, nothing. The app doesn't send any data anywhere, ever — no analytics, no logs, no phoning home. And since it's all open-source, you don't have to take our word for it: you (or your AI coding assistant) can go read the exact code that generates this certificate right here: [`internal/ca`](https://github.com/MrHoustonOff/iphone-gyro-controller/tree/main/internal/ca).",
     "disclosure_body_2": "**Why is this even necessary?** Safari (WebKit) simply refuses to share gyroscope/motion data or keep a live WebSocket connection open unless the page is loaded over a secure, encrypted connection (HTTPS/WSS) — that's an Apple privacy rule, and no app can get around it. Since there's no way to get a \"real,\" publicly-trusted certificate for a private local address, self-signing one and asking your phone to trust it is the only way to satisfy that rule without ever going through the internet.",
     "disclosure_body_3": "**The trade-off:** you get a fully private, direct, offline connection where none of your data ever leaves your Wi-Fi — but in exchange, you have to do this one manual \"trust\" step yourself, since there's no public authority that can vouch for a certificate that only exists on your home network.",
-    "disclosure_title": "What am I installing and why?",
+    "disclosure_body_4": "No hidden actions. Just transparent local communication for your gamepad.",
+    "disclosure_title": "Why is this certificate needed and is it safe?",
     "ios_desc": "One-time local profile setup for Safari",
+    "ios_step1_badge": "Safari → `Allow`",
     "ios_step1_text": "Open the link (or scan the QR code) **on your phone**, then tap `Allow`.",
     "ios_step1_title": "Step 1. Download Profile",
     "ios_step2_badge": "`Settings` → `Profile Downloaded`",
@@ -270,12 +273,45 @@
     "step_x_of_y": "Step {x} of {y}",
     "title": "Initial Setup"
   },
+  "help": {
+    "title": "Help & Guide",
+    "subtitle": "Information and setup instructions for GyroBridge",
+    "setup_title": "Initial Setup",
+    "setup_desc": "Step-by-step wizard to connect your phone to PC over local Wi-Fi",
+    "btn_open_setup": "Start",
+    "cal_title": "Axis Calibration",
+    "cal_desc": "After connecting, place phone motionless on desk and calibrate for optimal precision",
+    "repo_title": "Source Code",
+    "repo_url": "https://github.com/MrHoustonOff/iphone-gyro-controller",
+    "author_signature": "by MrHoustonOff",
+    "btn_close": "Close"
+  },
+  "settings_modal": {
+    "title": "Settings",
+    "subtitle": "Application parameters and preferences",
+    "wip_badge": "Work in Progress",
+    "wip_desc": "The settings section is currently under development. Upcoming releases will bring startup preferences, advanced filtering, and network adapter selection.",
+    "btn_close": "Close"
+  },
+  "welcome": {
+    "title": "Welcome to GyroBridge!",
+    "badge": "First Launch",
+    "p1": "With this application, you can use your smartphone (Android or iPhone) as a gyroscope motion source for PC games and emulators!",
+    "p2": "This project is completely open source — feel free to review the code or contribute to development!",
+    "steps_title": "Important Before Starting!",
+    "step1": "1. Ensure your phone and PC are on the **SAME LOCAL NETWORK**!",
+    "step2": "2. Complete the **initial setup** (needed only once per device).",
+    "step3": "3. After connecting, make sure to **CALIBRATE IT** (one time is enough).",
+    "btn_start_setup": "Start Setup",
+    "btn_skip": "To Main Screen"
+  },
   "status": {
     "connected_time": "Connected",
     "device_connected": "Controller connected",
     "offline": "offline",
     "online": "online",
     "paused": "paused",
+    "recal_hint": "Device is stationary but axes are off-center. If placed on a flat surface, consider recalibrating.",
     "waiting_sensors": "waiting for sensors..."
   }
 }

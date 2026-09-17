@@ -8,6 +8,8 @@ export function CopyCalibrationReport():Promise<string>;
 
 export function CopyLast20Frames():Promise<string>;
 
+export function GetHideAuthor():Promise<boolean>;
+
 export function GetLang():Promise<string>;
 
 export function GetLanguages():Promise<Array<string>>;
@@ -22,6 +24,10 @@ export function GetTheme():Promise<string>;
 
 export function GetTranslations(arg1:string):Promise<string>;
 
+export function IsFirstLaunch():Promise<boolean>;
+
+export function MarkFirstLaunchDone():Promise<void>;
+
 export function OpenLiveDebugWindow():Promise<void>;
 
 export function PreviewMatrix(arg1:any):Promise<void>;
@@ -31,6 +37,8 @@ export function ResetAHRS():Promise<void>;
 export function SaveProfile(arg1:number,arg2:string,arg3:string,arg4:string,arg5:any):Promise<string>;
 
 export function SetActiveProfile(arg1:number):Promise<string>;
+
+export function SetHideAuthor(arg1:boolean):Promise<void>;
 
 export function SetLang(arg1:string):Promise<void>;
 

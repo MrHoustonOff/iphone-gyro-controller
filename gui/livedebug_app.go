@@ -217,6 +217,7 @@ func runLiveDebug() {
 			OpenInspectorOnStartup: false,
 		},
 		Windows: &windows.Options{
+			WebviewUserDataPath:  filepath.Join(os.Getenv("APPDATA"), "GyroBridge", "WebView2_LiveDebug"),
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 			Theme:                windows.Dark,

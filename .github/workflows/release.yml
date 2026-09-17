@@ -5,47 +5,116 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag for release (e.g. v0.1.0)'
-        required: false
-        default: 'v0.1.0'
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build & Release GyroBridge
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+    name: Build Windows Release Binaries
+    runs-on: windows-latest
 
-      - name: Set up Go
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: 'stable'
-          check-latest: true
+          go-version: '1.21'
+          cache: false
 
-      - name: Build Windows Binary (gyrobridge.exe)
-        env:
-          CGO_ENABLED: 0
-          GOOS: windows
-          GOARCH: amd64
-        run: |
-          go build -ldflags="-s -w" -o gyrobridge.exe ./cmd/gyrobridge
-
-      - name: Publish Release Asset
-        uses: softprops/action-gh-release@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
-          name: ${{ github.event.inputs.tag || github.ref_name }}
-          body_path: RELEASE_NOTES.md
-          generate_release_notes: true
+          node-version: '20'
+
+      - name: Install Wails CLI
+        run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
+        shell: powershell
+
+      - name: Build Windows AMD64 (x86_64)
+        run: |
+          cd gui
+          wails build -o GyroBridge-windows-amd64.exe
+          Copy-Item build\bin\GyroBridge-windows-amd64.exe build\bin\GyroBridge.exe
+        shell: powershell
+
+      - name: Build Windows ARM64
+        run: |
+          cd gui
+          wails build -platform windows/arm64 -o GyroBridge-windows-arm64.exe
+        shell: powershell
+
+      - name: Generate Checksums
+        run: |
+          cd gui\build\bin
+          Get-FileHash GyroBridge.exe, GyroBridge-windows-amd64.exe, GyroBridge-windows-arm64.exe -Algorithm SHA256 | Format-Table -AutoSize | Out-String | Set-Content SHA256SUMS.txt
+        shell: powershell
+
+      - name: Analyze with VirusTotal & Prepare Release Notes
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          $amd64Path = "gui\build\bin\GyroBridge-windows-amd64.exe"
+          $arm64Path = "gui\build\bin\GyroBridge-windows-arm64.exe"
+          $amd64Hash = (Get-FileHash $amd64Path -Algorithm SHA256).Hash.ToLower()
+          $arm64Hash = (Get-FileHash $arm64Path -Algorithm SHA256).Hash.ToLower()
+
+          Write-Host "AMD64 SHA-256: $amd64Hash"
+          Write-Host "ARM64 SHA-256: $arm64Hash"
+
+          if ($env:VT_API_KEY) {
+            Write-Host "Submitting release binaries to VirusTotal..."
+            $headers = @{ "x-apikey" = $env:VT_API_KEY }
+
+            foreach ($file in @($amd64Path, $arm64Path)) {
+              try {
+                $item = Get-Item $file
+                Write-Host "Uploading $($item.Name) ($([math]::Round($item.Length/1MB, 2)) MB)..."
+
+                $uploadUrl = "https://www.virustotal.com/api/v3/files"
+                if ($item.Length -gt 32MB) {
+                  $urlResp = Invoke-RestMethod -Uri "https://www.virustotal.com/api/v3/files/upload_url" -Headers $headers -Method Get
+                  $uploadUrl = $urlResp.data
+                }
+
+                $form = @{ file = $item }
+                $uploadResp = Invoke-RestMethod -Uri $uploadUrl -Headers $headers -Method Post -Form $form -TimeoutSec 180
+                Write-Host "Upload completed successfully. Analysis ID: $($uploadResp.data.id)"
+              } catch {
+                Write-Warning "VirusTotal upload notice for $($file): $_"
+              }
+            }
+          } else {
+            Write-Warning "VT_API_KEY secret not found or empty, skipping upload."
+          }
+
+          $notes = Get-Content RELEASE_NOTES.md -Raw
+          $vtSection = @"
+
+---
+
+### Security & VirusTotal Reports
+- **Windows x86_64 (`GyroBridge.exe`)**: [VirusTotal Scan Report](https://www.virustotal.com/gui/file/$amd64Hash)  
+  SHA-256: ``$amd64Hash``
+- **Windows ARM64 (`GyroBridge-windows-arm64.exe`)**: [VirusTotal Scan Report](https://www.virustotal.com/gui/file/$arm64Hash)  
+  SHA-256: ``$arm64Hash``
+"@
+          $fullNotes = $notes + $vtSection
+          Set-Content -Path RELEASE_NOTES_COMPOSED.md -Value $fullNotes -Encoding UTF8
+        shell: powershell
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: GyroBridge ${{ github.ref_name }}
+          body_path: RELEASE_NOTES_COMPOSED.md
           files: |
-            gyrobridge.exe
+            gui/build/bin/GyroBridge.exe
+            gui/build/bin/GyroBridge-windows-amd64.exe
+            gui/build/bin/GyroBridge-windows-arm64.exe
+            gui/build/bin/SHA256SUMS.txt
           draft: false
           prerelease: false

@@ -14,6 +14,10 @@ export function CopyLast20Frames() {
   return window['go']['main']['App']['CopyLast20Frames']();
 }
 
+export function GetHideAuthor() {
+  return window['go']['main']['App']['GetHideAuthor']();
+}
+
 export function GetLang() {
   return window['go']['main']['App']['GetLang']();
 }
@@ -42,6 +46,14 @@ export function GetTranslations(arg1) {
   return window['go']['main']['App']['GetTranslations'](arg1);
 }
 
+export function IsFirstLaunch() {
+  return window['go']['main']['App']['IsFirstLaunch']();
+}
+
+export function MarkFirstLaunchDone() {
+  return window['go']['main']['App']['MarkFirstLaunchDone']();
+}
+
 export function OpenLiveDebugWindow() {
   return window['go']['main']['App']['OpenLiveDebugWindow']();
 }
@@ -60,6 +72,10 @@ export function SaveProfile(arg1, arg2, arg3, arg4, arg5) {
 
 export function SetActiveProfile(arg1) {
   return window['go']['main']['App']['SetActiveProfile'](arg1);
+}
+
+export function SetHideAuthor(arg1) {
+  return window['go']['main']['App']['SetHideAuthor'](arg1);
 }
 
 export function SetLang(arg1) {

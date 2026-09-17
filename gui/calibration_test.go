@@ -445,6 +445,8 @@ func TestProfileSlots6_And_SettingsPersistence(t *testing.T) {
 
 	app := NewApp()
 	app.profilesDir = tempDir
+	app.loadSettings()
+	app.loadProfiles()
 
 	// Verify initial 6 slots
 	profs := app.GetProfiles()
@@ -484,9 +486,41 @@ func TestProfileSlots6_And_SettingsPersistence(t *testing.T) {
 	app.SetTheme("light")
 	app.SetLang("en")
 
+	// Test first-launch behavior
+	if !app.IsFirstLaunch() {
+		t.Fatalf("expected IsFirstLaunch to be true initially")
+	}
+	app.MarkFirstLaunchDone()
+	if app.IsFirstLaunch() {
+		t.Fatalf("expected IsFirstLaunch to be false after MarkFirstLaunchDone")
+	}
+
+	// Test hideAuthor behavior
+	if app.GetHideAuthor() {
+		t.Fatalf("expected hideAuthor to default to false")
+	}
+	app.SetHideAuthor(true)
+	if !app.GetHideAuthor() {
+		t.Fatalf("expected hideAuthor to be true after SetHideAuthor(true)")
+	}
+
 	settingsPath := filepath.Join(tempDir, "settings.json")
 	if _, err := os.Stat(settingsPath); os.IsNotExist(err) {
 		t.Fatalf("settings.json was not created at %s", settingsPath)
+	}
+
+	// Test reload settings
+	appReload := NewApp()
+	appReload.profilesDir = tempDir
+	appReload.loadSettings()
+	if appReload.IsFirstLaunch() {
+		t.Fatalf("expected reloaded app to have firstLaunchDone = true")
+	}
+	if !appReload.GetHideAuthor() {
+		t.Fatalf("expected reloaded app to have hideAuthor = true")
+	}
+	if appReload.GetLang() != "en" {
+		t.Fatalf("expected reloaded app to have lang = en, got %s", appReload.GetLang())
 	}
 
 	// Test logs persistence

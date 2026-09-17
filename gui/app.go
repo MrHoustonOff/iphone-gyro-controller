@@ -88,7 +88,9 @@ type AppState struct {
 	AhrsQ0 float64 `json:"ahrsQ0"`
 	AhrsQ1 float64 `json:"ahrsQ1"`
 	AhrsQ2 float64 `json:"ahrsQ2"`
-	AhrsQ3 float64 `json:"ahrsQ3"`
+	AhrsQ3      float64 `json:"ahrsQ3"`
+	FirstLaunch bool    `json:"firstLaunch"`
+	HideAuthor  bool    `json:"hideAuthor"`
 }
 
 // captureSample holds raw 60 Hz gyro and accel readings
@@ -200,9 +202,11 @@ type App struct {
 	liveDebugCmd     *exec.Cmd
 	lastMotionRecvTs atomic.Int64
 	// Multi-window theme and language synchronization
-	themeMu      sync.RWMutex
-	currentTheme string
-	currentLang  string
+	themeMu         sync.RWMutex
+	currentTheme    string
+	currentLang     string
+	firstLaunchDone bool
+	hideAuthor      bool
 	// Process resource monitor (CPU / RAM)
 	stopResmon   func()
 	lastResStats atomic.Pointer[map[string]any]
@@ -522,32 +526,56 @@ func (a *App) logEvent(level, format string, args ...any) {
 
 // loadSettings loads theme, language, and slot preferences from settings.json
 func (a *App) loadSettings() {
+	if a.profilesDir == "" {
+		return
+	}
 	path := filepath.Join(a.profilesDir, "settings.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
+		// First launch!
+		a.themeMu.Lock()
+		a.firstLaunchDone = false
+		if a.currentLang == "" {
+			a.currentLang = "ru"
+		}
+		a.themeMu.Unlock()
 		return
 	}
 	var s struct {
-		Theme      string `json:"theme"`
-		Lang       string `json:"lang"`
-		ActiveSlot int    `json:"activeSlot"`
+		Theme           string `json:"theme"`
+		Lang            string `json:"lang"`
+		ActiveSlot      int    `json:"activeSlot"`
+		FirstLaunchDone bool   `json:"firstLaunchDone"`
+		HideAuthor      bool   `json:"hideAuthor"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
 	}
+	a.themeMu.Lock()
 	if s.Theme == "dark" || s.Theme == "light" {
 		a.currentTheme = s.Theme
 	}
 	if s.Lang == "ru" || s.Lang == "en" {
 		a.currentLang = s.Lang
+	} else if a.currentLang == "" {
+		a.currentLang = "ru"
 	}
+	a.firstLaunchDone = s.FirstLaunchDone
+	a.hideAuthor = s.HideAuthor
+	a.themeMu.Unlock()
+
+	a.profilesMu.Lock()
 	if s.ActiveSlot >= 0 && s.ActiveSlot < 6 {
 		a.activeSlot = s.ActiveSlot
 	}
+	a.profilesMu.Unlock()
 }
 
-// saveSettings persists theme, language, and activeSlot to settings.json
+// saveSettings persists theme, language, activeSlot, and preferences to settings.json
 func (a *App) saveSettings() {
+	if a.profilesDir == "" {
+		return
+	}
 	if err := os.MkdirAll(a.profilesDir, 0755); err != nil {
 		return
 	}
@@ -556,6 +584,8 @@ func (a *App) saveSettings() {
 	a.themeMu.RLock()
 	theme := a.currentTheme
 	lang := a.currentLang
+	firstLaunchDone := a.firstLaunchDone
+	hideAuthor := a.hideAuthor
 	a.themeMu.RUnlock()
 
 	a.profilesMu.RLock()
@@ -563,13 +593,17 @@ func (a *App) saveSettings() {
 	a.profilesMu.RUnlock()
 
 	s := struct {
-		Theme      string `json:"theme"`
-		Lang       string `json:"lang"`
-		ActiveSlot int    `json:"activeSlot"`
+		Theme           string `json:"theme"`
+		Lang            string `json:"lang"`
+		ActiveSlot      int    `json:"activeSlot"`
+		FirstLaunchDone bool   `json:"firstLaunchDone"`
+		HideAuthor      bool   `json:"hideAuthor"`
 	}{
-		Theme:      theme,
-		Lang:       lang,
-		ActiveSlot: slot,
+		Theme:           theme,
+		Lang:            lang,
+		ActiveSlot:      slot,
+		FirstLaunchDone: firstLaunchDone,
+		HideAuthor:      hideAuthor,
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -1219,9 +1253,9 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.srv = srv
 
-	// Orientation heartbeat (30 Hz = 33ms) for smooth main GUI telemetry
+	// Orientation heartbeat (15 Hz = 66ms) for smooth main GUI telemetry
 	go func() {
-		ticker := time.NewTicker(33 * time.Millisecond)
+		ticker := time.NewTicker(66 * time.Millisecond)
 		defer ticker.Stop()
 		for range ticker.C {
 			if a.hasClient.Load() {
@@ -1392,6 +1426,8 @@ func (a *App) GetState() AppState {
 		AhrsQ1:        math.Float64frombits(a.curAhrsQ1.Load()),
 		AhrsQ2:        math.Float64frombits(a.curAhrsQ2.Load()),
 		AhrsQ3:        math.Float64frombits(a.curAhrsQ3.Load()),
+		FirstLaunch:   !a.firstLaunchDone,
+		HideAuthor:    a.hideAuthor,
 	}
 }
 
@@ -1698,6 +1734,36 @@ func (a *App) GetLang() string {
 		return "ru"
 	}
 	return a.currentLang
+}
+
+// IsFirstLaunch returns true if the application has not finished its first-launch onboarding.
+func (a *App) IsFirstLaunch() bool {
+	a.themeMu.RLock()
+	defer a.themeMu.RUnlock()
+	return !a.firstLaunchDone
+}
+
+// MarkFirstLaunchDone marks that the welcome onboarding has been viewed and persists to settings.
+func (a *App) MarkFirstLaunchDone() {
+	a.themeMu.Lock()
+	a.firstLaunchDone = true
+	a.themeMu.Unlock()
+	a.saveSettings()
+}
+
+// GetHideAuthor returns whether the discreet author attribution should be hidden.
+func (a *App) GetHideAuthor() bool {
+	a.themeMu.RLock()
+	defer a.themeMu.RUnlock()
+	return a.hideAuthor
+}
+
+// SetHideAuthor configures author attribution visibility and persists to settings.
+func (a *App) SetHideAuthor(hide bool) {
+	a.themeMu.Lock()
+	a.hideAuthor = hide
+	a.themeMu.Unlock()
+	a.saveSettings()
 }
 
 // SetWindowTheme sets the native window title bar theme.

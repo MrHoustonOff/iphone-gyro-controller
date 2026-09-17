@@ -228,6 +228,7 @@ em {
 
 /* ── Apple Style Header Bar ─────────────────────────────────────────────────── */
 .app-header {
+  position: relative;
   height: 64px;
   min-height: 64px;
   border-bottom: 1px solid var(--border);
@@ -1434,27 +1435,6 @@ em {
   font-size: 12px;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
-}
-
-.footer-cpu-chart-wrap {
-  width: 108px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  position: relative;
-  overflow: hidden;
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.08);
-}
-
-[data-theme="dark"] .footer-cpu-chart-wrap {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.footer-cpu-canvas {
-  width: 108px;
-  height: 30px;
-  display: block;
 }
 
 .footer-actions {
@@ -3362,6 +3342,476 @@ em {
     transform: scale(1.03);
     box-shadow: 0 0 0 3.5px rgba(255, 69, 58, 0.85), 0 0 28px rgba(255, 69, 58, 0.65);
   }
+}
+
+/* ── Header Brand & Center Bubble Navigation ──────────────────────────────── */
+.header-brand-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  background: rgba(120, 120, 128, 0.08);
+  border: 1px solid rgba(120, 120, 128, 0.18);
+  border-radius: 6px;
+  user-select: none;
+  transition: background 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-brand-bubble:hover {
+  background: rgba(120, 120, 128, 0.14);
+  border-color: rgba(120, 120, 128, 0.28);
+}
+
+.header-brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.header-center {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.header-nav-bubbles {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.header-bubble-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 13px;
+  background: rgba(120, 120, 128, 0.08);
+  border: 1px solid rgba(120, 120, 128, 0.18);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-bubble-btn:hover {
+  background: rgba(120, 120, 128, 0.16);
+  border-color: rgba(120, 120, 128, 0.32);
+  transform: translateY(-1px);
+}
+
+.header-bubble-btn:active {
+  transform: translateY(0);
+  background: rgba(120, 120, 128, 0.22);
+}
+
+.header-bubble-btn.active {
+  background: rgba(10, 132, 255, 0.2);
+  border-color: rgba(10, 132, 255, 0.5);
+  color: #0A84FF;
+}
+
+.header-bubble-svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+.header-bubble-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.author-signature {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  user-select: none;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.author-signature:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.author-signature .github-icon {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.author-signature:hover .github-icon {
+  transform: scale(1.12);
+}
+
+/* ── Help, Settings, and Welcome Modules ──────────────────────────────────── */
+.help-module,
+.settings-module,
+.welcome-module {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeInModule 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.help-card-inner,
+.settings-card-inner,
+.welcome-card-inner {
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Apple Authentic Inset Grouped Help Card */
+.help-grouped-card {
+  width: 100%;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: 14px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.help-group-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition-fast);
+}
+
+.help-group-item:last-child {
+  border-bottom: none;
+}
+
+.help-item-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  background: rgba(120, 120, 128, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.help-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.help-item-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.help-item-desc {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.help-item-link {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  word-break: break-all;
+}
+
+.help-action-btn {
+  min-height: 34px !important;
+  padding: 6px 16px !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  flex-shrink: 0;
+}
+
+.help-footer-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+}
+
+.help-author-discreet {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  opacity: 0.6;
+  user-select: none;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+
+.help-author-discreet:hover {
+  opacity: 1;
+  color: var(--text);
+}
+
+.help-author-discreet .github-icon {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.help-author-discreet:hover .github-icon {
+  transform: scale(1.12);
+}
+
+.setup-footer-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 0 4px;
+}
+
+/* Settings Module Specifics */
+.settings-wip-card {
+  width: 100%;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.settings-wip-badge {
+  display: inline-block;
+  padding: 5px 12px;
+  background: rgba(255, 149, 0, 0.15);
+  border: 1px solid rgba(255, 149, 0, 0.3);
+  border-radius: var(--radius-pill);
+  color: #FF9500;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.settings-wip-desc {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+  max-width: 480px;
+  margin: 0;
+}
+
+.settings-footer-row {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Welcome Module Specifics */
+.welcome-badge-wrap {
+  margin-bottom: 12px;
+}
+
+.welcome-badge {
+  display: inline-block;
+  padding: 5px 14px;
+  background: rgba(10, 132, 255, 0.12);
+  border: 1px solid rgba(10, 132, 255, 0.3);
+  border-radius: var(--radius-pill);
+  color: #0A84FF;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.welcome-headline {
+  font-size: clamp(24px, 3vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.welcome-content-card {
+  width: 100%;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 26px;
+}
+
+.welcome-p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text);
+  margin: 0;
+}
+
+.welcome-steps-box {
+  margin-top: 8px;
+  background: rgba(120, 120, 128, 0.08);
+  border: 1px solid rgba(120, 120, 128, 0.16);
+  border-radius: var(--radius-md);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.welcome-steps-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.welcome-step-item {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.welcome-step-item strong {
+  color: var(--text);
+}
+
+.welcome-nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.welcome-nav-row .btn-apple-primary,
+.welcome-nav-row .btn-apple-secondary {
+  max-width: 240px;
+  min-height: 48px;
+}
+
+/* ── Stillness Recalibration Banner ────────────────────────────────────────── */
+.level-recal-hint {
+  width: 100%;
+  max-width: 440px;
+  margin: 8px auto 6px auto;
+  opacity: 0;
+  transform: translateY(-8px) scale(0.97);
+  transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.level-recal-hint.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.level-recal-inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 149, 0, 0.08);
+  border: 1px solid rgba(255, 149, 0, 0.28);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .level-recal-inner {
+  background: rgba(255, 149, 0, 0.12);
+  border-color: rgba(255, 149, 0, 0.35);
+}
+
+.level-recal-icon {
+  width: 17px;
+  height: 17px;
+  color: #FF9500;
+  flex-shrink: 0;
+}
+
+.level-recal-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.level-recal-text {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
+  margin: 0;
+  display: block;
+}
+
+.level-recal-close {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition: color 0.18s ease, background 0.18s ease;
+}
+
+.level-recal-close:hover {
+  color: var(--text);
+  background: rgba(120, 120, 128, 0.15);
 }
 
 

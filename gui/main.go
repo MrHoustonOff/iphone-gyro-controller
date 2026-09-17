@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	"os"
+	"path/filepath"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -56,6 +57,7 @@ func main() {
 			OpenInspectorOnStartup: false,
 		},
 		Windows: &windows.Options{
+			WebviewUserDataPath:  filepath.Join(os.Getenv("APPDATA"), "GyroBridge", "WebView2_Main"),
 			WebviewIsTransparent: false,
 			WindowIsTranslucent:  false,
 		},

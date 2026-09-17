@@ -17,8 +17,6 @@ ca_data/
 *.csv
 tmp/
 
-# Documentation as requested
-*.md
 
 # IDE & OS
 .idea/

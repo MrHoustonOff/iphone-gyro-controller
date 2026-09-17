@@ -54,6 +54,8 @@ export namespace main {
 	    ahrsQ1: number;
 	    ahrsQ2: number;
 	    ahrsQ3: number;
+	    firstLaunch: boolean;
+	    hideAuthor: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppState(source);
@@ -92,6 +94,8 @@ export namespace main {
 	        this.ahrsQ1 = source["ahrsQ1"];
 	        this.ahrsQ2 = source["ahrsQ2"];
 	        this.ahrsQ3 = source["ahrsQ3"];
+	        this.firstLaunch = source["firstLaunch"];
+	        this.hideAuthor = source["hideAuthor"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

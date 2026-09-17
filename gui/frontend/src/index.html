@@ -17,8 +17,40 @@
 
   <!-- Apple Style Header Bar -->
   <header class="app-header">
-    <div class="brand-title">
-      <span data-i18n="app.title">Gyro Bridge</span>
+    <div class="header-left">
+      <div class="header-brand-bubble">
+        <span class="header-brand-title" data-i18n="app.title">Gyro Bridge</span>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div class="header-nav-bubbles">
+        <button type="button" class="header-bubble-btn" id="btn-header-settings" data-i18n-title="nav.settings" title="Настройки">
+          <svg class="header-bubble-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span class="header-bubble-text" data-i18n="nav.settings">Настройки</span>
+        </button>
+
+        <button type="button" class="header-bubble-btn" id="btn-header-stats" data-i18n-title="nav.stats" title="Статистика &amp; 3D просмотр">
+          <svg class="header-bubble-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          <span class="header-bubble-text" data-i18n="nav.stats">Статистика &amp; 3D просмотр</span>
+        </button>
+
+        <button type="button" class="header-bubble-btn" id="btn-header-help" data-i18n-title="nav.help" title="Помощь">
+          <svg class="header-bubble-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span class="header-bubble-text" data-i18n="nav.help">Помощь</span>
+        </button>
+      </div>
     </div>
 
     <div class="header-controls">
@@ -166,6 +198,26 @@
               <span class="hud-level-status" id="hud-level-status">LEVEL</span>
             </div>
 
+            <!-- Subtle Stillness Recalibration Hint Dropdown Banner -->
+            <div class="level-recal-hint" id="level-recal-hint" style="display: none;">
+              <div class="level-recal-inner">
+                <svg class="level-recal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <div class="level-recal-content">
+                  <span class="level-recal-text" data-i18n="status.recal_hint">Телефон неподвижен, но горизонт смещен. Если устройство лежит ровно, возможно, стоит выполнить калибровку.</span>
+                </div>
+                <button type="button" class="level-recal-close" id="btn-recal-hint-close" aria-label="Dismiss">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
             <!-- Apple-styled Telemetry & Network Health Row -->
             <div class="telemetry-row">
               <span class="metric-pill" id="device-hz">60 Hz</span>
@@ -278,7 +330,15 @@
               </button>
             </div>
 
-            <button type="button" class="btn-apple-secondary setup-close-btn" id="btn-setup-close" data-i18n="setup.btn_close">Закрыть</button>
+            <div class="setup-footer-row">
+              <a href="https://github.com/MrHoustonOff/iphone-gyro-controller" target="_blank" class="help-author-discreet" id="setup-author-sig" title="GitHub: MrHoustonOff">
+                <svg class="github-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                <span data-i18n="help.author_signature">by MrHoustonOff</span>
+              </a>
+              <button type="button" class="btn-apple-secondary setup-close-btn" id="btn-setup-close" data-i18n="setup.btn_close">Закрыть</button>
+            </div>
           </div>
 
           <!-- Screen 1: Android Guide -->
@@ -479,6 +539,112 @@
 
         </div>
 
+        <!-- Help & Reference Module -->
+        <div class="help-module" id="view-help" style="display: none;">
+          <div class="help-card-inner">
+            <h2 class="setup-headline" data-i18n="help.title">Помощь и руководство</h2>
+            <p class="setup-subhead" data-i18n="help.subtitle">Информация о работе и настройке GyroBridge</p>
+
+            <div class="help-grouped-card">
+              <!-- Item 1: Setup Wizard -->
+              <div class="help-group-item">
+                <div class="help-item-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                  </svg>
+                </div>
+                <div class="help-item-text">
+                  <span class="help-item-title" data-i18n="help.setup_title">Начальная настройка</span>
+                  <span class="help-item-desc" data-i18n="help.setup_desc">Мастер пошагового подключения смартфона к ПК через локальную сеть</span>
+                </div>
+                <button type="button" class="btn-apple-secondary help-action-btn" id="btn-help-to-setup" data-i18n="help.btn_open_setup">Начать</button>
+              </div>
+
+              <!-- Item 2: Calibration note -->
+              <div class="help-group-item">
+                <div class="help-item-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+                  </svg>
+                </div>
+                <div class="help-item-text">
+                  <span class="help-item-title" data-i18n="help.cal_title">Калибровка осей</span>
+                  <span class="help-item-desc" data-i18n="help.cal_desc">После подключения положите телефон неподвижно и откалибруйте для идеальной точности</span>
+                </div>
+              </div>
+
+              <!-- Item 3: Open source repo link -->
+              <div class="help-group-item">
+                <div class="help-item-icon-wrap">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                  </svg>
+                </div>
+                <div class="help-item-text">
+                  <span class="help-item-title" data-i18n="help.repo_title">Исходный код</span>
+                  <a href="https://github.com/MrHoustonOff/iphone-gyro-controller" target="_blank" class="md-link help-item-link" id="link-help-repo">github.com/MrHoustonOff/iphone-gyro-controller</a>
+                </div>
+              </div>
+            </div>
+
+            <div class="help-footer-row">
+              <a href="https://github.com/MrHoustonOff/iphone-gyro-controller" target="_blank" class="help-author-discreet" id="help-author-sig" title="GitHub: MrHoustonOff">
+                <svg class="github-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                  <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+                </svg>
+                <span data-i18n="help.author_signature">by MrHoustonOff</span>
+              </a>
+              <button type="button" class="btn-apple-secondary" id="btn-help-close" data-i18n="help.btn_close">Закрыть</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings (TODO) Module -->
+        <div class="settings-module" id="view-settings" style="display: none;">
+          <div class="settings-card-inner">
+            <h2 class="setup-headline" data-i18n="settings_modal.title">Настройки</h2>
+            <p class="setup-subhead" data-i18n="settings_modal.subtitle">Параметры приложения и конфигурация</p>
+
+            <div class="settings-wip-card">
+              <span class="settings-wip-badge" data-i18n="settings_modal.wip_badge">В разработке</span>
+              <p class="settings-wip-desc" data-i18n="settings_modal.wip_desc">Раздел настроек находится в разработке. В будущих обновлениях здесь появятся параметры автозапуска, тонкая фильтрация и выбор сетевых интерфейсов.</p>
+            </div>
+
+            <div class="settings-footer-row">
+              <button type="button" class="btn-apple-secondary" id="btn-settings-close" data-i18n="settings_modal.btn_close">Закрыть</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Welcome Screen (First Launch) Module -->
+        <div class="welcome-module" id="view-welcome" style="display: none;">
+          <div class="welcome-card-inner">
+            <div class="welcome-badge-wrap">
+              <span class="welcome-badge" data-i18n="welcome.badge">Первый запуск</span>
+            </div>
+            <h2 class="welcome-headline" data-i18n="welcome.title">Добро пожаловать в GyroBridge!</h2>
+            
+            <div class="welcome-content-card">
+              <p class="welcome-p" data-i18n="welcome.p1">Благодаря этому приложению вы сможете использовать ваш смартфон (Android или iPhone) в качестве источника гироскопических данных для ПК игр и (или) эмуляторов!</p>
+              <p class="welcome-p" data-i18n="welcome.p2">Этот проект полностью opensource и вы можете ознакомиться с его кодом или помочь с разработкой!</p>
+              
+              <div class="welcome-steps-box">
+                <div class="welcome-steps-header" data-i18n="welcome.steps_title">Обязательно перед стартом!</div>
+                <div class="welcome-step-item" data-i18n="welcome.step1">1. Убедитесь, что ваш телефон и ПК <strong>В ОДНОЙ ЛОКАЛЬНОЙ СЕТИ</strong>!</div>
+                <div class="welcome-step-item" data-i18n="welcome.step2">2. Пройдите <strong>начальную настройку</strong> (требуется лишь 1 раз для одного устройства).</div>
+                <div class="welcome-step-item" data-i18n="welcome.step3">3. После подключения обязательно <strong>ОТКАЛИБРУЙТЕ ЕГО</strong> (достаточно один раз).</div>
+              </div>
+            </div>
+
+            <div class="welcome-nav-row">
+              <button type="button" class="btn-apple-primary" id="btn-welcome-start" data-i18n="welcome.btn_start_setup">Начать настройку</button>
+              <button type="button" class="btn-apple-secondary" id="btn-welcome-skip" data-i18n="welcome.btn_skip">На главный экран</button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </main>
@@ -486,15 +652,6 @@
   <!-- Apple Style Footer Bar -->
   <footer class="app-footer">
     <div class="footer-metrics" id="footer-metrics">
-      <!-- CPU Monitor Capsule -->
-      <div class="footer-metric-item" id="footer-metric-cpu" data-i18n-title="footer.cpu_tip">
-        <span class="footer-metric-label" data-i18n="footer.cpu">ЦП</span>
-        <span class="footer-metric-val" id="footer-cpu-val">0.000%</span>
-        <div class="footer-cpu-chart-wrap">
-          <canvas class="footer-cpu-canvas" id="footer-cpu-canvas" width="108" height="30"></canvas>
-        </div>
-      </div>
-
       <!-- RAM Monitor Capsule -->
       <div class="footer-metric-item" id="footer-metric-ram" data-i18n-title="footer.ram_tip">
         <span class="footer-metric-label" data-i18n="footer.ram">ОЗУ</span>
@@ -504,17 +661,12 @@
     </div>
 
     <div class="footer-actions">
-      <button type="button" class="btn-footer-live-debug" id="link-live-debug" style="display: none;">
-        <svg class="footer-live-debug-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      <a href="https://github.com/MrHoustonOff/iphone-gyro-controller" target="_blank" class="author-signature" id="author-signature" title="GitHub: MrHoustonOff">
+        <svg class="github-icon" viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
         </svg>
-        <span class="footer-live-debug-text" id="footer-live-debug-text" data-i18n="nav.live_debug">Окно статистики и 3D просмотра</span>
-        <svg class="footer-live-debug-arrow" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
-      </button>
+        <span data-i18n="help.author_signature">by MrHoustonOff</span>
+      </a>
     </div>
   </footer>
 
@@ -1134,7 +1286,15 @@
           }
         });
       }
-      await this.setLanguage(this.currentLang, true);
+      if (window.go && window.go.main && window.go.main.App && window.go.main.App.GetLang) {
+        try {
+          const backendLang = await window.go.main.App.GetLang();
+          if (backendLang) {
+            this.currentLang = backendLang;
+          }
+        } catch (e) {}
+      }
+      await this.setLanguage(this.currentLang, false);
     }
   };
 
@@ -1247,6 +1407,10 @@
 
     open() {
       this.isOpen = true;
+      if (typeof HelpManager !== 'undefined' && HelpManager.isOpen) HelpManager.close(false);
+      if (typeof SettingsManager !== 'undefined' && SettingsManager.isOpen) SettingsManager.close(false);
+      if (typeof WelcomeManager !== 'undefined' && WelcomeManager.isOpen) WelcomeManager.close(false);
+
       const container = document.querySelector('.modular-container');
       if (container) {
         container.classList.add('setup-mode');
@@ -1266,7 +1430,7 @@
     close() {
       this.isOpen = false;
       const container = document.querySelector('.modular-container');
-      if (container) {
+      if (container && (!HelpManager?.isOpen && !SettingsManager?.isOpen && !WelcomeManager?.isOpen)) {
         container.classList.remove('setup-mode');
         container.classList.remove('setup-mode-wide');
       }
@@ -1350,6 +1514,246 @@
     updateI18n() {
       if (this.currentScreen === 'ios') {
         this.setIosStep(this.iosStep);
+      }
+    }
+  };
+
+  // ── Help & Reference Module Manager ─────────────────────────────────────────
+  const HelpManager = {
+    isOpen: false,
+    initialized: false,
+
+    init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
+      document.getElementById('btn-header-help')?.addEventListener('click', () => {
+        this.toggle();
+      });
+
+      document.getElementById('btn-help-close')?.addEventListener('click', () => {
+        this.close();
+      });
+
+      document.getElementById('btn-help-to-setup')?.addEventListener('click', () => {
+        this.close();
+        if (typeof SetupWizard !== 'undefined') {
+          SetupWizard.open();
+        }
+      });
+    },
+
+    toggle() {
+      if (this.isOpen) {
+        this.close();
+      } else {
+        this.open();
+      }
+    },
+
+    open() {
+      this.isOpen = true;
+      if (typeof SettingsManager !== 'undefined' && SettingsManager.isOpen) SettingsManager.close(false);
+      if (typeof WelcomeManager !== 'undefined' && WelcomeManager.isOpen) WelcomeManager.close(false);
+      if (typeof SetupWizard !== 'undefined' && SetupWizard.isOpen) SetupWizard.close();
+
+      const container = document.querySelector('.modular-container');
+      if (container) {
+        container.classList.add('setup-mode');
+        container.classList.remove('setup-mode-wide');
+      }
+
+      const vOff = document.getElementById('view-offline');
+      const vOn = document.getElementById('view-online');
+      const vSet = document.getElementById('view-setup');
+      const vSettings = document.getElementById('view-settings');
+      const vWelcome = document.getElementById('view-welcome');
+      const vHelp = document.getElementById('view-help');
+
+      if (vOff) vOff.style.display = 'none';
+      if (vOn) vOn.style.display = 'none';
+      if (vSet) vSet.style.display = 'none';
+      if (vSettings) vSettings.style.display = 'none';
+      if (vWelcome) vWelcome.style.display = 'none';
+      if (vHelp) vHelp.style.display = 'flex';
+
+      document.getElementById('btn-header-help')?.classList.add('active');
+    },
+
+    close(renderState = true) {
+      this.isOpen = false;
+      const vHelp = document.getElementById('view-help');
+      if (vHelp) vHelp.style.display = 'none';
+
+      document.getElementById('btn-header-help')?.classList.remove('active');
+
+      const container = document.querySelector('.modular-container');
+      if (container && (!SettingsManager?.isOpen && !WelcomeManager?.isOpen && !SetupWizard?.isOpen)) {
+        container.classList.remove('setup-mode');
+        container.classList.remove('setup-mode-wide');
+      }
+
+      if (renderState && AppState.lastState) {
+        AppState._lastIsOffline = null;
+        AppState.render(AppState.lastState);
+      }
+    }
+  };
+
+  // ── Settings (TODO) Module Manager ─────────────────────────────────────────
+  const SettingsManager = {
+    isOpen: false,
+    initialized: false,
+
+    init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
+      document.getElementById('btn-header-settings')?.addEventListener('click', () => {
+        this.toggle();
+      });
+
+      document.getElementById('btn-settings-close')?.addEventListener('click', () => {
+        this.close();
+      });
+    },
+
+    toggle() {
+      if (this.isOpen) {
+        this.close();
+      } else {
+        this.open();
+      }
+    },
+
+    open() {
+      this.isOpen = true;
+      if (typeof HelpManager !== 'undefined' && HelpManager.isOpen) HelpManager.close(false);
+      if (typeof WelcomeManager !== 'undefined' && WelcomeManager.isOpen) WelcomeManager.close(false);
+      if (typeof SetupWizard !== 'undefined' && SetupWizard.isOpen) SetupWizard.close();
+
+      const container = document.querySelector('.modular-container');
+      if (container) {
+        container.classList.add('setup-mode');
+        container.classList.remove('setup-mode-wide');
+      }
+
+      const vOff = document.getElementById('view-offline');
+      const vOn = document.getElementById('view-online');
+      const vSet = document.getElementById('view-setup');
+      const vHelp = document.getElementById('view-help');
+      const vWelcome = document.getElementById('view-welcome');
+      const vSettings = document.getElementById('view-settings');
+
+      if (vOff) vOff.style.display = 'none';
+      if (vOn) vOn.style.display = 'none';
+      if (vSet) vSet.style.display = 'none';
+      if (vHelp) vHelp.style.display = 'none';
+      if (vWelcome) vWelcome.style.display = 'none';
+      if (vSettings) vSettings.style.display = 'flex';
+
+      document.getElementById('btn-header-settings')?.classList.add('active');
+    },
+
+    close(renderState = true) {
+      this.isOpen = false;
+      const vSettings = document.getElementById('view-settings');
+      if (vSettings) vSettings.style.display = 'none';
+
+      document.getElementById('btn-header-settings')?.classList.remove('active');
+
+      const container = document.querySelector('.modular-container');
+      if (container && (!HelpManager?.isOpen && !WelcomeManager?.isOpen && !SetupWizard?.isOpen)) {
+        container.classList.remove('setup-mode');
+        container.classList.remove('setup-mode-wide');
+      }
+
+      if (renderState && AppState.lastState) {
+        AppState._lastIsOffline = null;
+        AppState.render(AppState.lastState);
+      }
+    }
+  };
+
+  // ── Welcome Screen (First Launch) Manager ──────────────────────────────────
+  const WelcomeManager = {
+    isOpen: false,
+    initialized: false,
+
+    init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
+      document.getElementById('btn-welcome-start')?.addEventListener('click', async () => {
+        if (window.go && window.go.main && window.go.main.App && window.go.main.App.MarkFirstLaunchDone) {
+          try { await window.go.main.App.MarkFirstLaunchDone(); } catch (e) {}
+        }
+        this.close();
+        if (typeof SetupWizard !== 'undefined') {
+          SetupWizard.open();
+        }
+      });
+
+      document.getElementById('btn-welcome-skip')?.addEventListener('click', async () => {
+        if (window.go && window.go.main && window.go.main.App && window.go.main.App.MarkFirstLaunchDone) {
+          try { await window.go.main.App.MarkFirstLaunchDone(); } catch (e) {}
+        }
+        this.close();
+      });
+    },
+
+    async checkFirstLaunch() {
+      if (window.go && window.go.main && window.go.main.App && window.go.main.App.IsFirstLaunch) {
+        try {
+          const isFirst = await window.go.main.App.IsFirstLaunch();
+          if (isFirst) {
+            this.open();
+          }
+        } catch (e) {}
+      }
+    },
+
+    open() {
+      this.isOpen = true;
+      if (typeof HelpManager !== 'undefined' && HelpManager.isOpen) HelpManager.close(false);
+      if (typeof SettingsManager !== 'undefined' && SettingsManager.isOpen) SettingsManager.close(false);
+      if (typeof SetupWizard !== 'undefined' && SetupWizard.isOpen) SetupWizard.close();
+
+      const container = document.querySelector('.modular-container');
+      if (container) {
+        container.classList.add('setup-mode');
+        container.classList.remove('setup-mode-wide');
+      }
+
+      const vOff = document.getElementById('view-offline');
+      const vOn = document.getElementById('view-online');
+      const vSet = document.getElementById('view-setup');
+      const vHelp = document.getElementById('view-help');
+      const vSettings = document.getElementById('view-settings');
+      const vWelcome = document.getElementById('view-welcome');
+
+      if (vOff) vOff.style.display = 'none';
+      if (vOn) vOn.style.display = 'none';
+      if (vSet) vSet.style.display = 'none';
+      if (vHelp) vHelp.style.display = 'none';
+      if (vSettings) vSettings.style.display = 'none';
+      if (vWelcome) vWelcome.style.display = 'flex';
+    },
+
+    close(renderState = true) {
+      this.isOpen = false;
+      const vWelcome = document.getElementById('view-welcome');
+      if (vWelcome) vWelcome.style.display = 'none';
+
+      const container = document.querySelector('.modular-container');
+      if (container && (!HelpManager?.isOpen && !SettingsManager?.isOpen && !SetupWizard?.isOpen)) {
+        container.classList.remove('setup-mode');
+        container.classList.remove('setup-mode-wide');
+      }
+
+      if (renderState && AppState.lastState) {
+        AppState._lastIsOffline = null;
+        AppState.render(AppState.lastState);
       }
     }
   };
@@ -2033,8 +2437,9 @@
     },
 
     open() {
-      if (typeof AppState !== 'undefined' && AppState.dismissFirstTimeDeviceAlert) {
-        AppState.dismissFirstTimeDeviceAlert();
+      if (typeof AppState !== 'undefined') {
+        if (AppState.dismissFirstTimeDeviceAlert) AppState.dismissFirstTimeDeviceAlert();
+        if (AppState.hideRecalHint) AppState.hideRecalHint(true);
       }
       this.isOpen = true;
       const overlay = document.getElementById('cal-overlay');
@@ -2045,8 +2450,9 @@
     },
 
     openToSlot(slot) {
-      if (typeof AppState !== 'undefined' && AppState.dismissFirstTimeDeviceAlert) {
-        AppState.dismissFirstTimeDeviceAlert();
+      if (typeof AppState !== 'undefined') {
+        if (AppState.dismissFirstTimeDeviceAlert) AppState.dismissFirstTimeDeviceAlert();
+        if (AppState.hideRecalHint) AppState.hideRecalHint(true);
       }
       this.isOpen = true;
       this.targetSlot = slot;
@@ -3111,6 +3517,12 @@
     _alertTriggeredForDevice: null,
     _alertTimeout: null,
     _alertActive: false,
+    _stillnessStart: 0,
+    _lastStillP: 0,
+    _lastStillR: 0,
+    _recalHintShown: false,
+    _recalHintDismissedTs: 0,
+    _recalHintTimer: null,
     targetPitch: 0,
     targetRoll: 0,
     targetYaw: 0,
@@ -3263,6 +3675,96 @@
       this.dismissFirstTimeDeviceAlert();
     },
 
+    checkStillnessRecalHint(p, r, state) {
+      if (!state || state.status === 'offline' || state.isPaused) {
+        this.hideRecalHint(true);
+        return;
+      }
+      if (CalibrationWizard?.isOpen || SetupWizard?.isOpen || HelpManager?.isOpen || SettingsManager?.isOpen || WelcomeManager?.isOpen) {
+        this.hideRecalHint(true);
+        return;
+      }
+
+      // Check if cooldown is active (45 seconds after user dismiss or timeout)
+      const now = Date.now();
+      if (this._recalHintDismissedTs && (now - this._recalHintDismissedTs < 45000)) {
+        return;
+      }
+
+      // Calculate angular delta from last frame
+      const deltaP = Math.abs(p - this._lastStillP);
+      const deltaR = Math.abs(r - this._lastStillR);
+      this._lastStillP = p;
+      this._lastStillR = r;
+
+      // Stillness threshold: phone resting on desk produces tiny sensor noise (< 0.12 deg)
+      const isMotionless = deltaP < 0.12 && deltaR < 0.12;
+
+      if (isMotionless) {
+        if (!this._stillnessStart) {
+          this._stillnessStart = now;
+        } else if (now - this._stillnessStart >= 2200) {
+          // Resting motionless for > 2.2s. Check if tilted significantly (> 10 deg)
+          const isOffCenter = Math.abs(p) > 10.0 || Math.abs(r) > 10.0;
+          if (isOffCenter && !this._recalHintShown) {
+            this.showRecalHint();
+          }
+        }
+      } else {
+        // Device is being moved
+        this._stillnessStart = 0;
+        if (this._recalHintShown) {
+          this.hideRecalHint(false);
+        }
+      }
+    },
+
+    showRecalHint() {
+      if (this._recalHintShown) return;
+      this._recalHintShown = true;
+      const el = document.getElementById('level-recal-hint');
+      const calBtn = document.getElementById('btn-open-calibration');
+      if (el) {
+        el.style.display = 'block';
+        void el.offsetHeight;
+        el.classList.add('visible');
+      }
+      if (calBtn) {
+        calBtn.classList.add('highlight-pulse');
+      }
+      if (this._recalHintTimer) clearTimeout(this._recalHintTimer);
+      this._recalHintTimer = setTimeout(() => {
+        this.hideRecalHint(false);
+      }, 10000);
+    },
+
+    hideRecalHint(immediate = false) {
+      if (!this._recalHintShown && !immediate) return;
+      this._recalHintShown = false;
+      this._recalHintDismissedTs = Date.now();
+      if (this._recalHintTimer) {
+        clearTimeout(this._recalHintTimer);
+        this._recalHintTimer = null;
+      }
+      const el = document.getElementById('level-recal-hint');
+      const calBtn = document.getElementById('btn-open-calibration');
+      if (calBtn && !this._alertActive) {
+        calBtn.classList.remove('highlight-pulse');
+      }
+      if (el) {
+        el.classList.remove('visible');
+        if (immediate) {
+          el.style.display = 'none';
+        } else {
+          setTimeout(() => {
+            if (!this._recalHintShown) {
+              el.style.display = 'none';
+            }
+          }, 350);
+        }
+      }
+    },
+
     render(state) {
       this.lastState = state;
       if (!state) return;
@@ -3316,14 +3818,16 @@
       if (this._lastIsOffline !== isOffline) {
         this._lastIsOffline = isOffline;
         if (isOffline) {
-          if (!SetupWizard.isOpen) {
+          if (!SetupWizard?.isOpen && !HelpManager?.isOpen && !SettingsManager?.isOpen && !WelcomeManager?.isOpen) {
             viewOffline.style.display = 'flex';
           }
           viewOnline.style.display = 'none';
           if (linkLiveDebug) linkLiveDebug.style.display = 'none';
         } else {
-          viewOffline.style.display = 'none';
-          viewOnline.style.display = 'flex';
+          if (!SetupWizard?.isOpen && !HelpManager?.isOpen && !SettingsManager?.isOpen && !WelcomeManager?.isOpen) {
+            viewOffline.style.display = 'none';
+            viewOnline.style.display = 'flex';
+          }
           if (linkLiveDebug) linkLiveDebug.style.display = 'inline-flex';
         }
       }
@@ -3335,6 +3839,7 @@
       }
 
       if (isOffline) {
+        this.hideRecalHint(true);
         this.targetPitch = 0;
         this.targetRoll = 0;
         this.targetYaw = 0;
@@ -3351,8 +3856,10 @@
         }
       } else {
         // State 2 & 3: Online or Paused
-        viewOffline.style.display = 'none';
-        viewOnline.style.display = 'flex';
+        if (!SetupWizard?.isOpen && !HelpManager?.isOpen && !SettingsManager?.isOpen && !WelcomeManager?.isOpen) {
+          viewOffline.style.display = 'none';
+          viewOnline.style.display = 'flex';
+        }
         if (linkLiveDebug) linkLiveDebug.style.display = 'inline-flex';
 
         const deviceIconWrap = document.getElementById('device-icon-wrap');
@@ -3374,7 +3881,12 @@
           this.targetYaw = Number(state.yaw) || 0;
         }
 
+        const p = this.targetPitch;
+        const r = this.targetRoll;
+        const y = this.targetYaw;
+
         if (state.isPaused) {
+          this.hideRecalHint(true);
           if (deviceIconWrap) deviceIconWrap.className = 'device-icon-wrap paused';
           if (deviceStatusBadge) {
             deviceStatusBadge.className = 'device-status-badge paused';
@@ -3385,6 +3897,7 @@
           btnPause.innerHTML = renderMarkdown(I18n.t('controls.resume'));
           btnPause.classList.add('paused');
         } else {
+          this.checkStillnessRecalHint(p, r, state);
           if (deviceIconWrap) deviceIconWrap.className = 'device-icon-wrap online';
           if (deviceStatusBadge) {
             if (state.hz === 0 && Math.abs(p) < 0.001 && Math.abs(r) < 0.001 && Math.abs(y) < 0.001) {
@@ -3421,6 +3934,20 @@
       if (confirmScene) confirmScene.updateFromState(state);
       const manualScene = Scene3D.get('cal-3d-canvas-manual');
       if (manualScene) manualScene.updateFromState(state);
+
+      // Author signature visibility
+      const authorSig = document.getElementById('author-signature');
+      const helpAuthorSig = document.getElementById('help-author-sig');
+      const setupAuthorSig = document.getElementById('setup-author-sig');
+      if (state.hideAuthor) {
+        if (authorSig) authorSig.style.display = 'none';
+        if (helpAuthorSig) helpAuthorSig.style.display = 'none';
+        if (setupAuthorSig) setupAuthorSig.style.display = 'none';
+      } else {
+        if (authorSig) authorSig.style.display = '';
+        if (helpAuthorSig) helpAuthorSig.style.display = '';
+        if (setupAuthorSig) setupAuthorSig.style.display = '';
+      }
     },
 
     async init() {
@@ -3468,15 +3995,31 @@
         this.dismissFirstTimeDeviceAlert();
       });
 
-      // Open separate 3D LiveDebug window
-      document.getElementById('link-live-debug')?.addEventListener('click', (e) => {
-        e.preventDefault();
+      // Recalibration hint banner dismiss
+      document.getElementById('btn-recal-hint-close')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.hideRecalHint(false);
+      });
+
+      // Recalibration hint banner click: opens calibration wizard directly
+      document.getElementById('level-recal-hint')?.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-recal-hint-close')) return;
+        this.hideRecalHint(true);
+        const slot = (this.lastState && this.lastState.activeSlot >= 0) ? this.lastState.activeSlot : 0;
+        CalibrationWizard.openToSlot(slot);
+      });
+
+      // Open separate 3D LiveDebug window from stats header button
+      const onOpenStats = (e) => {
+        if (e) e.preventDefault();
         if (window.go?.main?.App?.OpenLiveDebugWindow) {
           window.go.main.App.OpenLiveDebugWindow();
         } else {
           window.open('http://127.0.0.1:8080/livedebug', '_blank');
         }
-      });
+      };
+      document.getElementById('btn-header-stats')?.addEventListener('click', onOpenStats);
+      document.getElementById('link-live-debug')?.addEventListener('click', onOpenStats);
 
 
       // Listen for real-time state changes from Wails backend
@@ -3494,16 +4037,11 @@
     }
   };
 
-  // ── Process Resource Monitor (CPU / RAM) ──────────────────────────────────
+  // ── Process Resource Monitor (RAM) ─────────────────────────────────────────
   const ResourceMonitor = {
-    cpuHistory: new Array(18).fill(0),
-    maxHistory: 18,
     lastStats: null,
 
     init() {
-      this.initCanvas();
-      window.addEventListener('resize', () => this.initCanvas());
-
       // Listen for periodic updates from Go backend (resmon)
       if (window.runtime && window.runtime.EventsOn) {
         window.runtime.EventsOn('resource-stats', (stats) => {
@@ -3514,50 +4052,20 @@
       // Initial query if available
       if (window.go?.main?.App?.GetResourceStats) {
         window.go.main.App.GetResourceStats().then((stats) => {
-          if (stats && (stats.ramMb > 0 || stats.cpuPercent > 0)) {
+          if (stats && stats.ramMb > 0) {
             this.update(stats);
           }
         }).catch(() => {});
       }
     },
 
-    initCanvas() {
-      const canvas = document.getElementById('footer-cpu-canvas');
-      if (!canvas) return;
-      const dpr = window.devicePixelRatio || 1;
-      const rect = canvas.getBoundingClientRect();
-      const w = Math.round(rect.width || 108);
-      const h = Math.round(rect.height || 30);
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.scale(dpr, dpr);
-      }
-      this.draw();
-    },
-
     update(stats) {
       if (!stats) return;
       this.lastStats = stats;
 
-      const cpuVal = typeof stats.cpuPercent === 'number' ? stats.cpuPercent : 0;
       const ramMb = typeof stats.ramMb === 'number' ? stats.ramMb : 0;
       const totalRamMb = typeof stats.totalRamMb === 'number' ? stats.totalRamMb : 0;
       const ramPct = typeof stats.ramPercent === 'number' ? stats.ramPercent : 0;
-
-      // Update CPU text with thousandths precision (3 decimals)
-      const cpuValEl = document.getElementById('footer-cpu-val');
-      if (cpuValEl) {
-        cpuValEl.textContent = cpuVal.toFixed(3) + '%';
-      }
-
-      // Add to rolling history
-      this.cpuHistory.push(cpuVal);
-      if (this.cpuHistory.length > this.maxHistory) {
-        this.cpuHistory.shift();
-      }
-      this.draw();
 
       // Update RAM text with thousandths precision (3 decimals)
       const ramValEl = document.getElementById('footer-ram-val');
@@ -3580,83 +4088,6 @@
         const usedStr = ramMb >= 1024 ? (ramMb / 1024).toFixed(3) + ' GB' : ramMb.toFixed(3) + ' MB';
         itemRam.title = `${usedStr} / ${totalStr} (${ramPct.toFixed(3)}%)`;
       }
-    },
-
-    draw() {
-      const canvas = document.getElementById('footer-cpu-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
-      const dpr = window.devicePixelRatio || 1;
-      const w = canvas.width / dpr;
-      const h = canvas.height / dpr;
-      if (w <= 0 || h <= 0) return;
-
-      ctx.clearRect(0, 0, w, h);
-
-      const data = this.cpuHistory;
-      const n = data.length;
-      if (n < 2) return;
-
-      const maxVal = Math.max(10, ...data) * 1.15;
-      const minVal = 0;
-      const range = maxVal - minVal;
-
-      const pts = [];
-      for (let i = 0; i < n; i++) {
-        const x = (i / (n - 1)) * (w - 4) + 2;
-        const norm = (data[i] - minVal) / range;
-        const y = h - 2 - norm * (h - 4);
-        pts.push({ x, y });
-      }
-
-      // Draw subtle area fill gradient under the line
-      const grad = ctx.createLinearGradient(0, 0, 0, h);
-      grad.addColorStop(0, 'rgba(48, 176, 199, 0.40)');
-      grad.addColorStop(1, 'rgba(48, 176, 199, 0.0)');
-
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, h);
-      ctx.lineTo(pts[0].x, pts[0].y);
-      for (let i = 0; i < pts.length - 1; i++) {
-        const mx = (pts[i].x + pts[i + 1].x) / 2;
-        const my = (pts[i].y + pts[i + 1].y) / 2;
-        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
-      }
-      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-      ctx.lineTo(pts[pts.length - 1].x, h);
-      ctx.closePath();
-      ctx.fillStyle = grad;
-      ctx.fill();
-
-      // Draw smooth line
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 0; i < pts.length - 1; i++) {
-        const mx = (pts[i].x + pts[i + 1].x) / 2;
-        const my = (pts[i].y + pts[i + 1].y) / 2;
-        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
-      }
-      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y);
-      ctx.strokeStyle = '#30B0C7';
-      ctx.lineWidth = 1.8;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.shadowColor = 'rgba(48, 176, 199, 0.5)';
-      ctx.shadowBlur = 4;
-      ctx.stroke();
-      ctx.shadowBlur = 0;
-
-      // Draw running live head dot
-      const lastPt = pts[pts.length - 1];
-      ctx.beginPath();
-      ctx.arc(lastPt.x, lastPt.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.shadowColor = '#30B0C7';
-      ctx.shadowBlur = 4;
-      ctx.fill();
-      ctx.shadowBlur = 0;
     }
   };
 
@@ -3668,17 +4099,21 @@
     let pollWails = null;
     let fallbackTimer = null;
 
-    const startApp = () => {
+    const startApp = async () => {
       if (ready) return;
       ready = true;
       if (pollWails) clearInterval(pollWails);
       if (fallbackTimer) clearTimeout(fallbackTimer);
-      I18n.init();
+      await I18n.init();
       ProfileManager.init();
       SetupWizard.init();
+      HelpManager.init();
+      SettingsManager.init();
+      WelcomeManager.init();
       CalibrationWizard.init();
       AppState.init();
       ResourceMonitor.init();
+      await WelcomeManager.checkFirstLaunch();
     };
 
     pollWails = setInterval(() => {
