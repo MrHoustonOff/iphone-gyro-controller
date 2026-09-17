@@ -35,6 +35,7 @@
     "capture_success_title": "Gesture Successfully Recognized!",
     "confirm_hint": "Rotate your phone in your hands — the 3D model should follow in real time.",
     "confirm_no": "Manual Setup",
+    "confirm_recenter": "Recenter (Space)",
     "confirm_restart": "Restart Calibration",
     "confirm_title": "Verify Calibration",
     "confirm_yes": "Looks Great — Save",

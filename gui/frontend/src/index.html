@@ -642,6 +642,7 @@
 
           <div class="cal-3d-wrapper">
             <div class="cal-3d-panel" id="cal-3d-panel-confirm">
+              <button type="button" class="cal-3d-recenter-pill" id="btn-confirm-recenter" data-i18n="calibration.confirm_recenter">Центрировать (Пробел)</button>
               <canvas id="cal-3d-canvas-confirm" class="cal-3d-canvas"></canvas>
               <div class="cal-3d-caption">Покрутите телефон в руках</div>
             </div>
@@ -723,6 +724,7 @@
 
           <div class="cal-3d-wrapper">
             <div class="cal-3d-panel" id="cal-3d-panel-manual">
+              <button type="button" class="cal-3d-recenter-pill" id="btn-manual-recenter" data-i18n="calibration.confirm_recenter">Центрировать (Пробел)</button>
               <canvas id="cal-3d-canvas-manual" class="cal-3d-canvas"></canvas>
               <div class="cal-3d-caption">Покрутите телефон для проверки</div>
             </div>
@@ -1539,6 +1541,11 @@
         setMatrix(mat) {
           activeMatrix = mat;
         },
+        resetQuat() {
+          liveQuat.set(0, 0, 0, 1);
+          currentQuat.set(0, 0, 0, 1);
+          gamepadGroup.quaternion.set(0, 0, 0, 1);
+        },
         updateFromState(state) {
           if (mode !== 'live' || !state) return;
 
@@ -1672,7 +1679,10 @@
         }
         this._renderConfirmDetails();
         const s = Scene3D.mount('cal-3d-canvas-confirm', { mode: 'live' });
-        if (s && this.builtMatrix) s.setMatrix(this.builtMatrix);
+        if (s) {
+          if (this.builtMatrix) s.setMatrix(this.builtMatrix);
+          s.resetQuat();
+        }
         if (window.go?.main?.App) {
           if (this.builtMatrix) {
             window.go.main.App.PreviewMatrix(this.builtMatrix).catch(() => {});
@@ -1681,6 +1691,10 @@
         }
       } else if (screen === 'manual') {
         const s = Scene3D.mount('cal-3d-canvas-manual', { mode: 'live' });
+        if (s) s.resetQuat();
+        if (window.go?.main?.App) {
+          window.go.main.App.ResetAHRS().catch(() => {});
+        }
         this._buildManualMatrix();
       } else if (screen === 'save') {
         const labelEl = document.getElementById('cal-save-slot-label');
@@ -1984,6 +1998,9 @@
       if (result.success) {
         if (this.captureStep === 0) {
           this.capturedVectors[0] = [0, 0, 0];
+          if (window.go?.main?.App) {
+            window.go.main.App.ResetAHRS().catch(() => {});
+          }
           if (resultIcon) {
             resultIcon.textContent = '✓';
             resultIcon.className = 'result-badge-icon success';
@@ -2350,6 +2367,33 @@
       document.getElementById('cal-confirm-back')?.addEventListener('click', () => {
         this.captureStep = 2;
         this.showScreen('capture');
+      });
+
+      // Recenter 3D orientation (Button, Canvas click, or Space key)
+      const doRecenterConfirm = () => {
+        if (window.go?.main?.App?.ResetAHRS) {
+          window.go.main.App.ResetAHRS().catch(() => {});
+        }
+        const scConfirm = Scene3D.get('cal-3d-canvas-confirm');
+        if (scConfirm && scConfirm.resetQuat) scConfirm.resetQuat();
+        const scManual = Scene3D.get('cal-3d-canvas-manual');
+        if (scManual && scManual.resetQuat) scManual.resetQuat();
+      };
+
+      document.getElementById('btn-confirm-recenter')?.addEventListener('click', doRecenterConfirm);
+      document.getElementById('cal-3d-canvas-confirm')?.addEventListener('click', doRecenterConfirm);
+      document.getElementById('btn-manual-recenter')?.addEventListener('click', doRecenterConfirm);
+      document.getElementById('cal-3d-canvas-manual')?.addEventListener('click', doRecenterConfirm);
+
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && CalibrationWizard.isOpen &&
+            (CalibrationWizard.currentScreen === 'confirm' || CalibrationWizard.currentScreen === 'manual')) {
+          const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+          if (activeTag !== 'input' && activeTag !== 'textarea') {
+            e.preventDefault();
+            doRecenterConfirm();
+          }
+        }
       });
 
       // Copy Calibration Full Report helper
