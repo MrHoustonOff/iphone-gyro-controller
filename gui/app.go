@@ -156,6 +156,7 @@ type App struct {
 	captureMu     sync.Mutex
 	captureBuffer []captureSample
 	calVectors    [3][3]float64
+	calGravity    [3]float64 // captured gravity unit vector from step 0 rest
 	// Gyroscope stationary zero-bias correction (§2 of spec)
 	biasMu        sync.RWMutex
 	gyroBias      [3]float64
@@ -412,7 +413,7 @@ func NewApp() *App {
 		activeMatrix: defaultMatrix3x3(),
 		profilesDir:  profilesDir,
 		calStepLogs:  make(map[int]StepCaptureLog),
-		ahrs:         NewMadgwickAHRS(0.0),
+		ahrs:         NewMadgwickAHRS(0.104), // Beta=0.104 matching PadTest exactly for 1:1 viewport synchronization
 		currentTheme: "dark",
 		currentLang:  "ru",
 	}
@@ -1475,6 +1476,21 @@ func (a *App) StopCapture(step int) CaptureResult {
 		a.gyroBias = [3]float64{bX, bY, bZ}
 		a.biasMu.Unlock()
 
+		// Capture average gravity unit vector during stillness
+		var sumAccX, sumAccY, sumAccZ float64
+		for _, s := range samples {
+			sumAccX += s.acc[0]
+			sumAccY += s.acc[1]
+			sumAccZ += s.acc[2]
+		}
+		gX := sumAccX / n
+		gY := sumAccY / n
+		gZ := sumAccZ / n
+		gNorm := math.Sqrt(gX*gX + gY*gY + gZ*gZ)
+		if gNorm > 0.4 {
+			a.calGravity = [3]float64{gX / gNorm, gY / gNorm, gZ / gNorm}
+		}
+
 		res := CaptureResult{
 			Success:     true,
 			AxisIdx:     -1,
@@ -1623,12 +1639,50 @@ func (a *App) StopCapture(step int) CaptureResult {
 	// row_k = target_sign * detected_sign * e_{detected_axis}
 	var d [3]float64
 	if step == 1 {
+		// Physical check: Pitch cannot be rotation around the gravity vector (e.g. turning in table plane like compass/steering wheel)
+		if gNorm := math.Sqrt(a.calGravity[0]*a.calGravity[0] + a.calGravity[1]*a.calGravity[1] + a.calGravity[2]*a.calGravity[2]); gNorm > 0.5 {
+			if math.Abs(a.calGravity[axisIdx]) > 0.70 {
+				res := CaptureResult{
+					Success:     false,
+					AxisIdx:     axisIdx,
+					Sign:        sign,
+					AxisName:    name,
+					Confidence:  confidence,
+					SampleCount: activeCount,
+					PeakSpeed:   peakSpeed,
+					ErrorCode:   "error_pitch_along_gravity",
+					ErrorMsg:    a.getI18nMsg("calibration.error_pitch_along_gravity"),
+				}
+				a.writeDebugCSV(step, samples, res)
+				return res
+			}
+		}
+
 		// Pitch step: target RotX < 0 when nodding forward -> target = -1.0
 		targetPitchSign := -1.0
 		d[axisIdx] = targetPitchSign * sign
 		a.calVectors[0] = d
 		a.calVectors[1] = [3]float64{0, 0, 0}
 	} else if step == 2 {
+		// Physical check: Roll cannot be rotation around the gravity vector
+		if gNorm := math.Sqrt(a.calGravity[0]*a.calGravity[0] + a.calGravity[1]*a.calGravity[1] + a.calGravity[2]*a.calGravity[2]); gNorm > 0.5 {
+			if math.Abs(a.calGravity[axisIdx]) > 0.70 {
+				res := CaptureResult{
+					Success:     false,
+					AxisIdx:     axisIdx,
+					Sign:        sign,
+					AxisName:    name,
+					Confidence:  confidence,
+					SampleCount: activeCount,
+					PeakSpeed:   peakSpeed,
+					ErrorCode:   "error_roll_along_gravity",
+					ErrorMsg:    a.getI18nMsg("calibration.error_roll_along_gravity"),
+				}
+				a.writeDebugCSV(step, samples, res)
+				return res
+			}
+		}
+
 		// Roll step: target RotZ > 0 when banking right -> target = +1.0
 		targetRollSign := +1.0
 		d[axisIdx] = targetRollSign * sign
@@ -1763,6 +1817,23 @@ func (a *App) ValidateCalibration(pitch, roll [3]float64) ValidationResult {
 		a.calValResult = res
 		a.calLogMu.Unlock()
 		return res
+	}
+
+	// Physical sanity check: Gravity at rest must never be mapped to lateral axis AccX (Pitch),
+	// which would cause the controller to stand 90° on its side in PadTest and emulators.
+	if gNorm := math.Sqrt(a.calGravity[0]*a.calGravity[0] + a.calGravity[1]*a.calGravity[1] + a.calGravity[2]*a.calGravity[2]); gNorm > 0.5 {
+		gDsuX, _, _ := applyMatrix(mat, a.calGravity[0], a.calGravity[1], a.calGravity[2])
+		if math.Abs(gDsuX) > 0.65 {
+			res := ValidationResult{
+				Success:   false,
+				ErrorCode: "error_gravity_alignment",
+				ErrorMsg:  a.getI18nMsg("calibration.error_gravity_alignment"),
+			}
+			a.calLogMu.Lock()
+			a.calValResult = res
+			a.calLogMu.Unlock()
+			return res
+		}
 	}
 
 	formatAxis := func(v [3]float64) string {

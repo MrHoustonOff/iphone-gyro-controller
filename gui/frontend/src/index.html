@@ -2758,6 +2758,8 @@
       if (pollWails) clearInterval(pollWails);
       if (fallbackTimer) clearTimeout(fallbackTimer);
       I18n.init();
+      ProfileManager.init();
+      CalibrationWizard.init();
       AppState.init();
     };
 
