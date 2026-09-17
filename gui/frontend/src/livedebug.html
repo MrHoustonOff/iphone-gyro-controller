@@ -845,7 +845,7 @@
       background-color: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 8px 10px;
+      padding: 8px 8px;
       display: flex;
       flex-direction: column;
       gap: 4px;
@@ -995,26 +995,26 @@
     .stat-vector-row {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 6px;
+      gap: 3px;
       font-family: var(--font-mono);
-      font-size: 11.5px;
+      font-size: 11px;
       font-weight: 600;
-      padding-top: 2px;
+      padding-top: 3px;
     }
 
     .vec-item {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 3px;
       min-width: 0;
       overflow: hidden;
     }
 
     .vec-ax {
-      font-size: 9.5px;
+      font-size: 9px;
       font-weight: 800;
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -1029,7 +1029,7 @@
       letter-spacing: -0.02em;
       white-space: nowrap;
       display: inline-block;
-      min-width: 44px;
+      min-width: 38px;
     }
 
     .stat-card[data-i18n-tip] {
@@ -1480,7 +1480,7 @@
             </div>
 
             <!-- Raw Gyroscope -->
-            <div class="stat-card full-width" id="card-raw-gyro" data-i18n-tip="live_debug.stats_raw_gyro_tip">
+            <div class="stat-card" id="card-raw-gyro" data-i18n-tip="live_debug.stats_raw_gyro_tip">
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_raw_gyro">Сырой гироскоп (°/s)</span>
@@ -1495,7 +1495,7 @@
             </div>
 
             <!-- Raw Accelerometer -->
-            <div class="stat-card full-width" id="card-raw-accel" data-i18n-tip="live_debug.stats_raw_accel_tip">
+            <div class="stat-card" id="card-raw-accel" data-i18n-tip="live_debug.stats_raw_accel_tip">
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_raw_accel">Сырой акселерометр (g)</span>
@@ -1558,7 +1558,7 @@
             </div>
 
             <!-- DSU Clients Count -->
-            <div class="stat-card full-width" id="card-dsu-clients" data-i18n-tip="live_debug.stats_dsu_clients_tip">
+            <div class="stat-card" id="card-dsu-clients" data-i18n-tip="live_debug.stats_dsu_clients_tip">
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_dsu_clients">Клиенты DSU</span>
@@ -1575,7 +1575,7 @@
             </div>
 
             <!-- DSU Gyro Motion Output -->
-            <div class="stat-card full-width" id="card-out-gyro" data-i18n-tip="live_debug.stats_out_gyro_tip">
+            <div class="stat-card" id="card-out-gyro" data-i18n-tip="live_debug.stats_out_gyro_tip">
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_out_gyro">Выходной гироскоп DSU</span>
@@ -2315,12 +2315,11 @@
       btnModelCube?.addEventListener('click', () => applyModel('cube'));
       applyModel(currentModel);
 
-      // ── Camera Modes Switcher Logic ──
-      let currentCamMode = localStorage.getItem('gb_debug_cam_mode') || 'static';
+      // ── Camera Modes Switcher Logic (Always defaults to 'static') ──
+      let currentCamMode = 'static';
 
       function setCamMode(mode) {
         currentCamMode = mode;
-        localStorage.setItem('gb_debug_cam_mode', mode);
 
         btnCamStatic?.classList.toggle('active', mode === 'static');
         btnCamQuad?.classList.toggle('active', mode === 'quad');
@@ -2760,6 +2759,12 @@
               currentActiveCard = card;
               card.classList.add('is-active-tip');
               showCardTooltip(card);
+            }
+          });
+
+          card.addEventListener('mouseleave', () => {
+            if (currentActiveCard === card) {
+              hideCardTooltip();
             }
           });
         });
