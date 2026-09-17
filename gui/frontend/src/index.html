@@ -83,8 +83,8 @@
 
         <!-- State 2 & 3: Online / Paused Module (Phone connected) -->
         <div class="online-module" id="view-online" style="display: none;">
-          <!-- First-Time Device Calibration Notice Banner (10s Animation) -->
-          <div class="first-connect-banner" id="first-connect-banner" style="display: none;">
+          <!-- First-Time Device Calibration Notice Banner (20s Apple Red HIG) -->
+          <div class="first-connect-banner" id="first-connect-banner">
             <div class="banner-top-row">
               <div class="banner-icon-badge">
                 <svg viewBox="0 0 24 24">
@@ -3116,21 +3116,23 @@
       if (calBtn) calBtn.classList.add('highlight-pulse');
 
       if (banner) {
-        banner.style.display = 'block';
         banner.classList.remove('fade-out');
+        // Force reflow so smooth CSS transition begins from initial state
+        void banner.offsetHeight;
         banner.classList.add('show');
         if (progressBar) {
           progressBar.style.transition = 'none';
           progressBar.style.width = '100%';
           void progressBar.offsetWidth;
-          progressBar.style.transition = 'width 10s linear';
+          // Increased lifetime 2x: 20 seconds
+          progressBar.style.transition = 'width 20s linear';
           progressBar.style.width = '0%';
         }
       }
 
       this._alertTimeout = setTimeout(() => {
         this.dismissFirstTimeDeviceAlert();
-      }, 10000);
+      }, 20000); // 20 seconds lifetime (2x previous 10s)
     },
 
     dismissFirstTimeDeviceAlert() {
@@ -3148,13 +3150,13 @@
       if (card) card.classList.remove('first-device-alert-active');
       if (calBtn) calBtn.classList.remove('highlight-pulse');
       if (banner) {
+        banner.classList.remove('show');
         banner.classList.add('fade-out');
         setTimeout(() => {
           if (!this._alertActive) {
-            banner.style.display = 'none';
-            banner.classList.remove('show', 'fade-out');
+            banner.classList.remove('fade-out');
           }
-        }, 400);
+        }, 700);
       }
     },
 
