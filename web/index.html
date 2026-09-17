@@ -217,7 +217,7 @@
 <body>
 
 <div class="app-wrap">
-  <h1 class="header-title">GyroBridge <span style="display:inline-block; font-size:12px; font-weight:700; background:#38bdf8; color:#070b14; padding:2px 8px; border-radius:8px; margin-left:6px; vertical-align:middle;">v3.3-DIAG</span></h1>
+  <h1 class="header-title">GyroBridge <span style="display:inline-block; font-size:12px; font-weight:700; background:#38bdf8; color:#070b14; padding:2px 8px; border-radius:8px; margin-left:6px; vertical-align:middle;">v3.4-RAW</span></h1>
 
   <!-- 1. Permission Request Button -->
   <button id="btn-perm" class="btn btn-perm">
@@ -240,10 +240,10 @@
   <!-- 4. Diagnostic & Live Sensor Debug Panel -->
   <div id="debug-panel" style="width:100%; margin-top:6px; padding:12px 14px; background:#0f172a; border:2px solid #38bdf8; border-radius:14px; font-family:monospace; font-size:12px; color:#e2e8f0; text-align:left; box-sizing:border-box;">
     <div style="font-size:13px; font-weight:800; color:#38bdf8; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.5px;">
-      ВЕРСИЯ: v3.3-DIAGNOSTIC
+      ВЕРСИЯ: v3.4-RAW (ЧИСТЫЕ ДАТЧИКИ)
     </div>
     <div style="font-size:11px; opacity:0.8; margin-bottom:8px;">
-      Сборка: 2026-09-16 07:45 | URL: <span id="dbg-url-info" style="color:#facc15;">-</span>
+      Сборка: 2026-09-17 12:50 | URL: <span id="dbg-url-info" style="color:#facc15;">-</span>
     </div>
     <div style="background:#1e293b; padding:8px 10px; border-radius:8px; margin-bottom:8px; line-height:1.4;">
       <div style="color:#94a3b8; font-size:11px; font-weight:700; margin-bottom:2px;">СЫРОЙ ГИРОСКОП (device):</div>
@@ -389,8 +389,8 @@ if (dbgBtnCopy20) {
 const G_CONST = 9.80665;
 const DEG2RAD_HALF = Math.PI / 360;
 
-const savedBias = JSON.parse(localStorage.getItem('gb_bias_up') || '{"x":0,"y":0,"z":0}');
-let biasX = savedBias.x, biasY = savedBias.y, biasZ = savedBias.z;
+try { localStorage.removeItem('gb_bias_up'); } catch (e) {}
+let biasX = 0, biasY = 0, biasZ = 0;
 
 let zeroYawOffset = 0;
 let rawGyr = { x: 0, y: 0, z: 0 };
@@ -663,15 +663,11 @@ function onMotion(e) {
     return;
   }
 
-  const [cx, cy, cz] = applyBias(rawGyr.x, rawGyr.y, rawGyr.z);
-
-  // Send true raw sensor frame in physical device coordinates (X, Y, Z):
-  // cx = rotation rate around device X axis (pitch / nodding)
-  // cy = rotation rate around device Y axis (roll / tilting)
-  // cz = rotation rate around device Z axis (yaw / compass)
-  dsuPitch = cx;
-  dsuYaw   = cy;
-  dsuRoll  = cz;
+  // Send 100% pure raw sensor frame in physical device coordinates (X, Y, Z).
+  // No shifting baseline, no deadband clipping on phone — PC calibration is single source of truth!
+  dsuPitch = rawGyr.x;
+  dsuYaw   = rawGyr.y;
+  dsuRoll  = rawGyr.z;
 
   // Raw device acceleration (X, Y, Z):
   dsuAccX = rawAcc.x;

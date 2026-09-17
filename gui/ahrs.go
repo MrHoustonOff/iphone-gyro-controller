@@ -159,20 +159,9 @@ func (m *MadgwickAHRS) Update(rotX, rotY, rotZ, accX, accY, accZ float32, now ti
 			m.Q2 = n2 * qrecip
 			m.Q3 = n3 * qrecip
 		}
-	} else {
-		// When stationary, smoothly decay pitch (Q1) and roll (Q3) towards zero
-		// so that the 3D model settles completely level and flat horizontally.
-		m.Q1 *= 0.98
-		m.Q3 *= 0.98
-		norm := float32(math.Sqrt(float64(m.Q0*m.Q0 + m.Q1*m.Q1 + m.Q2*m.Q2 + m.Q3*m.Q3)))
-		if norm > 1e-4 {
-			inv := 1.0 / norm
-			m.Q0 *= inv
-			m.Q1 *= inv
-			m.Q2 *= inv
-			m.Q3 *= inv
-		}
 	}
+	// When stationary (omegaMag <= 1e-6), keep the exact current quaternion without decay.
+	// This ensures 1:1 attitude hold and zero offset when returning to neutral.
 
 	return m.Q0, m.Q1, m.Q2, m.Q3
 }

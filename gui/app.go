@@ -608,11 +608,11 @@ func (a *App) startup(ctx context.Context) {
 		corrected.AccY = float32(ay)
 		corrected.AccZ = float32(az)
 
-		// Deadband for tiny stationary gyro noise (< 0.25 deg/s) to ensure 0.000% stationary drift.
+		// Deadband for tiny stationary gyro noise (< 0.10 deg/s) to ensure 0.000% stationary drift.
 		// Note: corrected frame sent to DSU is unaffected to preserve analog precision in games.
 		gyroSpeed := math.Sqrt(rx*rx + ry*ry + rz*rz)
 		var ahrsRx, ahrsRy, ahrsRz float32
-		if gyroSpeed >= 0.25 {
+		if gyroSpeed >= 0.10 {
 			ahrsRx = corrected.RotX
 			ahrsRy = corrected.RotY
 			ahrsRz = corrected.RotZ

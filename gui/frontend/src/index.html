@@ -1496,8 +1496,8 @@
           // Smoothly glide camera back to neutral center in live mode
           currentCamAngle += (0 - currentCamAngle) * 0.04;
 
-          // Live motion tracking
-          currentQuat.slerp(liveQuat, 0.18);
+          // Live motion tracking: snappy 1:1 response
+          currentQuat.slerp(liveQuat, 0.35);
           gamepadGroup.quaternion.copy(currentQuat);
         }
 
