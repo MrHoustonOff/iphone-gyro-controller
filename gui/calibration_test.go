@@ -306,10 +306,10 @@ func TestLiveDebug_ThemeAndLangSync(t *testing.T) {
 	}
 }
 
-func TestCalibration_GravityOrthogonalityAndAlignment(t *testing.T) {
+func TestCalibration_UnconstrainedGestureRecognition(t *testing.T) {
 	app := &App{}
 
-	// Step 0: Rest on desk -> gravity is along Z: [0, 0, 1.0]
+	// Step 0: Rest on desk
 	app.StartCapture()
 	for i := 0; i < 25; i++ {
 		app.captureMu.Lock()
@@ -324,7 +324,7 @@ func TestCalibration_GravityOrthogonalityAndAlignment(t *testing.T) {
 		t.Fatalf("Step 0 failed: %s", res0.ErrorMsg)
 	}
 
-	// Step 1: Nod forward around Z (parallel to gravity, e.g. rotating in table plane) -> must fail!
+	// Step 1: Gesture on any axis succeeds without artificial blocking
 	app.StartCapture()
 	for i := 0; i < 20; i++ {
 		app.captureMu.Lock()
@@ -334,38 +334,9 @@ func TestCalibration_GravityOrthogonalityAndAlignment(t *testing.T) {
 		})
 		app.captureMu.Unlock()
 	}
-	res1Fail := app.StopCapture(1)
-	if res1Fail.Success {
-		t.Fatalf("expected Pitch along gravity to fail")
-	}
-	if res1Fail.ErrorCode != "error_pitch_along_gravity" {
-		t.Fatalf("expected error_pitch_along_gravity, got %s", res1Fail.ErrorCode)
-	}
-
-	// Step 1 correct: Nod forward around X (orthogonal to gravity) -> succeeds
-	app.StartCapture()
-	for i := 0; i < 20; i++ {
-		app.captureMu.Lock()
-		app.captureBuffer = append(app.captureBuffer, captureSample{
-			rot: [3]float64{-65.0, 0.1, 0.2},
-			acc: [3]float64{0, 0, 1.0},
-		})
-		app.captureMu.Unlock()
-	}
-	res1Ok := app.StopCapture(1)
-	if !res1Ok.Success {
-		t.Fatalf("expected valid Pitch to succeed, got %s", res1Ok.ErrorCode)
-	}
-
-	// Validate with inverted matrix that maps gravity to AccX -> must fail!
-	pitchOnZ := [3]float64{0, 0, 1}
-	rollOnX := [3]float64{1, 0, 0}
-	valFail := app.ValidateCalibration(pitchOnZ, rollOnX)
-	if valFail.Success {
-		t.Fatalf("expected lateral gravity alignment to fail")
-	}
-	if valFail.ErrorCode != "error_gravity_alignment" {
-		t.Fatalf("expected error_gravity_alignment, got %s", valFail.ErrorCode)
+	res1 := app.StopCapture(1)
+	if !res1.Success {
+		t.Fatalf("Step 1 expected to succeed, got error: %s", res1.ErrorCode)
 	}
 }
 

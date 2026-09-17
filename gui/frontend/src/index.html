@@ -2055,7 +2055,7 @@
             resultTitle.textContent = I18n.t('calibration.capture_success_title') || 'Покой зафиксирован!';
           }
           if (resultSubtext) {
-            resultSubtext.innerHTML = renderMarkdown(result.axisName || 'Смещение гироскопа устранено');
+            resultSubtext.innerHTML = '';
           }
           if (btnNext) {
             btnNext.style.display = 'inline-flex';
