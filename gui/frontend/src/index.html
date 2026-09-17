@@ -83,6 +83,31 @@
 
         <!-- State 2 & 3: Online / Paused Module (Phone connected) -->
         <div class="online-module" id="view-online" style="display: none;">
+          <!-- First-Time Device Calibration Notice Banner (10s Animation) -->
+          <div class="first-connect-banner" id="first-connect-banner" style="display: none;">
+            <div class="banner-top-row">
+              <div class="banner-icon-badge">
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div class="banner-text-wrap">
+                <div class="banner-title" data-i18n="calibration.first_connect_title">Новое устройство</div>
+                <div class="banner-desc" data-i18n="calibration.first_connect_desc">
+                  Скорее всего данное устройство подключается первый раз и мы крайне рекомендуем провести его калибровку нажав на кнопку снизу и создать профиль под него!
+                </div>
+              </div>
+              <button type="button" class="banner-close-btn" id="btn-dismiss-first-connect" aria-label="Dismiss">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div class="banner-progress-track">
+              <div class="banner-progress-bar" id="first-connect-progress-bar"></div>
+            </div>
+          </div>
+
           <div class="device-subcard">
             <div class="device-headline">
               <div class="device-icon-wrap online" id="device-icon-wrap">
@@ -1943,19 +1968,47 @@
       }
     ],
 
+    getConnectedDevice() {
+      const st = (typeof AppState !== 'undefined' && AppState.lastState) ? AppState.lastState : null;
+      if (st && st.deviceName && st.deviceName !== 'Controller' && st.deviceName !== 'Unknown') {
+        return st.deviceName;
+      }
+      return (st && st.deviceName) || 'iPhone';
+    },
+
+    updateSubtitleWithDevice() {
+      const connectedDev = this.getConnectedDevice();
+      const subEl = document.getElementById('cal-modal-subtitle');
+      if (subEl) {
+        if (connectedDev && connectedDev !== 'Unknown') {
+          subEl.textContent = (I18n.t('calibration.subtitle_device') || 'Настройка соответствия осей • {device}').replace('{device}', connectedDev);
+        } else {
+          subEl.textContent = I18n.t('calibration.subtitle');
+        }
+      }
+    },
+
     open() {
+      if (typeof AppState !== 'undefined' && AppState.dismissFirstTimeDeviceAlert) {
+        AppState.dismissFirstTimeDeviceAlert();
+      }
       this.isOpen = true;
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'flex';
+      this.updateSubtitleWithDevice();
       this.showScreen('slots');
       this.renderSlotList();
     },
 
     openToSlot(slot) {
+      if (typeof AppState !== 'undefined' && AppState.dismissFirstTimeDeviceAlert) {
+        AppState.dismissFirstTimeDeviceAlert();
+      }
       this.isOpen = true;
       this.targetSlot = slot;
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'flex';
+      this.updateSubtitleWithDevice();
       this.startCaptureFlow(slot);
     },
 
@@ -2039,6 +2092,17 @@
 
         info.appendChild(numEl);
         info.appendChild(nameEl);
+
+        const connectedDev = this.getConnectedDevice();
+        const pDev = (p && p.device && p.device !== 'Unknown') ? p.device : (p && p.name ? '' : connectedDev);
+        if (pDev) {
+          const devEl = document.createElement('span');
+          devEl.className = 'cal-slot-card-dev';
+          devEl.style.fontSize = '11px';
+          devEl.style.opacity = '0.6';
+          devEl.textContent = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', pDev);
+          info.appendChild(devEl);
+        }
         card.appendChild(info);
 
         const actions = document.createElement('div');
@@ -2563,6 +2627,11 @@
         icon: 'default'
       };
 
+      const connectedDevice = this.getConnectedDevice();
+      const finalDevice = (connectedDevice && connectedDevice !== 'Unknown')
+        ? connectedDevice
+        : (targetProf.device && targetProf.device !== 'Unknown' ? targetProf.device : 'iPhone');
+
       // 1. Icon Selection: preserve or default to target profile's icon
       if (!this.selectedIcon) {
         this.selectedIcon = targetProf.icon || 'default';
@@ -2582,8 +2651,7 @@
       if (triggerTitle) {
         triggerTitle.textContent = targetProf.name || `Слот ${slot + 1}`;
       }
-      const devName = targetProf.device || I18n.t('calibration.device_unknown') || 'Неизвестно';
-      const devLabel = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', devName);
+      const devLabel = (I18n.t('calibration.device_label') || 'Устройство: {device}').replace('{device}', finalDevice);
       if (triggerDevice) {
         triggerDevice.textContent = devLabel;
       }
@@ -2597,7 +2665,10 @@
       // 3. Name Input
       const nameInput = document.getElementById('cal-name-input');
       if (nameInput) {
-        nameInput.value = targetProf.name || `Слот ${slot + 1}`;
+        const defaultName = (targetProf && targetProf.name && !targetProf.name.startsWith('Слот') && !targetProf.name.startsWith('Slot'))
+          ? targetProf.name
+          : `${finalDevice} ${slot + 1}`;
+        nameInput.value = defaultName;
         setTimeout(() => nameInput.select(), 50);
       }
 
@@ -2751,8 +2822,7 @@
       const mat = this.builtMatrix;
       if (!mat || slot < 0) return;
 
-      const curProf = ProfileManager.profiles[slot];
-      const device = curProf?.device || 'Unknown';
+      const device = this.getConnectedDevice();
       const icon = this.selectedIcon || 'default';
 
       if (window.go?.main?.App) {
@@ -2994,6 +3064,104 @@
     lastState: null,
     currentUrl: '',
     _calCaptureCb: null,
+    _alertTriggeredForDevice: null,
+    _alertTimeout: null,
+    _alertActive: false,
+
+    findEmptyOrActiveSlot() {
+      const profiles = (this.lastState && this.lastState.profiles) || ProfileManager.profiles || [];
+      for (let i = 0; i < 4; i++) {
+        const p = profiles[i];
+        if (!p || !p.name || p.name.startsWith('Слот') || p.name.startsWith('Slot')) {
+          return i;
+        }
+      }
+      return (this.lastState && this.lastState.activeSlot >= 0) ? this.lastState.activeSlot : 0;
+    },
+
+    checkFirstTimeDeviceAlert(state) {
+      const dev = (state.deviceName || '').trim();
+      if (!dev || dev === 'Controller' || dev === 'Unknown') {
+        return;
+      }
+
+      if (this._alertTriggeredForDevice === dev) {
+        return;
+      }
+      this._alertTriggeredForDevice = dev;
+
+      // Check if ANY profile is calibrated for this device
+      const profiles = state.profiles || ProfileManager.profiles || [];
+      const hasProfile = profiles.some(p => {
+        if (!p || !p.name) return false;
+        const pDev = (p.device || '').trim().toLowerCase();
+        return pDev === dev.toLowerCase() && pDev !== 'unknown';
+      });
+
+      if (!hasProfile) {
+        this.triggerFirstTimeDeviceAlert(dev);
+      }
+    },
+
+    triggerFirstTimeDeviceAlert(device) {
+      this.clearFirstTimeDeviceAlert(false);
+      this._alertActive = true;
+
+      const card = document.querySelector('.apple-card');
+      const banner = document.getElementById('first-connect-banner');
+      const calBtn = document.getElementById('btn-open-calibration');
+      const progressBar = document.getElementById('first-connect-progress-bar');
+
+      if (card) card.classList.add('first-device-alert-active');
+      if (calBtn) calBtn.classList.add('highlight-pulse');
+
+      if (banner) {
+        banner.style.display = 'block';
+        banner.classList.remove('fade-out');
+        banner.classList.add('show');
+        if (progressBar) {
+          progressBar.style.transition = 'none';
+          progressBar.style.width = '100%';
+          void progressBar.offsetWidth;
+          progressBar.style.transition = 'width 10s linear';
+          progressBar.style.width = '0%';
+        }
+      }
+
+      this._alertTimeout = setTimeout(() => {
+        this.dismissFirstTimeDeviceAlert();
+      }, 10000);
+    },
+
+    dismissFirstTimeDeviceAlert() {
+      if (!this._alertActive) return;
+      this._alertActive = false;
+      if (this._alertTimeout) {
+        clearTimeout(this._alertTimeout);
+        this._alertTimeout = null;
+      }
+
+      const card = document.querySelector('.apple-card');
+      const banner = document.getElementById('first-connect-banner');
+      const calBtn = document.getElementById('btn-open-calibration');
+
+      if (card) card.classList.remove('first-device-alert-active');
+      if (calBtn) calBtn.classList.remove('highlight-pulse');
+      if (banner) {
+        banner.classList.add('fade-out');
+        setTimeout(() => {
+          if (!this._alertActive) {
+            banner.style.display = 'none';
+            banner.classList.remove('show', 'fade-out');
+          }
+        }, 400);
+      }
+    },
+
+    clearFirstTimeDeviceAlert(resetTriggered = true) {
+      if (resetTriggered) this._alertTriggeredForDevice = null;
+      this.dismissFirstTimeDeviceAlert();
+    },
 
     render(state) {
       this.lastState = state;
@@ -3058,6 +3226,12 @@
           viewOnline.style.display = 'flex';
           if (linkLiveDebug) linkLiveDebug.style.display = 'inline-flex';
         }
+      }
+
+      if (!isOffline && state.deviceName) {
+        this.checkFirstTimeDeviceAlert(state);
+      } else if (isOffline) {
+        this.clearFirstTimeDeviceAlert(true);
       }
 
       if (isOffline) {
@@ -3194,6 +3368,21 @@
 
       // Default offline QR copy chip
       setupCopyChip('chip-url', 'url-copy-badge', () => this.currentUrl);
+
+      // First-connect banner click: open calibration directly to recommended slot
+      document.getElementById('first-connect-banner')?.addEventListener('click', (e) => {
+        if (e.target.closest('#btn-dismiss-first-connect')) {
+          this.dismissFirstTimeDeviceAlert();
+          return;
+        }
+        const targetSlot = this.findEmptyOrActiveSlot();
+        CalibrationWizard.openToSlot(targetSlot);
+      });
+
+      document.getElementById('btn-dismiss-first-connect')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.dismissFirstTimeDeviceAlert();
+      });
 
       // Open separate 3D LiveDebug window
       document.getElementById('link-live-debug')?.addEventListener('click', (e) => {

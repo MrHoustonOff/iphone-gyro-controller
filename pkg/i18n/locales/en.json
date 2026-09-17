@@ -52,6 +52,9 @@
     "error_opposite_direction": "Phone was tilted in the opposite direction. Follow the on-screen prompt.",
     "error_too_few_samples": "Too few sensor samples. Check phone connection.",
     "error_too_weak": "Motion too weak. Tilt phone more decisively.",
+    "first_connect_btn": "Calibrate",
+    "first_connect_desc": "This device is likely connecting for the first time. We strongly recommend calibrating it by clicking the button below and creating a profile for it!",
+    "first_connect_title": "New Device",
     "icon_default": "Gamepad",
     "icon_horizontal": "Horizontal",
     "icon_select_title": "Orientation / Icon",
@@ -108,6 +111,7 @@
     "step_pill_roll": "Roll",
     "step_pill_rest": "Rest",
     "subtitle": "Map your phone's axes to gamepad axes",
+    "subtitle_device": "Axis mapping configuration • {device}",
     "title": "Axis Calibration",
     "view_disclaimer": "3D orientation may differ from your physical grip"
   },

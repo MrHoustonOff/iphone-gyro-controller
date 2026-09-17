@@ -3023,4 +3023,181 @@ em {
   }
 }
 
+/* ── First-Time Device Calibration Radiant Aura (10s Animation) ────────────── */
+.apple-card.first-device-alert-active {
+  position: relative;
+  border-color: rgba(10, 132, 255, 0.85) !important;
+  animation: cardAuraPulse 2s infinite ease-in-out;
+  transition: box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.6s ease;
+}
+
+@keyframes cardAuraPulse {
+  0% {
+    box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.75),
+                0 0 32px rgba(10, 132, 255, 0.45),
+                0 16px 48px rgba(0, 0, 0, 0.6);
+    border-color: rgba(10, 132, 255, 0.85);
+  }
+  50% {
+    box-shadow: 0 0 0 3.5px rgba(94, 92, 230, 0.9),
+                0 0 52px rgba(94, 92, 230, 0.6),
+                0 20px 60px rgba(0, 0, 0, 0.7);
+    border-color: rgba(94, 92, 230, 0.95);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.75),
+                0 0 32px rgba(10, 132, 255, 0.45),
+                0 16px 48px rgba(0, 0, 0, 0.6);
+    border-color: rgba(10, 132, 255, 0.85);
+  }
+}
+
+/* ── First-Connect Bright Notice Banner ────────────────────────────────────── */
+.first-connect-banner {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(10, 132, 255, 0.16) 0%, rgba(94, 92, 230, 0.22) 100%);
+  border: 1px solid rgba(10, 132, 255, 0.5);
+  box-shadow: 0 6px 24px rgba(10, 132, 255, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  padding: 14px 16px;
+  margin-bottom: 18px;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: bannerSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.first-connect-banner.fade-out {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+@keyframes bannerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.banner-top-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.banner-icon-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(10, 132, 255, 0.22);
+  border: 1px solid rgba(10, 132, 255, 0.6);
+  color: #0A84FF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.banner-icon-badge svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+.banner-text-wrap {
+  flex: 1;
+  min-width: 0;
+}
+
+.banner-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0A84FF;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.banner-desc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+[data-theme="light"] .banner-desc {
+  color: #1C1C1E;
+}
+
+.banner-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.banner-close-btn:hover {
+  color: var(--text);
+}
+
+.banner-close-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.banner-progress-track {
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+[data-theme="light"] .banner-progress-track {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.banner-progress-bar {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #0A84FF, #5E5CE6);
+  border-radius: 2px;
+  transform-origin: left;
+}
+
+/* Bottom "Калибровать" Button Highlight Glow */
+.btn-calibrate-trigger.highlight-pulse {
+  background: linear-gradient(135deg, #0A84FF, #5E5CE6) !important;
+  color: #FFFFFF !important;
+  border-color: transparent !important;
+  box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.6), 0 0 20px rgba(10, 132, 255, 0.5) !important;
+  animation: calibrateBtnPulse 1.6s infinite ease-in-out;
+}
+
+@keyframes calibrateBtnPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.6), 0 0 16px rgba(10, 132, 255, 0.4); }
+  50% { transform: scale(1.04); box-shadow: 0 0 0 3px rgba(94, 92, 230, 0.8), 0 0 26px rgba(94, 92, 230, 0.6); }
+}
+
+
 
