@@ -993,9 +993,9 @@
     }
 
     .stat-vector-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
       font-family: var(--font-mono);
       font-size: 11.5px;
       font-weight: 600;
@@ -1003,16 +1003,43 @@
     }
 
     .vec-item {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
+      min-width: 0;
+      overflow: hidden;
     }
 
     .vec-ax {
       font-size: 9.5px;
       font-weight: 800;
-      padding: 1px 4px;
+      width: 15px;
+      height: 15px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border-radius: 3px;
+      flex-shrink: 0;
+      text-align: center;
+    }
+
+    .vec-val {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      display: inline-block;
+      min-width: 44px;
+    }
+
+    .stat-card[data-i18n-tip] {
+      cursor: pointer;
+    }
+
+    .stat-card.is-active-tip {
+      border-color: var(--apple-blue) !important;
+      box-shadow: 0 0 0 1px var(--apple-blue), 0 6px 20px rgba(0, 0, 0, 0.35);
+      transform: translateY(-2px) scale(1.02);
     }
 
     .axis-x { background: rgba(255, 59, 48, 0.18); color: #FF3B30; }
@@ -1251,7 +1278,6 @@
     <div class="header-left">
       <div class="brand-title">
         <span>GyroBridge</span>
-        <span class="brand-badge">Live Debug</span>
       </div>
       <div class="status-capsule offline" id="status-capsule">
         <span class="status-dot" id="status-dot"></span>
@@ -1349,7 +1375,7 @@
               <line x1="12" y1="16" x2="12" y2="12"></line>
               <line x1="12" y1="8" x2="12.01" y2="8"></line>
             </svg>
-            <span data-i18n="live_debug.stats_hover_hint">Удерживайте курсор на карточке 1 сек для описания</span>
+            <span data-i18n="live_debug.stats_hover_hint">Нажмите на карточку для описания</span>
           </div>
         </div>
 
@@ -1448,6 +1474,9 @@
                 <span class="stat-big-val" id="val-loss">0</span>
                 <span class="stat-val-unit" id="val-loss-pct">(0.0%)</span>
               </div>
+              <div class="stat-chart-wrap">
+                <canvas class="stat-chart-canvas" id="spark-loss"></canvas>
+              </div>
             </div>
 
             <!-- Raw Gyroscope -->
@@ -1459,9 +1488,9 @@
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
               <div class="stat-vector-row" id="raw-gyro-vector">
-                <span class="vec-item"><span class="vec-ax axis-x">X</span><span id="raw-gx">0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span id="raw-gy">0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span id="raw-gz">0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="raw-gx">+0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="raw-gy">+0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="raw-gz">+0.00</span></span>
               </div>
             </div>
 
@@ -1474,9 +1503,9 @@
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
               <div class="stat-vector-row" id="raw-accel-vector">
-                <span class="vec-item"><span class="vec-ax axis-x">X</span><span id="raw-ax">0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span id="raw-ay">-1.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span id="raw-az">0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="raw-ax">+0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="raw-ay">-1.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="raw-az">+0.00</span></span>
               </div>
             </div>
           </div>
@@ -1554,9 +1583,9 @@
                 <span class="stat-vector-unit">X / Y / Z</span>
               </div>
               <div class="stat-vector-row" id="out-gyro-vector">
-                <span class="vec-item"><span class="vec-ax axis-x">X</span><span id="out-gx">0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span id="out-gy">0.00</span></span>
-                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span id="out-gz">0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-x">X</span><span class="vec-val" id="out-gx">+0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-y">Y</span><span class="vec-val" id="out-gy">+0.00</span></span>
+                <span class="vec-item"><span class="vec-ax axis-z">Z</span><span class="vec-val" id="out-gz">+0.00</span></span>
               </div>
             </div>
           </div>
@@ -1705,7 +1734,7 @@
           "live_debug.cam_reset_title": "Сбросить положение камеры",
           "live_debug.stats_title": "Статистика",
           "live_debug.stats_desc": "Мониторинг потока данных в реальном времени",
-          "live_debug.stats_hover_hint": "Удерживайте курсор на карточке 2 сек для описания",
+          "live_debug.stats_hover_hint": "Нажмите на карточку для описания",
           "live_debug.stats_record_start": "Начать запись",
           "live_debug.stats_record_stop": "Остановить",
           "live_debug.stats_recording": "Запись...",
@@ -1789,7 +1818,7 @@
           "live_debug.cam_reset_title": "Reset camera position",
           "live_debug.stats_title": "Statistics",
           "live_debug.stats_desc": "Real-time pipeline data stream monitoring",
-          "live_debug.stats_hover_hint": "Hover over card for 2 sec to reveal description",
+          "live_debug.stats_hover_hint": "Click a card to reveal description",
           "live_debug.stats_record_start": "Start Recording",
           "live_debug.stats_record_stop": "Stop Recording",
           "live_debug.stats_recording": "Recording...",
@@ -2443,6 +2472,7 @@
 
         frameCount++;
         const now = performance.now();
+        if (typeof flushCharts === 'function') flushCharts(now);
         if (now - lastFpsTime >= 1000) {
           const fps = Math.round((frameCount * 1000) / (now - lastFpsTime));
           if (fpsCounter && isPhoneConnected) fpsCounter.textContent = `${fps} fps`;
@@ -2667,10 +2697,9 @@
         }
       });
 
-      // ── Apple HIG 2s Hold-to-Reveal Card Tooltip Engine ──
+      // ── Apple HIG Click-to-Reveal Card Tooltip Engine ──
       const tooltipEl = document.getElementById('stats-floating-tooltip');
-      let currentHoverCard = null;
-      let cardHoverTimer = null;
+      let currentActiveCard = null;
 
       function showCardTooltip(card) {
         if (!tooltipEl || !card) return;
@@ -2705,13 +2734,9 @@
       }
 
       function hideCardTooltip() {
-        if (cardHoverTimer) {
-          clearTimeout(cardHoverTimer);
-          cardHoverTimer = null;
-        }
-        if (currentHoverCard) {
-          currentHoverCard.classList.remove('is-hovered');
-          currentHoverCard = null;
+        if (currentActiveCard) {
+          currentActiveCard.classList.remove('is-active-tip');
+          currentActiveCard = null;
         }
         if (tooltipEl) {
           tooltipEl.classList.remove('show');
@@ -2724,51 +2749,26 @@
 
         const cards = document.querySelectorAll('.stat-card[data-i18n-tip]');
         cards.forEach(card => {
-          card.addEventListener('mouseenter', () => {
-            if (currentHoverCard && currentHoverCard !== card) {
-              hideCardTooltip();
-            }
-            if (cardHoverTimer) {
-              clearTimeout(cardHoverTimer);
-              cardHoverTimer = null;
-            }
-
-            currentHoverCard = card;
-            card.classList.add('is-hovered');
-
-            // Wait 2.0s continuous hover before showing description tooltip
-            cardHoverTimer = setTimeout(() => {
-              if (currentHoverCard === card) {
-                showCardTooltip(card);
-              }
-            }, 2000);
-          });
-
-          card.addEventListener('mouseleave', () => {
-            if (currentHoverCard === card) {
-              hideCardTooltip();
-            } else {
-              card.classList.remove('is-hovered');
-            }
-          });
-
           card.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (cardHoverTimer) {
-              clearTimeout(cardHoverTimer);
-              cardHoverTimer = null;
-            }
-            if (currentHoverCard === card && tooltipEl.classList.contains('show')) {
+            if (currentActiveCard === card && tooltipEl.classList.contains('show')) {
               hideCardTooltip();
             } else {
-              if (currentHoverCard && currentHoverCard !== card) {
-                hideCardTooltip();
+              if (currentActiveCard && currentActiveCard !== card) {
+                currentActiveCard.classList.remove('is-active-tip');
               }
-              currentHoverCard = card;
-              card.classList.add('is-hovered');
+              currentActiveCard = card;
+              card.classList.add('is-active-tip');
               showCardTooltip(card);
             }
           });
+        });
+
+        // Close tooltip when clicking anywhere outside of cards
+        document.addEventListener('click', (e) => {
+          if (!e.target.closest('.stat-card[data-i18n-tip]') && !e.target.closest('#stats-floating-tooltip')) {
+            hideCardTooltip();
+          }
         });
       }
 
@@ -2786,22 +2786,44 @@
       }
 
       // ── Apple HIG Fluid Telemetry Area-Chart Renderer ──
+      const chartDimCache = new Map();
+      const chartCtxCache = new Map();
+
+      function getChartContext(canvasId) {
+        let cached = chartCtxCache.get(canvasId);
+        if (!cached) {
+          const cvs = document.getElementById(canvasId);
+          if (!cvs) return null;
+          const ctx = cvs.getContext('2d');
+          cached = { canvas: cvs, ctx };
+          chartCtxCache.set(canvasId, cached);
+        }
+        return cached;
+      }
+
+      window.addEventListener('resize', () => {
+        chartDimCache.clear();
+      });
+
       function drawAppleChart(canvasId, data, minVal, maxVal, strokeColor) {
-        const canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
+        const item = getChartContext(canvasId);
+        if (!item) return;
+        const { canvas: cvs, ctx } = item;
 
-        // HiDPI Retina Display Crispness scaling
+        // HiDPI Retina Display Crispness scaling without synchronous layout reflows
         const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        const w = rect.width || canvas.clientWidth || 160;
-        const h = rect.height || canvas.clientHeight || 60;
+        let dims = chartDimCache.get(canvasId);
+        if (!dims) {
+          const w = cvs.clientWidth || 160;
+          const h = cvs.clientHeight || 60;
+          dims = { w, h, targetW: Math.round(w * dpr), targetH: Math.round(h * dpr) };
+          chartDimCache.set(canvasId, dims);
+        }
 
-        const targetW = Math.round(w * dpr);
-        const targetH = Math.round(h * dpr);
-        if (canvas.width !== targetW || canvas.height !== targetH) {
-          canvas.width = targetW;
-          canvas.height = targetH;
+        const { w, h, targetW, targetH } = dims;
+        if (cvs.width !== targetW || cvs.height !== targetH) {
+          cvs.width = targetW;
+          cvs.height = targetH;
         }
 
         ctx.save();
@@ -2871,29 +2893,32 @@
         ctx.fillStyle = grad;
         ctx.fill(fillPath);
 
-        // 2. Stroke with vibrant Apple halo glow
-        ctx.shadowColor = hexToRgba(strokeColor, 0.50);
-        ctx.shadowBlur = 7;
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2.4;
+        // 2. Hardware-accelerated 2-pass Apple halo stroke (zero software blur penalty!)
+        // Ambient glow stroke
+        ctx.strokeStyle = hexToRgba(strokeColor, 0.28);
+        ctx.lineWidth = 4.2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
         ctx.stroke(path);
 
+        // Crisp core stroke
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2.0;
+        ctx.stroke(path);
+
         // 3. Glowing live head indicator dot on latest point
-        ctx.shadowBlur = 0;
         const lastPt = pts[pts.length - 1];
 
         ctx.beginPath();
-        ctx.arc(lastPt.x, lastPt.y, 5.2, 0, Math.PI * 2);
+        ctx.arc(lastPt.x, lastPt.y, 5.0, 0, Math.PI * 2);
         ctx.fillStyle = hexToRgba(strokeColor, 0.35);
         ctx.fill();
 
         ctx.beginPath();
-        ctx.arc(lastPt.x, lastPt.y, 2.5, 0, Math.PI * 2);
+        ctx.arc(lastPt.x, lastPt.y, 2.4, 0, Math.PI * 2);
         ctx.fillStyle = '#FFFFFF';
         ctx.fill();
-        ctx.lineWidth = 1.3;
+        ctx.lineWidth = 1.2;
         ctx.strokeStyle = strokeColor;
         ctx.stroke();
 
@@ -2912,53 +2937,95 @@
       recordedLines = [];
       savedFilePath = '';
       const RECORD_MAX_DURATION_MS = 60000; // Hard 1-minute limit
-      const MAX_CHART_SAMPLES = 36; // Expanded 36-sample rolling timeline
+      const MAX_CHART_SAMPLES = 36; // 36-sample rolling timeline
 
       // Incoming metrics rolling history
       const hzHistory = [];
       const latencyHistory = [];
       const jitterHistory = [];
+      const lossHistory = [];
       const outHzHistory = [];
       const pipeMsHistory = [];
+
+      // Pre-seed lossHistory with flat zero baseline so line is steady at 0
+      for (let i = 0; i < MAX_CHART_SAMPLES; i++) lossHistory.push(0);
+
       let lastPacketRecvTime = 0;
       let lastSeq = 0;
       let lostPacketsCount = 0;
       let totalExpectedPackets = 0;
       let lastLossResetTime = performance.now();
+      let currentLossSpike = 0;
+      let lastValidInHz = 0;
+      let lastValidInHzTime = 0;
       lastTelemetryData = null;
       lastRecordedElapsedMs = 0;
+
+      let chartsDirty = false;
+      let lastChartFlushTime = 0;
+
+      function flushCharts(now) {
+        if (!chartsDirty) return;
+        if (now - lastChartFlushTime < 50) return; // Throttled to 20 FPS max: leaves 100% GPU/CPU for 60+ FPS Three.js scene
+        lastChartFlushTime = now;
+        chartsDirty = false;
+
+        if (hzHistory.length >= 2) drawAppleChart('spark-in-hz', hzHistory, 30, 80, '#34C759');
+        if (latencyHistory.length >= 2) drawAppleChart('spark-latency', latencyHistory, 0, 50, '#0A84FF');
+        if (jitterHistory.length >= 2) drawAppleChart('spark-jitter', jitterHistory, 0, 15, '#FF9500');
+        if (lossHistory.length >= 2) {
+          const maxLoss = Math.max(3, ...lossHistory);
+          drawAppleChart('spark-loss', lossHistory, 0, maxLoss, '#FF3B30');
+        }
+        if (outHzHistory.length >= 2) drawAppleChart('spark-out-hz', outHzHistory, 30, 80, '#5E5CE6');
+        if (pipeMsHistory.length >= 2) drawAppleChart('spark-pipe-ms', pipeMsHistory, 0, 3.5, '#30D158');
+      }
+
+      // Standalone timer to flush charts if 3D rendering is paused or phone is stationary
+      setInterval(() => {
+        if (!isRendering && chartsDirty) {
+          flushCharts(performance.now());
+        }
+      }, 100);
 
       function updateTelemetryStats(data) {
         lastTelemetryData = data;
         const now = performance.now();
         const dict = DICTIONARY[currentLang] || DICTIONARY.ru;
 
-        // 1. INPUT Frequency (In Hz)
-        const inHz = typeof data.in_hz === 'number' && data.in_hz > 0 ? data.in_hz : 0;
+        // 1. INPUT Frequency (In Hz) with persistence smoothing
+        let inHz = typeof data.in_hz === 'number' && data.in_hz > 0 ? data.in_hz : 0;
+        if (inHz > 0) {
+          lastValidInHz = inHz;
+          lastValidInHzTime = now;
+        } else if (isPhoneConnected && lastValidInHz > 0 && (now - lastValidInHzTime < 1500)) {
+          inHz = lastValidInHz;
+        }
+
         const valInHzEl = document.getElementById('val-in-hz');
         const chipInHzEl = document.getElementById('chip-in-hz');
-        if (valInHzEl) valInHzEl.textContent = inHz > 0 ? inHz.toFixed(1) : '--';
+        if (valInHzEl) valInHzEl.textContent = (isPhoneConnected && inHz > 0) ? inHz.toFixed(1) : '--';
 
         if (chipInHzEl) {
-          if (inHz >= 55) {
+          if (!isPhoneConnected || inHz <= 0) {
+            chipInHzEl.className = 'stat-chip muted';
+            chipInHzEl.textContent = '--';
+          } else if (inHz >= 55) {
             chipInHzEl.className = 'stat-chip green';
             chipInHzEl.textContent = Math.round(inHz) + ' Hz';
           } else if (inHz >= 40) {
             chipInHzEl.className = 'stat-chip yellow';
             chipInHzEl.textContent = Math.round(inHz) + ' Hz';
-          } else if (inHz > 0) {
+          } else {
             chipInHzEl.className = 'stat-chip red';
             chipInHzEl.textContent = Math.round(inHz) + ' Hz';
-          } else {
-            chipInHzEl.className = 'stat-chip muted';
-            chipInHzEl.textContent = '--';
           }
         }
 
         if (inHz > 0) {
           hzHistory.push(inHz);
           if (hzHistory.length > MAX_CHART_SAMPLES) hzHistory.shift();
-          drawAppleChart('spark-in-hz', hzHistory, 30, 80, '#34C759');
+          chartsDirty = true;
         }
 
         // 2. Latency & Jitter
@@ -2991,7 +3058,7 @@
         }
         latencyHistory.push(latencyMs);
         if (latencyHistory.length > MAX_CHART_SAMPLES) latencyHistory.shift();
-        drawAppleChart('spark-latency', latencyHistory, 0, 50, '#0A84FF');
+        chartsDirty = true;
 
         // Jitter
         if (lastPacketRecvTime > 0) {
@@ -3000,6 +3067,7 @@
           const jitter = Math.abs(interval - expectedInterval);
           jitterHistory.push(jitter);
           if (jitterHistory.length > MAX_CHART_SAMPLES) jitterHistory.shift();
+          chartsDirty = true;
 
           const avgJitter = jitterHistory.reduce((a, b) => a + b, 0) / jitterHistory.length;
           const valJitterEl = document.getElementById('val-jitter');
@@ -3011,25 +3079,36 @@
               : (avgJitter < 8 ? (dict["live_debug.jitter_normal"] || "normal") : (dict["live_debug.jitter_high"] || "jitter"));
             chipJitterEl.className = avgJitter < 3 ? 'stat-chip green' : (avgJitter < 8 ? 'stat-chip yellow' : 'stat-chip red');
           }
-          drawAppleChart('spark-jitter', jitterHistory, 0, 15, '#FF9500');
         }
         lastPacketRecvTime = now;
 
-        // 3. Packet Loss
+        // 3. Packet Loss: 0 baseline is calm flat line; spikes jump upward
         if (now - lastLossResetTime > 60000) {
           lostPacketsCount = 0;
           totalExpectedPackets = 0;
           lastLossResetTime = now;
         }
         const curSeq = Number(data.seq) || 0;
+        let curLostDelta = 0;
         if (lastSeq > 0 && curSeq > lastSeq) {
           const diff = curSeq - lastSeq;
           if (diff > 1) {
-            lostPacketsCount += (diff - 1);
+            curLostDelta = diff - 1;
+            lostPacketsCount += curLostDelta;
           }
           totalExpectedPackets += diff;
         }
         lastSeq = curSeq;
+
+        if (curLostDelta > 0) {
+          currentLossSpike = Math.min(20, currentLossSpike + curLostDelta);
+        } else {
+          currentLossSpike *= 0.88;
+          if (currentLossSpike < 0.01) currentLossSpike = 0;
+        }
+        lossHistory.push(currentLossSpike);
+        if (lossHistory.length > MAX_CHART_SAMPLES) lossHistory.shift();
+        chartsDirty = true;
 
         const valLossEl = document.getElementById('val-loss');
         const valLossPctEl = document.getElementById('val-loss-pct');
@@ -3047,9 +3126,9 @@
           }
         }
 
-        // 4. Raw Gyro & Accel
+        // 4. Raw Gyro & Accel: Fixed width with +/- sign and tabular numbers
         const formatNum = (n) => {
-          if (typeof n !== 'number' || isNaN(n)) return '0.00';
+          if (typeof n !== 'number' || isNaN(n)) return '+0.00';
           return (n >= 0 ? '+' : '') + n.toFixed(2);
         };
         const rawGxEl = document.getElementById('raw-gx');
@@ -3069,11 +3148,11 @@
         // 5. OUTPUT Metrics
         const outHz = typeof data.out_hz === 'number' && data.out_hz > 0 ? data.out_hz : inHz;
         const valOutHzEl = document.getElementById('val-out-hz');
-        if (valOutHzEl) valOutHzEl.textContent = outHz > 0 ? outHz.toFixed(1) : '--';
+        if (valOutHzEl) valOutHzEl.textContent = (isPhoneConnected && outHz > 0) ? outHz.toFixed(1) : '--';
         if (outHz > 0) {
           outHzHistory.push(outHz);
           if (outHzHistory.length > MAX_CHART_SAMPLES) outHzHistory.shift();
-          drawAppleChart('spark-out-hz', outHzHistory, 30, 80, '#5E5CE6');
+          chartsDirty = true;
         }
 
         const pipeMs = typeof data.pipe_ms === 'number' ? data.pipe_ms : 0.4;
@@ -3094,7 +3173,7 @@
         }
         pipeMsHistory.push(pipeMs);
         if (pipeMsHistory.length > MAX_CHART_SAMPLES) pipeMsHistory.shift();
-        drawAppleChart('spark-pipe-ms', pipeMsHistory, 0, 3.5, '#30D158');
+        chartsDirty = true;
 
         const dsuClients = typeof data.dsu_clients === 'number' ? data.dsu_clients : 0;
         const valDsuClientsEl = document.getElementById('val-dsu-clients');

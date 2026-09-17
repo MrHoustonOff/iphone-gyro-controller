@@ -196,6 +196,7 @@ type App struct {
 	liveDebugSeq     atomic.Uint64
 	liveDebugCmdMu   sync.Mutex
 	liveDebugCmd     *exec.Cmd
+	lastMotionRecvTs atomic.Int64
 	// Multi-window theme and language synchronization
 	themeMu      sync.RWMutex
 	currentTheme string
@@ -628,6 +629,7 @@ func (a *App) startup(ctx context.Context) {
 	srv = server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
 		startPipe := time.Now()
 		recvTs := startPipe.UnixMilli()
+		a.lastMotionRecvTs.Store(recvTs)
 
 		if !a.hasClient.Load() {
 			a.hasClient.Store(true)
@@ -1116,23 +1118,31 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.srv = srv
 
-	// Smooth live telemetry ticker (20 Hz = 50ms) when client is active
+	// Fallback orientation heartbeat (10 Hz = 100ms) for quiet periods
 	go func() {
-		ticker := time.NewTicker(50 * time.Millisecond)
+		ticker := time.NewTicker(100 * time.Millisecond)
 		defer ticker.Stop()
 		for range ticker.C {
 			if a.hasClient.Load() {
 				a.emitStateChange()
-				// Continuous live orientation heartbeat feed to Live Debug window
-				q0 := float32(math.Float64frombits(a.curAhrsQ0.Load()))
-				q1 := float32(math.Float64frombits(a.curAhrsQ1.Load()))
-				q2 := float32(math.Float64frombits(a.curAhrsQ2.Load()))
-				q3 := float32(math.Float64frombits(a.curAhrsQ3.Load()))
-				a.liveDebugMu.RLock()
-				numDebug := len(a.liveDebugClients)
-				a.liveDebugMu.RUnlock()
-				if numDebug > 0 {
-					a.broadcastLiveDebug(q0, q1, q2, q3)
+				// Only send fallback heartbeat to 3D window if no live motion packet arrived recently (> 150ms)
+				if time.Now().UnixMilli()-a.lastMotionRecvTs.Load() > 150 {
+					q0 := float32(math.Float64frombits(a.curAhrsQ0.Load()))
+					q1 := float32(math.Float64frombits(a.curAhrsQ1.Load()))
+					q2 := float32(math.Float64frombits(a.curAhrsQ2.Load()))
+					q3 := float32(math.Float64frombits(a.curAhrsQ3.Load()))
+					a.liveDebugMu.RLock()
+					numDebug := len(a.liveDebugClients)
+					a.liveDebugMu.RUnlock()
+					if numDebug > 0 {
+						var inHz float64
+						if a.srv != nil {
+							_, _, inHz = a.srv.PacketStats()
+						}
+						a.broadcastLiveDebug(q0, q1, q2, q3, liveDebugMsg{
+							InHz: inHz,
+						})
+					}
 				}
 			}
 		}
