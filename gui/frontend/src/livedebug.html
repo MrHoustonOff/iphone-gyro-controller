@@ -1,29 +1,69 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ru" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GyroBridge 3D Live Debug</title>
+  <title>GyroBridge - Live Debug</title>
   <style>
     :root {
-      --bg: #07090e;
-      --card-bg: rgba(18, 22, 34, 0.75);
-      --border: rgba(255, 255, 255, 0.12);
-      --border-subtle: rgba(255, 255, 255, 0.08);
+      --radius-pill: 9999px;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --transition-fast: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-smooth: 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #06080d;
+      --bg-gradient: radial-gradient(ellipse at 75% 45%, #121724 0%, #06080d 75%);
+      --bg-header: rgba(10, 14, 22, 0.82);
+      --bg-surface: rgba(16, 21, 32, 0.72);
+      --bg-surface-hover: rgba(24, 31, 48, 0.82);
+      --bg-card-inner: rgba(10, 14, 22, 0.55);
+      --border: rgba(255, 255, 255, 0.11);
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-dashed: rgba(255, 255, 255, 0.18);
       --text: #f5f7fa;
       --text-secondary: #94a3b8;
       --text-tertiary: #64748b;
       --accent: #007aff;
       --accent-hover: #0062cc;
+      --accent-bg: rgba(0, 122, 255, 0.14);
       --success: #30d158;
-      --radius-pill: 9999px;
-      --radius-lg: 16px;
+      --danger: #ff453a;
+      --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.45);
+      --shadow-header: 0 4px 20px rgba(0, 0, 0, 0.35);
+      --eco-overlay-bg: rgba(6, 8, 13, 0.55);
+    }
+
+    [data-theme="light"] {
+      --bg-app: #f4f6fa;
+      --bg-gradient: radial-gradient(ellipse at 75% 45%, #ffffff 0%, #e6edf5 85%);
+      --bg-header: rgba(255, 255, 255, 0.85);
+      --bg-surface: rgba(255, 255, 255, 0.85);
+      --bg-surface-hover: rgba(248, 250, 252, 0.95);
+      --bg-card-inner: rgba(241, 245, 249, 0.75);
+      --border: rgba(0, 0, 0, 0.09);
+      --border-subtle: rgba(0, 0, 0, 0.04);
+      --border-dashed: rgba(0, 0, 0, 0.18);
+      --text: #0f172a;
+      --text-secondary: #475569;
+      --text-tertiary: #94a3b8;
+      --accent: #007aff;
+      --accent-hover: #0062cc;
+      --accent-bg: rgba(0, 122, 255, 0.10);
+      --success: #30d158;
+      --danger: #ff453a;
+      --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.05);
+      --shadow-header: 0 2px 14px rgba(0, 0, 0, 0.04);
+      --eco-overlay-bg: rgba(244, 246, 250, 0.65);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: radial-gradient(ellipse at 50% 45%, #1d212d 0%, #07090e 100%);
+      background: var(--bg-gradient);
       color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
       overflow: hidden;
@@ -31,188 +71,464 @@
       width: 100vw;
       user-select: none;
       -webkit-user-select: none;
+      display: flex;
+      flex-direction: column;
+      transition: background var(--transition-smooth), color var(--transition-smooth);
     }
 
-    /* ── Top Floating Bar ── */
-    .top-bar {
-      position: absolute;
-      top: 16px;
-      left: 16px;
-      right: 16px;
-      z-index: 100;
+    /* ── Top Header Bar ── */
+    .app-header {
+      height: 54px;
+      min-height: 54px;
+      padding: 0 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      pointer-events: none;
+      background: var(--bg-header);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-header);
+      z-index: 100;
+      transition: background var(--transition-smooth), border-color var(--transition-smooth);
     }
 
-    .top-bar-left, .top-bar-right {
+    .header-left, .header-right {
       display: flex;
       align-items: center;
       gap: 12px;
-      pointer-events: auto;
     }
 
     .brand-pill {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 7px 16px;
-      background: rgba(15, 20, 32, 0.75);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      gap: 10px;
+      padding: 6px 14px;
+      background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-pill);
-      font-size: 12px;
+      font-size: 12.5px;
       font-weight: 700;
       letter-spacing: -0.01em;
-      color: #ffffff;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      color: var(--text);
     }
 
-    .brand-dot {
+    .status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
+      background: var(--danger);
+      box-shadow: 0 0 8px var(--danger);
+      transition: all 0.25s ease;
+    }
+
+    .status-dot.connected {
       background: var(--success);
       box-shadow: 0 0 8px var(--success);
     }
 
-    .fps-badge {
-      font-size: 11px;
-      color: var(--text-secondary);
-      font-variant-numeric: tabular-nums;
-      margin-left: 4px;
+    .tag-badge {
+      font-size: 10.5px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border: 1px solid rgba(0, 122, 255, 0.25);
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
 
-    /* ── Eco Toggle Switch ── */
-    .eco-control {
+    .fps-badge {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      background: var(--bg-card-inner);
+      padding: 4px 10px;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-header {
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       padding: 6px 14px;
-      background: rgba(15, 20, 32, 0.75);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: var(--radius-pill);
-      font-size: 11.5px;
+      font-size: 12px;
       font-weight: 600;
       color: var(--text);
       cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-      transition: all 0.18s ease;
+      transition: all var(--transition-fast);
     }
 
-    .eco-control:hover {
+    .btn-header:hover {
+      background: var(--bg-surface-hover);
       border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
     }
 
-    .eco-switch {
+    .btn-header:active {
+      transform: translateY(0);
+    }
+
+    .btn-theme {
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .btn-theme svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+    }
+
+    /* ── Split 50/50 Body ── */
+    .split-body {
+      display: flex;
+      flex: 1;
+      width: 100vw;
+      height: calc(100vh - 54px);
+      overflow: hidden;
+    }
+
+    /* ── Left Column (50%) ── */
+    .left-panel {
+      width: 50%;
+      height: 100%;
+      overflow-y: auto;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      border-right: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.02);
+      transition: border-color var(--transition-smooth);
+    }
+
+    .left-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+    .left-panel::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: var(--radius-pill);
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-card);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: all var(--transition-fast);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--accent-bg);
+      color: var(--accent);
+    }
+
+    .card-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    .card-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    /* Eco Switch Component */
+    .eco-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--bg-card-inner);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .eco-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .eco-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .eco-status-text {
+      font-size: 11.5px;
+      color: var(--text-tertiary);
+    }
+
+    .switch {
       position: relative;
       display: inline-block;
-      width: 32px;
-      height: 18px;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
     }
 
-    .eco-switch input {
+    .switch input {
       opacity: 0;
       width: 0;
       height: 0;
     }
 
-    .eco-slider {
+    .slider {
       position: absolute;
       cursor: pointer;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: #3a4252;
-      transition: 0.25s ease;
-      border-radius: 18px;
+      background: rgba(148, 163, 184, 0.35);
+      transition: 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: var(--radius-pill);
     }
 
-    .eco-slider:before {
+    .slider:before {
       position: absolute;
       content: "";
-      height: 14px;
-      width: 14px;
-      left: 2px;
-      bottom: 2px;
-      background: white;
-      transition: 0.25s ease;
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background: #ffffff;
+      transition: 0.24s cubic-bezier(0.4, 0, 0.2, 1);
       border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
     }
 
-    .eco-switch input:checked + .eco-slider {
-      background: var(--success);
+    input:checked + .slider {
+      background: var(--accent);
     }
 
-    .eco-switch input:checked + .eco-slider:before {
-      transform: translateX(14px);
+    input:checked + .slider:before {
+      transform: translateX(20px);
     }
 
-    /* ── Recenter Pill Button ── */
-    .btn-recenter {
+    /* Telemetry Grid */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .telemetry-tile {
+      background: var(--bg-card-inner);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .telemetry-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+
+    .telemetry-value {
+      font-size: 16px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      color: var(--accent);
+    }
+
+    .quat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      background: var(--bg-card-inner);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+    }
+
+    .quat-cell {
+      font-size: 11px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: var(--text-secondary);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .quat-cell strong {
+      color: var(--text);
+    }
+
+    /* Action Buttons */
+    .btn-action {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 16px;
+      background: var(--accent);
+      color: #ffffff;
+      border: none;
+      border-radius: var(--radius-pill);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35);
+      transition: all var(--transition-fast);
+    }
+
+    .btn-action:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(0, 122, 255, 0.45);
+    }
+
+    .btn-action:active {
+      transform: translateY(0);
+    }
+
+    .key-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Reserved Placeholder Card ("Тут будет функционал") */
+    .card-placeholder {
+      border: 1.5px dashed var(--border-dashed);
+      background: var(--bg-card-inner);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .placeholder-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 7px 16px;
-      background: rgba(0, 0, 0, 0.65);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-bg);
+      border: 1px solid rgba(0, 122, 255, 0.3);
+      padding: 4px 10px;
       border-radius: var(--radius-pill);
-      font-size: 11.5px;
-      font-weight: 600;
-      color: #ffffff;
-      cursor: pointer;
-      transition: all 0.18s ease;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+      margin-bottom: 10px;
     }
 
-    .btn-recenter:hover {
-      background: var(--accent);
-      border-color: rgba(255, 255, 255, 0.4);
-      transform: scale(1.02);
+    .placeholder-title {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
     }
 
-    .btn-recenter:active {
-      transform: scale(0.98);
+    .placeholder-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 16px;
     }
 
-    /* ── Canvas Viewport ── */
-    #viewport-wrap {
-      width: 100vw;
-      height: 100vh;
+    .skeleton-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .skeleton-bar {
+      height: 12px;
+      background: var(--border-subtle);
+      border-radius: 6px;
+    }
+    .skeleton-bar.w-70 { width: 70%; }
+    .skeleton-bar.w-90 { width: 90%; }
+    .skeleton-bar.w-50 { width: 50%; }
+
+    /* ── Right Column (50% 3D Viewport) ── */
+    .right-panel {
       position: relative;
+      width: 50%;
+      height: 100%;
       overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
     }
 
     #livedebug-canvas {
       width: 100%;
       height: 100%;
       display: block;
-      transition: filter 0.3s ease;
+      transition: filter 0.28s ease, transform 0.28s ease;
     }
 
     #livedebug-canvas.blurred {
-      filter: blur(10px) brightness(0.65);
+      filter: blur(16px) brightness(0.65);
+      transform: scale(0.98);
+      pointer-events: none;
     }
 
-    /* ── Eco Paused Overlay ── */
+    /* Eco-mode Frosted Overlay */
     .eco-overlay {
       position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
+      inset: 0;
+      z-index: 50;
       display: none;
       align-items: center;
       justify-content: center;
-      background: rgba(5, 8, 14, 0.45);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      z-index: 50;
+      background: var(--eco-overlay-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       cursor: pointer;
       opacity: 0;
-      transition: opacity 0.25s ease;
+      transition: opacity 0.24s ease;
     }
 
     .eco-overlay.visible {
@@ -221,42 +537,46 @@
     }
 
     .eco-card {
-      background: rgba(18, 24, 38, 0.88);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
       border-radius: var(--radius-lg);
-      padding: 24px 32px;
+      padding: 24px 28px;
       text-align: center;
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
-      max-width: 380px;
-      animation: pop-in 0.22s ease-out;
+      max-width: 320px;
+      box-shadow: var(--shadow-card);
+      transform: translateY(0);
+      transition: transform 0.2s ease;
     }
 
-    @keyframes pop-in {
-      from { transform: scale(0.95); opacity: 0; }
-      to { transform: scale(1.0); opacity: 1; }
+    .eco-card:hover {
+      transform: translateY(-2px);
     }
 
     .eco-icon {
-      width: 36px;
-      height: 36px;
-      margin-bottom: 12px;
-      color: var(--success);
+      width: 44px;
+      height: 44px;
+      margin: 0 auto 12px;
+      color: var(--accent);
+      animation: pulse-eco 2.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse-eco {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.08); opacity: 1; }
     }
 
     .eco-title {
       font-size: 15px;
       font-weight: 700;
-      color: #ffffff;
+      color: var(--text);
       margin-bottom: 6px;
     }
 
     .eco-desc {
-      font-size: 12.5px;
+      font-size: 12px;
       color: var(--text-secondary);
-      line-height: 1.4;
-      margin-bottom: 14px;
+      line-height: 1.45;
+      margin-bottom: 16px;
     }
 
     .eco-hint {
@@ -264,86 +584,260 @@
       font-size: 11px;
       font-weight: 600;
       color: var(--accent);
-      background: rgba(0, 122, 255, 0.12);
+      background: var(--accent-bg);
       border: 1px solid rgba(0, 122, 255, 0.3);
-      padding: 4px 12px;
+      padding: 5px 14px;
       border-radius: var(--radius-pill);
     }
   </style>
 </head>
 <body>
 
-  <!-- Top Floating Controls Bar -->
-  <div class="top-bar">
-    <div class="top-bar-left">
+  <!-- Top Header Bar -->
+  <header class="app-header">
+    <div class="header-left">
       <div class="brand-pill">
-        <span class="brand-dot" id="status-dot"></span>
+        <span class="status-dot" id="status-dot"></span>
         <span>GyroBridge 3D Live</span>
-        <span class="fps-badge" id="fps-counter">60 fps</span>
       </div>
+      <span class="tag-badge">Standalone Window</span>
+      <span class="fps-badge" id="fps-counter">60 fps</span>
     </div>
 
-    <div class="top-bar-right">
-      <label class="eco-control" title="При потере фокуса или сворачивании окна рендеринг засыпает для 0% нагрузки на GPU">
-        <span>Экономия ресурсов</span>
-        <div class="eco-switch">
-          <input type="checkbox" id="eco-toggle" checked>
-          <span class="eco-slider"></span>
-        </div>
-      </label>
+    <div class="header-right">
+      <button type="button" class="btn-header" id="btn-recenter-top" title="Обнулить ориентацию (Пробел)">
+        <span class="key-badge">Space</span>
+        <span>Центрировать</span>
+      </button>
 
-      <button type="button" class="btn-recenter" id="btn-recenter" title="Обнулить ориентацию (Пробел)">
-        Центрировать (Пробел)
+      <button type="button" class="btn-header btn-theme" id="btn-theme-toggle" title="Переключить тему (Светлая / Темная)">
+        <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="icon-moon" style="display: none;" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
       </button>
     </div>
-  </div>
+  </header>
 
-  <!-- Viewport Area -->
-  <div id="viewport-wrap">
-    <canvas id="livedebug-canvas"></canvas>
+  <!-- Split 50/50 Body -->
+  <main class="split-body">
 
-    <!-- Eco Paused Frosted Overlay -->
-    <div class="eco-overlay" id="eco-overlay" title="Кликните для возобновления рендеринга">
-      <div class="eco-card">
-        <svg class="eco-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-        </svg>
-        <div class="eco-title">Рендеринг приостановлен</div>
-        <div class="eco-desc">Окно не в фокусе. 0% нагрузки на GPU и процессор.</div>
-        <span class="eco-hint">Кликните по окну для возобновления</span>
+    <!-- Left Column (50%) -->
+    <aside class="left-panel">
+
+      <!-- Eco-Mode Control Card -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <span class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
+            </span>
+            <h2 class="card-title">Экономия ресурсов</h2>
+          </div>
+        </div>
+        <p class="card-desc">
+          При неактивном или свернутом окне 3D-рендеринг полностью засыпает (0 FPS), а видеокарта и процессор разгружаются до 0%.
+        </p>
+
+        <div class="eco-row">
+          <div class="eco-info">
+            <span class="eco-label">Спящий режим при потере фокуса</span>
+            <span class="eco-status-text" id="eco-status-desc">Активно (0% нагрузки в фоне)</span>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="eco-toggle" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Recenter Action Card -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <span class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="16"></line>
+                <line x1="8" y1="12" x2="16" y2="12"></line>
+              </svg>
+            </span>
+            <h2 class="card-title">Центрирование ориентации</h2>
+          </div>
+        </div>
+        <p class="card-desc">
+          Сбрасывает фильтр AHRS в текущем положении телефона, совмещая его с нейтральным взглядом вперед.
+        </p>
+        <button type="button" class="btn-action" id="btn-recenter-main">
+          <span class="key-badge">Space</span>
+          <span>Обнулить ориентацию в нейтраль</span>
+        </button>
+      </section>
+
+      <!-- Live Orientation Telemetry -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title-wrap">
+            <span class="card-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+            </span>
+            <h2 class="card-title">Текущая ориентация</h2>
+          </div>
+        </div>
+
+        <div class="telemetry-grid">
+          <div class="telemetry-tile">
+            <div class="telemetry-label">Pitch</div>
+            <div class="telemetry-value" id="val-pitch">+0.0°</div>
+          </div>
+          <div class="telemetry-tile">
+            <div class="telemetry-label">Roll</div>
+            <div class="telemetry-value" id="val-roll">+0.0°</div>
+          </div>
+          <div class="telemetry-tile">
+            <div class="telemetry-label">Yaw</div>
+            <div class="telemetry-value" id="val-yaw">+0.0°</div>
+          </div>
+        </div>
+
+        <div class="quat-grid">
+          <div class="quat-cell">W: <strong id="val-q0">1.000</strong></div>
+          <div class="quat-cell">X: <strong id="val-q1">0.000</strong></div>
+          <div class="quat-cell">Y: <strong id="val-q2">0.000</strong></div>
+          <div class="quat-cell">Z: <strong id="val-q3">0.000</strong></div>
+        </div>
+      </section>
+
+      <!-- Future Functional Block Placeholder -->
+      <section class="card card-placeholder">
+        <div class="placeholder-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+            <polyline points="2 17 12 22 22 17"></polyline>
+            <polyline points="2 12 12 17 22 12"></polyline>
+          </svg>
+          <span>Здесь будет функционал</span>
+        </div>
+        <h3 class="placeholder-title">Панель расширенной отладки</h3>
+        <p class="placeholder-desc">
+          Резервный блок для графиков угловых скоростей (deg/s), спектрального анализа шума акселерометра, калибровочных гистограмм и тонкой настройки матрицы ориентации в реальном времени.
+        </p>
+
+        <div class="skeleton-wrap">
+          <div class="skeleton-bar w-90"></div>
+          <div class="skeleton-bar w-70"></div>
+          <div class="skeleton-bar w-50"></div>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- Right Column (50% 3D Viewport) -->
+    <section class="right-panel" id="viewport-wrap">
+      <canvas id="livedebug-canvas"></canvas>
+
+      <!-- Eco Paused Frosted Overlay -->
+      <div class="eco-overlay" id="eco-overlay" title="Кликните для возобновления рендеринга">
+        <div class="eco-card">
+          <svg class="eco-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          </svg>
+          <div class="eco-title">Рендеринг приостановлен</div>
+          <div class="eco-desc">Окно не в фокусе. 0% нагрузки на видеокарту и процессор.</div>
+          <span class="eco-hint">Кликните для возобновления</span>
+        </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+  </main>
 
   <!-- Scripts -->
-  <script src="/assets/three.min.js"></script>
-  <script src="/assets/GLTFLoader.js"></script>
+  <script src="assets/three.min.js"></script>
+  <script src="assets/GLTFLoader.js"></script>
 
   <script>
     (function() {
+      // ── DOM Elements ──
       const canvas = document.getElementById('livedebug-canvas');
+      const viewportWrap = document.getElementById('viewport-wrap');
       const ecoOverlay = document.getElementById('eco-overlay');
       const ecoToggle = document.getElementById('eco-toggle');
+      const ecoStatusDesc = document.getElementById('eco-status-desc');
       const fpsCounter = document.getElementById('fps-counter');
-      const btnRecenter = document.getElementById('btn-recenter');
       const statusDot = document.getElementById('status-dot');
+      const btnRecenterTop = document.getElementById('btn-recenter-top');
+      const btnRecenterMain = document.getElementById('btn-recenter-main');
+      const btnThemeToggle = document.getElementById('btn-theme-toggle');
+      const iconSun = document.getElementById('icon-sun');
+      const iconMoon = document.getElementById('icon-moon');
 
-      // ── Three.js Setup ──
+      const valPitch = document.getElementById('val-pitch');
+      const valRoll = document.getElementById('val-roll');
+      const valYaw = document.getElementById('val-yaw');
+      const valQ0 = document.getElementById('val-q0');
+      const valQ1 = document.getElementById('val-q1');
+      const valQ2 = document.getElementById('val-q2');
+      const valQ3 = document.getElementById('val-q3');
+
+      // ── Theme Manager ──
+      let currentTheme = localStorage.getItem('gb_theme') || 'dark';
+
+      function applyTheme(theme) {
+        currentTheme = theme;
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('gb_theme', theme);
+
+        if (theme === 'dark') {
+          iconSun.style.display = 'block';
+          iconMoon.style.display = 'none';
+        } else {
+          iconSun.style.display = 'none';
+          iconMoon.style.display = 'block';
+        }
+
+        update3DTheme(theme);
+      }
+
+      btnThemeToggle.addEventListener('click', () => {
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      });
+
+      // Sync across windows via storage event
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'gb_theme' && e.newValue) {
+          applyTheme(e.newValue);
+        }
+      });
+
+      // ── Three.js Studio Scene ──
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
       const scene = new THREE.Scene();
 
-      // Camera: centered on gamepad (0, 0, 0), elevated 22 deg
-      const camera = new THREE.PerspectiveCamera(27, 1, 0.2, 50);
+      // Camera positioned with subtle elevation
+      const camera = new THREE.PerspectiveCamera(28, 1, 0.2, 50);
       const camTarget = new THREE.Vector3(0, 0, 0);
       const orbitHRadius = 7.6;
       const orbitY = 3.2;
-
       camera.position.set(camTarget.x, orbitY, camTarget.z + orbitHRadius);
       camera.lookAt(camTarget);
 
-      // Studio Lighting
+      // Keynote Studio Lighting Setup
       const ambLight = new THREE.AmbientLight(0xffffff, 0.85);
       scene.add(ambLight);
 
@@ -355,26 +849,43 @@
       fillLight.position.set(-3, 5, 3);
       scene.add(fillLight);
 
+      const rimLight = new THREE.DirectionalLight(0x007aff, 0.85);
+      rimLight.position.set(0, -3, -5);
+      scene.add(rimLight);
+
       const bounceLight = new THREE.DirectionalLight(0x3a455a, 0.25);
       bounceLight.position.set(0, -4, 2);
       scene.add(bounceLight);
 
-      const rimLight = new THREE.DirectionalLight(0x007aff, 0.85);
-      rimLight.position.set(-2.5, 4.5, -4);
-      scene.add(rimLight);
-
-      // Radial fade grid floor
-      function createRadialGridTexture() {
-        const size = 1024;
-        const center = size / 2;
-        const step = 64;
+      // Floor Radial Grid
+      function createRadialGridTexture(isDark) {
+        const size = 512;
         const cvs = document.createElement('canvas');
-        cvs.width = size;
-        cvs.height = size;
+        cvs.width = size; cvs.height = size;
         const ctx = cvs.getContext('2d');
+        const center = size / 2;
 
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.38)';
-        ctx.lineWidth = 1.8;
+        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)';
+        ctx.lineWidth = 1.0;
+
+        for (let r = 24; r < center; r += 24) {
+          ctx.beginPath();
+          ctx.arc(center, center, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        const rings = [center * 0.38, center * 0.68, center * 0.94];
+        ctx.lineWidth = 1.4;
+        ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.32)' : 'rgba(71, 85, 105, 0.28)';
+        rings.forEach(r => {
+          ctx.beginPath();
+          ctx.arc(center, center, r, 0, Math.PI * 2);
+          ctx.stroke();
+        });
+
+        const step = 24;
+        ctx.lineWidth = 0.8;
+        ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)';
         ctx.beginPath();
         for (let offset = step; offset < center; offset += step) {
           ctx.moveTo(center + offset, 0); ctx.lineTo(center + offset, size);
@@ -384,8 +895,8 @@
         }
         ctx.stroke();
 
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)';
-        ctx.lineWidth = 2.4;
+        ctx.strokeStyle = isDark ? 'rgba(56, 189, 248, 0.70)' : 'rgba(0, 122, 255, 0.55)';
+        ctx.lineWidth = 2.2;
         ctx.beginPath();
         ctx.moveTo(center, 0); ctx.lineTo(center, size);
         ctx.moveTo(0, center); ctx.lineTo(size, center);
@@ -407,16 +918,34 @@
         return tex;
       }
 
+      let gridTex = createRadialGridTexture(currentTheme === 'dark');
       const gridMat = new THREE.MeshBasicMaterial({
-        map: createRadialGridTexture(),
+        map: gridTex,
         transparent: true,
         depthWrite: false,
-        opacity: 0.85
+        opacity: (currentTheme === 'dark') ? 0.85 : 0.65
       });
       const gridFloor = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), gridMat);
       gridFloor.rotation.x = -Math.PI / 2;
       gridFloor.position.y = -0.65;
       scene.add(gridFloor);
+
+      function update3DTheme(theme) {
+        const isDark = (theme === 'dark');
+        ambLight.intensity = isDark ? 0.85 : 0.95;
+        mainLight.intensity = isDark ? 1.25 : 1.15;
+        fillLight.color.setHex(isDark ? 0x8eb6ff : 0xc8ddff);
+        fillLight.intensity = isDark ? 0.45 : 0.40;
+        rimLight.color.setHex(isDark ? 0x007aff : 0x409cff);
+        rimLight.intensity = isDark ? 0.85 : 0.55;
+        bounceLight.intensity = isDark ? 0.25 : 0.20;
+
+        if (gridTex) gridTex.dispose();
+        gridTex = createRadialGridTexture(isDark);
+        gridMat.map = gridTex;
+        gridMat.opacity = isDark ? 0.85 : 0.65;
+        gridMat.needsUpdate = true;
+      }
 
       // Hero Gamepad Object
       const gamepadGroup = new THREE.Group();
@@ -428,10 +957,10 @@
         metalness: 0.0,
       });
 
-      if (window.THREE.GLTFLoader) {
+      if (window.THREE && window.THREE.GLTFLoader) {
         const loader = new THREE.GLTFLoader();
         loader.load(
-          '/assets/models/gamepad.glb',
+          'assets/models/gamepad.glb',
           (gltf) => {
             const raw = gltf.scene;
             raw.rotation.y = -Math.PI * 0.5;
@@ -471,8 +1000,9 @@
       const currentQuat = new THREE.Quaternion();
 
       function resize() {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
+        if (!viewportWrap) return;
+        const w = viewportWrap.clientWidth;
+        const h = viewportWrap.clientHeight;
         if (w <= 0 || h <= 0) return;
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
@@ -539,22 +1069,21 @@
         const isHidden = document.hidden;
         const ecoEnabled = ecoToggle.checked;
 
+        ecoStatusDesc.textContent = ecoEnabled
+          ? 'Активно (0% нагрузки в фоне)'
+          : 'Отключено (постоянный 60 FPS)';
+
         if (isHidden) {
-          // Completely hidden or minimized: stop rendering entirely
           stopRendering(false);
         } else if (!isFocused && ecoEnabled) {
-          // Unfocused and eco mode is active: pause rendering & show frosted overlay
           stopRendering(true);
         } else {
-          // Focused and visible: full 60fps rendering
           startRendering();
         }
       }
 
-      // Visibility change (Minimized, backgrounded)
       document.addEventListener('visibilitychange', updatePowerState);
 
-      // Focus / Blur
       window.addEventListener('focus', () => {
         isFocused = true;
         updatePowerState();
@@ -565,14 +1094,12 @@
         updatePowerState();
       });
 
-      // Overlay click to resume
       ecoOverlay.addEventListener('click', () => {
         window.focus();
         isFocused = true;
         updatePowerState();
       });
 
-      // Toggle switch change
       ecoToggle.addEventListener('change', () => {
         localStorage.setItem('gb_debug_eco', ecoToggle.checked ? 'true' : 'false');
         updatePowerState();
@@ -582,7 +1109,8 @@
         ecoToggle.checked = false;
       }
 
-      // Start initial render
+      // Initial theme and render start
+      applyTheme(currentTheme);
       startRendering();
 
       // ── Recenter Action ──
@@ -591,21 +1119,26 @@
         currentQuat.set(0, 0, 0, 1);
         gamepadGroup.quaternion.set(0, 0, 0, 1);
 
+        valPitch.textContent = '+0.0°';
+        valRoll.textContent = '+0.0°';
+        valYaw.textContent = '+0.0°';
+
         if (ws && ws.readyState === WebSocket.OPEN) {
           try {
             ws.send(JSON.stringify({ action: 'recenter' }));
           } catch (e) {}
         }
-        fetch('/livedebug/recenter', { method: 'POST' }).catch(() => {});
+        fetch('http://127.0.0.1:8080/livedebug/recenter', { method: 'POST' }).catch(() => {});
 
-        if (window.opener?.go?.main?.App?.ResetAHRS) {
+        if (window.go?.main?.LiveDebugApp?.ResetAHRS) {
+          try { window.go.main.LiveDebugApp.ResetAHRS(); } catch (e) {}
+        } else if (window.opener?.go?.main?.App?.ResetAHRS) {
           try { window.opener.go.main.App.ResetAHRS(); } catch (e) {}
-        } else if (window.go?.main?.App?.ResetAHRS) {
-          try { window.go.main.App.ResetAHRS(); } catch (e) {}
         }
       }
 
-      btnRecenter.addEventListener('click', doRecenter);
+      btnRecenterTop.addEventListener('click', doRecenter);
+      btnRecenterMain.addEventListener('click', doRecenter);
 
       window.addEventListener('keydown', (e) => {
         if (e.code === 'Space') {
@@ -621,11 +1154,9 @@
       function updateStatus(connected) {
         if (!statusDot) return;
         if (connected) {
-          statusDot.style.background = 'var(--success)';
-          statusDot.style.boxShadow = '0 0 8px var(--success)';
+          statusDot.classList.add('connected');
         } else {
-          statusDot.style.background = '#ff453a';
-          statusDot.style.boxShadow = '0 0 8px #ff453a';
+          statusDot.classList.remove('connected');
         }
       }
 
@@ -635,12 +1166,10 @@
           reconnectTimer = null;
         }
 
-        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = location.host || '127.0.0.1:8080';
-        const url = `${protocol}//${host}/livedebug/ws`;
+        const wsUrl = 'ws://127.0.0.1:8080/livedebug/ws';
 
         try {
-          ws = new WebSocket(url);
+          ws = new WebSocket(wsUrl);
         } catch (err) {
           updateStatus(false);
           scheduleReconnect();
@@ -664,6 +1193,20 @@
               // Three.js coordinates: -q1 (pitch), -q2 (yaw), q3 (roll), q0 (w)
               liveQuat.set(-q1, -q2, q3, q0);
               liveQuat.normalize();
+
+              // Euler angles computation (Tait-Bryan)
+              const p = Math.asin(Math.max(-1, Math.min(1, 2 * (q0 * q1 - q2 * q3)))) * (180 / Math.PI);
+              const r = -Math.atan2(2 * (q0 * q3 + q1 * q2), 1 - 2 * (q1 * q1 + q3 * q3)) * (180 / Math.PI);
+              const y = Math.atan2(2 * (q0 * q2 + q1 * q3), 1 - 2 * (q1 * q1 + q2 * q2)) * (180 / Math.PI);
+
+              valPitch.textContent = (p >= 0 ? '+' : '') + p.toFixed(1) + '°';
+              valRoll.textContent = (r >= 0 ? '+' : '') + r.toFixed(1) + '°';
+              valYaw.textContent = (y >= 0 ? '+' : '') + y.toFixed(1) + '°';
+
+              valQ0.textContent = q0.toFixed(3);
+              valQ1.textContent = q1.toFixed(3);
+              valQ2.textContent = q2.toFixed(3);
+              valQ3.textContent = q3.toFixed(3);
             }
           } catch (e) {}
         };
@@ -686,28 +1229,6 @@
       }
 
       connectWebSocket();
-
-      // ── External Data Injection Fallback (Parent Window & Runtime) ──
-      window.updateFromState = function(state) {
-        if (!state) return;
-        const q0 = Number(state.ahrsQ0);
-        const q1 = Number(state.ahrsQ1);
-        const q2 = Number(state.ahrsQ2);
-        const q3 = Number(state.ahrsQ3);
-
-        if (!isNaN(q0) && !isNaN(q1) && !isNaN(q2) && !isNaN(q3) &&
-            (q0 !== 0 || q1 !== 0 || q2 !== 0 || q3 !== 0)) {
-          // Three.js coordinates: -q1 (pitch), -q2 (yaw), q3 (roll), q0 (w)
-          liveQuat.set(-q1, -q2, q3, q0);
-          liveQuat.normalize();
-        }
-      };
-
-      if (window.opener && window.opener.runtime && window.opener.runtime.EventsOn) {
-        window.opener.runtime.EventsOn('state:change', window.updateFromState);
-      } else if (window.runtime && window.runtime.EventsOn) {
-        window.runtime.EventsOn('state:change', window.updateFromState);
-      }
     })();
   </script>
 </body>

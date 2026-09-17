@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"os"
 
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -14,6 +15,13 @@ import (
 var assets embed.FS
 
 func main() {
+	for _, arg := range os.Args[1:] {
+		if arg == "--livedebug" {
+			runLiveDebug()
+			return
+		}
+	}
+
 	app := NewApp()
 
 	err := wails.Run(&options.App{

@@ -10,6 +10,7 @@ import (
 	"mime"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -715,6 +716,13 @@ func (a *App) startup(ctx context.Context) {
 			mux.Handle("/assets/", http.FileServer(http.FS(subFS)))
 			mux.Handle("/livedebug/assets/", http.StripPrefix("/livedebug", http.FileServer(http.FS(subFS))))
 			mux.HandleFunc("/livedebug", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "*")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
 				data, err := fs.ReadFile(subFS, "livedebug.html")
 				if err != nil {
 					http.Error(w, "Not found", http.StatusNotFound)
@@ -726,6 +734,13 @@ func (a *App) startup(ctx context.Context) {
 				w.Write(data)
 			})
 			mux.HandleFunc("/livedebug/", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "*")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
 				if r.URL.Path == "/livedebug/" {
 					data, err := fs.ReadFile(subFS, "livedebug.html")
 					if err != nil {
@@ -741,6 +756,13 @@ func (a *App) startup(ctx context.Context) {
 				http.NotFound(w, r)
 			})
 			mux.HandleFunc("/livedebug/recenter", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "*")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
 				a.ResetAHRS()
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
@@ -1091,8 +1113,16 @@ func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32) {
 	}
 }
 
-// OpenLiveDebugWindow opens the standalone 3D Live Debug window in the user's default browser.
+// OpenLiveDebugWindow opens the standalone 3D Live Debug desktop .exe window.
 func (a *App) OpenLiveDebugWindow() {
+	exePath, err := os.Executable()
+	if err == nil {
+		cmd := exec.Command(exePath, "--livedebug")
+		if err := cmd.Start(); err == nil {
+			return
+		}
+	}
+	// Fallback to browser if process execution fails
 	url := fmt.Sprintf("http://127.0.0.1:%d/livedebug", HTTPPort)
 	if a.ctx != nil {
 		wailsRuntime.BrowserOpenURL(a.ctx, url)
