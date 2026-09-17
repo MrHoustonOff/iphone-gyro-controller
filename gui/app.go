@@ -603,6 +603,11 @@ func (a *App) startup(ctx context.Context) {
 	}
 	a.dsuSrv = dsuSrv
 
+	var (
+		accFiltered   [3]float64
+		accFilterInit bool
+	)
+
 	// 3. Web & Telemetry Server (HTTP 8080 / HTTPS 8443)
 	srv := server.NewServer(caMgr, HTTPPort, HTTPSPort, web.IndexHTML, func(frame server.MotionFrame) {
 		// Store latest raw gyro/accel/quaternion for calibration wizard
@@ -676,30 +681,73 @@ func (a *App) startup(ctx context.Context) {
 		accMat := computeAccMatrix(a.calGravity)
 		ax, ay, az := applyMatrix(accMat, float64(frame.AccX), float64(frame.AccY), float64(frame.AccZ))
 
-		corrected := frame
-		corrected.RotX = float32(rx)
-		corrected.RotY = float32(ry)
-		corrected.RotZ = float32(rz)
-		corrected.AccX = float32(ax)
-		corrected.AccY = float32(ay)
-		corrected.AccZ = float32(az)
-
-		// Deadband for tiny stationary gyro noise (< 0.28 deg/s) to ensure 0.000% stationary drift.
-		// Residual table noise peaks at ~0.26 deg/s; 0.28 deg/s completely blocks phantom integration while stationary.
-		// Note: corrected frame sent to DSU is unaffected to preserve analog precision in games.
 		gyroSpeed := math.Sqrt(rx*rx + ry*ry + rz*rz)
+
+		// 1. Gyroscope deadband with soft-knee attenuation.
+		// Electronic MEMS sensor noise is ~0.05-0.15 deg/s on desk.
+		// Deadband of 0.25 deg/s completely eliminates stationary gyro trembling in PadTest and games.
+		// For movements above 0.25 deg/s, a linear soft ramp ensures smooth, zero-cliff analog feel.
+		const gyroDeadband = 0.25
 		var ahrsRx, ahrsRy, ahrsRz float32
-		if gyroSpeed >= 0.28 {
-			ahrsRx = corrected.RotX
-			ahrsRy = corrected.RotY
-			ahrsRz = corrected.RotZ
+		var dsuRx, dsuRy, dsuRz float32
+		if gyroSpeed >= gyroDeadband {
+			scale := float32((gyroSpeed - gyroDeadband) / gyroSpeed)
+			ahrsRx = float32(rx) * scale
+			ahrsRy = float32(ry) * scale
+			ahrsRz = float32(rz) * scale
+
+			dsuRx = float32(rx) * scale
+			dsuRy = -float32(ry) * scale // Cemuhook DSU protocol convention (nose right / clockwise is negative)
+			dsuRz = float32(rz) * scale
 		}
 
-		// Update Madgwick AHRS filter. Runs on calibrated (post-M) gyro/accel so its
-		// quaternion output is already in DSU space matching PadTest conventions.
-		// Store in separate ahrs fields - do NOT write curQx/Qy/Qz/Qw (those hold raw phone quat).
+		// 2. Accelerometer filtering and stationary table lock.
+		// PadTest's Madgwick AHRS normalizes the error vector (2*beta*s/|s| = 11.5 deg/s step),
+		// meaning even tiny 0.003g electrical noise causes violent 60 Hz limit-cycle shaking.
+		// When the phone is resting on the table in neutral (gyroSpeed < 0.25 and Acc ≈ [0, -1, 0]),
+		// we lock Acc exactly to [0, -1.0, 0] which cancels the gradient error to 0.000000.
+		// When moving or held in hands, we apply an exponential moving average (EMA) low-pass filter
+		// to eliminate 60 Hz electrical noise while tracking true gravity smoothly.
+		if !accFilterInit {
+			accFiltered = [3]float64{ax, ay, az}
+			accFilterInit = true
+		}
+
+		isRestingOnTable := gyroSpeed < gyroDeadband &&
+			math.Abs(ax) < 0.06 &&
+			math.Abs(ay+1.0) < 0.08 &&
+			math.Abs(az) < 0.06
+
+		var finalAx, finalAy, finalAz float32
+		if isRestingOnTable {
+			finalAx = 0.0
+			finalAy = -1.0
+			finalAz = 0.0
+			accFiltered = [3]float64{0.0, -1.0, 0.0}
+		} else {
+			alpha := 0.20
+			if gyroSpeed < gyroDeadband {
+				alpha = 0.05
+			}
+			accFiltered[0] += alpha * (ax - accFiltered[0])
+			accFiltered[1] += alpha * (ay - accFiltered[1])
+			accFiltered[2] += alpha * (az - accFiltered[2])
+			finalAx = float32(accFiltered[0])
+			finalAy = float32(accFiltered[1])
+			finalAz = float32(accFiltered[2])
+		}
+
+		corrected := frame
+		corrected.RotX = ahrsRx
+		corrected.RotY = ahrsRy
+		corrected.RotZ = ahrsRz
+		corrected.AccX = finalAx
+		corrected.AccY = finalAy
+		corrected.AccZ = finalAz
+
+		// Update Madgwick AHRS filter.
 		if a.ahrs != nil {
-			q0, q1, q2, q3 := a.ahrs.Update(ahrsRx, ahrsRy, ahrsRz, corrected.AccX, corrected.AccY, corrected.AccZ, time.Now())
+			q0, q1, q2, q3 := a.ahrs.Update(ahrsRx, ahrsRy, ahrsRz, finalAx, finalAy, finalAz, time.Now())
 			p, r, y := a.ahrs.GetEulerAngles()
 			a.curPitch.Store(math.Float64bits(p))
 			a.curRoll.Store(math.Float64bits(r))
@@ -715,10 +763,13 @@ func (a *App) startup(ctx context.Context) {
 			return // Muted during pause
 		}
 		if a.dsuSrv != nil {
-			// Cemuhook DSU protocol convention: Yaw (RotY) has opposite sign convention
-			// (nose left = +, nose right / clockwise = -) compared to Three.js view.
-			dsuFrame := corrected
-			dsuFrame.RotY = -corrected.RotY
+			dsuFrame := frame
+			dsuFrame.RotX = dsuRx
+			dsuFrame.RotY = dsuRy
+			dsuFrame.RotZ = dsuRz
+			dsuFrame.AccX = finalAx
+			dsuFrame.AccY = finalAy
+			dsuFrame.AccZ = finalAz
 			a.dsuSrv.SendMotion(dsuFrame)
 		}
 	})
