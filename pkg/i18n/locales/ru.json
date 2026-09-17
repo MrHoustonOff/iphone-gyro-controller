@@ -146,7 +146,7 @@
     "recenter_desc": "Мгновенно сбрасывает виртуальное положение к исходному",
     "recenter_hint": "Пробел",
     "stats_desc": "Мониторинг потока данных в реальном времени",
-    "stats_hover_hint": "Удерживайте курсор на карточке 1 сек для описания",
+    "stats_hover_hint": "Удерживайте курсор на карточке 2 сек для описания",
     "stats_dsu_clients": "Клиенты DSU",
     "stats_dsu_clients_active": "активных",
     "stats_dsu_clients_initial": "0 активных",

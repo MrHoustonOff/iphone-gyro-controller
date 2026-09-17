@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="live_debug.title">3D Live Debug</title>
   <link rel="stylesheet" href="main.css">
+  <script src="/wails/ipc.js"></script>
+  <script src="/wails/runtime.js"></script>
   <style>
     /* ── Authentic Apple HIG Desktop Window Layout ───────────────────────────── */
     body {
@@ -902,60 +904,8 @@
       text-overflow: ellipsis;
     }
 
-    .stat-card.is-filling {
-      transform: translateY(-2.5px) scale(1.025);
-      border-color: rgba(10, 132, 255, 0.65);
-      box-shadow: 0 8px 24px rgba(10, 132, 255, 0.28), 0 2px 8px rgba(0, 0, 0, 0.2);
-      z-index: 6;
-    }
-
-    .stat-card.is-filled {
-      transform: translateY(-2.5px) scale(1.025);
-      border-color: rgba(10, 132, 255, 0.9);
-      box-shadow: 0 8px 28px rgba(10, 132, 255, 0.38), 0 2px 8px rgba(0, 0, 0, 0.2);
-      z-index: 6;
-    }
-
-    .stat-card-progress {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 3px;
-      background: rgba(255, 255, 255, 0.06);
+    .stat-card * {
       pointer-events: none;
-      z-index: 10;
-      overflow: hidden;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-
-    .stat-card:hover .stat-card-progress,
-    .stat-card.is-hovered .stat-card-progress {
-      opacity: 1;
-    }
-
-    .stat-card-progress-bar {
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, #0A84FF 0%, #5E5CE6 50%, #BF5AF2 100%);
-      box-shadow: 0 0 12px rgba(10, 132, 255, 0.9), 0 0 4px #5E5CE6;
-      transform: scaleX(0);
-      transform-origin: left;
-      opacity: 0;
-      transition: none;
-    }
-
-    .stat-card.is-filling .stat-card-progress-bar {
-      opacity: 1;
-      transform: scaleX(1);
-      transition: transform 1000ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease;
-    }
-
-    .stat-card.is-filled .stat-card-progress-bar {
-      opacity: 1;
-      transform: scaleX(1);
-      transition: none;
     }
 
     .stat-chip {
@@ -1102,7 +1052,7 @@
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      pointer-events: auto;
+      pointer-events: none !important;
       transition: opacity 0.22s cubic-bezier(0.16, 1, 0.3, 1), transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
       opacity: 0;
       transform: translateY(4px);
@@ -1439,7 +1389,6 @@
           <div class="stats-grid-2col">
             <!-- In Hz -->
             <div class="stat-card" id="card-in-hz" data-i18n-tip="live_debug.stats_in_hz_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_in_hz">Частота (Hz)</span>
@@ -1457,7 +1406,6 @@
 
             <!-- Latency (ms) -->
             <div class="stat-card" id="card-latency" data-i18n-tip="live_debug.stats_latency_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_latency">Задержка (мс)</span>
@@ -1475,7 +1423,6 @@
 
             <!-- Jitter (ms) -->
             <div class="stat-card" id="card-jitter" data-i18n-tip="live_debug.stats_jitter_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_jitter">Джиттер (мс)</span>
@@ -1493,7 +1440,6 @@
 
             <!-- Packet Loss -->
             <div class="stat-card" id="card-loss" data-i18n-tip="live_debug.stats_loss_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_loss">Потери пакетов</span>
@@ -1508,7 +1454,6 @@
 
             <!-- Raw Gyroscope -->
             <div class="stat-card full-width" id="card-raw-gyro" data-i18n-tip="live_debug.stats_raw_gyro_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_raw_gyro">Сырой гироскоп (°/s)</span>
@@ -1524,7 +1469,6 @@
 
             <!-- Raw Accelerometer -->
             <div class="stat-card full-width" id="card-raw-accel" data-i18n-tip="live_debug.stats_raw_accel_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_raw_accel">Сырой акселерометр (g)</span>
@@ -1554,7 +1498,6 @@
           <div class="stats-grid-2col">
             <!-- Out Hz -->
             <div class="stat-card" id="card-out-hz" data-i18n-tip="live_debug.stats_out_hz_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_out_hz">Частота DSU (Hz)</span>
@@ -1572,7 +1515,6 @@
 
             <!-- Pipeline Latency (ms) -->
             <div class="stat-card" id="card-pipe-ms" data-i18n-tip="live_debug.stats_pipe_latency_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_pipe_latency">Задержка пайплайна (мс)</span>
@@ -1590,7 +1532,6 @@
 
             <!-- DSU Clients Count -->
             <div class="stat-card full-width" id="card-dsu-clients" data-i18n-tip="live_debug.stats_dsu_clients_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_dsu_clients">Клиенты DSU</span>
@@ -1608,7 +1549,6 @@
 
             <!-- DSU Gyro Motion Output -->
             <div class="stat-card full-width" id="card-out-gyro" data-i18n-tip="live_debug.stats_out_gyro_tip">
-              <div class="stat-card-progress"><div class="stat-card-progress-bar"></div></div>
               <div class="stat-card-header">
                 <div class="stat-label-wrap">
                   <span class="stat-card-label" data-i18n="live_debug.stats_out_gyro">Выходной гироскоп DSU</span>
@@ -1767,7 +1707,7 @@
           "live_debug.cam_reset_title": "Сбросить положение камеры",
           "live_debug.stats_title": "Статистика",
           "live_debug.stats_desc": "Мониторинг потока данных в реальном времени",
-          "live_debug.stats_hover_hint": "Удерживайте курсор на карточке 1 сек для описания",
+          "live_debug.stats_hover_hint": "Удерживайте курсор на карточке 2 сек для описания",
           "live_debug.stats_record_start": "Начать запись",
           "live_debug.stats_record_stop": "Остановить",
           "live_debug.stats_recording": "Запись...",
@@ -1851,7 +1791,7 @@
           "live_debug.cam_reset_title": "Reset camera position",
           "live_debug.stats_title": "Statistics",
           "live_debug.stats_desc": "Real-time pipeline data stream monitoring",
-          "live_debug.stats_hover_hint": "Hover over card for 1 sec to reveal description",
+          "live_debug.stats_hover_hint": "Hover over card for 2 sec to reveal description",
           "live_debug.stats_record_start": "Start Recording",
           "live_debug.stats_record_stop": "Stop Recording",
           "live_debug.stats_recording": "Recording...",
@@ -2644,22 +2584,21 @@
         })
         .catch(() => {});
 
-      fetch(`${coreBaseUrl}/livedebug/status`)
-        .then(r => r.json())
-        .then(d => {
-          if (d && typeof d.device_connected === 'boolean') {
-            if (d.device_connected) {
-              lastFrameTime = performance.now();
-              setPhoneConnected(true);
-            } else {
-              setPhoneConnected(false);
+      async function checkDeviceStatus() {
+        if (window.go?.main?.LiveDebugApp?.GetDeviceStatus) {
+          try {
+            const connected = await window.go.main.LiveDebugApp.GetDeviceStatus();
+            if (typeof connected === 'boolean') {
+              if (connected) {
+                lastFrameTime = performance.now();
+                if (!isPhoneConnected) setPhoneConnected(true);
+              } else if (lastFrameTime === 0 || performance.now() - lastFrameTime > 4000) {
+                setPhoneConnected(false);
+              }
+              return;
             }
-          }
-        })
-        .catch(() => {});
-
-      // Background polling failsafe for device connection status
-      setInterval(() => {
+          } catch (e) {}
+        }
         fetch(`${coreBaseUrl}/livedebug/status`)
           .then(r => r.json())
           .then(d => {
@@ -2667,17 +2606,25 @@
               if (d.device_connected) {
                 lastFrameTime = performance.now();
                 if (!isPhoneConnected) setPhoneConnected(true);
+              } else if (lastFrameTime === 0 || performance.now() - lastFrameTime > 4000) {
+                setPhoneConnected(false);
               }
             }
           })
           .catch(() => {});
-      }, 2500);
+      }
 
-      // Telemetry silence watchdog (if frames stop for >6.0s, mark as disconnected)
+      // Initial query for status
+      checkDeviceStatus();
+
+      // Continuous failsafe polling for device connection status
+      setInterval(checkDeviceStatus, 1500);
+
+      // Telemetry silence watchdog
       setInterval(() => {
         if (isPhoneConnected && lastFrameTime > 0) {
-          if (performance.now() - lastFrameTime > 6000) {
-            setPhoneConnected(false);
+          if (performance.now() - lastFrameTime > 5000) {
+            checkDeviceStatus();
           }
         }
       }, 1000);
@@ -2713,11 +2660,10 @@
         }
       });
 
-      // ── Apple HIG 1s Delay + 1s Hold-to-Reveal Card Tooltip Engine ──
+      // ── Apple HIG 2s Hold-to-Reveal Card Tooltip Engine ──
       const tooltipEl = document.getElementById('stats-floating-tooltip');
       let currentHoverCard = null;
-      let cardDelayTimer = null;
-      let cardFillTimer = null;
+      let cardHoverTimer = null;
 
       function showCardTooltip(card) {
         if (!tooltipEl || !card) return;
@@ -2748,22 +2694,15 @@
         tooltipEl.classList.add('show');
       }
 
-      function resetCardHover(card) {
-        if (!card) return;
-        card.classList.remove('is-hovered', 'is-filling', 'is-filled');
-      }
-
       function hideCardTooltip() {
-        clearTimeout(cardDelayTimer);
-        clearTimeout(cardFillTimer);
-        cardDelayTimer = null;
-        cardFillTimer = null;
-
+        if (cardHoverTimer) {
+          clearTimeout(cardHoverTimer);
+          cardHoverTimer = null;
+        }
         if (currentHoverCard) {
-          resetCardHover(currentHoverCard);
+          currentHoverCard.classList.remove('is-hovered');
           currentHoverCard = null;
         }
-
         if (tooltipEl) {
           tooltipEl.classList.remove('show');
           tooltipEl.style.display = 'none';
@@ -2775,57 +2714,48 @@
 
         const cards = document.querySelectorAll('.stat-card[data-i18n-tip]');
         cards.forEach(card => {
-          card.addEventListener('pointerenter', () => {
+          card.addEventListener('mouseenter', () => {
             if (currentHoverCard && currentHoverCard !== card) {
-              resetCardHover(currentHoverCard);
+              hideCardTooltip();
             }
-            clearTimeout(cardDelayTimer);
-            clearTimeout(cardFillTimer);
-            if (tooltipEl) {
-              tooltipEl.classList.remove('show');
-              tooltipEl.style.display = 'none';
+            if (cardHoverTimer) {
+              clearTimeout(cardHoverTimer);
+              cardHoverTimer = null;
             }
 
             currentHoverCard = card;
-            resetCardHover(card);
             card.classList.add('is-hovered');
 
-            // Step 1: Wait exactly 1.0 second (1000ms) before starting fill animation
-            cardDelayTimer = setTimeout(() => {
-              if (currentHoverCard !== card) return;
-              card.classList.add('is-filling');
-
-              // Step 2: 1.0 second (1000ms) smooth fill animation
-              cardFillTimer = setTimeout(() => {
-                if (currentHoverCard !== card) return;
-                card.classList.remove('is-filling');
-                card.classList.add('is-filled');
+            // Wait 2.0s continuous hover before showing description tooltip
+            cardHoverTimer = setTimeout(() => {
+              if (currentHoverCard === card) {
                 showCardTooltip(card);
-              }, 1000);
-            }, 1000);
+              }
+            }, 2000);
           });
 
-          card.addEventListener('pointerleave', () => {
+          card.addEventListener('mouseleave', () => {
             if (currentHoverCard === card) {
               hideCardTooltip();
             } else {
-              resetCardHover(card);
+              card.classList.remove('is-hovered');
             }
           });
 
           card.addEventListener('click', (e) => {
             e.stopPropagation();
-            clearTimeout(cardDelayTimer);
-            clearTimeout(cardFillTimer);
-            if (card.classList.contains('is-filled') && tooltipEl.classList.contains('show')) {
+            if (cardHoverTimer) {
+              clearTimeout(cardHoverTimer);
+              cardHoverTimer = null;
+            }
+            if (currentHoverCard === card && tooltipEl.classList.contains('show')) {
               hideCardTooltip();
             } else {
               if (currentHoverCard && currentHoverCard !== card) {
-                resetCardHover(currentHoverCard);
+                hideCardTooltip();
               }
               currentHoverCard = card;
-              card.classList.remove('is-filling');
-              card.classList.add('is-hovered', 'is-filled');
+              card.classList.add('is-hovered');
               showCardTooltip(card);
             }
           });
@@ -3405,13 +3335,109 @@
 
       setupTooltips();
 
-      // ── WebSocket Real-time Quaternion Stream ──
+      // ── Unified Telemetry Data Processor ──
+      function handleTelemetryData(data) {
+        if (!data) return;
+
+        // Shutdown signal from parent application
+        if (data.action === 'shutdown') {
+          if (window.runtime?.Quit) {
+            window.runtime.Quit();
+          } else {
+            window.close();
+          }
+          return;
+        }
+
+        // Sync frame on connection
+        if (data.type === 'sync') {
+          if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
+          if (data.lang && data.lang !== currentLang) applyLang(data.lang);
+          if (typeof data.device_connected === 'boolean') {
+            if (data.device_connected) {
+              lastFrameTime = performance.now();
+              setPhoneConnected(true);
+            } else if (lastFrameTime === 0) {
+              setPhoneConnected(false);
+            }
+          }
+          return;
+        }
+
+        // Device connected status update
+        if (data.type === 'device_status') {
+          const connected = Boolean(data.connected);
+          if (connected) {
+            lastFrameTime = performance.now();
+            setPhoneConnected(true);
+          } else {
+            setPhoneConnected(false);
+          }
+          return;
+        }
+
+        // Broadcasted theme change from main window
+        if (data.type === 'theme') {
+          if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
+          return;
+        }
+
+        // Broadcasted language change from main window
+        if (data.type === 'lang') {
+          if (data.lang && data.lang !== currentLang) applyLang(data.lang);
+          return;
+        }
+
+        // Mark device as active on ANY valid telemetry packet
+        if (data.device_connected === true || (typeof data.in_hz === 'number' && data.in_hz > 0) || data.seq !== undefined) {
+          lastFrameTime = performance.now();
+          if (!isPhoneConnected) {
+            setPhoneConnected(true);
+          }
+        }
+
+        // Telemetry quaternion frame
+        const q0 = Number(data.q0);
+        const q1 = Number(data.q1);
+        const q2 = Number(data.q2);
+        const q3 = Number(data.q3);
+
+        if (!isNaN(q0) && !isNaN(q1) && !isNaN(q2) && !isNaN(q3) &&
+            (q0 !== 0 || q1 !== 0 || q2 !== 0 || q3 !== 0)) {
+          lastFrameTime = performance.now();
+          if (!isPhoneConnected) {
+            setPhoneConnected(true);
+          }
+          // Three.js coordinates: -q1 (pitch), -q2 (yaw), q3 (roll), q0 (w)
+          liveQuat.set(-q1, -q2, q3, q0);
+          liveQuat.normalize();
+        }
+
+        // Update real-time statistics panel and record stream
+        updateTelemetryStats(data);
+      }
+
+      // ── Wails Native Go Event Bridge ──
+      function registerWailsTelemetryBridge() {
+        if (window.runtime?.EventsOn) {
+          window.runtime.EventsOn('livedebug:telemetry', (payload) => {
+            try {
+              const data = (typeof payload === 'string') ? JSON.parse(payload) : payload;
+              handleTelemetryData(data);
+            } catch (e) {}
+          });
+        }
+      }
+      registerWailsTelemetryBridge();
+      window.addEventListener('DOMContentLoaded', registerWailsTelemetryBridge);
+
+      // ── Direct WebSocket Stream (Fallback & External Browser Support) ──
       let ws = null;
       let reconnectTimer = null;
 
       function updateWsStatus(connected) {
         if (!connected && (lastFrameTime === 0 || performance.now() - lastFrameTime > 4000)) {
-          setPhoneConnected(false);
+          checkDeviceStatus();
         }
       }
 
@@ -3421,8 +3447,7 @@
           reconnectTimer = null;
         }
 
-        const wsProtocol = (window.location.protocol === 'https:') ? 'wss:' : 'ws:';
-        const wsUrl = `${wsProtocol}//${getCoreHost()}/livedebug/ws`;
+        const wsUrl = `ws://${getCoreHost()}/livedebug/ws`;
 
         try {
           ws = new WebSocket(wsUrl);
@@ -3433,96 +3458,13 @@
         }
 
         ws.onopen = () => {
-          // Connected to core server WS - refresh status immediately
-          fetch(`${coreBaseUrl}/livedebug/status`)
-            .then(r => r.json())
-            .then(d => {
-              if (d && typeof d.device_connected === 'boolean') {
-                if (d.device_connected) {
-                  lastFrameTime = performance.now();
-                  setPhoneConnected(true);
-                }
-              }
-            })
-            .catch(() => {});
+          checkDeviceStatus();
         };
 
         ws.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-
-            // Shutdown signal from parent application
-            if (data.action === 'shutdown') {
-              if (window.runtime?.Quit) {
-                window.runtime.Quit();
-              } else {
-                window.close();
-              }
-              return;
-            }
-
-            // Sync frame on connection
-            if (data.type === 'sync') {
-              if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
-              if (data.lang && data.lang !== currentLang) applyLang(data.lang);
-              if (typeof data.device_connected === 'boolean') {
-                if (data.device_connected) {
-                  lastFrameTime = performance.now();
-                  setPhoneConnected(true);
-                } else if (lastFrameTime === 0) {
-                  setPhoneConnected(false);
-                }
-              }
-              return;
-            }
-
-            // Device connected status update
-            if (data.type === 'device_status') {
-              const connected = Boolean(data.connected);
-              if (connected) lastFrameTime = performance.now();
-              setPhoneConnected(connected);
-              return;
-            }
-
-            // Broadcasted theme change from main window
-            if (data.type === 'theme') {
-              if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
-              return;
-            }
-
-            // Broadcasted language change from main window
-            if (data.type === 'lang') {
-              if (data.lang && data.lang !== currentLang) applyLang(data.lang);
-              return;
-            }
-
-            // Mark device as active on ANY valid telemetry packet
-            if (data.device_connected === true || (typeof data.in_hz === 'number' && data.in_hz > 0) || data.seq !== undefined) {
-              lastFrameTime = performance.now();
-              if (!isPhoneConnected) {
-                setPhoneConnected(true);
-              }
-            }
-
-            // Telemetry quaternion frame
-            const q0 = Number(data.q0);
-            const q1 = Number(data.q1);
-            const q2 = Number(data.q2);
-            const q3 = Number(data.q3);
-
-            if (!isNaN(q0) && !isNaN(q1) && !isNaN(q2) && !isNaN(q3) &&
-                (q0 !== 0 || q1 !== 0 || q2 !== 0 || q3 !== 0)) {
-              lastFrameTime = performance.now();
-              if (!isPhoneConnected) {
-                setPhoneConnected(true);
-              }
-              // Three.js coordinates: -q1 (pitch), -q2 (yaw), q3 (roll), q0 (w)
-              liveQuat.set(-q1, -q2, q3, q0);
-              liveQuat.normalize();
-            }
-
-            // Update real-time statistics panel and record stream
-            updateTelemetryStats(data);
+            handleTelemetryData(data);
           } catch (e) {}
         };
 

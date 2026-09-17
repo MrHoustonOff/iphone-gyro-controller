@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gorilla/websocket"
 	"github.com/wailsapp/wails/v2"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
@@ -53,6 +54,50 @@ func (a *LiveDebugApp) startup(ctx context.Context) {
 			}
 		}
 	}()
+
+	// Native Go telemetry bridge: dials core server WS directly bypassing WebView2 loopback limits
+	go func() {
+		wsURL := fmt.Sprintf("ws://127.0.0.1:%d/livedebug/ws", HTTPPort)
+		for {
+			if a.ctx != nil && a.ctx.Err() != nil {
+				return
+			}
+			conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+			if err != nil {
+				time.Sleep(500 * time.Millisecond)
+				continue
+			}
+
+			for {
+				_, msg, err := conn.ReadMessage()
+				if err != nil {
+					conn.Close()
+					break
+				}
+				if a.ctx != nil {
+					wailsRuntime.EventsEmit(a.ctx, "livedebug:telemetry", string(msg))
+				}
+			}
+			time.Sleep(300 * time.Millisecond)
+		}
+	}()
+}
+
+// GetDeviceStatus checks device connection status directly from core server via Go HTTP.
+func (a *LiveDebugApp) GetDeviceStatus() bool {
+	client := &http.Client{Timeout: 500 * time.Millisecond}
+	resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/livedebug/status", HTTPPort))
+	if err != nil || resp == nil {
+		return false
+	}
+	defer resp.Body.Close()
+	var st struct {
+		DeviceConnected bool `json:"device_connected"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&st); err != nil {
+		return false
+	}
+	return st.DeviceConnected
 }
 
 func (a *LiveDebugApp) shutdown(ctx context.Context) {
@@ -128,8 +173,6 @@ func (a *LiveDebugApp) OpenInFolder(filePath string) {
 func runLiveDebug() {
 	debugApp := NewLiveDebugApp()
 
-	subFS, _ := fs.Sub(assets, "frontend/src")
-
 	err := wails.Run(&options.App{
 		Title:            "GyroBridge - Live Debug",
 		Width:            1120,
@@ -143,17 +186,8 @@ func runLiveDebug() {
 			Middleware: func(next http.Handler) http.Handler {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					p := strings.TrimPrefix(r.URL.Path, "/")
-					if p == "" || p == "index.html" || p == "index.htm" || p == "livedebug.html" {
-						if subFS != nil {
-							data, err := fs.ReadFile(subFS, "livedebug.html")
-							if err == nil {
-								w.Header().Set("Content-Type", "text/html; charset=utf-8")
-								w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-								w.WriteHeader(http.StatusOK)
-								w.Write(data)
-								return
-							}
-						}
+					if p == "" || p == "index.html" || p == "index.htm" {
+						r.URL.Path = "/livedebug.html"
 					}
 					next.ServeHTTP(w, r)
 				})

@@ -146,7 +146,7 @@
     "recenter_desc": "Instantly resets virtual orientation to neutral baseline",
     "recenter_hint": "Space",
     "stats_desc": "Real-time pipeline data stream monitoring",
-    "stats_hover_hint": "Hover over card for 1 sec to reveal description",
+    "stats_hover_hint": "Hover over card for 2 sec to reveal description",
     "stats_dsu_clients": "DSU Clients",
     "stats_dsu_clients_active": "active",
     "stats_dsu_clients_initial": "0 active",

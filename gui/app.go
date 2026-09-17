@@ -1029,6 +1029,7 @@ func (a *App) startup(ctx context.Context) {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 				w.Header().Set("Access-Control-Allow-Headers", "*")
+				w.Header().Set("Access-Control-Allow-Private-Network", "true")
 				if r.Method == http.MethodOptions {
 					w.WriteHeader(http.StatusOK)
 					return
@@ -1054,12 +1055,6 @@ func (a *App) startup(ctx context.Context) {
 				if err != nil {
 					return
 				}
-				a.liveDebugMu.Lock()
-				if a.liveDebugClients == nil {
-					a.liveDebugClients = make(map[*websocket.Conn]struct{})
-				}
-				a.liveDebugClients[conn] = struct{}{}
-				a.liveDebugMu.Unlock()
 
 				// Send immediate initial theme, language, and device connection sync frame
 				a.themeMu.RLock()
@@ -1078,7 +1073,15 @@ func (a *App) startup(ctx context.Context) {
 					"lang":             curL,
 					"device_connected": a.hasClient.Load(),
 				})
+
+				a.liveDebugMu.Lock()
+				if a.liveDebugClients == nil {
+					a.liveDebugClients = make(map[*websocket.Conn]struct{})
+				}
+				_ = conn.SetWriteDeadline(time.Now().Add(100 * time.Millisecond))
 				_ = conn.WriteMessage(websocket.TextMessage, syncBytes)
+				a.liveDebugClients[conn] = struct{}{}
+				a.liveDebugMu.Unlock()
 
 				go func(c *websocket.Conn) {
 					defer func() {
@@ -1120,6 +1123,17 @@ func (a *App) startup(ctx context.Context) {
 		for range ticker.C {
 			if a.hasClient.Load() {
 				a.emitStateChange()
+				// Continuous live orientation heartbeat feed to Live Debug window
+				q0 := float32(math.Float64frombits(a.curAhrsQ0.Load()))
+				q1 := float32(math.Float64frombits(a.curAhrsQ1.Load()))
+				q2 := float32(math.Float64frombits(a.curAhrsQ2.Load()))
+				q3 := float32(math.Float64frombits(a.curAhrsQ3.Load()))
+				a.liveDebugMu.RLock()
+				numDebug := len(a.liveDebugClients)
+				a.liveDebugMu.RUnlock()
+				if numDebug > 0 {
+					a.broadcastLiveDebug(q0, q1, q2, q3)
+				}
 			}
 		}
 	}()

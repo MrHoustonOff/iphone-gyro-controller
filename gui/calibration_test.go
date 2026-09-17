@@ -307,6 +307,16 @@ func TestLiveDebug_ThemeAndLangSync(t *testing.T) {
 	}
 }
 
+func TestLiveDebug_AppMethods(t *testing.T) {
+	debugApp := NewLiveDebugApp()
+	if debugApp == nil {
+		t.Fatal("NewLiveDebugApp returned nil")
+	}
+	if debugApp.GetDeviceStatus() {
+		t.Fatal("expected GetDeviceStatus to be false when core server is inactive")
+	}
+}
+
 func TestCalibration_UnconstrainedGestureRecognition(t *testing.T) {
 	app := &App{}
 
