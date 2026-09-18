@@ -338,6 +338,7 @@
     "bench_mode_platform": "Платформа",
     "bench_platform_title": "Платформа святилища (Zelda)",
     "bench_platform_sub": "3D-платформа аппарата святилища наклоняется от движений контроллера",
+    "bench_sensitivity_note": "Чувствительность в играх может отличаться. **Крайне рекомендуем** настраивать чувствительность непосредственно в игре (Zelda / CEMU / Ryujinx).",
     "bench_feed_dsu": "DSU",
     "bench_feed_raw": "Сырой",
     "bench_recenter": "Центр",

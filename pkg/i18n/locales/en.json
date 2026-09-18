@@ -338,6 +338,7 @@
     "bench_mode_platform": "Platform",
     "bench_platform_title": "Shrine Platform (Zelda)",
     "bench_platform_sub": "3D shrine apparatus platform tilts with controller motion",
+    "bench_sensitivity_note": "In-game sensitivity may vary. We **strongly recommend** tuning gyro sensitivity directly in the game settings (Zelda / CEMU / Ryujinx).",
     "bench_feed_dsu": "DSU",
     "bench_feed_raw": "Raw",
     "bench_recenter": "Recenter",

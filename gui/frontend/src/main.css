@@ -4352,10 +4352,10 @@ em {
 }
 
 .bench-target-viewport {
-  width: 140px;
+  width: 100%;
   height: 140px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(10, 132, 255, 0.08) 0%, rgba(0, 0, 0, 0.28) 100%);
+  border-radius: var(--radius-md);
+  background: radial-gradient(circle at 50% 50%, rgba(10, 132, 255, 0.08) 0%, rgba(0, 0, 0, 0.42) 100%);
   border: 1.5px solid var(--border);
   position: relative;
   display: flex;
@@ -4363,32 +4363,72 @@ em {
   justify-content: center;
   overflow: hidden;
   box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
 }
 
 [data-theme="light"] .bench-target-viewport {
-  background: radial-gradient(circle, rgba(0, 122, 255, 0.05) 0%, rgba(0, 0, 0, 0.06) 100%);
+  background: radial-gradient(circle at 50% 50%, rgba(0, 122, 255, 0.05) 0%, rgba(0, 0, 0, 0.05) 100%);
 }
 
+/* Sheikah Slate Viewfinder Corner L-Brackets */
+.bench-target-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: rgba(10, 132, 255, 0.45);
+  border-style: solid;
+  pointer-events: none;
+}
+
+.bench-target-corner.tl {
+  top: 8px;
+  left: 8px;
+  border-width: 2px 0 0 2px;
+  border-top-left-radius: 3px;
+}
+
+.bench-target-corner.tr {
+  top: 8px;
+  right: 8px;
+  border-width: 2px 2px 0 0;
+  border-top-right-radius: 3px;
+}
+
+.bench-target-corner.bl {
+  bottom: 8px;
+  left: 8px;
+  border-width: 0 0 2px 2px;
+  border-bottom-left-radius: 3px;
+}
+
+.bench-target-corner.br {
+  bottom: 8px;
+  right: 8px;
+  border-width: 0 2px 2px 0;
+  border-bottom-right-radius: 3px;
+}
+
+/* Center Reference Ticks and Rings */
 .bench-target-cross-v {
   position: absolute;
   width: 1px;
   height: 100%;
-  background: rgba(120, 120, 128, 0.25);
+  background: linear-gradient(180deg, transparent 0%, rgba(120, 120, 128, 0.18) 30%, rgba(120, 120, 128, 0.18) 70%, transparent 100%);
 }
 
 .bench-target-cross-h {
   position: absolute;
   height: 1px;
   width: 100%;
-  background: rgba(120, 120, 128, 0.25);
+  background: linear-gradient(90deg, transparent 0%, rgba(120, 120, 128, 0.18) 30%, rgba(120, 120, 128, 0.18) 70%, transparent 100%);
 }
 
 .bench-target-ring.r-outer {
   position: absolute;
-  width: 104px;
-  height: 104px;
+  width: 108px;
+  height: 108px;
   border-radius: 50%;
-  border: 1px dashed rgba(120, 120, 128, 0.35);
+  border: 1px dashed rgba(10, 132, 255, 0.25);
 }
 
 .bench-target-ring.r-inner {
@@ -4396,21 +4436,22 @@ em {
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 1px solid rgba(120, 120, 128, 0.2);
+  border: 1px solid rgba(120, 120, 128, 0.22);
 }
 
 .bench-target-center {
   position: absolute;
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: rgba(120, 120, 128, 0.4);
+  background: rgba(120, 120, 128, 0.45);
 }
 
+/* Moving Zelda Bow Aim Reticle */
 .bench-reticle-dot {
   position: absolute;
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   pointer-events: none;
   will-change: transform;
   display: flex;
@@ -4418,14 +4459,16 @@ em {
   justify-content: center;
   z-index: 5;
   transform: translate(0, 0);
+  transition: transform 0.04s cubic-bezier(0, 0, 0.2, 1);
 }
 
 .bench-reticle-circle {
-  width: 16px;
-  height: 16px;
+  position: absolute;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  border: 2px solid #0A84FF;
-  box-shadow: 0 0 8px rgba(10, 132, 255, 0.7);
+  border: 1.5px solid #0A84FF;
+  box-shadow: 0 0 10px rgba(10, 132, 255, 0.8), inset 0 0 6px rgba(10, 132, 255, 0.3);
 }
 
 .bench-reticle-sight {
@@ -4433,14 +4476,79 @@ em {
   height: 4px;
   border-radius: 50%;
   background: #FF3B30;
+  box-shadow: 0 0 6px rgba(255, 59, 48, 0.9);
   position: absolute;
+  z-index: 2;
 }
 
+.bench-reticle-tick {
+  position: absolute;
+  background: #0A84FF;
+}
+
+.bench-reticle-tick.top {
+  top: 0;
+  width: 1.5px;
+  height: 4px;
+}
+
+.bench-reticle-tick.bl {
+  bottom: 2px;
+  left: 2px;
+  width: 4px;
+  height: 1.5px;
+  transform: rotate(45deg);
+}
+
+.bench-reticle-tick.br {
+  bottom: 2px;
+  right: 2px;
+  width: 4px;
+  height: 1.5px;
+  transform: rotate(-45deg);
+}
+
+/* Viewport Telemetry HUD */
+.bench-target-hud {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.55);
+  padding: 2px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .bench-target-hud {
+  background: rgba(255, 255, 255, 0.85);
+  color: #1c1c1e;
+}
+
+/* In-Game Sensitivity Recommendation Banner */
 .bench-target-caption {
   font-size: 11px;
   color: var(--text-secondary);
   text-align: center;
-  line-height: 1.35;
+  line-height: 1.45;
+  padding: 6px 10px;
+  background: rgba(120, 120, 128, 0.08);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.bench-target-caption strong {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 /* Dual-Trace Oscilloscope */

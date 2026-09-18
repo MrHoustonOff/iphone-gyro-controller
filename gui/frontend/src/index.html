@@ -918,24 +918,34 @@
                           <span class="bench-aim-title" data-i18n="settings_modal.bench_aim_title">Прицел (как в Zelda)</span>
                           <div class="bench-aim-actions">
                             <button type="button" class="bench-btn-feed" id="btn-bench-feed-aim" title="Поток данных: DSU / Сырой">DSU</button>
-                            <button type="button" class="bench-btn-invert" id="btn-bench-inv-x" data-i18n="settings_modal.bench_inv_x" title="Инвертировать ось X (влево / вправо)">Инв. X</button>
-                            <button type="button" class="bench-btn-invert" id="btn-bench-inv-y" data-i18n="settings_modal.bench_inv_y" title="Инвертировать ось Y (вверх / вниз)">Инв. Y</button>
                             <button type="button" class="bench-btn-recenter" id="btn-bench-recenter-aim" data-i18n="settings_modal.bench_recenter">Центр</button>
                           </div>
                         </div>
                         <div class="bench-target-viewport">
+                          <div class="bench-target-corner tl"></div>
+                          <div class="bench-target-corner tr"></div>
+                          <div class="bench-target-corner bl"></div>
+                          <div class="bench-target-corner br"></div>
                           <div class="bench-target-cross-v"></div>
                           <div class="bench-target-cross-h"></div>
                           <div class="bench-target-ring r-outer"></div>
                           <div class="bench-target-ring r-inner"></div>
                           <div class="bench-target-center"></div>
-                          <!-- Interactive Moving Crosshair Dot -->
+                          <!-- Interactive Moving Zelda Bow Reticle -->
                           <div class="bench-reticle-dot" id="bench-reticle-dot">
                             <div class="bench-reticle-circle"></div>
+                            <div class="bench-reticle-tick top"></div>
+                            <div class="bench-reticle-tick bl"></div>
+                            <div class="bench-reticle-tick br"></div>
                             <div class="bench-reticle-sight"></div>
                           </div>
+                          <!-- Telemetry HUD -->
+                          <div class="bench-target-hud">
+                            <span id="bench-hud-aim-x">X: +0.0°</span>
+                            <span id="bench-hud-aim-y">Y: +0.0°</span>
+                          </div>
                         </div>
-                        <div class="bench-target-caption" data-i18n="settings_modal.bench_aim_sub">Перекрестие реагирует на скорость DSU в реальном времени</div>
+                        <div class="bench-target-caption" data-i18n="settings_modal.bench_sensitivity_note">Чувствительность в играх может отличаться. <strong>Крайне рекомендуем</strong> настраивать чувствительность непосредственно в игре (Zelda / CEMU / Ryujinx).</div>
                       </div>
                     </div>
 
@@ -956,7 +966,7 @@
                             <span id="bench-hud-roll">R: +0.0°</span>
                           </div>
                         </div>
-                        <div class="bench-target-caption" data-i18n="settings_modal.bench_platform_sub">3D-платформа аппарата святилища наклоняется от движений контроллера</div>
+                        <div class="bench-target-caption" data-i18n="settings_modal.bench_sensitivity_note">Чувствительность в играх может отличаться. <strong>Крайне рекомендуем</strong> настраивать чувствительность непосредственно в игре (Zelda / CEMU / Ryujinx).</div>
                       </div>
                     </div>
 
@@ -2303,10 +2313,10 @@
       const radY = vy * (Math.PI / 180);
       const radZ = vz * (Math.PI / 180);
 
-      // Pitch: tilting phone forward (+vx) tilts platform down away (-rotation.x)
+      // Pitch: tilting phone forward (+vx) tilts platform forward (+rotation.x)
       // Roll: tilting phone right (+vz) tilts platform down right (-rotation.z)
       // Yaw: turning phone right (+vy) rotates platform clockwise (-rotation.y)
-      this.pitch -= radX * dt;
+      this.pitch += radX * dt;
       this.roll -= radZ * dt;
       this.yaw -= radY * dt * 0.45;
 
@@ -2329,10 +2339,10 @@
 
       // Gravity acceleration down inclined surface
       // roll < 0 (right tilted down) -> ax > 0 (accelerate right)
-      // pitch < 0 (front tilted down) -> az < 0 (accelerate into screen)
+      // pitch > 0 (forward tilted down) -> az < 0 (accelerate into screen away from camera)
       const gravity = 26.0;
       const ax = -Math.sin(this.roll) * gravity;
-      const az = Math.sin(this.pitch) * gravity;
+      const az = -Math.sin(this.pitch) * gravity;
 
       this.ballVel.x += ax * dt;
       this.ballVel.z += az * dt;
@@ -2376,7 +2386,7 @@
       const pEl = document.getElementById('bench-hud-pitch');
       const rEl = document.getElementById('bench-hud-roll');
       if (pEl) {
-        const deg = -this.pitch * (180 / Math.PI);
+        const deg = this.pitch * (180 / Math.PI);
         pEl.textContent = `P: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
       }
       if (rEl) {
@@ -2483,26 +2493,6 @@
         this.recenter();
         PlatformGame.recenter();
       });
-
-      // Invert X / Invert Y buttons (Aim Reticle)
-      const btnInvX = document.getElementById('btn-bench-inv-x');
-      const btnInvY = document.getElementById('btn-bench-inv-y');
-      if (btnInvX) {
-        btnInvX.classList.toggle('active', this.invertX);
-        btnInvX.addEventListener('click', () => {
-          this.invertX = !this.invertX;
-          localStorage.setItem('gb_bench_inv_x', this.invertX ? 'true' : 'false');
-          btnInvX.classList.toggle('active', this.invertX);
-        });
-      }
-      if (btnInvY) {
-        btnInvY.classList.toggle('active', this.invertY);
-        btnInvY.addEventListener('click', () => {
-          this.invertY = !this.invertY;
-          localStorage.setItem('gb_bench_inv_y', this.invertY ? 'true' : 'false');
-          btnInvY.classList.toggle('active', this.invertY);
-        });
-      }
 
       // Wails 60 Hz telemetry event
       if (window.runtime && window.runtime.EventsOn) {
@@ -2705,17 +2695,15 @@
       const curY = (this.dataFeed === 'raw') ? rawY : outY;
       const curZ = (this.dataFeed === 'raw') ? rawZ : outZ;
 
-      // 2. Update Aim Reticle (Zelda mechanics: angular velocity integration)
-      const aimSpeed = 6.2; // px per degree
-      const signX = this.invertX ? -1 : 1;
-      const signY = this.invertY ? -1 : 1;
-      this.reticleX += curY * dt * aimSpeed * signX;
-      this.reticleY += -curX * dt * aimSpeed * signY;
+      // 2. Update Aim Reticle (Zelda mechanics: angular velocity integration, calibrated for widescreen)
+      const aimSpeed = 2.4; // px per degree
+      this.reticleX += curY * dt * aimSpeed;
+      this.reticleY += -curX * dt * aimSpeed;
 
       // Soft clamp to target viewport bounds
       const viewport = document.querySelector('.bench-target-viewport');
-      const maxW = viewport ? Math.max(80, (viewport.clientWidth / 2) - 16) : 140;
-      const maxH = viewport ? Math.max(40, (viewport.clientHeight / 2) - 16) : 56;
+      const maxW = viewport ? Math.max(80, (viewport.clientWidth / 2) - 18) : 150;
+      const maxH = viewport ? Math.max(40, (viewport.clientHeight / 2) - 18) : 52;
 
       if (this.reticleX > maxW) this.reticleX = maxW;
       if (this.reticleX < -maxW) this.reticleX = -maxW;
@@ -2776,6 +2764,17 @@
       const dot = document.getElementById('bench-reticle-dot');
       if (dot) {
         dot.style.transform = `translate(calc(-50% + ${Math.round(this.reticleX)}px), calc(-50% + ${Math.round(this.reticleY)}px))`;
+      }
+      const hudX = document.getElementById('bench-hud-aim-x');
+      const hudY = document.getElementById('bench-hud-aim-y');
+      const aimSpeed = 2.4;
+      if (hudX) {
+        const degX = (this.reticleX / aimSpeed);
+        hudX.textContent = `X: ${(degX >= 0 ? '+' : '')}${degX.toFixed(1)}°`;
+      }
+      if (hudY) {
+        const degY = (-this.reticleY / aimSpeed);
+        hudY.textContent = `Y: ${(degY >= 0 ? '+' : '')}${degY.toFixed(1)}°`;
       }
     },
 
