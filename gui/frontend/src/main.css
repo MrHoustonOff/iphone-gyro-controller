@@ -4419,11 +4419,13 @@ em {
   height: 100vh !important;
   border-radius: 0 !important;
   border: none !important;
-  background: radial-gradient(circle at 50% 40%, rgba(10, 132, 255, 0.12) 0%, #0d1117 100%) !important;
+  background-color: #080b12 !important;
+  background: radial-gradient(circle at 50% 35%, #141c28 0%, #06080e 100%) !important;
 }
 
 [data-theme="light"] .bench-platform-viewport.fullscreen {
-  background: radial-gradient(circle at 50% 40%, rgba(0, 122, 255, 0.10) 0%, #e5e9f0 100%) !important;
+  background-color: #dce4ee !important;
+  background: radial-gradient(circle at 50% 35%, #edf3fa 0%, #cbd6e4 100%) !important;
 }
 
 /* Fullscreen Top HUD */

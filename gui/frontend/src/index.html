@@ -2084,7 +2084,7 @@
   // ── Sound Alerts Manager ───────────────────────────────────────────────────
   const SoundManager = {
     audioCtx: null,
-    _lastPlayTs: { connect: 0, disconnect: 0 },
+    _lastPlayTs: { connect: 0, disconnect: 0, goal: 0, defeat: 0 },
 
     getAudioContext() {
       if (!this.audioCtx) {
@@ -2112,9 +2112,16 @@
       if (mode === 'off') return;
 
       const now = Date.now();
-      if (this._lastPlayTs[type] && now - this._lastPlayTs[type] < 600) {
+      const minInterval = (type === 'defeat') ? 1200 : (type === 'goal') ? 700 : 600;
+      if (this._lastPlayTs[type] && now - this._lastPlayTs[type] < minInterval) {
         return;
       }
+
+      if (type === 'defeat') {
+        if (typeof PlatformGame !== 'undefined' && PlatformGame.isOffline) return;
+        if (typeof TuningBench !== 'undefined' && TuningBench.isOffline) return;
+      }
+
       this._lastPlayTs[type] = now;
 
       if (type === 'goal') {
@@ -2166,6 +2173,82 @@
       osc.stop(startTime + duration);
     },
 
+    playFMBell(freq, startTime, duration, gainVal = 0.16, modRatio = 2.756, modDepth = 2.4) {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+
+      const carrier = ctx.createOscillator();
+      const modulator = ctx.createOscillator();
+      const modGain = ctx.createGain();
+      const mainGain = ctx.createGain();
+
+      carrier.type = 'sine';
+      carrier.frequency.setValueAtTime(freq, startTime);
+
+      modulator.type = 'sine';
+      modulator.frequency.setValueAtTime(freq * modRatio, startTime);
+
+      modGain.gain.setValueAtTime(freq * modDepth, startTime);
+      modGain.gain.exponentialRampToValueAtTime(0.01, startTime + Math.min(duration, 0.14));
+
+      modulator.connect(modGain);
+      modGain.connect(carrier.frequency);
+
+      mainGain.gain.setValueAtTime(0.0001, startTime);
+      mainGain.gain.exponentialRampToValueAtTime(gainVal, startTime + 0.008);
+      mainGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+      carrier.connect(mainGain);
+      mainGain.connect(ctx.destination);
+
+      carrier.start(startTime);
+      modulator.start(startTime);
+      carrier.stop(startTime + duration);
+      modulator.stop(startTime + duration);
+    },
+
+    playToneSweep(fromFreq, toFreq, startTime, duration, gainVal = 0.15) {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(fromFreq, startTime);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(10, toFreq), startTime + duration);
+      gain.gain.setValueAtTime(gainVal, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    },
+
+    playVoidPlunge(startTime) {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+      const bufferSize = Math.floor(ctx.sampleRate * 0.45);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.Q.value = 3.2;
+      filter.frequency.setValueAtTime(920, startTime);
+      filter.frequency.exponentialRampToValueAtTime(80, startTime + 0.40);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.12, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.42);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(startTime);
+      noise.stop(startTime + 0.45);
+    },
+
     playCuteConnect() {
       const ctx = this.getAudioContext();
       if (!ctx) return;
@@ -2201,15 +2284,23 @@
       const ctx = this.getAudioContext();
       if (!ctx) return;
       const now = ctx.currentTime;
-      // Zelda-style uplifting triumph chord: F5 (698Hz), A5 (880Hz), C6 (1046Hz), F6 (1397Hz)
-      const notes = [
-        { f: 698.46, t: 0.00, d: 0.18, g: 0.15 },
-        { f: 880.00, t: 0.08, d: 0.20, g: 0.16 },
-        { f: 1046.50, t: 0.16, d: 0.24, g: 0.18 },
-        { f: 1396.91, t: 0.24, d: 0.45, g: 0.20 }
+      // Legendary Zelda Secret / Puzzle Solved Fanfare (8 notes + resolving major chord)
+      const melody = [
+        { f: 783.99, t: 0.00, d: 0.22, g: 0.16 }, // G5
+        { f: 739.99, t: 0.10, d: 0.22, g: 0.16 }, // F#5
+        { f: 622.25, t: 0.20, d: 0.22, g: 0.17 }, // D#5
+        { f: 440.00, t: 0.30, d: 0.22, g: 0.18 }, // A4
+        { f: 415.30, t: 0.40, d: 0.24, g: 0.18 }, // G#4
+        { f: 659.25, t: 0.50, d: 0.24, g: 0.19 }, // E5
+        { f: 830.61, t: 0.60, d: 0.26, g: 0.20 }, // G#5
+        { f: 1046.5, t: 0.70, d: 0.95, g: 0.22 }, // C6 (triumphal resolve)
+        // Resolving harmony chord under C6
+        { f: 523.25, t: 0.71, d: 0.90, g: 0.13 }, // C5
+        { f: 1318.5, t: 0.72, d: 0.85, g: 0.14 }, // E6
+        { f: 1567.9, t: 0.73, d: 0.80, g: 0.12 }  // G6
       ];
-      for (const n of notes) {
-        this.playTone(n.f, now + n.t, n.d, n.g, 'sine');
+      for (const n of melody) {
+        this.playFMBell(n.f, now + n.t, n.d, n.g, 2.756, 2.4);
       }
     },
 
@@ -2217,15 +2308,22 @@
       const ctx = this.getAudioContext();
       if (!ctx) return;
       const now = ctx.currentTime;
-      // Soft gentle defeat drop: G4 (392Hz), Eb4 (311Hz), C4 (261Hz)
+      // Zelda shrine orb falling into the bottomless abyss:
+      // 1. Descending crystal chime
       const notes = [
-        { f: 392.00, t: 0.00, d: 0.16, g: 0.14 },
-        { f: 311.13, t: 0.10, d: 0.18, g: 0.12 },
-        { f: 261.63, t: 0.20, d: 0.35, g: 0.10 }
+        { f: 622.25, t: 0.00, d: 0.26, g: 0.15 }, // Eb5
+        { f: 523.25, t: 0.09, d: 0.30, g: 0.14 }, // C5
+        { f: 415.30, t: 0.18, d: 0.35, g: 0.13 }, // Ab4
+        { f: 349.23, t: 0.28, d: 0.50, g: 0.12 }  // F4
       ];
       for (const n of notes) {
         this.playTone(n.f, now + n.t, n.d, n.g, 'triangle');
+        this.playTone(n.f * 2.0, now + n.t, n.d * 0.4, n.g * 0.25, 'sine');
       }
+      // 2. Void abyss plunge whoosh (filtered white noise sweep)
+      this.playVoidPlunge(now);
+      // 3. Sub-bass abyss drop
+      this.playToneSweep(110, 35, now, 0.45, 0.18);
     },
 
     preview() {
@@ -2340,12 +2438,19 @@
     platformGroup: null,
     slabMesh: null,
     slabMat: null,
+    pedMid: null,
+    pedLow: null,
+    gimbalHub: null,
+    hubRing: null,
     edgeLine: null,
+    runeGroup: null,
     ballMesh: null,
     holeMesh: null,
+    beaconMesh: null,
     score: 0,
     record: parseInt(localStorage.getItem('gb_platform_record') || '0', 10),
     isFullscreen: false,
+    isOffline: false,
     pitch: 0, // rad (tilt around X)
     roll: 0,  // rad (tilt around Z)
     yaw: 0,   // rad (turn around Y)
@@ -2354,11 +2459,11 @@
     ballPosY: 0,
     ballVelY: 0,
     isFalling: false,
-    holePos: { x: 1.3, z: -0.4 },
-    ballRadius: 0.24,
-    platformSizeX: 4.6,
-    platformSizeZ: 2.7,
-    platformThickness: 0.22,
+    holePos: { x: 0.9, z: -0.3 },
+    ballRadius: 0.14,
+    platformSizeX: 3.4,
+    platformSizeZ: 2.1,
+    platformThickness: 0.16,
     confettiParticles: [],
     confettiColors: [0xff3b30, 0xff9500, 0xffcc00, 0x34c759, 0x00c7be, 0x32ade6, 0xaf52de, 0xff2d55, 0x00e5ff],
     lastTickTs: 0,
@@ -2377,34 +2482,35 @@
       const scene = new THREE.Scene();
       this.scene = scene;
 
-      const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 50);
-      camera.position.set(0, 3.8, 5.0);
-      camera.lookAt(0, -0.1, 0);
+      const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 50);
+      camera.position.set(0, 3.6, 4.4);
+      camera.lookAt(0, -0.05, 0);
       this.camera = camera;
 
-      // Studio Lighting: Sheikah Shrine glow
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+      // Studio Lighting: Sheikah Shrine ancient illumination
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
       scene.add(ambientLight);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
-      dirLight.position.set(4, 9, 6);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      dirLight.position.set(3.5, 8.0, 5.0);
       scene.add(dirLight);
 
-      const cyanPoint = new THREE.PointLight(0x00e5ff, 1.5, 12);
-      cyanPoint.position.set(0, 2.2, 0);
+      const cyanPoint = new THREE.PointLight(0x00e5ff, 1.4, 10);
+      cyanPoint.position.set(0, 2.0, 0);
       scene.add(cyanPoint);
 
-      // Platform Root Group
+      // Platform Root Group (rotates on central gimbal pivot)
       const platformGroup = new THREE.Group();
       scene.add(platformGroup);
       this.platformGroup = platformGroup;
 
-      // 1. Base stone slate slab (completely open floating platform with no walls)
       const isLight = (document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light');
+
+      // 1. Main Ancient Sheikah Slate Top Slab
       const slabGeo = new THREE.BoxGeometry(this.platformSizeX, this.platformThickness, this.platformSizeZ);
       const slateMat = new THREE.MeshStandardMaterial({
-        color: isLight ? 0x2e3440 : 0x1d2028,
-        roughness: 0.70,
+        color: isLight ? 0x2e3644 : 0x151821,
+        roughness: 0.65,
         metalness: 0.35
       });
       const slabMesh = new THREE.Mesh(slabGeo, slateMat);
@@ -2412,41 +2518,57 @@
       this.slabMesh = slabMesh;
       this.slabMat = slateMat;
 
-      // 2. Sheikah perimeter runic edge line (flush with top surface, no curbs/walls)
+      // 2. Zelda Underside Tapered Stone Pedestal & Gimbal Hub
+      const pedMat = new THREE.MeshStandardMaterial({
+        color: isLight ? 0x242a36 : 0x0e1017,
+        roughness: 0.72,
+        metalness: 0.28
+      });
+      this.pedMat = pedMat;
+
+      const pedMidGeo = new THREE.BoxGeometry(this.platformSizeX * 0.88, 0.08, this.platformSizeZ * 0.88);
+      const pedMid = new THREE.Mesh(pedMidGeo, pedMat);
+      pedMid.position.y = -this.platformThickness / 2 - 0.04;
+      platformGroup.add(pedMid);
+      this.pedMid = pedMid;
+
+      const pedLowGeo = new THREE.BoxGeometry(this.platformSizeX * 0.68, 0.10, this.platformSizeZ * 0.68);
+      const pedLow = new THREE.Mesh(pedLowGeo, pedMat);
+      pedLow.position.y = -this.platformThickness / 2 - 0.13;
+      platformGroup.add(pedLow);
+      this.pedLow = pedLow;
+
+      // Gimbal Hub & Cyan Energy Ring
+      const hubGeo = new THREE.CylinderGeometry(0.30, 0.36, 0.18, 24);
+      const hubMat = new THREE.MeshStandardMaterial({
+        color: 0x9b752c,
+        metalness: 0.88,
+        roughness: 0.25
+      });
+      const gimbalHub = new THREE.Mesh(hubGeo, hubMat);
+      gimbalHub.position.y = -this.platformThickness / 2 - 0.24;
+      platformGroup.add(gimbalHub);
+      this.gimbalHub = gimbalHub;
+
+      const hubRingGeo = new THREE.TorusGeometry(0.32, 0.015, 12, 32);
+      const hubRingMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+      const hubRing = new THREE.Mesh(hubRingGeo, hubRingMat);
+      hubRing.rotation.x = Math.PI / 2;
+      hubRing.position.y = -this.platformThickness / 2 - 0.24;
+      platformGroup.add(hubRing);
+      this.hubRing = hubRing;
+
+      // 3. Surface Sheikah Runic Circuitry & Border Line
       this.createEdgeLine();
+      this.createRunes();
 
-      // 3. Ancient Sheikah Center Concentric Rings
-      const ringGeo = new THREE.RingGeometry(0.38, 0.44, 32);
-      const ringMat = new THREE.MeshBasicMaterial({
-        color: 0x00e5ff,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.55
-      });
-      const centerRing = new THREE.Mesh(ringGeo, ringMat);
-      centerRing.rotation.x = -Math.PI / 2;
-      centerRing.position.y = this.platformThickness / 2 + 0.003;
-      platformGroup.add(centerRing);
-
-      const dotGeo = new THREE.CircleGeometry(0.11, 24);
-      const dotMat = new THREE.MeshBasicMaterial({
-        color: 0x00e5ff,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.65
-      });
-      const centerDot = new THREE.Mesh(dotGeo, dotMat);
-      centerDot.rotation.x = -Math.PI / 2;
-      centerDot.position.y = this.platformThickness / 2 + 0.004;
-      platformGroup.add(centerDot);
-
-      // 4. Sheikah Ancient Goal Hole / Funnel
+      // 4. Sheikah Ancient Goal Socket (Receptacle)
       const holeGroup = new THREE.Group();
 
       // Deep void pit
-      const holePitGeo = new THREE.CircleGeometry(0.28, 32);
+      const holePitGeo = new THREE.CircleGeometry(0.18, 32);
       const holePitMat = new THREE.MeshBasicMaterial({
-        color: 0x07090e,
+        color: 0x030508,
         side: THREE.DoubleSide
       });
       const holePit = new THREE.Mesh(holePitGeo, holePitMat);
@@ -2454,57 +2576,81 @@
       holePit.position.y = this.platformThickness / 2 + 0.002;
       holeGroup.add(holePit);
 
-      // Outer glowing energy rim (Vibrant Cyan / Amber Sheikah ring)
-      const holeRimGeo = new THREE.RingGeometry(0.26, 0.33, 32);
+      // Outer metallic bronze collar
+      const collarGeo = new THREE.TorusGeometry(0.19, 0.016, 12, 32);
+      const collarMat = new THREE.MeshStandardMaterial({
+        color: 0x9b752c,
+        metalness: 0.88,
+        roughness: 0.28
+      });
+      const collar = new THREE.Mesh(collarGeo, collarMat);
+      collar.rotation.x = Math.PI / 2;
+      collar.position.y = this.platformThickness / 2 + 0.003;
+      holeGroup.add(collar);
+
+      // Glowing Sheikah energetic pulse ring
+      const holeRimGeo = new THREE.RingGeometry(0.15, 0.19, 32);
       const holeRimMat = new THREE.MeshBasicMaterial({
         color: 0x00e5ff,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.90
+        opacity: 0.92
       });
       const holeRim = new THREE.Mesh(holeRimGeo, holeRimMat);
       holeRim.rotation.x = -Math.PI / 2;
-      holeRim.position.y = this.platformThickness / 2 + 0.003;
+      holeRim.position.y = this.platformThickness / 2 + 0.004;
       holeGroup.add(holeRim);
 
-      // Inner glowing core accent
-      const holeCoreGeo = new THREE.CircleGeometry(0.12, 24);
-      const holeCoreMat = new THREE.MeshBasicMaterial({
-        color: 0xffd60a,
-        side: THREE.DoubleSide,
+      // Ethereal vertical energy beacon beam rising from the socket
+      const beaconGeo = new THREE.CylinderGeometry(0.08, 0.16, 0.9, 16, 1, true);
+      const beaconMat = new THREE.MeshBasicMaterial({
+        color: 0x00e5ff,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.32,
+        side: THREE.DoubleSide,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
       });
-      const holeCore = new THREE.Mesh(holeCoreGeo, holeCoreMat);
-      holeCore.rotation.x = -Math.PI / 2;
-      holeCore.position.y = this.platformThickness / 2 + 0.004;
-      holeGroup.add(holeCore);
+      const beaconMesh = new THREE.Mesh(beaconGeo, beaconMat);
+      beaconMesh.position.y = this.platformThickness / 2 + 0.45;
+      holeGroup.add(beaconMesh);
+      this.beaconMesh = beaconMesh;
 
       platformGroup.add(holeGroup);
       this.holeMesh = holeGroup;
 
-      // 5. Ancient Bronze Ball with Sheikah Equator Ring
+      // 5. Ancient Sheikah Orb (Ball)
       const ballGroup = new THREE.Group();
       const ballGeo = new THREE.SphereGeometry(this.ballRadius, 32, 32);
       const ballMat = new THREE.MeshStandardMaterial({
         color: 0xd4af37,
-        roughness: 0.28,
-        metalness: 0.88
+        roughness: 0.22,
+        metalness: 0.90
       });
       const ballCore = new THREE.Mesh(ballGeo, ballMat);
       ballGroup.add(ballCore);
 
-      const ballRingGeo = new THREE.TorusGeometry(this.ballRadius + 0.004, 0.012, 12, 32);
-      const ballRingMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
-      const ballRing = new THREE.Mesh(ballRingGeo, ballRingMat);
-      ballGroup.add(ballRing);
+      // Equator & meridian cyan energy rings
+      const eqRingGeo = new THREE.TorusGeometry(this.ballRadius + 0.002, 0.007, 12, 32);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+      const eqRing = new THREE.Mesh(eqRingGeo, ringMat);
+      ballGroup.add(eqRing);
+
+      const merRingGeo = new THREE.TorusGeometry(this.ballRadius + 0.002, 0.007, 12, 32);
+      const merRing = new THREE.Mesh(merRingGeo, ringMat);
+      merRing.rotation.y = Math.PI / 2;
+      ballGroup.add(merRing);
+
+      // Local light attached to ball
+      const ballLight = new THREE.PointLight(0x00e5ff, 0.70, 1.2);
+      ballGroup.add(ballLight);
 
       this.ballPosY = this.platformThickness / 2 + this.ballRadius;
       ballGroup.position.set(0, this.ballPosY, 0);
       platformGroup.add(ballGroup);
       this.ballMesh = ballGroup;
 
-      // Event listeners for Fullscreen Toggle and Escape key
+      // Fullscreen Toggle and Escape Key
       document.getElementById('btn-bench-platform-fullscreen')?.addEventListener('click', (e) => {
         e.stopPropagation();
         this.toggleFullscreen();
@@ -2526,8 +2672,8 @@
         if (this.edgeLine.geometry) this.edgeLine.geometry.dispose();
       }
       const THREE = window.THREE;
-      const hx = this.platformSizeX / 2 - 0.03;
-      const hz = this.platformSizeZ / 2 - 0.03;
+      const hx = this.platformSizeX / 2 - 0.04;
+      const hz = this.platformSizeZ / 2 - 0.04;
       const y = this.platformThickness / 2 + 0.003;
       const points = [
         new THREE.Vector3(-hx, y, -hz),
@@ -2540,10 +2686,71 @@
       const edgeMat = new THREE.LineBasicMaterial({
         color: 0x00e5ff,
         transparent: true,
-        opacity: 0.75
+        opacity: 0.85
       });
       this.edgeLine = new THREE.Line(edgeGeo, edgeMat);
       this.platformGroup.add(this.edgeLine);
+    },
+
+    createRunes() {
+      if (!this.platformGroup || !window.THREE) return;
+      if (this.runeGroup) {
+        this.platformGroup.remove(this.runeGroup);
+      }
+      const THREE = window.THREE;
+      const runeGroup = new THREE.Group();
+      const y = this.platformThickness / 2 + 0.003;
+
+      // Outer concentric ring
+      const ring1Geo = new THREE.RingGeometry(0.32, 0.36, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00e5ff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.60
+      });
+      const ring1 = new THREE.Mesh(ring1Geo, ringMat);
+      ring1.rotation.x = -Math.PI / 2;
+      ring1.position.y = y;
+      runeGroup.add(ring1);
+
+      // Inner concentric ring
+      const ring2Geo = new THREE.RingGeometry(0.18, 0.21, 32);
+      const ring2 = new THREE.Mesh(ring2Geo, ringMat);
+      ring2.rotation.x = -Math.PI / 2;
+      ring2.position.y = y + 0.001;
+      runeGroup.add(ring2);
+
+      // Center Sheikah eye dot
+      const dotGeo = new THREE.CircleGeometry(0.07, 24);
+      const dot = new THREE.Mesh(dotGeo, ringMat);
+      dot.rotation.x = -Math.PI / 2;
+      dot.position.y = y + 0.002;
+      runeGroup.add(dot);
+
+      // 4 Radiating Sheikah circuit lines to corners
+      const hx = this.platformSizeX / 2 - 0.25;
+      const hz = this.platformSizeZ / 2 - 0.25;
+      const circuitMat = new THREE.LineBasicMaterial({
+        color: 0x00e5ff,
+        transparent: true,
+        opacity: 0.50
+      });
+      const rays = [
+        [new THREE.Vector3(0.36, y, 0), new THREE.Vector3(hx, y, 0)],
+        [new THREE.Vector3(-0.36, y, 0), new THREE.Vector3(-hx, y, 0)],
+        [new THREE.Vector3(0.25, y, 0.25), new THREE.Vector3(hx, y, hz)],
+        [new THREE.Vector3(-0.25, y, 0.25), new THREE.Vector3(-hx, y, hz)],
+        [new THREE.Vector3(0.25, y, -0.25), new THREE.Vector3(hx, y, -hz)],
+        [new THREE.Vector3(-0.25, y, -0.25), new THREE.Vector3(-hx, y, -hz)]
+      ];
+      for (const pts of rays) {
+        const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+        runeGroup.add(new THREE.Line(lineGeo, circuitMat));
+      }
+
+      this.platformGroup.add(runeGroup);
+      this.runeGroup = runeGroup;
     },
 
     toggleFullscreen() {
@@ -2564,12 +2771,15 @@
         btn.title = this.isFullscreen ? (I18n.t('settings_modal.bench_exit_fullscreen') || 'Свернуть') : (I18n.t('settings_modal.bench_fullscreen') || 'На весь экран');
       }
 
-      // In fullscreen, expand platform even wider along X and reset mini-game score
       if (this.isFullscreen) {
-        this.platformSizeX = 7.4;
+        this.platformSizeX = 4.4;
+        this.platformSizeZ = 2.6;
+        this.platformThickness = 0.18;
         this.score = 0;
       } else {
-        this.platformSizeX = 4.6;
+        this.platformSizeX = 3.4;
+        this.platformSizeZ = 2.1;
+        this.platformThickness = 0.16;
       }
 
       this.rebuildPlatformGeometry();
@@ -2581,21 +2791,44 @@
     rebuildPlatformGeometry() {
       if (!this.slabMesh || !window.THREE) return;
       const THREE = window.THREE;
+
       if (this.slabMesh.geometry) this.slabMesh.geometry.dispose();
       this.slabMesh.geometry = new THREE.BoxGeometry(this.platformSizeX, this.platformThickness, this.platformSizeZ);
+
+      if (this.pedMid && this.pedMid.geometry) {
+        this.pedMid.geometry.dispose();
+        this.pedMid.geometry = new THREE.BoxGeometry(this.platformSizeX * 0.88, 0.08, this.platformSizeZ * 0.88);
+        this.pedMid.position.y = -this.platformThickness / 2 - 0.04;
+      }
+      if (this.pedLow && this.pedLow.geometry) {
+        this.pedLow.geometry.dispose();
+        this.pedLow.geometry = new THREE.BoxGeometry(this.platformSizeX * 0.68, 0.10, this.platformSizeZ * 0.68);
+        this.pedLow.position.y = -this.platformThickness / 2 - 0.13;
+      }
+      if (this.gimbalHub) {
+        this.gimbalHub.position.y = -this.platformThickness / 2 - 0.24;
+      }
+      if (this.hubRing) {
+        this.hubRing.position.y = -this.platformThickness / 2 - 0.24;
+      }
+
       this.createEdgeLine();
+      this.createRunes();
     },
 
     updateTheme(theme) {
       const isLight = (theme === 'light');
       if (this.slabMat) {
-        this.slabMat.color.setHex(isLight ? 0x2e3440 : 0x1d2028);
+        this.slabMat.color.setHex(isLight ? 0x2e3644 : 0x151821);
+      }
+      if (this.pedMat) {
+        this.pedMat.color.setHex(isLight ? 0x242a36 : 0x0e1017);
       }
     },
 
     spawnHole() {
-      const marginX = 0.55;
-      const marginZ = 0.45;
+      const marginX = 0.40;
+      const marginZ = 0.35;
       const maxSpawnX = (this.platformSizeX / 2) - this.ballRadius - marginX;
       const maxSpawnZ = (this.platformSizeZ / 2) - this.ballRadius - marginZ;
 
@@ -2606,7 +2839,7 @@
         randX = (Math.random() * 2 - 1) * maxSpawnX;
         randZ = (Math.random() * 2 - 1) * maxSpawnZ;
         attempts++;
-      } while (Math.hypot(randX, randZ) < 0.9 && attempts < 25);
+      } while (Math.hypot(randX, randZ) < 0.65 && attempts < 25);
 
       this.holePos = { x: randX, z: randZ };
       if (this.holeMesh) {
@@ -2618,7 +2851,7 @@
       if (!this.platformGroup || !window.THREE) return;
       const THREE = window.THREE;
       const count = 48;
-      const geom = new THREE.PlaneGeometry(0.10, 0.06);
+      const geom = new THREE.PlaneGeometry(0.09, 0.05);
 
       for (let i = 0; i < count; i++) {
         const color = this.confettiColors[Math.floor(Math.random() * this.confettiColors.length)];
@@ -2633,8 +2866,8 @@
         mesh.position.set(posX, yPos, posZ);
 
         const angle = Math.random() * Math.PI * 2;
-        const speedH = 1.0 + Math.random() * 2.4;
-        const speedY = 2.5 + Math.random() * 3.2;
+        const speedH = 0.9 + Math.random() * 2.2;
+        const speedY = 2.4 + Math.random() * 3.0;
 
         this.platformGroup.add(mesh);
         this.confettiParticles.push({
@@ -2696,6 +2929,14 @@
       }
     },
 
+    onDisconnect() {
+      this.isOffline = true;
+      this.isFalling = false;
+      this.ballVel.x = 0;
+      this.ballVel.z = 0;
+      this.ballVelY = 0;
+    },
+
     recenter() {
       this.pitch = 0;
       this.roll = 0;
@@ -2731,20 +2972,16 @@
 
     onMotion(vx, vy, vz, dt) {
       if (!this.initialized || !this.platformGroup) return;
+      this.isOffline = false;
 
-      // Encapsulated angular velocity integration (matching Zelda client thread)
       const radX = vx * (Math.PI / 180);
       const radY = vy * (Math.PI / 180);
       const radZ = vz * (Math.PI / 180);
 
-      // Pitch: tilting phone forward (+vx) tilts platform forward (+rotation.x)
-      // Roll: tilting phone right (+vz) tilts platform down right (-rotation.z)
-      // Yaw: turning phone right (+vy) rotates platform clockwise (-rotation.y)
       this.pitch += radX * dt;
       this.roll -= radZ * dt;
       this.yaw -= radY * dt * 0.45;
 
-      // Soft clamp tilt angle to +/- 42 degrees (0.73 rad)
       const maxTilt = 0.73;
       if (this.pitch > maxTilt) this.pitch = maxTilt;
       if (this.pitch < -maxTilt) this.pitch = -maxTilt;
@@ -2761,8 +2998,28 @@
     updatePhysics(dt) {
       if (!this.platformGroup || !this.ballMesh) return;
 
+      // When disconnected / offline: smoothly return platform to level and ball to center
+      if (this.isOffline) {
+        const levelSpeed = Math.min(1.0, dt * 6.0);
+        this.pitch += (0 - this.pitch) * levelSpeed;
+        this.roll += (0 - this.roll) * levelSpeed;
+        this.yaw += (0 - this.yaw) * levelSpeed;
+        this.platformGroup.rotation.set(this.pitch, this.yaw, this.roll);
+
+        this.ballPos.x += (0 - this.ballPos.x) * levelSpeed;
+        this.ballPos.z += (0 - this.ballPos.z) * levelSpeed;
+        this.ballVel.x = 0;
+        this.ballVel.z = 0;
+        this.ballVelY = 0;
+        this.isFalling = false;
+        this.ballPosY = this.platformThickness / 2 + this.ballRadius;
+        this.ballMesh.scale.set(1, 1, 1);
+        this.ballMesh.position.set(this.ballPos.x, this.ballPosY, this.ballPos.z);
+        this.updateHud();
+        return;
+      }
+
       if (this.isFalling) {
-        // Ball plunges down into the void
         this.ballVelY -= 32.0 * dt;
         this.ballPosY += this.ballVelY * dt;
         this.ballPos.x += this.ballVel.x * dt;
@@ -2785,27 +3042,25 @@
         return;
       }
 
-      // Gravity acceleration down inclined surface:
-      // When roll < 0 (right tilted down) -> ax > 0 (accelerate right)
-      // When pitch > 0 (near edge down) -> az > 0 (accelerate towards camera down slope)
-      const gravity = 26.0;
+      // Gravity acceleration along inclined plane
+      const gravity = 25.0;
       const ax = -Math.sin(this.roll) * gravity;
       const az = Math.sin(this.pitch) * gravity;
 
       this.ballVel.x += ax * dt;
       this.ballVel.z += az * dt;
 
-      // Suction pull when near the goal hole
+      // Suction pull near goal hole
       const distToHole = Math.hypot(this.ballPos.x - this.holePos.x, this.ballPos.z - this.holePos.z);
-      if (distToHole < 0.42) {
-        const pull = (0.42 - distToHole) * 32.0;
+      if (distToHole < 0.32) {
+        const pull = (0.32 - distToHole) * 30.0;
         const angle = Math.atan2(this.holePos.z - this.ballPos.z, this.holePos.x - this.ballPos.x);
         this.ballVel.x += Math.cos(angle) * pull * dt;
         this.ballVel.z += Math.sin(angle) * pull * dt;
       }
 
-      // Goal detection: ball enters hole!
-      if (distToHole < 0.20) {
+      // Goal detection: ball enters hole
+      if (distToHole < 0.15) {
         this.score++;
         if (this.score > this.record) {
           this.record = this.score;
@@ -2830,18 +3085,21 @@
       this.ballPos.x += this.ballVel.x * dt;
       this.ballPos.z += this.ballVel.z * dt;
 
-      // Check if ball rolls over the open edge of the platform!
+      // Check if ball rolls over the open edge of the platform
       const halfX = this.platformSizeX / 2;
       const halfZ = this.platformSizeZ / 2;
-      const contactRadius = this.ballRadius * 0.75;
+      const contactRadius = this.ballRadius * 0.70;
       const overEdge = (Math.abs(this.ballPos.x) > halfX + contactRadius || Math.abs(this.ballPos.z) > halfZ + contactRadius);
 
       if (overEdge) {
+        if (this.isOffline) {
+          this.respawnBall();
+          return;
+        }
         this.isFalling = true;
-        this.ballVelY = -1.0;
+        this.ballVelY = -0.8;
         this.ballPosY = this.platformThickness / 2 + this.ballRadius;
 
-        // Defeat sound and score reset with shake animation
         if (typeof SoundManager !== 'undefined' && SoundManager.play) {
           SoundManager.play('defeat');
         }
@@ -2853,7 +3111,7 @@
         return;
       }
 
-      // Position ball on top of the slab
+      // Position ball on top of slab
       this.ballPosY = this.platformThickness / 2 + this.ballRadius;
       this.ballMesh.position.x = this.ballPos.x;
       this.ballMesh.position.y = this.ballPosY;
@@ -2902,6 +3160,10 @@
       this.updatePhysics(dt);
       this.updateConfetti(dt);
 
+      if (this.beaconMesh && this.beaconMesh.material) {
+        this.beaconMesh.material.opacity = 0.26 + Math.sin(now * 0.005) * 0.12;
+      }
+
       const canvas = document.getElementById('bench-platform-canvas');
       if (canvas) {
         const rect = canvas.getBoundingClientRect();
@@ -2911,7 +3173,18 @@
           const dpr = Math.min(window.devicePixelRatio || 1, 2);
           if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
             this.renderer.setSize(w, h, false);
-            this.camera.aspect = w / h;
+            const aspect = w / h;
+            this.camera.aspect = aspect;
+
+            const fovRad = (this.camera.fov * Math.PI) / 180;
+            const targetHalfW = this.platformSizeX * 0.90;
+            const targetHalfH = this.platformSizeZ * 1.10;
+            const distForW = targetHalfW / (Math.tan(fovRad / 2) * aspect);
+            const distForH = targetHalfH / Math.tan(fovRad / 2);
+            const dist = Math.max(distForW, distForH, 4.2);
+
+            this.camera.position.set(0, dist * 0.72, dist * 0.90);
+            this.camera.lookAt(0, -0.05, 0);
             this.camera.updateProjectionMatrix();
           }
         }
@@ -3072,6 +3345,10 @@
       if (fpsStat) {
         fpsStat.textContent = '-- Hz';
       }
+
+      if (typeof PlatformGame !== 'undefined' && PlatformGame.onDisconnect) {
+        PlatformGame.onDisconnect();
+      }
     },
 
     setWaitingState() {
@@ -3088,6 +3365,10 @@
       if (stabilityTag) {
         stabilityTag.textContent = I18n.t('settings_modal.bench_status_still') || 'Покой';
         stabilityTag.className = 'bench-status-tag still';
+      }
+
+      if (typeof PlatformGame !== 'undefined' && PlatformGame.onDisconnect) {
+        PlatformGame.onDisconnect();
       }
     },
 
@@ -3107,6 +3388,10 @@
       const fpsStat = document.getElementById('bench-fps-stat');
       if (fpsStat) {
         fpsStat.textContent = `${Math.round(hz || 60)} Hz`;
+      }
+
+      if (typeof PlatformGame !== 'undefined') {
+        PlatformGame.isOffline = false;
       }
     },
 
@@ -3166,6 +3451,9 @@
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
         this.rafId = null;
+      }
+      if (typeof PlatformGame !== 'undefined' && PlatformGame.onDisconnect) {
+        PlatformGame.onDisconnect();
       }
       const canvas = document.getElementById('bench-oscilloscope-canvas');
       if (canvas) {
