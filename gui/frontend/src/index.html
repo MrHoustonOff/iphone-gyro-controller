@@ -195,15 +195,7 @@
                   </g>
                 </svg>
               </div>
-              <div class="hud-level-action-row">
-                <span class="hud-level-status" id="hud-level-status">LEVEL</span>
-                <button type="button" class="btn-hud-quick-cal" id="btn-hud-quick-cal" title="Быстрая калибровка горизонта (1 сек)">
-                  <svg class="quick-cal-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-                  </svg>
-                  <span data-i18n="status.quick_cal">Быстрая калибровка</span>
-                </button>
-              </div>
+              <span class="hud-level-status" id="hud-level-status">LEVEL</span>
             </div>
 
             <!-- Subtle Stillness Recalibration Hint Dropdown Banner -->
@@ -216,7 +208,6 @@
                 </svg>
                 <div class="level-recal-content">
                   <span class="level-recal-text" data-i18n="status.recal_hint">Телефон неподвижен, но горизонт смещен. Если устройство лежит ровно, возможно, стоит выполнить калибровку.</span>
-                  <button type="button" class="btn-level-quick-cal" id="btn-banner-quick-cal" data-i18n="status.quick_cal_btn">Быстрая калибровка (1 сек)</button>
                 </div>
                 <button type="button" class="level-recal-close" id="btn-recal-hint-close" aria-label="Dismiss">
                   <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -7122,57 +7113,10 @@
 
       // Recalibration hint banner click: opens calibration wizard directly
       document.getElementById('level-recal-hint')?.addEventListener('click', (e) => {
-        if (e.target.closest('#btn-recal-hint-close') || e.target.closest('#btn-banner-quick-cal')) return;
+        if (e.target.closest('#btn-recal-hint-close')) return;
         this.hideRecalHint(true);
         const slot = (this.lastState && this.lastState.activeSlot >= 0) ? this.lastState.activeSlot : 0;
         CalibrationWizard.openToSlot(slot);
-      });
-
-      // Click on inclinometer widget: instant AHRS reset to neutral (zeros pitch, roll, and yaw needle)
-      document.getElementById('gyro-hud-bezel')?.addEventListener('click', async () => {
-        if (window.go?.main?.App?.ResetAHRS) {
-          await window.go.main.App.ResetAHRS().catch(() => {});
-          showToast(I18n.t('status.horizon_recenter') || 'Горизонт сброшен в нейтраль');
-        }
-      });
-
-      // Quick 1-Second Calibration handler (calibrates stationary zero-bias & horizon gravity in 1 tap)
-      const runQuickCal = async (btn) => {
-        if (!window.go?.main?.App?.QuickCalibrate) return;
-        if (btn) {
-          btn.disabled = true;
-          btn.classList.add('calibrating');
-          btn.textContent = (I18n.t('status.quick_cal_progress') || 'Калибровка... (1 сек)');
-        }
-        try {
-          const res = await window.go.main.App.QuickCalibrate();
-          if (res && res.success) {
-            showToast(I18n.t('status.quick_cal_success') || 'Горизонт и гироскоп откалиброваны!');
-            AppState.hideRecalHint(true);
-          } else {
-            showToast(res?.error || (I18n.t('calibration.error_moved_during_rest') || 'Устройство двигалось. Положите на стол и повторите.'));
-          }
-        } catch (e) {
-          showToast('Ошибка калибровки: ' + e);
-        } finally {
-          if (btn) {
-            btn.disabled = false;
-            btn.classList.remove('calibrating');
-            const origKey = btn.id === 'btn-banner-quick-cal' ? 'status.quick_cal_btn' : 'status.quick_cal';
-            const origFallback = btn.id === 'btn-banner-quick-cal' ? 'Быстрая калибровка (1 сек)' : 'Быстрая калибровка';
-            btn.textContent = (I18n.t(origKey) || origFallback);
-          }
-        }
-      };
-
-      document.getElementById('btn-hud-quick-cal')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        runQuickCal(document.getElementById('btn-hud-quick-cal'));
-      });
-
-      document.getElementById('btn-banner-quick-cal')?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        runQuickCal(document.getElementById('btn-banner-quick-cal'));
       });
 
       // Open separate 3D LiveDebug window from stats header button
@@ -7187,7 +7131,6 @@
       document.getElementById('btn-header-stats')?.addEventListener('click', onOpenStats);
       document.getElementById('link-live-debug')?.addEventListener('click', onOpenStats);
 
-
       // Listen for real-time state changes from Wails backend
       if (window.runtime && window.runtime.EventsOn) {
         window.runtime.EventsOn('state:change', (state) => {
@@ -7201,9 +7144,6 @@
         window.runtime.EventsOn('device:connected', () => {
           AppState._reconnectCooldownTs = Date.now();
           AppState._stillnessStart = 0;
-          if (window.go?.main?.App?.ResetAHRS) {
-            window.go.main.App.ResetAHRS().catch(() => {});
-          }
           if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
             CalibrationWizard.hideDisconnectAlert();
           }

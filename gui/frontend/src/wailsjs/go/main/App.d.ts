@@ -36,8 +36,6 @@ export function PlaySystemSound(arg1:string):Promise<void>;
 
 export function PreviewMatrix(arg1:any):Promise<void>;
 
-export function QuickCalibrate():Promise<Record<string, any>>;
-
 export function ResetAHRS():Promise<void>;
 
 export function ResetGyroFilter():Promise<void>;

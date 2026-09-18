@@ -886,13 +886,13 @@
         <span id="txt-sub-socket">Разорвать связь</span>
       </button>
 
-      <button class="btn-sub-action" id="btn-screenlock">
+      <button class="btn-sub-action active" id="btn-screenlock">
         <svg viewBox="0 0 24 24">
           <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
           <line x1="8" y1="21" x2="16" y2="21"></line>
           <line x1="12" y1="17" x2="12" y2="21"></line>
         </svg>
-        <span id="txt-sub-screenlock">Не гасить экран: Выкл</span>
+        <span id="txt-sub-screenlock">Не гасить экран: Вкл</span>
       </button>
     </div>
 
@@ -1078,7 +1078,7 @@ document.getElementById('device-model-label').textContent = deviceModel;
 // 4. Screen Lock (WakeLock API & Silent Loop Fallback)
 // ─────────────────────────────────────────────────────────────────────────────
 let wakeLock = null;
-let wakeLockEnabled = false;
+let wakeLockEnabled = true;
 const btnScreenlock = document.getElementById('btn-screenlock');
 const txtSubScreenlock = document.getElementById('txt-sub-screenlock');
 
@@ -1134,34 +1134,18 @@ if (btnScreenlock) {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     if (wakeLockEnabled) requestWakeLock();
-    // Zero out stale gyro velocities immediately upon waking up
-    dsuPitch = 0;
-    dsuYaw   = 0;
-    dsuRoll  = 0;
-    motionReady = false;
-    lastMotionTime = performance.now();
-
-    // If socket disconnected while asleep, reconnect immediately
-    if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
-      if (!deliberateDisconnect) {
-        connectWSS();
-      }
-    } else if (ws.readyState === WebSocket.OPEN) {
+    if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
       try { ws.send(JSON.stringify({ type: 'visibility', visible: true })); } catch (e) {}
     }
   } else if (document.visibilityState === 'hidden') {
-    // Zero out rates when entering background/lock screen
-    dsuPitch = 0;
-    dsuYaw   = 0;
-    dsuRoll  = 0;
     if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
       try { ws.send(JSON.stringify({ type: 'visibility', visible: false })); } catch (e) {}
     }
   }
 });
 
-// Initial WakeLock UI state (starts off until user taps with required browser gesture)
-updateWakeLockUI();
+// Initial WakeLock request
+requestWakeLock();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. OLED Screensaver & Anti-Touch Shield (Smart Hold & Swipe Unlock)
@@ -1497,7 +1481,6 @@ let outQx = 0, outQy = 0, outQz = 0, outQw = 1;
 let dsuPitch = 0, dsuYaw = 0, dsuRoll = 0;
 let dsuAccX = 0, dsuAccY = 0, dsuAccZ = 0;
 let lastMotionTime = 0;
-let motionReady = false;
 
 const bubble    = document.getElementById('gyro-bubble');
 const yawGroup  = document.getElementById('gyro-yaw-group');
@@ -1532,10 +1515,7 @@ function onOrientation(e) {
   // Update Visual HUD Level (60 FPS SVG animation)
   updateHUDLevel(curBeta, curGamma, curAlpha);
 
-  if (motionReady && performance.now() - lastMotionTime > 200) {
-    dsuPitch = 0;
-    dsuYaw   = 0;
-    dsuRoll  = 0;
+  if (performance.now() - lastMotionTime > 200) {
     sendFrame();
   }
 }
@@ -1586,7 +1566,6 @@ function readRawAccel(e) {
 }
 
 function onMotion(e) {
-  motionReady = true;
   lastMotionTime = performance.now();
   onSensorDataReceived();
 
@@ -1628,9 +1607,6 @@ function sendFrame() {
 setInterval(() => {
   if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
     if (performance.now() - lastMotionTime > 1200) {
-      dsuPitch = 0;
-      dsuYaw   = 0;
-      dsuRoll  = 0;
       sendFrame();
     }
   }

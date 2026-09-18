@@ -417,10 +417,6 @@
     "paused": "Paused",
     "recal_hint": "Device is stationary but axes are off-center. If placed on a flat surface, consider recalibrating.",
     "horizon_recenter": "Horizon reset to neutral",
-    "quick_cal": "Quick Calibration",
-    "quick_cal_btn": "Quick Calibration (1s)",
-    "quick_cal_progress": "Calibrating... (1s)",
-    "quick_cal_success": "Horizon and gyro calibrated!",
     "waiting_sensors": "waiting for sensors..."
   }
 }
