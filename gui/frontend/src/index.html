@@ -221,7 +221,7 @@
             <!-- Apple-styled Telemetry & Network Health Row -->
             <div class="telemetry-row">
               <span class="metric-pill" id="device-hz">60 Hz</span>
-              <span class="metric-pill" id="device-ping">3 ms</span>
+              <span class="metric-pill" id="device-ping"><span id="device-ping-txt">3 ms</span><canvas id="main-net-spark-canvas" width="48" height="14" class="main-net-spark"></canvas></span>
               <span class="metric-pill network-health" id="network-health" data-i18n="calibration.network_quality_optimal">Отличное соединение</span>
             </div>
 
@@ -898,6 +898,20 @@
                 <div class="settings-section">
                   <div class="settings-section-header" data-i18n="settings_modal.bench_title">Тест отклика в реальном времени</div>
                   <div class="settings-bench-card">
+                    <!-- Offline Frosted Glass Blur Overlay -->
+                    <div class="bench-offline-overlay" id="bench-offline-overlay">
+                      <div class="bench-offline-card">
+                        <div class="bench-offline-icon-box">
+                          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                          </svg>
+                        </div>
+                        <div class="bench-offline-title" data-i18n="settings_modal.bench_offline_title">Нет подключения к телефону</div>
+                        <div class="bench-offline-desc" data-i18n="settings_modal.bench_offline_desc">Подключите iPhone по Wi-Fi для тестирования отклика в реальном времени</div>
+                      </div>
+                    </div>
+
                     <!-- Live Status Header & Mini-Game Switcher -->
                     <div class="bench-status-bar">
                       <div class="bench-live-pill offline" id="bench-live-pill">
@@ -945,7 +959,7 @@
                             <span id="bench-hud-aim-y">Y: +0.0°</span>
                           </div>
                         </div>
-                        <div class="bench-target-caption" data-i18n="settings_modal.bench_sensitivity_note">Чувствительность в играх может отличаться. <strong>Крайне рекомендуем</strong> настраивать чувствительность непосредственно в игре (Zelda / CEMU / Ryujinx).</div>
+                        <div class="bench-target-caption" data-i18n="settings_modal.bench_sensitivity_note">Отклик в тесте может отличаться от игры. <strong>Крайне рекомендуем</strong> настраивать параметры в нашем приложении, ориентируясь непосредственно на ощущения в самой игре!</div>
                       </div>
                     </div>
 
@@ -962,11 +976,12 @@
                         <div class="bench-platform-viewport">
                           <canvas id="bench-platform-canvas"></canvas>
                           <div class="bench-platform-hud">
+                            <span id="bench-hud-score" class="bench-hud-score">Цели: 0</span>
                             <span id="bench-hud-pitch">P: +0.0°</span>
                             <span id="bench-hud-roll">R: +0.0°</span>
                           </div>
                         </div>
-                        <div class="bench-target-caption" data-i18n="settings_modal.bench_sensitivity_note">Чувствительность в играх может отличаться. <strong>Крайне рекомендуем</strong> настраивать чувствительность непосредственно в игре (Zelda / CEMU / Ryujinx).</div>
+                        <div class="bench-target-caption" data-i18n="settings_modal.bench_sensitivity_note">Отклик в тесте может отличаться от игры. <strong>Крайне рекомендуем</strong> настраивать параметры в нашем приложении, ориентируясь непосредственно на ощущения в самой игре!</div>
                       </div>
                     </div>
 
@@ -987,6 +1002,10 @@
                       <canvas id="bench-oscilloscope-canvas" class="bench-canvas" width="340" height="95"></canvas>
                       <div class="bench-osc-footer">
                         <span class="bench-noise-readout" id="bench-noise-stat">Подавление шума: --%</span>
+                        <div class="bench-net-spark-wrap" title="Задержка сети (Ping / Jitter)">
+                          <span class="bench-net-spark-ping" id="bench-net-ping">3 ms</span>
+                          <canvas id="bench-net-spark-canvas" width="60" height="15"></canvas>
+                        </div>
                         <span class="bench-rate-readout" id="bench-fps-stat">-- Hz</span>
                       </div>
                     </div>
@@ -2143,6 +2162,96 @@
     }
   };
 
+  // ── Network Telemetry Mini-Sparkline (Ping & Jitter) ──────────────────────
+  const NetSparkline = {
+    history: [3, 4, 3, 5, 4, 3, 3, 4, 3, 4, 3, 3, 4],
+    maxLen: 32,
+
+    push(pingMs) {
+      const val = (typeof pingMs === 'number' && pingMs >= 0) ? pingMs : 3;
+      this.history.push(val);
+      if (this.history.length > this.maxLen) {
+        this.history.shift();
+      }
+      this.render();
+    },
+
+    render() {
+      this.drawToCanvas('main-net-spark-canvas', 48, 14);
+      this.drawToCanvas('bench-net-spark-canvas', 60, 15);
+    },
+
+    drawToCanvas(canvasId, w, h) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+      }
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+
+      const n = this.history.length;
+      if (n < 2) {
+        ctx.restore();
+        return;
+      }
+
+      let minVal = 0;
+      let maxVal = 16;
+      for (let i = 0; i < n; i++) {
+        if (this.history[i] > maxVal) maxVal = this.history[i];
+      }
+      const range = maxVal - minVal || 1;
+      const pad = 1.5;
+      const availH = h - pad * 2;
+      const dx = (w - pad * 2) / (this.maxLen - 1);
+      const startX = w - pad - (n - 1) * dx;
+
+      const lastPing = this.history[n - 1];
+      let strokeColor = '#30D158'; // Apple Green
+      let fillColor = 'rgba(48, 209, 88, 0.22)';
+      if (lastPing > 35) {
+        strokeColor = '#FF9F0A'; // Apple Orange
+        fillColor = 'rgba(255, 159, 10, 0.22)';
+      }
+      if (lastPing > 75) {
+        strokeColor = '#FF453A'; // Apple Red
+        fillColor = 'rgba(255, 69, 58, 0.22)';
+      }
+
+      ctx.beginPath();
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (let i = 0; i < n; i++) {
+        const x = startX + i * dx;
+        const norm = (this.history[i] - minVal) / range;
+        const y = h - pad - norm * availH;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // Translucent gradient fill under curve
+      ctx.lineTo(startX + (n - 1) * dx, h);
+      ctx.lineTo(startX, h);
+      ctx.closePath();
+      const grad = ctx.createLinearGradient(0, 0, 0, h);
+      grad.addColorStop(0, fillColor);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      ctx.restore();
+    }
+  };
+
   // ── Zelda 3D Shrine Platform Mini-Game (Apparatus Simulator) ───────────────
   const PlatformGame = {
     initialized: false,
@@ -2151,14 +2260,20 @@
     camera: null,
     platformGroup: null,
     ballMesh: null,
+    holeMesh: null,
+    score: 0,
     pitch: 0, // rad (tilt around X)
     roll: 0,  // rad (tilt around Z)
     yaw: 0,   // rad (turn around Y)
     ballPos: { x: 0, z: 0 },
     ballVel: { x: 0, z: 0 },
-    ballRadius: 0.26,
-    platformSize: 3.4,
+    holePos: { x: 1.3, z: -0.4 },
+    ballRadius: 0.24,
+    platformSizeX: 4.6,
+    platformSizeZ: 2.7,
     platformThickness: 0.22,
+    confettiParticles: [],
+    confettiColors: [0xff3b30, 0xff9500, 0xffcc00, 0x34c759, 0x00c7be, 0x32ade6, 0xaf52de, 0xff2d55, 0x00e5ff],
     lastTickTs: 0,
 
     init() {
@@ -2197,8 +2312,8 @@
       scene.add(platformGroup);
       this.platformGroup = platformGroup;
 
-      // 1. Base stone slate slab (Myahm Agana style)
-      const slabGeo = new THREE.BoxGeometry(this.platformSize, this.platformThickness, this.platformSize);
+      // 1. Base stone slate slab (Myahm Agana style, elongated rectangular ratio)
+      const slabGeo = new THREE.BoxGeometry(this.platformSizeX, this.platformThickness, this.platformSizeZ);
       const isLight = document.body.getAttribute('data-theme') === 'light';
       const slateMat = new THREE.MeshStandardMaterial({
         color: isLight ? 0xc8cdd5 : 0x1d2028,
@@ -2218,53 +2333,95 @@
       });
       const curbH = 0.14;
       const curbW = 0.08;
-      const curbOffset = this.platformSize / 2 - curbW / 2;
       const curbY = this.platformThickness / 2 + curbH / 2;
 
-      // North & South curbs
-      const curbGeoZ = new THREE.BoxGeometry(this.platformSize, curbH, curbW);
+      // North & South curbs (spanning platformSizeX)
+      const curbGeoZ = new THREE.BoxGeometry(this.platformSizeX, curbH, curbW);
       const curbN = new THREE.Mesh(curbGeoZ, curbMat);
-      curbN.position.set(0, curbY, -curbOffset);
+      curbN.position.set(0, curbY, -this.platformSizeZ / 2 + curbW / 2);
       platformGroup.add(curbN);
       const curbS = new THREE.Mesh(curbGeoZ, curbMat);
-      curbS.position.set(0, curbY, curbOffset);
+      curbS.position.set(0, curbY, this.platformSizeZ / 2 - curbW / 2);
       platformGroup.add(curbS);
 
-      // East & West curbs
-      const curbGeoX = new THREE.BoxGeometry(curbW, curbH, this.platformSize);
+      // East & West curbs (spanning platformSizeZ)
+      const curbGeoX = new THREE.BoxGeometry(curbW, curbH, this.platformSizeZ);
       const curbE = new THREE.Mesh(curbGeoX, curbMat);
-      curbE.position.set(curbOffset, curbY, 0);
+      curbE.position.set(this.platformSizeX / 2 - curbW / 2, curbY, 0);
       platformGroup.add(curbE);
       const curbWst = new THREE.Mesh(curbGeoX, curbMat);
-      curbWst.position.set(-curbOffset, curbY, 0);
+      curbWst.position.set(-this.platformSizeX / 2 + curbW / 2, curbY, 0);
       platformGroup.add(curbWst);
 
       // 3. Ancient Sheikah Center Concentric Rings
-      const ringGeo = new THREE.RingGeometry(0.48, 0.54, 32);
+      const ringGeo = new THREE.RingGeometry(0.38, 0.44, 32);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x00e5ff,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.65
+        opacity: 0.55
       });
       const centerRing = new THREE.Mesh(ringGeo, ringMat);
       centerRing.rotation.x = -Math.PI / 2;
       centerRing.position.y = this.platformThickness / 2 + 0.003;
       platformGroup.add(centerRing);
 
-      const dotGeo = new THREE.CircleGeometry(0.14, 24);
+      const dotGeo = new THREE.CircleGeometry(0.11, 24);
       const dotMat = new THREE.MeshBasicMaterial({
         color: 0x00e5ff,
         side: THREE.DoubleSide,
         transparent: true,
-        opacity: 0.75
+        opacity: 0.65
       });
       const centerDot = new THREE.Mesh(dotGeo, dotMat);
       centerDot.rotation.x = -Math.PI / 2;
       centerDot.position.y = this.platformThickness / 2 + 0.004;
       platformGroup.add(centerDot);
 
-      // 4. Ancient Bronze Ball with Sheikah Equator Ring
+      // 4. Sheikah Ancient Goal Hole / Funnel
+      const holeGroup = new THREE.Group();
+
+      // Deep void pit
+      const holePitGeo = new THREE.CircleGeometry(0.28, 32);
+      const holePitMat = new THREE.MeshBasicMaterial({
+        color: 0x07090e,
+        side: THREE.DoubleSide
+      });
+      const holePit = new THREE.Mesh(holePitGeo, holePitMat);
+      holePit.rotation.x = -Math.PI / 2;
+      holePit.position.y = this.platformThickness / 2 + 0.002;
+      holeGroup.add(holePit);
+
+      // Outer glowing energy rim (Vibrant Cyan / Amber Sheikah ring)
+      const holeRimGeo = new THREE.RingGeometry(0.26, 0.33, 32);
+      const holeRimMat = new THREE.MeshBasicMaterial({
+        color: 0x00e5ff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.90
+      });
+      const holeRim = new THREE.Mesh(holeRimGeo, holeRimMat);
+      holeRim.rotation.x = -Math.PI / 2;
+      holeRim.position.y = this.platformThickness / 2 + 0.003;
+      holeGroup.add(holeRim);
+
+      // Inner glowing core accent
+      const holeCoreGeo = new THREE.CircleGeometry(0.12, 24);
+      const holeCoreMat = new THREE.MeshBasicMaterial({
+        color: 0xffd60a,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.85
+      });
+      const holeCore = new THREE.Mesh(holeCoreGeo, holeCoreMat);
+      holeCore.rotation.x = -Math.PI / 2;
+      holeCore.position.y = this.platformThickness / 2 + 0.004;
+      holeGroup.add(holeCore);
+
+      platformGroup.add(holeGroup);
+      this.holeMesh = holeGroup;
+
+      // 5. Ancient Bronze Ball with Sheikah Equator Ring
       const ballGroup = new THREE.Group();
       const ballGeo = new THREE.SphereGeometry(this.ballRadius, 32, 32);
       const ballMat = new THREE.MeshStandardMaterial({
@@ -2287,6 +2444,94 @@
       this.recenter();
     },
 
+    spawnHole() {
+      const marginX = 0.55;
+      const marginZ = 0.45;
+      const maxSpawnX = (this.platformSizeX / 2) - this.ballRadius - marginX;
+      const maxSpawnZ = (this.platformSizeZ / 2) - this.ballRadius - marginZ;
+
+      let randX = 0;
+      let randZ = 0;
+      let attempts = 0;
+      do {
+        randX = (Math.random() * 2 - 1) * maxSpawnX;
+        randZ = (Math.random() * 2 - 1) * maxSpawnZ;
+        attempts++;
+      } while (Math.hypot(randX, randZ) < 0.9 && attempts < 25);
+
+      this.holePos = { x: randX, z: randZ };
+      if (this.holeMesh) {
+        this.holeMesh.position.set(randX, 0, randZ);
+      }
+    },
+
+    triggerConfetti(posX, posZ) {
+      if (!this.platformGroup || !window.THREE) return;
+      const THREE = window.THREE;
+      const count = 46;
+      const geom = new THREE.PlaneGeometry(0.09, 0.05);
+
+      for (let i = 0; i < count; i++) {
+        const color = this.confettiColors[Math.floor(Math.random() * this.confettiColors.length)];
+        const mat = new THREE.MeshBasicMaterial({
+          color: color,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 1.0
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        const yPos = this.platformThickness / 2 + 0.08;
+        mesh.position.set(posX, yPos, posZ);
+
+        const angle = Math.random() * Math.PI * 2;
+        const speedH = 1.0 + Math.random() * 2.2;
+        const speedY = 2.4 + Math.random() * 3.0;
+
+        this.platformGroup.add(mesh);
+        this.confettiParticles.push({
+          mesh: mesh,
+          vx: Math.cos(angle) * speedH,
+          vy: speedY,
+          vz: Math.sin(angle) * speedH,
+          rotSpeedX: (Math.random() - 0.5) * 16,
+          rotSpeedY: (Math.random() - 0.5) * 16,
+          rotSpeedZ: (Math.random() - 0.5) * 16,
+          age: 0,
+          life: 1.1 + Math.random() * 0.7
+        });
+      }
+    },
+
+    updateConfetti(dt) {
+      if (!this.confettiParticles.length) return;
+      const gravity = 8.0;
+      for (let i = this.confettiParticles.length - 1; i >= 0; i--) {
+        const p = this.confettiParticles[i];
+        p.age += dt;
+        if (p.age >= p.life) {
+          if (p.mesh.parent) p.mesh.parent.remove(p.mesh);
+          if (p.mesh.geometry) p.mesh.geometry.dispose();
+          if (p.mesh.material) p.mesh.material.dispose();
+          this.confettiParticles.splice(i, 1);
+          continue;
+        }
+
+        p.vy -= gravity * dt;
+        p.mesh.position.x += p.vx * dt;
+        p.mesh.position.y += p.vy * dt;
+        p.mesh.position.z += p.vz * dt;
+
+        p.mesh.rotation.x += p.rotSpeedX * dt;
+        p.mesh.rotation.y += p.rotSpeedY * dt;
+        p.mesh.rotation.z += p.rotSpeedZ * dt;
+
+        const remaining = p.life - p.age;
+        if (remaining < 0.35) {
+          p.mesh.material.opacity = Math.max(0, remaining / 0.35);
+        }
+      }
+    },
+
     recenter() {
       this.pitch = 0;
       this.roll = 0;
@@ -2302,6 +2547,13 @@
         this.ballMesh.position.set(0, this.platformThickness / 2 + this.ballRadius, 0);
         this.ballMesh.rotation.set(0, 0, 0);
       }
+      for (const p of this.confettiParticles) {
+        if (p.mesh.parent) p.mesh.parent.remove(p.mesh);
+        if (p.mesh.geometry) p.mesh.geometry.dispose();
+        if (p.mesh.material) p.mesh.material.dispose();
+      }
+      this.confettiParticles = [];
+      this.spawnHole();
       this.updateHud();
     },
 
@@ -2337,15 +2589,40 @@
     updatePhysics(dt) {
       if (!this.platformGroup || !this.ballMesh) return;
 
-      // Gravity acceleration down inclined surface
-      // roll < 0 (right tilted down) -> ax > 0 (accelerate right)
-      // pitch > 0 (forward tilted down) -> az < 0 (accelerate into screen away from camera)
+      // Gravity acceleration down inclined surface:
+      // When roll < 0 (right tilted down) -> ax > 0 (accelerate right)
+      // When pitch > 0 (near edge down) -> az > 0 (accelerate towards camera down slope)
       const gravity = 26.0;
       const ax = -Math.sin(this.roll) * gravity;
-      const az = -Math.sin(this.pitch) * gravity;
+      const az = Math.sin(this.pitch) * gravity;
 
       this.ballVel.x += ax * dt;
       this.ballVel.z += az * dt;
+
+      // Suction pull when near the goal hole
+      const distToHole = Math.hypot(this.ballPos.x - this.holePos.x, this.ballPos.z - this.holePos.z);
+      if (distToHole < 0.42) {
+        const pull = (0.42 - distToHole) * 32.0;
+        const angle = Math.atan2(this.holePos.z - this.ballPos.z, this.holePos.x - this.ballPos.x);
+        this.ballVel.x += Math.cos(angle) * pull * dt;
+        this.ballVel.z += Math.sin(angle) * pull * dt;
+      }
+
+      // Goal detection: ball enters hole!
+      if (distToHole < 0.20) {
+        this.score++;
+        this.triggerConfetti(this.holePos.x, this.holePos.z);
+        if (typeof SoundManager !== 'undefined' && SoundManager.play) {
+          SoundManager.play('calibrate_success');
+        }
+        this.spawnHole();
+        this.ballPos.x = 0;
+        this.ballPos.z = 0;
+        this.ballVel.x = 0;
+        this.ballVel.z = 0;
+        this.updateHud();
+        return;
+      }
 
       // Rolling surface friction
       const damping = Math.pow(0.95, dt * 60);
@@ -2356,20 +2633,22 @@
       this.ballPos.z += this.ballVel.z * dt;
 
       // Collision bounds against curbs
-      const limit = this.platformSize / 2 - 0.08 - this.ballRadius;
-      if (this.ballPos.x > limit) {
-        this.ballPos.x = limit;
+      const limitX = this.platformSizeX / 2 - 0.08 - this.ballRadius;
+      const limitZ = this.platformSizeZ / 2 - 0.08 - this.ballRadius;
+
+      if (this.ballPos.x > limitX) {
+        this.ballPos.x = limitX;
         this.ballVel.x = -this.ballVel.x * 0.45;
-      } else if (this.ballPos.x < -limit) {
-        this.ballPos.x = -limit;
+      } else if (this.ballPos.x < -limitX) {
+        this.ballPos.x = -limitX;
         this.ballVel.x = -this.ballVel.x * 0.45;
       }
 
-      if (this.ballPos.z > limit) {
-        this.ballPos.z = limit;
+      if (this.ballPos.z > limitZ) {
+        this.ballPos.z = limitZ;
         this.ballVel.z = -this.ballVel.z * 0.45;
-      } else if (this.ballPos.z < -limit) {
-        this.ballPos.z = -limit;
+      } else if (this.ballPos.z < -limitZ) {
+        this.ballPos.z = -limitZ;
         this.ballVel.z = -this.ballVel.z * 0.45;
       }
 
@@ -2383,8 +2662,13 @@
     },
 
     updateHud() {
+      const sEl = document.getElementById('bench-hud-score');
       const pEl = document.getElementById('bench-hud-pitch');
       const rEl = document.getElementById('bench-hud-roll');
+      if (sEl) {
+        const label = (typeof I18n !== 'undefined' ? I18n.t('settings_modal.bench_score') : '') || 'Цели';
+        sEl.textContent = `${label}: ${this.score}`;
+      }
       if (pEl) {
         const deg = this.pitch * (180 / Math.PI);
         pEl.textContent = `P: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
@@ -2403,6 +2687,7 @@
       this.lastTickTs = now;
 
       this.updatePhysics(dt);
+      this.updateConfetti(dt);
 
       const canvas = document.getElementById('bench-platform-canvas');
       if (canvas) {
@@ -2549,6 +2834,9 @@
     },
 
     setOfflineState() {
+      const overlay = document.getElementById('bench-offline-overlay');
+      if (overlay) overlay.classList.add('visible');
+
       const livePill = document.getElementById('bench-live-pill');
       if (livePill) livePill.classList.add('offline');
 
@@ -2574,6 +2862,9 @@
     },
 
     setWaitingState() {
+      const overlay = document.getElementById('bench-offline-overlay');
+      if (overlay) overlay.classList.remove('visible');
+
       const livePill = document.getElementById('bench-live-pill');
       if (livePill) livePill.classList.add('offline');
 
@@ -2588,6 +2879,9 @@
     },
 
     setLiveState(hz) {
+      const overlay = document.getElementById('bench-offline-overlay');
+      if (overlay) overlay.classList.remove('visible');
+
       const livePill = document.getElementById('bench-live-pill');
       if (livePill) livePill.classList.remove('offline');
 
@@ -2625,6 +2919,10 @@
       this.recentFiltDev = [];
       this.lastFrameTs = 0;
       this.renderReticle();
+
+      if (typeof NetSparkline !== 'undefined') {
+        NetSparkline.render();
+      }
 
       // Check current connection state
       const isOnline = (AppState.lastState && (AppState.lastState.status === 'online' || AppState.lastState.connected));
@@ -2843,13 +3141,15 @@
       const gridSeparator = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
       const gridCenter = isLight ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.15)';
       const gridBounds = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.06)';
-      const textAxisLabel = isLight ? 'rgba(60, 60, 67, 0.70)' : 'rgba(235, 235, 245, 0.55)';
 
       if (this.activeAxis === 'all') {
         // Stacked 3-Axis Oscilloscope Mode
         const trackH = h / 3;
         const axes = ['x', 'y', 'z'];
-        const titles = ['Pitch (X)', 'Yaw (Y)', 'Roll (Z)'];
+        const isRu = (typeof I18n !== 'undefined' && I18n.currentLang === 'ru');
+        const titles = isRu
+          ? ['Pitch (Тангаж · X)', 'Yaw (Рыскание · Y)', 'Roll (Крен · Z)']
+          : ['Pitch (X)', 'Yaw (Y)', 'Roll (Z)'];
 
         for (let k = 0; k < 3; k++) {
           const axis = axes[k];
@@ -2877,14 +3177,39 @@
           ctx.stroke();
           ctx.setLineDash([]);
 
-          // Axis title label badge
-          ctx.fillStyle = textAxisLabel;
-          ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-          ctx.fillText(titles[k], 8, topY + 13);
-
-          const rawArr = this.historyRaw[axis];
-          const filtArr = this.historyFilt[axis];
+          const rawArr = this.historyRaw[axis] || [];
+          const filtArr = this.historyFilt[axis] || [];
           const n = rawArr.length;
+
+          // Prominent high-contrast Pill Badge for Axis Title
+          const title = titles[k];
+          ctx.font = '600 10.5px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+          const textMetrics = ctx.measureText(title);
+          const badgeW = textMetrics.width + 12;
+          const badgeH = 17;
+          const badgeX = 8;
+          const badgeY = topY + 4;
+
+          ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+          if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+            ctx.fill();
+          } else {
+            ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
+          }
+
+          ctx.fillStyle = isLight ? '#1c1c1e' : '#ffffff';
+          ctx.fillText(title, badgeX + 6, badgeY + 12);
+
+          // Numeric DSU rate readout on right of track
+          const curFilt = filtArr.length ? filtArr[filtArr.length - 1] : 0;
+          const liveText = `DSU: ${(curFilt >= 0 ? '+' : '')}${curFilt.toFixed(1)}°/s`;
+          ctx.font = '600 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+          ctx.fillStyle = '#0A84FF';
+          const liveMetrics = ctx.measureText(liveText);
+          ctx.fillText(liveText, w - liveMetrics.width - 8, badgeY + 12);
+
           if (n < 2) continue;
 
           let maxAmp = 8.0;
@@ -2949,6 +3274,39 @@
         const rawArr = this.historyRaw[this.activeAxis] || [];
         const filtArr = this.historyFilt[this.activeAxis] || [];
         const n = rawArr.length;
+
+        const isRu = (typeof I18n !== 'undefined' && I18n.currentLang === 'ru');
+        let axisTitle = (this.activeAxis === 'y')
+          ? (isRu ? 'Yaw (Рыскание · Y)' : 'Yaw (Y)')
+          : (this.activeAxis === 'z')
+            ? (isRu ? 'Roll (Крен · Z)' : 'Roll (Z)')
+            : (isRu ? 'Pitch (Тангаж · X)' : 'Pitch (X)');
+
+        ctx.font = '600 11px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+        const textMetrics = ctx.measureText(axisTitle);
+        const badgeW = textMetrics.width + 12;
+        const badgeH = 18;
+        const badgeX = 8;
+        const badgeY = 6;
+
+        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)';
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
+          ctx.fill();
+        } else {
+          ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
+        }
+
+        ctx.fillStyle = isLight ? '#1c1c1e' : '#ffffff';
+        ctx.fillText(axisTitle, badgeX + 6, badgeY + 13);
+
+        const curFilt = (filtArr && filtArr.length) ? filtArr[filtArr.length - 1] : 0;
+        const liveText = `DSU: ${(curFilt >= 0 ? '+' : '')}${curFilt.toFixed(1)}°/s`;
+        ctx.font = '600 10.5px ui-monospace, SFMono-Regular, Menlo, monospace';
+        ctx.fillStyle = '#0A84FF';
+        const liveMetrics = ctx.measureText(liveText);
+        ctx.fillText(liveText, w - liveMetrics.width - 8, badgeY + 13);
 
         if (n >= 2) {
           let maxAmp = 8.0;
@@ -5817,7 +6175,21 @@
 
         document.getElementById('device-name').textContent = state.deviceName || 'Controller';
         document.getElementById('device-hz').textContent = `${Math.round(state.hz || 60)} Hz`;
-        document.getElementById('device-ping').textContent = `${state.pingMs || 3} ms`;
+        const pingVal = state.pingMs || 3;
+        const pingTxt = document.getElementById('device-ping-txt');
+        if (pingTxt) {
+          pingTxt.textContent = `${pingVal} ms`;
+        } else {
+          const devPing = document.getElementById('device-ping');
+          if (devPing) devPing.textContent = `${pingVal} ms`;
+        }
+        const benchPing = document.getElementById('bench-net-ping');
+        if (benchPing) {
+          benchPing.textContent = `${pingVal} ms`;
+        }
+        if (typeof NetSparkline !== 'undefined') {
+          NetSparkline.push(pingVal);
+        }
         document.getElementById('device-time').textContent = state.connectedTime || '00:00:00';
 
         // Update target Euler angles (P, R, Y) for continuous RAF lerp smoothing loop
@@ -6082,6 +6454,7 @@
       WelcomeManager.init();
       CalibrationWizard.init();
       AppState.init();
+      if (typeof NetSparkline !== 'undefined') NetSparkline.render();
       ResourceMonitor.init();
       await WelcomeManager.checkFirstLaunch();
     };
