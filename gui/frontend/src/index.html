@@ -673,10 +673,20 @@
                   </div>
                 </div>
 
-                <!-- Group 2: Sensor & Motion Filtering -->
+                <!-- Group 2: Aim Motion Filtering (DSU) -->
                 <div class="settings-section">
-                  <div class="settings-section-header" data-i18n="settings_modal.group_sensor">Сенсор и фильтрация движения</div>
+                  <div class="settings-section-header" data-i18n="settings_modal.group_motion">Фильтрация прицеливания (DSU)</div>
                   <div class="settings-grouped-card">
+                    <!-- Live Testing Hint -->
+                    <div class="settings-hint-box">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; color: var(--apple-blue);">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      <span data-i18n="settings_modal.filter_live_hint">Все параметры сглаживания применяются автоматически на лету. Лучше всего подбирать их прямо во время прицеливания в игре.</span>
+                    </div>
+
                     <!-- Gyro 1-Euro Aim Smoothing -->
                     <div class="setting-row">
                       <div class="setting-info">
@@ -743,10 +753,20 @@
                       </div>
                       <div class="setting-control setting-range-control">
                         <input type="range" id="setting-gyro-sensitivity" class="setting-range-input" min="0.50" max="2.50" step="0.05" value="1.00">
-                        <span class="setting-range-badge" id="setting-gyro-sens-badge">1.00x</span>
+                        <div class="setting-range-num-wrap" title="Нажмите, чтобы ввести вручную">
+                          <input type="number" id="setting-gyro-sens-input" class="setting-range-num-input" min="0.10" max="10.00" step="0.05" value="1.00">
+                          <span class="setting-range-num-unit">x</span>
+                        </div>
+                        <span class="setting-range-badge" id="setting-gyro-sens-badge" style="display:none;">1.00x</span>
                       </div>
                     </div>
+                  </div>
+                </div>
 
+                <!-- Group 3: Behavior & Notifications -->
+                <div class="settings-section">
+                  <div class="settings-section-header" data-i18n="settings_modal.group_behavior">Поведение и оповещения</div>
+                  <div class="settings-grouped-card">
                     <!-- Stillness Hint Toggle -->
                     <div class="setting-row">
                       <div class="setting-info">
@@ -2201,8 +2221,17 @@
       this.active = true;
       this.reticleX = 0;
       this.reticleY = 0;
-      this.historyRaw = { x: [], y: [], z: [] };
-      this.historyFilt = { x: [], y: [], z: [] };
+      // Pre-fill history arrays with 120 zeroes so lines render continuously
+      this.historyRaw = {
+        x: new Array(120).fill(0),
+        y: new Array(120).fill(0),
+        z: new Array(120).fill(0)
+      };
+      this.historyFilt = {
+        x: new Array(120).fill(0),
+        y: new Array(120).fill(0),
+        z: new Array(120).fill(0)
+      };
       this.recentRawDev = [];
       this.recentFiltDev = [];
       this.lastFrameTs = 0;
@@ -2253,20 +2282,29 @@
     onFrame(frame) {
       if (!frame) return;
 
+      // Extract properties safely handling both lowercase Wails JSON tags and uppercase
+      const rawX = (frame.rawX !== undefined) ? frame.rawX : (frame.RawX || 0);
+      const rawY = (frame.rawY !== undefined) ? frame.rawY : (frame.RawY || 0);
+      const rawZ = (frame.rawZ !== undefined) ? frame.rawZ : (frame.RawZ || 0);
+      const outX = (frame.outX !== undefined) ? frame.outX : (frame.OutX || 0);
+      const outY = (frame.outY !== undefined) ? frame.outY : (frame.OutY || 0);
+      const outZ = (frame.outZ !== undefined) ? frame.outZ : (frame.OutZ || 0);
+      const hz = (frame.hz !== undefined) ? frame.hz : (frame.Hz || 60);
+
       const now = performance.now();
       const dt = this.lastFrameTs ? Math.min(0.05, Math.max(0.001, (now - this.lastFrameTs) / 1000)) : 0.016;
       this.lastFrameTs = now;
 
       // 1. Switch to live status
-      this.setLiveState(frame.Hz || 60);
+      this.setLiveState(hz);
 
       // 2. Update Aim Reticle (Zelda mechanics: DSU angular velocity integration)
       // DSU conventions:
       // OutX is Pitch (tilting phone up -> pitch up -> reticle moves up, negative Y in canvas)
       // OutY is Yaw (turning phone right -> negative OutY -> reticle moves right, positive X)
       const aimSpeed = 6.2; // px per degree
-      this.reticleX += -frame.OutY * dt * aimSpeed;
-      this.reticleY += -frame.OutX * dt * aimSpeed;
+      this.reticleX += -outY * dt * aimSpeed;
+      this.reticleY += -outX * dt * aimSpeed;
 
       // Soft clamp to target viewport bounds
       const viewport = document.querySelector('.bench-target-viewport');
@@ -2281,7 +2319,7 @@
       this.renderReticle();
 
       // 3. Stability Tag
-      const speed = Math.sqrt(frame.OutX * frame.OutX + frame.OutY * frame.OutY + frame.OutZ * frame.OutZ);
+      const speed = Math.sqrt(outX * outX + outY * outY + outZ * outZ);
       const stabilityTag = document.getElementById('bench-stability-tag');
       if (stabilityTag) {
         if (speed < 0.12) {
@@ -2297,12 +2335,12 @@
       }
 
       // 4. Oscilloscope Multi-Axis Push
-      this.historyRaw.x.push(frame.RawX);
-      this.historyRaw.y.push(frame.RawY);
-      this.historyRaw.z.push(frame.RawZ);
-      this.historyFilt.x.push(frame.OutX);
-      this.historyFilt.y.push(frame.OutY);
-      this.historyFilt.z.push(frame.OutZ);
+      this.historyRaw.x.push(rawX);
+      this.historyRaw.y.push(rawY);
+      this.historyRaw.z.push(rawZ);
+      this.historyFilt.x.push(outX);
+      this.historyFilt.y.push(outY);
+      this.historyFilt.z.push(outZ);
 
       if (this.historyRaw.x.length > this.maxHistory) {
         this.historyRaw.x.shift();
@@ -2314,8 +2352,8 @@
       }
 
       // 5. Noise Reduction Calculation (RMS deviation comparison in resting/slow window)
-      const currentRaw = (this.activeAxis === 'y') ? frame.RawY : (this.activeAxis === 'z') ? frame.RawZ : frame.RawX;
-      const currentFilt = (this.activeAxis === 'y') ? frame.OutY : (this.activeAxis === 'z') ? frame.OutZ : frame.OutX;
+      const currentRaw = (this.activeAxis === 'y') ? rawY : (this.activeAxis === 'z') ? rawZ : rawX;
+      const currentFilt = (this.activeAxis === 'y') ? outY : (this.activeAxis === 'z') ? outZ : outX;
 
       this.recentRawDev.push(Math.abs(currentRaw));
       this.recentFiltDev.push(Math.abs(currentFilt));
@@ -2392,6 +2430,13 @@
       // Background clear
       ctx.clearRect(0, 0, w, h);
 
+      // Theme-aware high contrast stroke colors for canvas elements
+      const isLight = document.body.getAttribute('data-theme') === 'light';
+      const gridSeparator = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+      const gridCenter = isLight ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.15)';
+      const gridBounds = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.06)';
+      const textAxisLabel = isLight ? 'rgba(60, 60, 67, 0.70)' : 'rgba(235, 235, 245, 0.55)';
+
       if (this.activeAxis === 'all') {
         // Stacked 3-Axis Oscilloscope Mode
         const trackH = h / 3;
@@ -2406,7 +2451,7 @@
           // Track separator line
           if (k > 0) {
             ctx.beginPath();
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.strokeStyle = gridSeparator;
             ctx.setLineDash([]);
             ctx.lineWidth = 1;
             ctx.moveTo(0, topY);
@@ -2416,7 +2461,7 @@
 
           // Track center zero dashed line
           ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+          ctx.strokeStyle = gridCenter;
           ctx.setLineDash([3, 3]);
           ctx.lineWidth = 1;
           ctx.moveTo(0, centerY);
@@ -2425,7 +2470,7 @@
           ctx.setLineDash([]);
 
           // Axis title label badge
-          ctx.fillStyle = 'rgba(235, 235, 245, 0.55)';
+          ctx.fillStyle = textAxisLabel;
           ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
           ctx.fillText(titles[k], 8, topY + 13);
 
@@ -2475,7 +2520,7 @@
 
         // Center reference zero line
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.strokeStyle = gridCenter;
         ctx.setLineDash([4, 4]);
         ctx.lineWidth = 1;
         ctx.moveTo(0, centerY);
@@ -2484,7 +2529,7 @@
 
         // Top and bottom boundary guides
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.strokeStyle = gridBounds;
         ctx.setLineDash([2, 4]);
         ctx.moveTo(0, centerY - h * 0.35);
         ctx.lineTo(w, centerY - h * 0.35);
@@ -2597,14 +2642,38 @@
         });
       });
 
-      // Sensitivity slider live badge and preview
-      const sensInput = document.getElementById('setting-gyro-sensitivity');
+      // Sensitivity slider and direct numeric input bi-directional sync
+      const sensSlider = document.getElementById('setting-gyro-sensitivity');
+      const sensNumInput = document.getElementById('setting-gyro-sens-input');
       const sensBadge = document.getElementById('setting-gyro-sens-badge');
-      if (sensInput) {
-        sensInput.addEventListener('input', (e) => {
+
+      if (sensSlider) {
+        sensSlider.addEventListener('input', (e) => {
           const val = parseFloat(e.target.value || '1.00');
+          if (sensNumInput) sensNumInput.value = val.toFixed(2);
           if (sensBadge) sensBadge.textContent = val.toFixed(2) + 'x';
           this.syncLiveFilter();
+        });
+      }
+
+      if (sensNumInput) {
+        const handleManualSens = (e) => {
+          let val = parseFloat(e.target.value);
+          if (isNaN(val) || val <= 0) val = 1.00;
+          if (val > 10.00) val = 10.00;
+          if (sensSlider) {
+            sensSlider.value = Math.min(2.50, Math.max(0.50, val));
+          }
+          if (sensBadge) sensBadge.textContent = val.toFixed(2) + 'x';
+          this.syncLiveFilter();
+        };
+        sensNumInput.addEventListener('input', handleManualSens);
+        sensNumInput.addEventListener('change', (e) => {
+          let val = parseFloat(e.target.value);
+          if (isNaN(val) || val < 0.10) val = 1.00;
+          if (val > 10.00) val = 10.00;
+          e.target.value = val.toFixed(2);
+          handleManualSens(e);
         });
       }
 
@@ -2628,7 +2697,9 @@
     syncLiveFilter() {
       const smoothing = parseFloat(document.getElementById('setting-gyro-smoothing')?.value || '0.50');
       const deadband = parseFloat(document.getElementById('setting-gyro-deadband')?.value || '0.10');
-      const sens = parseFloat(document.getElementById('setting-gyro-sensitivity')?.value || '1.00');
+      const sensInput = document.getElementById('setting-gyro-sens-input');
+      const sensSlider = document.getElementById('setting-gyro-sensitivity');
+      const sens = parseFloat(sensInput?.value || sensSlider?.value || '1.00');
       if (window.go?.main?.App?.SetTuningFilterParams) {
         window.go.main.App.SetTuningFilterParams(smoothing, deadband, sens);
       }
@@ -2828,13 +2899,13 @@
       }
 
       // DSU Sensitivity Multiplier
-      const sensInput = document.getElementById('setting-gyro-sensitivity');
+      const sensSlider = document.getElementById('setting-gyro-sensitivity');
+      const sensNumInput = document.getElementById('setting-gyro-sens-input');
       const sensBadge = document.getElementById('setting-gyro-sens-badge');
-      if (sensInput) {
-        const sensVal = (s.gyroSensitivity !== undefined && s.gyroSensitivity > 0) ? Number(s.gyroSensitivity).toFixed(2) : '1.00';
-        sensInput.value = sensVal;
-        if (sensBadge) sensBadge.textContent = Number(sensVal).toFixed(2) + 'x';
-      }
+      const sensVal = (s.gyroSensitivity !== undefined && s.gyroSensitivity > 0) ? Number(s.gyroSensitivity).toFixed(2) : '1.00';
+      if (sensSlider) sensSlider.value = sensVal;
+      if (sensNumInput) sensNumInput.value = sensVal;
+      if (sensBadge) sensBadge.textContent = Number(sensVal).toFixed(2) + 'x';
 
       const stillnessCheckbox = document.getElementById('setting-stillness-hint');
       if (stillnessCheckbox) {
@@ -2893,12 +2964,12 @@
         deadbandSelect.value = '0.10';
       }
 
-      const sensInput = document.getElementById('setting-gyro-sensitivity');
+      const sensSlider = document.getElementById('setting-gyro-sensitivity');
+      const sensNumInput = document.getElementById('setting-gyro-sens-input');
       const sensBadge = document.getElementById('setting-gyro-sens-badge');
-      if (sensInput) {
-        sensInput.value = '1.00';
-        if (sensBadge) sensBadge.textContent = '1.00x';
-      }
+      if (sensSlider) sensSlider.value = '1.00';
+      if (sensNumInput) sensNumInput.value = '1.00';
+      if (sensBadge) sensBadge.textContent = '1.00x';
 
       const stillnessCheckbox = document.getElementById('setting-stillness-hint');
       if (stillnessCheckbox) {
@@ -2967,7 +3038,9 @@
 
       const gyroSmoothing = parseFloat(document.getElementById('setting-gyro-smoothing')?.value || '0.50');
       const gyroDeadband = parseFloat(document.getElementById('setting-gyro-deadband')?.value || '0.10');
-      const gyroSensitivity = parseFloat(document.getElementById('setting-gyro-sensitivity')?.value || '1.00');
+      const gyroSensInput = document.getElementById('setting-gyro-sens-input');
+      const gyroSensSlider = document.getElementById('setting-gyro-sensitivity');
+      const gyroSensitivity = parseFloat(gyroSensInput?.value || gyroSensSlider?.value || '1.00');
       const stillnessHint = !!document.getElementById('setting-stillness-hint')?.checked;
       const disconnectAlert = !!document.getElementById('setting-disconnect-alert')?.checked;
       const soundMode = document.getElementById('setting-sound-mode')?.value || 'cute';

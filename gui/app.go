@@ -2194,6 +2194,7 @@ func (a *App) SetTuningFilterParams(smoothing, deadband, sensitivity float64) {
 		a.gyroSensitivityBits.Store(math.Float64bits(sensitivity))
 	}
 	a.updateFilterParams()
+	a.saveSettings()
 }
 
 // ResetGyroFilter zeroes filter history
