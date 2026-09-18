@@ -384,7 +384,8 @@ em {
 .app-main {
   flex: 1;
   min-height: 0;
-  height: calc(100vh - 64px - 54px);
+  height: 100%;
+  box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
@@ -2053,8 +2054,9 @@ em {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6);
-  width: min(940px, 94vw);
-  max-height: 88vh;
+  width: min(940px, 94%);
+  max-height: 88%;
+  box-sizing: border-box;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
@@ -3804,9 +3806,20 @@ em {
 
 .setting-info {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
   flex: 1;
   min-width: 0;
+  gap: 2px;
+}
+
+.setting-subtext {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
 }
 
 .setting-label-row {
@@ -4484,14 +4497,36 @@ em {
 /* Fullscreen Mode for 3D Viewport */
 .bench-platform-viewport.fullscreen {
   position: fixed !important;
-  inset: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
   z-index: 99999 !important;
-  width: 100vw !important;
-  height: 100vh !important;
   border-radius: 0 !important;
   border: none !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
   background-color: #080b12 !important;
   background: radial-gradient(circle at 50% 35%, #141c28 0%, #06080e 100%) !important;
+}
+
+.bench-platform-viewport.fullscreen .bench-viewport-action-btn {
+  top: 18px !important;
+  right: 18px !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 10px !important;
+}
+
+.bench-platform-viewport.fullscreen .bench-platform-hud {
+  bottom: 18px !important;
+  right: 18px !important;
 }
 
 [data-theme="light"] .bench-platform-viewport.fullscreen {
@@ -5467,8 +5502,9 @@ em {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
-  width: min(390px, 92vw);
-  max-height: 90vh;
+  width: min(390px, 92%);
+  max-height: 90%;
+  box-sizing: border-box;
   overflow: hidden;
   display: flex;
   flex-direction: column;

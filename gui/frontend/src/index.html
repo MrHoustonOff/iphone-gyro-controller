@@ -958,6 +958,7 @@
                             </svg>
                           </button>
                         </div>
+                        <span class="setting-subtext" data-i18n="settings_modal.font_scale_hotkeys">Горячие клавиши: Ctrl + / Ctrl - • Ctrl 0</span>
                       </div>
                       <div class="setting-control" style="gap: 12px; min-width: 170px;">
                         <input type="range" id="setting-font-scale" class="setting-slider" min="0.80" max="1.40" step="0.05" value="1.00" style="flex: 1;">
@@ -2808,13 +2809,23 @@
     lastHudScore: -1,
     lastHudRecord: -1,
     lastHudTs: 0,
+    _placeholder: null,
 
     syncDimensions(force = false) {
       const canvas = document.getElementById('bench-platform-canvas');
+      const vp = document.getElementById('bench-platform-viewport');
       if (!canvas || !this.renderer || !this.camera) return;
-      const w = Math.floor(canvas.clientWidth || 340);
-      const h = Math.floor(canvas.clientHeight || (this.isFullscreen ? 600 : 210));
+
+      const rect = vp ? vp.getBoundingClientRect() : canvas.getBoundingClientRect();
+      const w = Math.floor(rect.width || canvas.clientWidth || (this.isFullscreen ? window.innerWidth : 340));
+      const h = Math.floor(rect.height || canvas.clientHeight || (this.isFullscreen ? window.innerHeight : 210));
       if (w <= 0 || h <= 0) return;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (this.renderer.getPixelRatio() !== dpr) {
+        this.renderer.setPixelRatio(dpr);
+      }
+
       if (force || w !== this.cachedW || h !== this.cachedH) {
         this.cachedW = w;
         this.cachedH = h;
@@ -2848,6 +2859,7 @@
     init() {
       if (this.initialized) return;
       const canvas = document.getElementById('bench-platform-canvas');
+      const vp = document.getElementById('bench-platform-viewport');
       if (!canvas || !window.THREE) return;
       this.initialized = true;
 
@@ -2855,6 +2867,14 @@
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       this.renderer = renderer;
+
+      if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => {
+          this.syncDimensions(true);
+        });
+        ro.observe(canvas);
+        if (vp) ro.observe(vp);
+      }
 
       const scene = new THREE.Scene();
       this.scene = scene;
@@ -3229,7 +3249,27 @@
       this.isFullscreen = !!enable;
       const vp = document.getElementById('bench-platform-viewport');
       const btn = document.getElementById('btn-bench-platform-fullscreen');
-      if (vp) vp.classList.toggle('fullscreen', this.isFullscreen);
+      if (!vp) return;
+
+      if (this.isFullscreen) {
+        if (!this._placeholder) {
+          this._placeholder = document.createElement('div');
+          this._placeholder.id = 'bench-platform-placeholder';
+          this._placeholder.style.display = 'none';
+        }
+        if (vp.parentNode && vp.parentNode !== document.body) {
+          vp.parentNode.insertBefore(this._placeholder, vp);
+          document.body.appendChild(vp);
+        }
+        vp.classList.add('fullscreen');
+      } else {
+        vp.classList.remove('fullscreen');
+        if (this._placeholder && this._placeholder.parentNode) {
+          this._placeholder.parentNode.insertBefore(vp, this._placeholder);
+          this._placeholder.parentNode.removeChild(this._placeholder);
+          this._placeholder = null;
+        }
+      }
 
       if (btn) {
         const iconExpand = btn.querySelector('.icon-expand');
@@ -3258,6 +3298,12 @@
       this.rebuildPlatformGeometry();
       this.respawnBall();
       this.syncDimensions(true);
+      requestAnimationFrame(() => {
+        this.syncDimensions(true);
+      });
+      setTimeout(() => {
+        this.syncDimensions(true);
+      }, 60);
       this.updateHud(true);
     },
 
@@ -4068,7 +4114,7 @@
       // 1. Numerical Aim Reticle Integration (Zelda mechanics: angular velocity integration)
       const aimSpeed = 2.4; // px per degree
       this.reticleX += curY * dt * aimSpeed;
-      this.reticleY += curX * dt * aimSpeed;
+      this.reticleY -= curX * dt * aimSpeed;
 
       // Soft clamp to target viewport bounds
       const maxW = 150;
@@ -5045,6 +5091,9 @@
 
     close(renderState = true) {
       this.isOpen = false;
+      if (typeof PlatformGame !== 'undefined' && PlatformGame.isFullscreen) {
+        PlatformGame.setFullscreen(false);
+      }
       // Revert live preview font scale if closed without saving
       const savedScale = (this.currentSettings && typeof this.currentSettings.fontScale === 'number') ? this.currentSettings.fontScale : (this.initialFontScale || 1.0);
       FontScaleManager.apply(savedScale, true, true);
