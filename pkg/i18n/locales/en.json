@@ -340,6 +340,7 @@
     "bench_platform_sub": "3D shrine apparatus platform tilts with controller motion",
     "bench_sensitivity_note": "Test bench response may feel different from gameplay. We **strongly recommend** tuning parameters in our app while testing directly in the game!",
     "bench_offline_title": "No Phone Connected",
+    "bench_offline_desc": "Connect iPhone via Wi-Fi to test motion response in real-time",
     "bench_score": "Score",
     "bench_record": "Best",
     "bench_fullscreen": "Fullscreen",

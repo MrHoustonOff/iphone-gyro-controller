@@ -558,6 +558,7 @@ func NewApp() *App {
 
 	// Load persisted settings and profiles
 	app.loadSettings()
+	app.updateFilterParams()
 	app.rebuildURLsAndQRCodes()
 	app.loadProfiles()
 	app.logEvent("INFO", "GyroBridge initialized: IP=%s, Theme=%s, Lang=%s, DSU=%d, HTTP=%d, HTTPS=%d", primaryIP, app.currentTheme, app.currentLang, app.dsuPort, app.httpPort, app.httpsPort)
@@ -1065,6 +1066,15 @@ func (a *App) startup(ctx context.Context) {
 			deadband = math.Float64frombits(a.gyroDeadzoneBits.Load())
 		}
 		gyroDeadband := deadband
+		smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
+		sens := math.Float64frombits(a.gyroSensitivityBits.Load())
+		if sens <= 0 {
+			sens = 1.00
+		}
+
+		rawDsuRx := float32(rx)
+		rawDsuRy := -float32(ry) // Cemuhook DSU protocol convention (nose right / clockwise is negative)
+		rawDsuRz := float32(rz)
 
 		var ahrsRx, ahrsRy, ahrsRz float32
 		var dsuRx, dsuRy, dsuRz float32
@@ -1073,18 +1083,33 @@ func (a *App) startup(ctx context.Context) {
 			ahrsRy = float32(ry)
 			ahrsRz = float32(rz)
 
-			dsuRx = float32(rx)
-			dsuRy = -float32(ry)
-			dsuRz = float32(rz)
+			dsuRx = rawDsuRx
+			dsuRy = rawDsuRy
+			dsuRz = rawDsuRz
 		} else if gyroSpeed >= gyroDeadband {
 			scale := float32((gyroSpeed - gyroDeadband) / gyroSpeed)
 			ahrsRx = float32(rx) * scale
 			ahrsRy = float32(ry) * scale
 			ahrsRz = float32(rz) * scale
 
-			dsuRx = float32(rx) * scale
-			dsuRy = -float32(ry) * scale // Cemuhook DSU protocol convention (nose right / clockwise is negative)
-			dsuRz = float32(rz) * scale
+			dsuRx = rawDsuRx * scale
+			dsuRy = rawDsuRy * scale
+			dsuRz = rawDsuRz * scale
+		}
+
+		// Apply 1-Euro adaptive smoothing if configured
+		if smoothing > 0 && a.gyroFilter != nil {
+			filtRx, filtRy, filtRz := a.gyroFilter.Filter(float64(dsuRx), float64(dsuRy), float64(dsuRz), startPipe)
+			dsuRx = float32(filtRx)
+			dsuRy = float32(filtRy)
+			dsuRz = float32(filtRz)
+		}
+
+		// Apply sensitivity multiplier
+		if sens != 1.0 {
+			dsuRx *= float32(sens)
+			dsuRy *= float32(sens)
+			dsuRz *= float32(sens)
 		}
 
 		// 2. Accelerometer filtering and stationary table lock.
@@ -1201,9 +1226,9 @@ func (a *App) startup(ctx context.Context) {
 				a.lastTuningEmit.Store(nowMs)
 				_, _, inHz := srv.PacketStats()
 				wailsRuntime.EventsEmit(a.ctx, "tuning:frame", TuningFrame{
-					RawX:  float32(rx),
-					RawY:  -float32(ry),
-					RawZ:  float32(rz),
+					RawX:  rawDsuRx,
+					RawY:  rawDsuRy,
+					RawZ:  rawDsuRz,
 					OutX:  dsuRx,
 					OutY:  dsuRy,
 					OutZ:  dsuRz,

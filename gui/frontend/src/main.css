@@ -4406,7 +4406,7 @@ em {
 /* 3D Shrine Platform Viewport */
 .bench-platform-viewport {
   width: 100%;
-  height: 140px;
+  height: 210px;
   border-radius: var(--radius-md);
   overflow: hidden;
   position: relative;

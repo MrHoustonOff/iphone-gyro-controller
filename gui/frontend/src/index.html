@@ -2492,7 +2492,7 @@
       const canvas = document.getElementById('bench-platform-canvas');
       if (!canvas || !this.renderer || !this.camera) return;
       const w = Math.floor(canvas.clientWidth || 340);
-      const h = Math.floor(canvas.clientHeight || 140);
+      const h = Math.floor(canvas.clientHeight || (this.isFullscreen ? 600 : 210));
       if (w <= 0 || h <= 0) return;
       if (force || w !== this.cachedW || h !== this.cachedH) {
         this.cachedW = w;
@@ -2502,14 +2502,24 @@
         this.camera.aspect = aspect;
 
         const fovRad = (this.camera.fov * Math.PI) / 180;
-        const targetHalfW = this.platformSizeX * 0.90;
-        const targetHalfH = this.platformSizeZ * 1.10;
-        const distForW = targetHalfW / (Math.tan(fovRad / 2) * aspect);
-        const distForH = targetHalfH / Math.tan(fovRad / 2);
-        const dist = Math.max(distForW, distForH, 4.2);
-
-        this.camera.position.set(0, dist * 0.72, dist * 0.90);
-        this.camera.lookAt(0, -0.05, 0);
+        let dist;
+        if (this.isFullscreen) {
+          const targetHalfW = this.platformSizeX * 0.62;
+          const targetHalfH = this.platformSizeZ * 0.68;
+          const distW = targetHalfW / (Math.tan(fovRad / 2) * aspect);
+          const distH = targetHalfH / Math.tan(fovRad / 2);
+          dist = Math.max(distW, distH, 4.4);
+          this.camera.position.set(0, dist * 0.66, dist * 0.86);
+        } else {
+          // Mini-screen mode: close-up dynamic camera to make platform prominent, detailed & beautiful
+          const targetHalfW = this.platformSizeX * 0.50;
+          const targetHalfH = this.platformSizeZ * 0.54;
+          const distW = targetHalfW / (Math.tan(fovRad / 2) * aspect);
+          const distH = targetHalfH / Math.tan(fovRad / 2);
+          dist = Math.max(distW, distH, 3.2);
+          this.camera.position.set(0, dist * 0.62, dist * 0.80);
+        }
+        this.camera.lookAt(0, -0.04, 0);
         this.camera.updateProjectionMatrix();
       }
     },
@@ -3134,7 +3144,7 @@
         this.lastRawYaw = rawY;
 
         const deg2rad = Math.PI / 180;
-        const targetP = (rawP - this.pitchOffset) * deg2rad;
+        const targetP = -(rawP - this.pitchOffset) * deg2rad;
         const targetR = -(rawR - this.rollOffset) * deg2rad;
         const targetY = -(rawY - this.yawOffset) * deg2rad;
 
@@ -3250,7 +3260,7 @@
 
         // Non-slip rolling rotation
         this.ballMesh.rotation.z -= (this.ballVel.x * dt) / this.ballRadius;
-        this.ballMesh.rotation.x += (this.ballVel.z * dt) / this.ballRadius;
+        this.ballMesh.rotation.x -= (this.ballVel.z * dt) / this.ballRadius;
         return;
       }
 
@@ -3323,7 +3333,7 @@
 
       // Non-slip rolling rotation
       this.ballMesh.rotation.z -= (this.ballVel.x * dt) / this.ballRadius;
-      this.ballMesh.rotation.x += (this.ballVel.z * dt) / this.ballRadius;
+      this.ballMesh.rotation.x -= (this.ballVel.z * dt) / this.ballRadius;
     },
 
     cacheHudElements() {
@@ -3986,25 +3996,25 @@
           const dx = w / (this.maxHistory - 1);
           const startX = w - (n - 1) * dx;
 
-          // Raw trace (Apple Orange, matches legend)
+          // 1. Filtered DSU trace (Electric Cyan/Blue, drawn first)
+          ctx.beginPath();
+          ctx.strokeStyle = isLight ? '#0071E3' : '#0A84FF';
+          ctx.lineWidth = 2.2;
+          for (let i = 0; i < n; i++) {
+            const x = startX + i * dx;
+            const y = centerY - filtArr[i] * scale;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+
+          // 2. Raw trace (Apple Orange, drawn on top so sensor noise spikes are clearly visible)
           ctx.beginPath();
           ctx.strokeStyle = isLight ? '#FF9500' : '#FF9F0A';
           ctx.lineWidth = isLight ? 1.6 : 1.4;
           for (let i = 0; i < n; i++) {
             const x = startX + i * dx;
             const y = centerY - rawArr[i] * scale;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-
-          // Filtered DSU trace (Electric Cyan/Blue)
-          ctx.beginPath();
-          ctx.strokeStyle = isLight ? '#0071E3' : '#0A84FF';
-          ctx.lineWidth = 2.0;
-          for (let i = 0; i < n; i++) {
-            const x = startX + i * dx;
-            const y = centerY - filtArr[i] * scale;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
           }
@@ -4088,25 +4098,25 @@
           const dx = w / (this.maxHistory - 1);
           const startX = w - (n - 1) * dx;
 
-          // 1. Draw Raw trace (Apple Orange, matches legend)
+          // 1. Draw Filtered DSU trace (Apple Cyan/Blue, drawn first)
+          ctx.beginPath();
+          ctx.strokeStyle = isLight ? '#0071E3' : '#0A84FF';
+          ctx.lineWidth = 2.2;
+          for (let i = 0; i < n; i++) {
+            const x = startX + i * dx;
+            const y = centerY - filtArr[i] * scale;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+
+          // 2. Draw Raw trace (Apple Orange, drawn on top so sensor noise spikes are clearly visible)
           ctx.beginPath();
           ctx.strokeStyle = isLight ? '#FF9500' : '#FF9F0A';
           ctx.lineWidth = isLight ? 1.8 : 1.6;
           for (let i = 0; i < n; i++) {
             const x = startX + i * dx;
             const y = centerY - rawArr[i] * scale;
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-          }
-          ctx.stroke();
-
-          // 2. Draw Filtered DSU trace (Apple Cyan/Blue)
-          ctx.beginPath();
-          ctx.strokeStyle = isLight ? '#0071E3' : '#0A84FF';
-          ctx.lineWidth = 2.0;
-          for (let i = 0; i < n; i++) {
-            const x = startX + i * dx;
-            const y = centerY - filtArr[i] * scale;
             if (i === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
           }
