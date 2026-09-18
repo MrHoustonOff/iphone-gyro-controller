@@ -228,6 +228,7 @@ type App struct {
 	gyroDeadbandBits    atomic.Uint64 // float64 (deg/s, default 0.10)
 	gyroSensitivityBits atomic.Uint64 // float64 (multiplier, default 1.00)
 	tuningActive        atomic.Bool
+	lastTuningEmit      atomic.Int64
 }
 
 // AppSettings holds configurable parameters exposed in the settings window
@@ -1168,18 +1169,22 @@ func (a *App) startup(ctx context.Context) {
 			a.dsuSrv.SendMotion(dsuFrame)
 		}
 
-		// Stream real-time telemetry to Settings test bench if active
+		// Stream real-time telemetry to Settings test bench if active (throttled to ~60Hz to prevent IPC queue clogging)
 		if a.tuningActive.Load() && a.ctx != nil {
-			_, _, inHz := srv.PacketStats()
-			wailsRuntime.EventsEmit(a.ctx, "tuning:frame", TuningFrame{
-				RawX: rawDsuRx,
-				RawY: rawDsuRy,
-				RawZ: rawDsuRz,
-				OutX: dsuRx,
-				OutY: dsuRy,
-				OutZ: dsuRz,
-				Hz:   float32(inHz),
-			})
+			nowMs := time.Now().UnixMilli()
+			if nowMs-a.lastTuningEmit.Load() >= 16 {
+				a.lastTuningEmit.Store(nowMs)
+				_, _, inHz := srv.PacketStats()
+				wailsRuntime.EventsEmit(a.ctx, "tuning:frame", TuningFrame{
+					RawX: rawDsuRx,
+					RawY: rawDsuRy,
+					RawZ: rawDsuRz,
+					OutX: dsuRx,
+					OutY: dsuRy,
+					OutZ: dsuRz,
+					Hz:   float32(inHz),
+				})
+			}
 		}
 	})
 

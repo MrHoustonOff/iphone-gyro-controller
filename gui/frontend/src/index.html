@@ -2343,6 +2343,7 @@
   const NetSparkline = {
     history: [3, 4, 3, 5, 4, 3, 3, 4, 3, 4, 3, 3, 4],
     maxLen: 32,
+    lastRenderTs: 0,
 
     push(pingMs) {
       const val = (typeof pingMs === 'number' && pingMs >= 0) ? pingMs : 3;
@@ -2350,17 +2351,23 @@
       if (this.history.length > this.maxLen) {
         this.history.shift();
       }
-      this.render();
+      const now = performance.now();
+      if (now - this.lastRenderTs >= 250) {
+        this.lastRenderTs = now;
+        this.render();
+      }
     },
 
     render() {
       this.drawToCanvas('main-net-spark-canvas', 48, 14);
-      this.drawToCanvas('bench-net-spark-canvas', 60, 15);
+      if (typeof SettingsManager !== 'undefined' && SettingsManager.isOpen) {
+        this.drawToCanvas('bench-net-spark-canvas', 60, 15);
+      }
     },
 
     drawToCanvas(canvasId, w, h) {
       const canvas = document.getElementById(canvasId);
-      if (!canvas) return;
+      if (!canvas || canvas.offsetParent === null) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
         canvas.width = Math.floor(w * dpr);
@@ -2467,6 +2474,38 @@
     confettiParticles: [],
     confettiColors: [0xff3b30, 0xff9500, 0xffcc00, 0x34c759, 0x00c7be, 0x32ade6, 0xaf52de, 0xff2d55, 0x00e5ff],
     lastTickTs: 0,
+    cachedW: 0,
+    cachedH: 0,
+    hudElements: null,
+    lastHudScore: -1,
+    lastHudRecord: -1,
+    lastHudTs: 0,
+
+    syncDimensions(force = false) {
+      const canvas = document.getElementById('bench-platform-canvas');
+      if (!canvas || !this.renderer || !this.camera) return;
+      const w = Math.floor(canvas.clientWidth || 340);
+      const h = Math.floor(canvas.clientHeight || 140);
+      if (w <= 0 || h <= 0) return;
+      if (force || w !== this.cachedW || h !== this.cachedH) {
+        this.cachedW = w;
+        this.cachedH = h;
+        this.renderer.setSize(w, h, false);
+        const aspect = w / h;
+        this.camera.aspect = aspect;
+
+        const fovRad = (this.camera.fov * Math.PI) / 180;
+        const targetHalfW = this.platformSizeX * 0.90;
+        const targetHalfH = this.platformSizeZ * 1.10;
+        const distForW = targetHalfW / (Math.tan(fovRad / 2) * aspect);
+        const distForH = targetHalfH / Math.tan(fovRad / 2);
+        const dist = Math.max(distForW, distForH, 4.2);
+
+        this.camera.position.set(0, dist * 0.72, dist * 0.90);
+        this.camera.lookAt(0, -0.05, 0);
+        this.camera.updateProjectionMatrix();
+      }
+    },
 
     init() {
       if (this.initialized) return;
@@ -2785,7 +2824,8 @@
       this.rebuildPlatformGeometry();
       this.respawnBall();
       this.spawnHole();
-      this.updateHud();
+      this.syncDimensions(true);
+      this.updateHud(true);
     },
 
     rebuildPlatformGeometry() {
@@ -2991,8 +3031,6 @@
       this.platformGroup.rotation.x = this.pitch;
       this.platformGroup.rotation.z = this.roll;
       this.platformGroup.rotation.y = this.yaw;
-
-      this.updateHud();
     },
 
     updatePhysics(dt) {
@@ -3122,31 +3160,47 @@
       this.ballMesh.rotation.x += (this.ballVel.z * dt) / this.ballRadius;
     },
 
-    updateHud() {
-      const sEl = document.getElementById('bench-hud-score');
-      const rkEl = document.getElementById('bench-hud-record');
-      const pEl = document.getElementById('bench-hud-pitch');
-      const rEl = document.getElementById('bench-hud-roll');
+    cacheHudElements() {
+      if (this.hudElements) return this.hudElements;
+      this.hudElements = {
+        score: document.getElementById('bench-hud-score'),
+        record: document.getElementById('bench-hud-record'),
+        pitch: document.getElementById('bench-hud-pitch'),
+        roll: document.getElementById('bench-hud-roll'),
+        fsScore: document.getElementById('bench-fs-score'),
+        fsRecord: document.getElementById('bench-fs-record')
+      };
+      return this.hudElements;
+    },
 
-      const fsScoreEl = document.getElementById('bench-fs-score');
-      const fsRecordEl = document.getElementById('bench-fs-record');
+    updateHud(force = false) {
+      const now = performance.now();
+      const els = this.cacheHudElements();
 
-      const scoreLabel = (typeof I18n !== 'undefined' ? I18n.t('settings_modal.bench_score') : '') || 'Счёт';
-      const recordLabel = (typeof I18n !== 'undefined' ? I18n.t('settings_modal.bench_record') : '') || 'Рекорд';
-
-      if (sEl) sEl.textContent = `${scoreLabel}: ${this.score}`;
-      if (rkEl) rkEl.textContent = `${recordLabel}: ${this.record}`;
-
-      if (fsScoreEl) fsScoreEl.textContent = this.score.toString();
-      if (fsRecordEl) fsRecordEl.textContent = this.record.toString();
-
-      if (pEl) {
-        const deg = this.pitch * (180 / Math.PI);
-        pEl.textContent = `P: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
+      if (force || this.score !== this.lastHudScore) {
+        this.lastHudScore = this.score;
+        const scoreLabel = (typeof I18n !== 'undefined' ? I18n.t('settings_modal.bench_score') : '') || 'Счёт';
+        if (els.score) els.score.textContent = `${scoreLabel}: ${this.score}`;
+        if (els.fsScore) els.fsScore.textContent = this.score.toString();
       }
-      if (rEl) {
-        const deg = -this.roll * (180 / Math.PI);
-        rEl.textContent = `R: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
+
+      if (force || this.record !== this.lastHudRecord) {
+        this.lastHudRecord = this.record;
+        const recordLabel = (typeof I18n !== 'undefined' ? I18n.t('settings_modal.bench_record') : '') || 'Рекорд';
+        if (els.record) els.record.textContent = `${recordLabel}: ${this.record}`;
+        if (els.fsRecord) els.fsRecord.textContent = this.record.toString();
+      }
+
+      if (force || (now - this.lastHudTs >= 100)) {
+        this.lastHudTs = now;
+        if (els.pitch) {
+          const deg = this.pitch * (180 / Math.PI);
+          els.pitch.textContent = `P: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
+        }
+        if (els.roll) {
+          const deg = -this.roll * (180 / Math.PI);
+          els.roll.textContent = `R: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
+        }
       }
     },
 
@@ -3164,30 +3218,8 @@
         this.beaconMesh.material.opacity = 0.26 + Math.sin(now * 0.005) * 0.12;
       }
 
-      const canvas = document.getElementById('bench-platform-canvas');
-      if (canvas) {
-        const rect = canvas.getBoundingClientRect();
-        const w = Math.floor(rect.width || 340);
-        const h = Math.floor(rect.height || 140);
-        if (w > 0 && h > 0) {
-          const dpr = Math.min(window.devicePixelRatio || 1, 2);
-          if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
-            this.renderer.setSize(w, h, false);
-            const aspect = w / h;
-            this.camera.aspect = aspect;
-
-            const fovRad = (this.camera.fov * Math.PI) / 180;
-            const targetHalfW = this.platformSizeX * 0.90;
-            const targetHalfH = this.platformSizeZ * 1.10;
-            const distForW = targetHalfW / (Math.tan(fovRad / 2) * aspect);
-            const distForH = targetHalfH / Math.tan(fovRad / 2);
-            const dist = Math.max(distForW, distForH, 4.2);
-
-            this.camera.position.set(0, dist * 0.72, dist * 0.90);
-            this.camera.lookAt(0, -0.05, 0);
-            this.camera.updateProjectionMatrix();
-          }
-        }
+      if (this.cachedW <= 0) {
+        this.syncDimensions(true);
       }
 
       this.renderer.render(this.scene, this.camera);
@@ -3212,6 +3244,26 @@
     recentFiltDev: [],
     lastFrameTs: 0,
     rafId: null,
+    cachedCanvasW: 0,
+    cachedCanvasH: 0,
+    lastDomUpdateTs: 0,
+    lastLiveHz: -1,
+    reticleDotEl: null,
+    hudAimXEl: null,
+    hudAimYEl: null,
+    stabilityTagEl: null,
+    _lastStabilityMode: '',
+
+    syncDimensions(force = false) {
+      const canvas = document.getElementById('bench-oscilloscope-canvas');
+      if (!canvas) return;
+      const w = Math.floor(canvas.clientWidth || 340);
+      const h = Math.floor(canvas.clientHeight || (this.activeAxis === 'all' ? 220 : 95));
+      if (force || w !== this.cachedCanvasW || h !== this.cachedCanvasH) {
+        this.cachedCanvasW = w;
+        this.cachedCanvasH = h;
+      }
+    },
 
     init() {
       if (this.initialized) return;
@@ -3250,6 +3302,7 @@
           if (canvas) {
             canvas.classList.toggle('mode-all', this.activeAxis === 'all');
           }
+          this.syncDimensions(true);
         });
       });
 
@@ -3263,6 +3316,16 @@
       document.getElementById('btn-bench-recenter')?.addEventListener('click', () => {
         this.recenter();
         PlatformGame.recenter();
+      });
+
+      // Window resize listener
+      window.addEventListener('resize', () => {
+        if (this.active) {
+          this.syncDimensions(true);
+          if (this.activeGame === 'platform') {
+            PlatformGame.syncDimensions(true);
+          }
+        }
       });
 
       // Wails 60 Hz telemetry event
@@ -3299,8 +3362,11 @@
       if (viewAim) viewAim.style.display = (target === 'aim') ? 'flex' : 'none';
       if (viewPlatform) viewPlatform.style.display = (target === 'platform') ? 'flex' : 'none';
 
+      this.syncDimensions(true);
+
       if (target === 'platform') {
         PlatformGame.init();
+        PlatformGame.syncDimensions(true);
         PlatformGame.updateAndRender();
       }
     },
@@ -3373,21 +3439,25 @@
     },
 
     setLiveState(hz) {
+      const roundedHz = Math.round(hz || 60);
       const overlay = document.getElementById('bench-offline-overlay');
-      if (overlay) overlay.classList.remove('visible');
+      if (overlay && overlay.classList.contains('visible')) overlay.classList.remove('visible');
 
       const livePill = document.getElementById('bench-live-pill');
-      if (livePill) livePill.classList.remove('offline');
+      if (livePill && livePill.classList.contains('offline')) livePill.classList.remove('offline');
 
-      const liveText = document.getElementById('bench-live-text');
-      if (liveText) {
-        const label = I18n.t('settings_modal.bench_live') || 'В эфире';
-        liveText.textContent = `${label} ${Math.round(hz || 60)} Hz`;
-      }
+      if (this.lastLiveHz !== roundedHz) {
+        this.lastLiveHz = roundedHz;
+        const liveText = document.getElementById('bench-live-text');
+        if (liveText) {
+          const label = I18n.t('settings_modal.bench_live') || 'В эфире';
+          liveText.textContent = `${label} ${roundedHz} Hz`;
+        }
 
-      const fpsStat = document.getElementById('bench-fps-stat');
-      if (fpsStat) {
-        fpsStat.textContent = `${Math.round(hz || 60)} Hz`;
+        if (!this.fpsStatEl) this.fpsStatEl = document.getElementById('bench-fps-stat');
+        if (this.fpsStatEl) {
+          this.fpsStatEl.textContent = `${roundedHz} Hz`;
+        }
       }
 
       if (typeof PlatformGame !== 'undefined') {
@@ -3401,6 +3471,7 @@
       this.reticleY = 0;
       this.switchGame(this.activeGame);
       this.syncFeedButtons();
+      this.syncDimensions(true);
 
       // Pre-fill history arrays with 120 zeroes so lines render continuously
       this.historyRaw = {
@@ -3437,7 +3508,9 @@
             return;
           }
           this.drawOscilloscope();
-          if (this.activeGame === 'platform') {
+          if (this.activeGame === 'aim') {
+            this.renderReticle();
+          } else if (this.activeGame === 'platform') {
             PlatformGame.updateAndRender();
           }
           this.rafId = requestAnimationFrame(loop);
@@ -3486,51 +3559,28 @@
       const dt = this.lastFrameTs ? Math.min(0.05, Math.max(0.001, (now - this.lastFrameTs) / 1000)) : 0.016;
       this.lastFrameTs = now;
 
-      // 1. Switch to live status
-      this.setLiveState(hz);
-
       // Active feed selection ('dsu' or 'raw')
       const curX = (this.dataFeed === 'raw') ? rawX : outX;
       const curY = (this.dataFeed === 'raw') ? rawY : outY;
       const curZ = (this.dataFeed === 'raw') ? rawZ : outZ;
 
-      // 2. Update Aim Reticle (Zelda mechanics: angular velocity integration, calibrated for widescreen)
+      // 1. Numerical Aim Reticle Integration (Zelda mechanics: angular velocity integration)
       const aimSpeed = 2.4; // px per degree
       this.reticleX += curY * dt * aimSpeed;
       this.reticleY += -curX * dt * aimSpeed;
 
       // Soft clamp to target viewport bounds
-      const viewport = document.querySelector('.bench-target-viewport');
-      const maxW = viewport ? Math.max(80, (viewport.clientWidth / 2) - 18) : 150;
-      const maxH = viewport ? Math.max(40, (viewport.clientHeight / 2) - 18) : 52;
-
+      const maxW = 150;
+      const maxH = 52;
       if (this.reticleX > maxW) this.reticleX = maxW;
       if (this.reticleX < -maxW) this.reticleX = -maxW;
       if (this.reticleY > maxH) this.reticleY = maxH;
       if (this.reticleY < -maxH) this.reticleY = -maxH;
 
-      this.renderReticle();
-
-      // 3. Update Platform Game (Zelda apparatus motion rates integration)
+      // 2. Numerical Platform Game Motion Rates Integration
       PlatformGame.onMotion(curX, curY, curZ, dt);
 
-      // 4. Stability Tag
-      const speed = Math.sqrt(outX * outX + outY * outY + outZ * outZ);
-      const stabilityTag = document.getElementById('bench-stability-tag');
-      if (stabilityTag) {
-        if (speed < 0.12) {
-          stabilityTag.textContent = I18n.t('settings_modal.bench_status_still') || 'Покой';
-          stabilityTag.className = 'bench-status-tag still';
-        } else if (speed < 3.2) {
-          stabilityTag.textContent = I18n.t('settings_modal.bench_status_aim') || 'Прицел';
-          stabilityTag.className = 'bench-status-tag aim';
-        } else {
-          stabilityTag.textContent = I18n.t('settings_modal.bench_status_active') || 'Движение';
-          stabilityTag.className = 'bench-status-tag active';
-        }
-      }
-
-      // 5. Oscilloscope Multi-Axis Push (Always tracks Raw vs DSU for direct comparison)
+      // 3. Oscilloscope Multi-Axis Push (Always tracks Raw vs DSU for direct comparison)
       this.historyRaw.x.push(rawX);
       this.historyRaw.y.push(rawY);
       this.historyRaw.z.push(rawZ);
@@ -3547,7 +3597,7 @@
         this.historyFilt.z.shift();
       }
 
-      // 6. Noise Reduction Calculation (RMS deviation comparison in resting/slow window)
+      // 4. Noise Reduction Calculation (RMS deviation comparison in resting/slow window)
       const currentRaw = (this.activeAxis === 'y') ? rawY : (this.activeAxis === 'z') ? rawZ : rawX;
       const currentFilt = (this.activeAxis === 'y') ? outY : (this.activeAxis === 'z') ? outZ : outX;
 
@@ -3556,24 +3606,59 @@
       if (this.recentRawDev.length > 50) this.recentRawDev.shift();
       if (this.recentFiltDev.length > 50) this.recentFiltDev.shift();
 
-      this.updateNoiseReadout(speed);
+      // 5. Throttled DOM updates (~10 Hz, 100ms) to eliminate layout thrashing
+      const speed = Math.sqrt(outX * outX + outY * outY + outZ * outZ);
+      if (now - this.lastDomUpdateTs >= 100) {
+        this.lastDomUpdateTs = now;
+        this.setLiveState(hz);
+        this.updateStabilityTag(speed);
+        this.updateNoiseReadout(speed);
+        if (this.activeGame === 'platform') {
+          PlatformGame.updateHud();
+        }
+      }
+    },
+
+    updateStabilityTag(speed) {
+      if (!this.stabilityTagEl) this.stabilityTagEl = document.getElementById('bench-stability-tag');
+      if (!this.stabilityTagEl) return;
+
+      let mode = 'active';
+      let i18nKey = 'settings_modal.bench_status_active';
+      let fallback = 'Движение';
+      if (speed < 0.12) {
+        mode = 'still';
+        i18nKey = 'settings_modal.bench_status_still';
+        fallback = 'Покой';
+      } else if (speed < 3.2) {
+        mode = 'aim';
+        i18nKey = 'settings_modal.bench_status_aim';
+        fallback = 'Прицел';
+      }
+
+      if (this._lastStabilityMode !== mode) {
+        this._lastStabilityMode = mode;
+        this.stabilityTagEl.textContent = I18n.t(i18nKey) || fallback;
+        this.stabilityTagEl.className = `bench-status-tag ${mode}`;
+      }
     },
 
     renderReticle() {
-      const dot = document.getElementById('bench-reticle-dot');
-      if (dot) {
-        dot.style.transform = `translate(calc(-50% + ${Math.round(this.reticleX)}px), calc(-50% + ${Math.round(this.reticleY)}px))`;
+      if (!this.reticleDotEl) this.reticleDotEl = document.getElementById('bench-reticle-dot');
+      if (!this.hudAimXEl) this.hudAimXEl = document.getElementById('bench-hud-aim-x');
+      if (!this.hudAimYEl) this.hudAimYEl = document.getElementById('bench-hud-aim-y');
+
+      if (this.reticleDotEl) {
+        this.reticleDotEl.style.transform = `translate(calc(-50% + ${Math.round(this.reticleX)}px), calc(-50% + ${Math.round(this.reticleY)}px))`;
       }
-      const hudX = document.getElementById('bench-hud-aim-x');
-      const hudY = document.getElementById('bench-hud-aim-y');
       const aimSpeed = 2.4;
-      if (hudX) {
+      if (this.hudAimXEl) {
         const degX = (this.reticleX / aimSpeed);
-        hudX.textContent = `X: ${(degX >= 0 ? '+' : '')}${degX.toFixed(1)}°`;
+        this.hudAimXEl.textContent = `X: ${(degX >= 0 ? '+' : '')}${degX.toFixed(1)}°`;
       }
-      if (hudY) {
+      if (this.hudAimYEl) {
         const degY = (-this.reticleY / aimSpeed);
-        hudY.textContent = `Y: ${(degY >= 0 ? '+' : '')}${degY.toFixed(1)}°`;
+        this.hudAimYEl.textContent = `Y: ${(degY >= 0 ? '+' : '')}${degY.toFixed(1)}°`;
       }
     },
 
@@ -3620,10 +3705,12 @@
         this.setOfflineState();
       }
 
-      const rect = canvas.getBoundingClientRect();
+      if (this.cachedCanvasW <= 0) {
+        this.syncDimensions(true);
+      }
+      const w = this.cachedCanvasW || 340;
+      const h = this.cachedCanvasH || (this.activeAxis === 'all' ? 220 : 95);
       const dpr = window.devicePixelRatio || 1;
-      const w = Math.floor(rect.width || 340);
-      const h = Math.floor(rect.height || (this.activeAxis === 'all' ? 220 : 95));
 
       if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
         canvas.width = Math.floor(w * dpr);
@@ -6304,6 +6391,8 @@
     _lastStatus: '',
     _lastIsOffline: null,
     _lastQrCode: '',
+    _lastBadgeKey: '',
+    _lastPauseState: null,
     lastState: null,
     currentUrl: '',
     _calCaptureCb: null,
@@ -6335,6 +6424,12 @@
       const maxR = 40.0;
 
       const step = () => {
+        // Pause SVG DOM updates when Settings is open or when device is offline (inclinometer hidden)
+        if ((typeof SettingsManager !== 'undefined' && SettingsManager.isOpen) || (this.lastState && this.lastState.status === 'offline')) {
+          requestAnimationFrame(step);
+          return;
+        }
+
         // Exponential lerp smoothing for 60/120/144Hz buttery smooth fluid movement
         const factor = 0.22;
         this.currentPitch += (this.targetPitch - this.currentPitch) * factor;
@@ -6718,22 +6813,24 @@
         const r = this.targetRoll;
         const y = this.targetYaw;
 
+        const isWaiting = (state.hz === 0 && Math.abs(p) < 0.001 && Math.abs(r) < 0.001 && Math.abs(y) < 0.001);
+        const badgeKey = state.isPaused ? 'paused' : (isWaiting ? 'waiting' : 'online');
+
         if (state.isPaused) {
           this.hideRecalHint(true);
-          if (deviceIconWrap) deviceIconWrap.className = 'device-icon-wrap paused';
-          if (deviceStatusBadge) {
-            deviceStatusBadge.className = 'device-status-badge paused';
-            deviceStatusBadge.setAttribute('data-i18n', 'status.paused');
-            deviceStatusBadge.innerHTML = renderMarkdown(I18n.t('status.paused'));
-          }
-          btnPause.setAttribute('data-i18n', 'controls.resume');
-          btnPause.innerHTML = renderMarkdown(I18n.t('controls.resume'));
-          btnPause.classList.add('paused');
         } else {
           this.checkStillnessRecalHint(p, r, state);
-          if (deviceIconWrap) deviceIconWrap.className = 'device-icon-wrap online';
+        }
+
+        if (this._lastBadgeKey !== badgeKey) {
+          this._lastBadgeKey = badgeKey;
+          if (deviceIconWrap) deviceIconWrap.className = `device-icon-wrap ${state.isPaused ? 'paused' : 'online'}`;
           if (deviceStatusBadge) {
-            if (state.hz === 0 && Math.abs(p) < 0.001 && Math.abs(r) < 0.001 && Math.abs(y) < 0.001) {
+            if (badgeKey === 'paused') {
+              deviceStatusBadge.className = 'device-status-badge paused';
+              deviceStatusBadge.setAttribute('data-i18n', 'status.paused');
+              deviceStatusBadge.innerHTML = renderMarkdown(I18n.t('status.paused'));
+            } else if (badgeKey === 'waiting') {
               deviceStatusBadge.className = 'device-status-badge waiting';
               deviceStatusBadge.setAttribute('data-i18n', 'status.waiting_sensors');
               deviceStatusBadge.innerHTML = renderMarkdown(I18n.t('status.waiting_sensors') || 'ожидание датчиков...');
@@ -6743,9 +6840,19 @@
               deviceStatusBadge.innerHTML = renderMarkdown(I18n.t('status.online'));
             }
           }
-          btnPause.setAttribute('data-i18n', 'controls.pause');
-          btnPause.innerHTML = renderMarkdown(I18n.t('controls.pause'));
-          btnPause.classList.remove('paused');
+        }
+
+        if (this._lastPauseState !== state.isPaused) {
+          this._lastPauseState = state.isPaused;
+          if (state.isPaused) {
+            btnPause.setAttribute('data-i18n', 'controls.resume');
+            btnPause.innerHTML = renderMarkdown(I18n.t('controls.resume'));
+            btnPause.classList.add('paused');
+          } else {
+            btnPause.setAttribute('data-i18n', 'controls.pause');
+            btnPause.innerHTML = renderMarkdown(I18n.t('controls.pause'));
+            btnPause.classList.remove('paused');
+          }
         }
       }
 
