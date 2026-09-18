@@ -18,6 +18,10 @@ export function GetAppSettings() {
   return window['go']['main']['App']['GetAppSettings']();
 }
 
+export function GetFontScale() {
+  return window['go']['main']['App']['GetFontScale']();
+}
+
 export function GetHideAuthor() {
   return window['go']['main']['App']['GetHideAuthor']();
 }
@@ -88,6 +92,10 @@ export function SaveProfile(arg1, arg2, arg3, arg4, arg5) {
 
 export function SetActiveProfile(arg1) {
   return window['go']['main']['App']['SetActiveProfile'](arg1);
+}
+
+export function SetFontScale(arg1) {
+  return window['go']['main']['App']['SetFontScale'](arg1);
 }
 
 export function SetHideAuthor(arg1) {

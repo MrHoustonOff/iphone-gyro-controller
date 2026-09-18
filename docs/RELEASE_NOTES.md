@@ -6,27 +6,37 @@ GyroBridge turns your smartphone (iOS or Android) into a high-precision, low-lat
 
 ## What's New in v1.1.0
 
-### Advanced Settings Hub
-- **Custom Network Ports**: Configure custom ports for the Cemuhook DSU motion server (default `26760`), HTTP pairing server (default `8080`), and secure HTTPS controller server (default `8443`). Strict port range validation (`1024-65535`) and collision detection prevent misconfigurations.
-- **Adjustable Gyroscope Deadzone**: Selectable noise deadzone threshold (`0.00 deg/s` raw to `0.35 deg/s` high) to eliminate resting sensor micro-jitter in sensitive titles.
-- **Stationary Tilt Warning Toggle**: Enable or disable the dropdown hint when the smartphone rests on an unlevel surface (> 10 degrees).
-- **Calibration Disconnect Alert Toggle**: Option to toggle visual disconnect warning during calibration.
-- **Apple-Style Floating Infotips**: Compact single-line settings rows with glassmorphism floating tooltips (`backdrop-filter: blur(20px)`), automatic edge bounding, and reset-to-defaults functionality.
-- **Graceful Service Restart**: Apple-style notification indicating service restart on save with automatic page reload.
+### Real-Time Response Test Bench
+- **Interactive Multi-Mode Bench**: Integrated into Settings to verify sensor response and filter tuning live before launching games.
+- **Oscilloscope Waveform Visualizer**: Real-time canvas oscilloscope tracking Pitch, Roll, and Yaw curves with 3-axis stacked view and responsive grid scaling. Supports instant switching between raw sensor input and filtered DSU output streams.
+- **Interactive 3D Target Aiming Bench**: Fullscreen-capable 3D viewfinder with customizable sensitivity multipliers, axis inversion toggles, and direct in-game translation advice.
+- **Physics Apparatus Platform**: Real-time 3D tilt stage featuring simulated ball physics, goal detection, confetti fanfare, and disconnect safe-leveling.
 
-### Connection Audio Cues
-- **Audio Feedback**: Audible notification when your smartphone connects or suddenly disconnects.
-- **Synthesized Celesta Melodies**: Pleasant synthesized arpeggio generated in real-time via Web Audio API (C5-E5-G5-C6 on connect, G5-Eb5-C5 on disconnect) without requiring external audio files.
-- **Windows System Sounds**: Native non-blocking Windows hardware sound integration (`PlaySoundW` via `winmm.dll`) for users preferring classic system alerts.
-- **Sound Preview & Silent Mode**: Instant preview button in Settings and full silent mode support.
+### Advanced Settings Hub & Sensor Pipeline
+- **Adaptive 1-Euro Filter & Deadband**: Tunable noise suppression to eliminate resting sensor jitter while preserving high-speed hand motion fidelity.
+- **Configurable Network Ports**: Independent port assignments for Cemuhook DSU (`26760`), HTTP pairing (`8080`), and HTTPS controller (`8443`) with range validation (`1024-65535`) and collision detection.
+- **Stationary Tilt & Disconnect Warning Toggles**: Configurable threshold alerts when the smartphone rests on an uneven surface or disconnects during calibration.
+- **Floating Infotips**: Glassmorphic parameter tooltips with automated boundary clamping and reset-to-defaults functionality.
 
-### Refined Disconnect Experience
-- **Modal-Scoped Calibration Alert**: Disconnect warning during calibration is now scoped strictly within the calibration modal card with frosted glass blur, keeping the main application window and header navigation crisp.
-- **Safe Capture Recovery**: Active recording automatically pauses safely if the phone screen turns off, with instant resume on reconnection.
+### Global UI Scaling & Desktop Shortcuts
+- **Universal Scale Engine**: Global UI and font zoom adjustment (`0.80x` to `1.40x`) with continuous synchronization across both the main application window and the dedicated 3D telemetry window.
+- **Standard Desktop Shortcuts**: Fast scaling using `Ctrl +`, `Ctrl -`, and `Ctrl 0` (reset), as well as `Ctrl + MouseWheel`, with captured-phase event priority.
+- **Transient HUD Indicator**: Lightweight pill toast notification displaying the active scale factor on adjustment.
 
-### RAM & Performance Optimizations
-- **Live Memory Tracking**: Integrated RAM monitor showing real-time working set memory usage.
-- **Adaptive Telemetry Rendering**: Inclinometer and 3D telemetry loops with exponential lerp smoothing for buttery-smooth 60/120/144Hz displays.
+### In-App 3D Gyro Recenter
+- **Dynamic Orientation Re-centering**: On-demand 1-second countdown trigger and modal with backdrop blur to re-align tracking without altering stored baseline sensor calibration.
+- **Orientation Continuity**: AHRS quaternion continuity preserved across transient network reconnections without wiping center.
+
+### Audio Cues & Connection Feedback
+- **Connection Events Audio**: Audible feedback on device connection and disconnect.
+- **Synthesized Celesta Melodies**: Real-time procedural arpeggios via Web Audio API (C5-E5-G5-C6 on connect, G5-Eb5-C5 on disconnect).
+- **Native Windows Alerts**: Non-blocking system audio via `winmm.dll` with instant preview and silent mode.
+
+### Performance & UI Hardening
+- **Responsive Header Collapse**: Automatic navigation transition into compact 36px icon mode for default window launch dimensions (`880x620`) and viewports `<= 1020px`.
+- **Viewport Layout Resilience**: Replaced relative viewport units with percentage-based sizing in 3D telemetry window to eliminate clipping artifacts under browser zoom.
+- **IPC & DOM Throttling**: Decoupled DOM updates and throttled telemetry IPC to 60Hz, preventing layout thrashing and reducing CPU usage.
+- **Live Memory Tracking**: Working set RAM monitor in header with live polling.
 
 ---
 
@@ -58,7 +68,9 @@ No installation required. Download, run, and connect.
 
 - **Native Multi-Architecture Support**: Official release builds for both Windows x86_64 and ARM64.
 - **Pure GUI Application**: Clean startup with zero console pop-up (`GyroBridge.exe`).
+- **Interactive Test Bench**: Real-time oscilloscope, 3D target viewfinder, and apparatus tilt mini-bench.
 - **Advanced Settings Hub**: Custom network ports, gyro noise filtering, and theme customization.
+- **Global UI Scaling**: Dynamic zoom (`0.80x` - `1.40x`) with `Ctrl +/-/0` shortcut support.
 - **Audio Feedback**: Melodic chimes or native Windows sounds on connect and disconnect.
 - **3D Gesture Calibration**: Guided motion wizard with resting gravity capture and validation.
 - **6 Profile Slots**: Store independent device profiles with automatic persistence.

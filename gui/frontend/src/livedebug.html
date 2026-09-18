@@ -7,14 +7,18 @@
   <link rel="stylesheet" href="main.css">
   <style>
     /* ── Authentic Apple HIG Desktop Window Layout ───────────────────────────── */
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+
     body {
       background-color: var(--bg);
       color: var(--text);
-      overflow: hidden;
-      height: 100vh;
-      width: 100vw;
-      min-width: 820px;
-      min-height: 500px;
       display: flex;
       flex-direction: column;
       font-family: var(--font-sans);
@@ -24,7 +28,7 @@
     .app-header {
       height: 56px;
       min-height: 56px;
-      padding: 0 20px;
+      padding: 0 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -32,13 +36,16 @@
       border-bottom: 1px solid var(--border);
       z-index: 100;
       flex-shrink: 0;
+      width: 100%;
+      box-sizing: border-box;
       transition: background-color var(--transition-theme), border-color var(--transition-theme);
     }
 
     .header-left, .header-right {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
+      flex-shrink: 0;
     }
 
     .brand-title {
@@ -63,14 +70,39 @@
       color: var(--apple-blue);
     }
 
+    /* ── Toast Utility ─────────────────────────────────────────────────────────── */
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      padding: 9px 18px;
+      border-radius: var(--radius-pill);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 9999;
+    }
+
+    .toast-msg.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* ── Split 50/50 Workspace (Responsive Sizing Constraints) ─────────────────── */
     .split-workspace {
       display: flex;
       flex: 1;
       width: 100%;
-      height: calc(100vh - 56px);
-      min-height: 444px;
+      height: calc(100% - 56px);
+      min-height: 0;
       overflow: hidden;
+      box-sizing: border-box;
     }
 
     /* ── Left Controls & Stats Panel (40% width) ───────────────────────────────── */
@@ -1757,6 +1789,9 @@
     </div>
   </div>
 
+  <!-- Subtle Notification Toast -->
+  <div id="toast" class="toast-msg"></div>
+
   <!-- Scripts -->
   <script src="assets/three.min.js"></script>
   <script src="assets/GLTFLoader.js"></script>
@@ -1938,6 +1973,7 @@
       // ── Core Application State ──
       let currentLang = localStorage.getItem('gb_lang') || 'ru';
       let currentTheme = localStorage.getItem('gb_theme') || 'dark';
+      let currentFontScale = parseFloat(localStorage.getItem('gb_font_scale')) || 1.0;
       let isPhoneConnected = false;
       let isRecording = false;
       let recordStartTime = 0;
@@ -2049,6 +2085,87 @@
       document.getElementById('btn-theme-toggle')?.addEventListener('click', () => {
         applyTheme(currentTheme === 'dark' ? 'light' : 'dark', true);
       });
+
+      // ── Toast Utility ──
+      function showToast(text) {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = text;
+        toast.classList.add('visible');
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => {
+          toast.classList.remove('visible');
+        }, 1800);
+      }
+
+      // ── Font & UI Scale Manager ──
+      function applyFontScale(scale, broadcast = false) {
+        const val = Math.max(0.80, Math.min(1.40, Number(scale) || 1.0));
+        currentFontScale = val;
+        try {
+          localStorage.setItem('gb_font_scale', val.toString());
+        } catch (e) {}
+        document.documentElement.style.zoom = val;
+        window.dispatchEvent(new Event('resize'));
+        if (broadcast) {
+          const host = (window.location.protocol === 'file:' || window.location.protocol === 'wails:') ? '127.0.0.1:8080' : window.location.host;
+          fetch('http://' + host + '/livedebug/font-scale?value=' + encodeURIComponent(val), { method: 'POST' }).catch(() => {});
+        }
+      }
+
+      function zoomIn() {
+        const next = Math.min(1.40, Math.round((currentFontScale + 0.05) * 100) / 100);
+        applyFontScale(next, true);
+        notifyZoom();
+      }
+
+      function zoomOut() {
+        const next = Math.max(0.80, Math.round((currentFontScale - 0.05) * 100) / 100);
+        applyFontScale(next, true);
+        notifyZoom();
+      }
+
+      function zoomReset() {
+        applyFontScale(1.00, true);
+        notifyZoom();
+      }
+
+      function notifyZoom() {
+        const label = currentLang === 'ru' ? 'Масштаб' : 'Scale';
+        showToast(`${label}: ${currentFontScale.toFixed(2)}x`);
+      }
+
+      // Global zoom shortcuts for Live Debug window: Ctrl + (+), Ctrl + (-), Ctrl + 0
+      window.addEventListener('keydown', (e) => {
+        if (!e.ctrlKey && !e.metaKey) return;
+
+        if (e.key === '+' || e.key === '=' || e.code === 'Equal' || e.code === 'NumpadAdd' || e.key === 'Add') {
+          e.preventDefault();
+          zoomIn();
+        } else if (e.key === '-' || e.key === '_' || e.code === 'Minus' || e.code === 'NumpadSubtract' || e.key === 'Subtract') {
+          e.preventDefault();
+          zoomOut();
+        } else if (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0') {
+          e.preventDefault();
+          zoomReset();
+        }
+      }, { capture: true, passive: false });
+
+      // Mouse wheel zoom: Ctrl + Wheel
+      let lastWheelTime = 0;
+      window.addEventListener('wheel', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const now = performance.now();
+          if (now - lastWheelTime < 60) return;
+          lastWheelTime = now;
+          if (e.deltaY < 0) {
+            zoomIn();
+          } else if (e.deltaY > 0) {
+            zoomOut();
+          }
+        }
+      }, { passive: false });
 
       // ── Three.js Studio Scene ──
       const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
@@ -2440,6 +2557,7 @@
 
       canvas.addEventListener('wheel', (e) => {
         if (currentCamMode !== 'orbit') return;
+        if (e.ctrlKey || e.metaKey) return;
         e.preventDefault();
         orbitRadius = Math.max(4.0, Math.min(22.0, orbitRadius + e.deltaY * 0.01));
         updateOrbitCamera();
@@ -2662,9 +2780,10 @@
       const coreHost = getCoreHost();
       const coreBaseUrl = `http://${coreHost}`;
 
-      // Initial Theme, Lang, CamMode, and Render Setup
+      // Initial Theme, Lang, CamMode, FontScale, and Render Setup
       applyLang(currentLang);
       applyTheme(currentTheme, false);
+      applyFontScale(currentFontScale);
       setCamMode(currentCamMode);
       window.focus();
 
@@ -2680,6 +2799,15 @@
         .then(r => r.json())
         .then(d => {
           if (d && d.lang && d.lang !== currentLang) applyLang(d.lang);
+        })
+        .catch(() => {});
+
+      fetch(`${coreBaseUrl}/livedebug/font-scale`)
+        .then(r => r.json())
+        .then(d => {
+          if (d && typeof d.fontScale === 'number' && Math.abs(d.fontScale - currentFontScale) > 0.01) {
+            applyFontScale(d.fontScale);
+          }
         })
         .catch(() => {});
 
@@ -3852,6 +3980,15 @@
         // Broadcasted language change from main window
         if (data.type === 'lang') {
           if (data.lang && data.lang !== currentLang) applyLang(data.lang);
+          return;
+        }
+
+        // Broadcasted font scale change from main window
+        if (data.type === 'font-scale') {
+          const fs = Number(data.fontScale);
+          if (!isNaN(fs) && fs > 0) {
+            applyFontScale(fs);
+          }
           return;
         }
 

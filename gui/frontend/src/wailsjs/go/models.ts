@@ -3,6 +3,7 @@ export namespace main {
 	export class AppSettings {
 	    theme: string;
 	    lang: string;
+	    fontScale: number;
 	    activeSlot: number;
 	    firstLaunchDone: boolean;
 	    hideAuthor: boolean;
@@ -12,7 +13,9 @@ export namespace main {
 	    gyroDeadzone: number;
 	    stillnessHint: boolean;
 	    disconnectAlert: boolean;
+	    silenceDisconnect: boolean;
 	    soundMode: string;
+	    soundVolume: number;
 	    gyroSmoothing: number;
 	    gyroDeadband: number;
 	    gyroSensitivity: number;
@@ -25,6 +28,7 @@ export namespace main {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.theme = source["theme"];
 	        this.lang = source["lang"];
+	        this.fontScale = source["fontScale"];
 	        this.activeSlot = source["activeSlot"];
 	        this.firstLaunchDone = source["firstLaunchDone"];
 	        this.hideAuthor = source["hideAuthor"];
@@ -34,7 +38,9 @@ export namespace main {
 	        this.gyroDeadzone = source["gyroDeadzone"];
 	        this.stillnessHint = source["stillnessHint"];
 	        this.disconnectAlert = source["disconnectAlert"];
+	        this.silenceDisconnect = source["silenceDisconnect"];
 	        this.soundMode = source["soundMode"];
+	        this.soundVolume = source["soundVolume"];
 	        this.gyroSmoothing = source["gyroSmoothing"];
 	        this.gyroDeadband = source["gyroDeadband"];
 	        this.gyroSensitivity = source["gyroSensitivity"];

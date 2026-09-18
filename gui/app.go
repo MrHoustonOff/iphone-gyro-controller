@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -220,7 +221,10 @@ type App struct {
 	gyroDeadzoneBits    atomic.Uint64
 	stillnessHint       atomic.Bool
 	disconnectAlert     atomic.Bool
+	silenceDisconnect   atomic.Bool
 	soundMode           string
+	soundVolume         atomic.Int32
+	lastSensorChangeTs  atomic.Int64
 	// Adaptive 1-Euro DSU filter and dynamic response parameters
 	gyroFilter          *filter.Vector3OneEuroFilter
 	gyroSmoothingBits   atomic.Uint64 // float64 (0.0 to 1.0, default 0.50)
@@ -228,25 +232,29 @@ type App struct {
 	gyroSensitivityBits atomic.Uint64 // float64 (multiplier, default 1.00)
 	tuningActive        atomic.Bool
 	lastTuningEmit      atomic.Int64
+	fontScaleBits       atomic.Uint64
 }
 
 // AppSettings holds configurable parameters exposed in the settings window
 type AppSettings struct {
-	Theme           string  `json:"theme"`
-	Lang            string  `json:"lang"`
-	ActiveSlot      int     `json:"activeSlot"`
-	FirstLaunchDone bool    `json:"firstLaunchDone"`
-	HideAuthor      bool    `json:"hideAuthor"`
-	DSUPort         int     `json:"dsuPort"`
-	HTTPPort        int     `json:"httpPort"`
-	HTTPSPort       int     `json:"httpsPort"`
-	GyroDeadzone    float64 `json:"gyroDeadzone"`
-	StillnessHint   bool    `json:"stillnessHint"`
-	DisconnectAlert bool    `json:"disconnectAlert"`
-	SoundMode       string  `json:"soundMode"`
-	GyroSmoothing   float64 `json:"gyroSmoothing"`
-	GyroDeadband    float64 `json:"gyroDeadband"`
-	GyroSensitivity float64 `json:"gyroSensitivity"`
+	Theme             string  `json:"theme"`
+	Lang              string  `json:"lang"`
+	FontScale         float64 `json:"fontScale"`
+	ActiveSlot        int     `json:"activeSlot"`
+	FirstLaunchDone   bool    `json:"firstLaunchDone"`
+	HideAuthor        bool    `json:"hideAuthor"`
+	DSUPort           int     `json:"dsuPort"`
+	HTTPPort          int     `json:"httpPort"`
+	HTTPSPort         int     `json:"httpsPort"`
+	GyroDeadzone      float64 `json:"gyroDeadzone"`
+	StillnessHint     bool    `json:"stillnessHint"`
+	DisconnectAlert   bool    `json:"disconnectAlert"`
+	SilenceDisconnect bool    `json:"silenceDisconnect"`
+	SoundMode         string  `json:"soundMode"`
+	SoundVolume       int     `json:"soundVolume"`
+	GyroSmoothing     float64 `json:"gyroSmoothing"`
+	GyroDeadband      float64 `json:"gyroDeadband"`
+	GyroSensitivity   float64 `json:"gyroSensitivity"`
 }
 
 // TuningFrame conveys simultaneous raw and filtered telemetry to the frontend tuning bench
@@ -536,9 +544,12 @@ func NewApp() *App {
 	app.gyroSmoothingBits.Store(math.Float64bits(0.50))
 	app.gyroDeadbandBits.Store(math.Float64bits(0.10))
 	app.gyroSensitivityBits.Store(math.Float64bits(1.00))
+	app.fontScaleBits.Store(math.Float64bits(1.00))
 	app.stillnessHint.Store(true)
 	app.disconnectAlert.Store(true)
+	app.silenceDisconnect.Store(true)
 	app.soundMode = "cute"
+	app.soundVolume.Store(1)
 	app.deviceName.Store("Controller")
 
 	// Initialize 6 empty slots with default portrait matrix
@@ -606,21 +617,24 @@ func (a *App) loadSettings() {
 		return
 	}
 	var s struct {
-		Theme           string   `json:"theme"`
-		Lang            string   `json:"lang"`
-		ActiveSlot      int      `json:"activeSlot"`
-		FirstLaunchDone bool     `json:"firstLaunchDone"`
-		HideAuthor      bool     `json:"hideAuthor"`
-		DSUPort         int      `json:"dsuPort"`
-		HTTPPort        int      `json:"httpPort"`
-		HTTPSPort       int      `json:"httpsPort"`
-		GyroDeadzone    float64  `json:"gyroDeadzone"`
-		StillnessHint   *bool    `json:"stillnessHint"`
-		DisconnectAlert *bool    `json:"disconnectAlert"`
-		SoundMode       string   `json:"soundMode"`
-		GyroSmoothing   *float64 `json:"gyroSmoothing,omitempty"`
-		GyroDeadband    *float64 `json:"gyroDeadband,omitempty"`
-		GyroSensitivity *float64 `json:"gyroSensitivity,omitempty"`
+		Theme             string   `json:"theme"`
+		Lang              string   `json:"lang"`
+		ActiveSlot        int      `json:"activeSlot"`
+		FirstLaunchDone   bool     `json:"firstLaunchDone"`
+		HideAuthor        bool     `json:"hideAuthor"`
+		DSUPort           int      `json:"dsuPort"`
+		HTTPPort          int      `json:"httpPort"`
+		HTTPSPort         int      `json:"httpsPort"`
+		GyroDeadzone      float64  `json:"gyroDeadzone"`
+		StillnessHint     *bool    `json:"stillnessHint"`
+		DisconnectAlert   *bool    `json:"disconnectAlert"`
+		SilenceDisconnect *bool    `json:"silenceDisconnect"`
+		SoundMode         string   `json:"soundMode"`
+		SoundVolume       *int     `json:"soundVolume"`
+		GyroSmoothing     *float64 `json:"gyroSmoothing,omitempty"`
+		GyroDeadband      *float64 `json:"gyroDeadband,omitempty"`
+		GyroSensitivity   *float64 `json:"gyroSensitivity,omitempty"`
+		FontScale         *float64 `json:"fontScale,omitempty"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
@@ -662,10 +676,20 @@ func (a *App) loadSettings() {
 	if s.DisconnectAlert != nil {
 		a.disconnectAlert.Store(*s.DisconnectAlert)
 	}
+	if s.SilenceDisconnect != nil {
+		a.silenceDisconnect.Store(*s.SilenceDisconnect)
+	} else {
+		a.silenceDisconnect.Store(true)
+	}
 	if s.SoundMode != "" {
 		a.soundMode = s.SoundMode
 	} else {
 		a.soundMode = "cute"
+	}
+	if s.SoundVolume != nil && *s.SoundVolume >= 0 && *s.SoundVolume <= 3 {
+		a.soundVolume.Store(int32(*s.SoundVolume))
+	} else {
+		a.soundVolume.Store(1)
 	}
 	if s.GyroSmoothing != nil {
 		a.gyroSmoothingBits.Store(math.Float64bits(*s.GyroSmoothing))
@@ -683,6 +707,11 @@ func (a *App) loadSettings() {
 		a.gyroSensitivityBits.Store(math.Float64bits(*s.GyroSensitivity))
 	} else {
 		a.gyroSensitivityBits.Store(math.Float64bits(1.00))
+	}
+	if s.FontScale != nil && *s.FontScale >= 0.70 && *s.FontScale <= 1.60 {
+		a.fontScaleBits.Store(math.Float64bits(*s.FontScale))
+	} else {
+		a.fontScaleBits.Store(math.Float64bits(1.00))
 	}
 	a.updateFilterParams()
 }
@@ -738,22 +767,35 @@ func (a *App) saveSettings() {
 		sensitivity = 1.00
 	}
 
+	vol := int(a.soundVolume.Load())
+	if vol < 0 || vol > 3 {
+		vol = 1
+	}
+
+	fontScale := math.Float64frombits(a.fontScaleBits.Load())
+	if fontScale < 0.70 || fontScale > 1.60 {
+		fontScale = 1.00
+	}
+
 	s := AppSettings{
-		Theme:           theme,
-		Lang:            lang,
-		ActiveSlot:      slot,
-		FirstLaunchDone: firstLaunchDone,
-		HideAuthor:      hideAuthor,
-		DSUPort:         dsuP,
-		HTTPPort:        httpP,
-		HTTPSPort:       httpsP,
-		GyroDeadzone:    deadzone,
-		StillnessHint:   a.stillnessHint.Load(),
-		DisconnectAlert: a.disconnectAlert.Load(),
-		SoundMode:       soundM,
-		GyroSmoothing:   smoothing,
-		GyroDeadband:    deadband,
-		GyroSensitivity: sensitivity,
+		Theme:             theme,
+		Lang:              lang,
+		FontScale:         fontScale,
+		ActiveSlot:        slot,
+		FirstLaunchDone:   firstLaunchDone,
+		HideAuthor:        hideAuthor,
+		DSUPort:           dsuP,
+		HTTPPort:          httpP,
+		HTTPSPort:         httpsP,
+		GyroDeadzone:      deadzone,
+		StillnessHint:     a.stillnessHint.Load(),
+		DisconnectAlert:   a.disconnectAlert.Load(),
+		SilenceDisconnect: a.silenceDisconnect.Load(),
+		SoundMode:         soundM,
+		SoundVolume:       vol,
+		GyroSmoothing:     smoothing,
+		GyroDeadband:      deadband,
+		GyroSensitivity:   sensitivity,
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -948,6 +990,20 @@ func (a *App) startup(ctx context.Context) {
 				"type":      "device_status",
 				"connected": true,
 			})
+		}
+
+		// Sensor freeze detection: check if readings actually changed
+		prevRotX := float32(math.Float64frombits(a.curRotX.Load()))
+		prevRotY := float32(math.Float64frombits(a.curRotY.Load()))
+		prevRotZ := float32(math.Float64frombits(a.curRotZ.Load()))
+		prevAccX := float32(math.Float64frombits(a.curAccX.Load()))
+		prevAccY := float32(math.Float64frombits(a.curAccY.Load()))
+		prevAccZ := float32(math.Float64frombits(a.curAccZ.Load()))
+
+		if frame.RotX != prevRotX || frame.RotY != prevRotY || frame.RotZ != prevRotZ ||
+			frame.AccX != prevAccX || frame.AccY != prevAccY || frame.AccZ != prevAccZ ||
+			a.lastSensorChangeTs.Load() == 0 {
+			a.lastSensorChangeTs.Store(recvTs)
 		}
 
 		// Store latest raw gyro/accel/quaternion for calibration wizard
@@ -1308,6 +1364,9 @@ func (a *App) startup(ctx context.Context) {
 		if a.ctx != nil {
 			wailsRuntime.EventsEmit(a.ctx, "device:visibility", visible)
 		}
+		if !visible && a.silenceDisconnect.Load() {
+			srv.DisconnectAllClients()
+		}
 	}
 
 	srv.OnClientDevice = func(device string) {
@@ -1447,6 +1506,28 @@ func (a *App) startup(ctx context.Context) {
 				w.WriteHeader(http.StatusOK)
 				_ = json.NewEncoder(w).Encode(map[string]string{"lang": curL})
 			})
+			mux.HandleFunc("/livedebug/font-scale", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Access-Control-Allow-Origin", "*")
+				w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+				w.Header().Set("Access-Control-Allow-Headers", "*")
+				if r.Method == http.MethodOptions {
+					w.WriteHeader(http.StatusOK)
+					return
+				}
+				val := r.URL.Query().Get("value")
+				if val != "" {
+					if scale, err := strconv.ParseFloat(val, 64); err == nil && scale >= 0.70 && scale <= 1.60 {
+						a.SetFontScale(scale)
+					}
+				}
+				curS := math.Float64frombits(a.fontScaleBits.Load())
+				if curS < 0.70 || curS > 1.60 {
+					curS = 1.00
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_ = json.NewEncoder(w).Encode(map[string]float64{"fontScale": curS})
+			})
 			mux.HandleFunc("/livedebug/status", func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Access-Control-Allow-Origin", "*")
 				w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -1544,6 +1625,19 @@ func (a *App) startup(ctx context.Context) {
 		defer ticker.Stop()
 		for range ticker.C {
 			if a.hasClient.Load() {
+				// Sensor silence & frozen data watchdog (2.0 seconds)
+				if a.silenceDisconnect.Load() && a.srv != nil {
+					nowMs := time.Now().UnixMilli()
+					silenceDuration := nowMs - a.lastMotionRecvTs.Load()
+					frozenDuration := nowMs - a.lastSensorChangeTs.Load()
+					// Grace period of 2 seconds after initial connection
+					if time.Since(a.connectedAt) > 2*time.Second {
+						if silenceDuration > 2000 || frozenDuration > 2000 {
+							a.srv.DisconnectAllClients()
+						}
+					}
+				}
+
 				a.emitStateChange()
 				// Only send fallback heartbeat to 3D window if no live motion packet arrived recently (> 150ms)
 				if time.Now().UnixMilli()-a.lastMotionRecvTs.Load() > 150 {
@@ -2044,6 +2138,33 @@ func (a *App) GetLang() string {
 	return a.currentLang
 }
 
+// SetFontScale updates UI font scale on backend, broadcasts to Live Debug window, and emits event to main window.
+func (a *App) SetFontScale(scale float64) {
+	if scale < 0.70 || scale > 1.60 {
+		scale = 1.00
+	}
+	a.fontScaleBits.Store(math.Float64bits(scale))
+
+	a.broadcastLiveDebugJSON(map[string]any{
+		"type":      "font-scale",
+		"fontScale": scale,
+	})
+
+	if a.ctx != nil {
+		wailsRuntime.EventsEmit(a.ctx, "font-scale-sync", scale)
+	}
+	a.saveSettings()
+}
+
+// GetFontScale returns the current synchronized UI font scale.
+func (a *App) GetFontScale() float64 {
+	scale := math.Float64frombits(a.fontScaleBits.Load())
+	if scale < 0.70 || scale > 1.60 {
+		return 1.00
+	}
+	return scale
+}
+
 // IsFirstLaunch returns true if the application has not finished its first-launch onboarding.
 func (a *App) IsFirstLaunch() bool {
 	a.themeMu.RLock()
@@ -2156,22 +2277,35 @@ func (a *App) GetAppSettings() AppSettings {
 		sensitivity = 1.00
 	}
 
+	vol := int(a.soundVolume.Load())
+	if vol < 0 || vol > 3 {
+		vol = 1
+	}
+
+	fontScale := math.Float64frombits(a.fontScaleBits.Load())
+	if fontScale < 0.70 || fontScale > 1.60 {
+		fontScale = 1.00
+	}
+
 	return AppSettings{
-		Theme:           theme,
-		Lang:            lang,
-		ActiveSlot:      slot,
-		FirstLaunchDone: firstLaunch,
-		HideAuthor:      hideAuthor,
-		DSUPort:         dsuP,
-		HTTPPort:        httpP,
-		HTTPSPort:       httpsP,
-		GyroDeadzone:    deadzone,
-		StillnessHint:   a.stillnessHint.Load(),
-		DisconnectAlert: a.disconnectAlert.Load(),
-		SoundMode:       soundM,
-		GyroSmoothing:   smoothing,
-		GyroDeadband:    deadband,
-		GyroSensitivity: sensitivity,
+		Theme:             theme,
+		Lang:              lang,
+		FontScale:         fontScale,
+		ActiveSlot:        slot,
+		FirstLaunchDone:   firstLaunch,
+		HideAuthor:        hideAuthor,
+		DSUPort:           dsuP,
+		HTTPPort:          httpP,
+		HTTPSPort:         httpsP,
+		GyroDeadzone:      deadzone,
+		StillnessHint:     a.stillnessHint.Load(),
+		DisconnectAlert:   a.disconnectAlert.Load(),
+		SilenceDisconnect: a.silenceDisconnect.Load(),
+		SoundMode:         soundM,
+		SoundVolume:       vol,
+		GyroSmoothing:     smoothing,
+		GyroDeadband:      deadband,
+		GyroSensitivity:   sensitivity,
 	}
 }
 
@@ -2229,8 +2363,17 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 
 	a.stillnessHint.Store(s.StillnessHint)
 	a.disconnectAlert.Store(s.DisconnectAlert)
+	a.silenceDisconnect.Store(s.SilenceDisconnect)
+	if s.SoundVolume >= 0 && s.SoundVolume <= 3 {
+		a.soundVolume.Store(int32(s.SoundVolume))
+	}
 	if s.SoundMode != "" {
 		a.soundMode = s.SoundMode
+	}
+	if s.FontScale >= 0.70 && s.FontScale <= 1.60 {
+		a.fontScaleBits.Store(math.Float64bits(s.FontScale))
+	} else if s.FontScale == 0 {
+		a.fontScaleBits.Store(math.Float64bits(1.00))
 	}
 
 	a.themeMu.Lock()
@@ -2241,6 +2384,12 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 		a.currentLang = s.Lang
 	}
 	a.themeMu.Unlock()
+
+	curScale := math.Float64frombits(a.fontScaleBits.Load())
+	a.broadcastLiveDebugJSON(map[string]any{
+		"type":      "font-scale",
+		"fontScale": curScale,
+	})
 
 	a.saveSettings()
 	a.emitStateChange()

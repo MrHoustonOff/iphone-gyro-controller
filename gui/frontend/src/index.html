@@ -824,6 +824,28 @@
                       </div>
                     </div>
 
+                    <!-- Silence Disconnect Watchdog Toggle -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.silence_disconnect">Принудительный разрыв при засыпании</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.silence_disconnect_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <label class="apple-toggle">
+                          <input type="checkbox" id="setting-silence-disconnect" checked>
+                          <span class="apple-toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
                     <!-- Sound Alerts Mode -->
                     <div class="setting-row">
                       <div class="setting-info">
@@ -850,6 +872,26 @@
                             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                           </svg>
                         </button>
+                      </div>
+                    </div>
+
+                    <!-- Sound Alerts Volume Slider -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.sound_volume">Громкость звука</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_volume_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control" style="gap: 12px; min-width: 170px;">
+                        <input type="range" id="setting-sound-volume" class="setting-slider" min="0" max="3" step="1" value="1" style="flex: 1;">
+                        <span id="setting-sound-vol-badge" class="setting-value-badge" style="min-width: 44px; text-align: center;">1x</span>
                       </div>
                     </div>
                   </div>
@@ -900,6 +942,26 @@
                           <button type="button" class="settings-seg-btn" data-val="ru">Русский</button>
                           <button type="button" class="settings-seg-btn" data-val="en">English</button>
                         </div>
+                      </div>
+                    </div>
+
+                    <!-- Global Font & Interface Scale -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.font_scale">Масштаб интерфейса и шрифта</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.font_scale_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control" style="gap: 12px; min-width: 170px;">
+                        <input type="range" id="setting-font-scale" class="setting-slider" min="0.80" max="1.40" step="0.05" value="1.00" style="flex: 1;">
+                        <span id="setting-font-scale-badge" class="setting-value-badge" style="min-width: 44px; text-align: center;">1.00x</span>
                       </div>
                     </div>
                   </div>
@@ -1587,25 +1649,23 @@
       <!-- Modal Body -->
       <div class="recenter-body">
 
-        <!-- Active Grip Profile Badge -->
-        <div class="recenter-profile-badge">
+        <!-- Central Hero Grip Profile Card -->
+        <div class="recenter-hero-card">
           <div class="recenter-profile-icon" id="recenter-modal-icon">
             <!-- Populated dynamically with vertical/horizontal/default icon -->
           </div>
-          <div class="recenter-profile-info">
-            <span class="recenter-profile-tag" data-i18n="recenter.active_profile_label">Активный профиль хвата</span>
+          <div class="recenter-hero-info">
+            <span class="recenter-profile-tag" data-i18n="recenter.active_profile_label">Активный хват</span>
             <span class="recenter-profile-name" id="recenter-modal-name">Слот 1</span>
           </div>
         </div>
 
-        <!-- Main Instruction Prompt -->
-        <div class="recenter-prompt-box">
-          <p class="recenter-prompt-text" id="recenter-modal-prompt" data-i18n="recenter.modal_hold_prompt">
-            Положите телефон в стандартное положение профиля и нажмите кнопку ниже.
-          </p>
-        </div>
+        <!-- Instructional prompt -->
+        <p class="recenter-prompt-text" id="recenter-modal-prompt" data-i18n="recenter.modal_hold_prompt">
+          Положите телефон в стандартное положение профиля и нажмите кнопку ниже.
+        </p>
 
-        <!-- Warning Alert Box (shown if phone moved during the 1 sec) -->
+        <!-- Moved alert warning banner (if device moved during measurement) -->
         <div class="recenter-moved-alert" id="recenter-moved-alert" style="display: none;">
           <svg class="recenter-alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"></circle>
@@ -1615,23 +1675,9 @@
           <span data-i18n="recenter.status_moved">Телефон двигался! Положите неподвижно и повторите.</span>
         </div>
 
-        <!-- Disclaimer Banner for Games -->
-        <div class="recenter-disclaimer-banner">
-          <div class="recenter-disclaimer-icon">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-          </div>
-          <div class="recenter-disclaimer-text">
-            <strong data-i18n="recenter.game_disclaimer_title">Сугубо для визуализации в приложении</strong>
-            <span data-i18n="recenter.game_disclaimer_desc">В играх калибровка осей уже работает непрерывно и не требует центрирования.</span>
-          </div>
-        </div>
-
-        <!-- Big 1-second Centering Button -->
-        <div class="recenter-action-area">
+        <!-- Ergonomic Action Row: [ Отмена ] [ ⌖ Центрировать ] -->
+        <div class="recenter-action-row">
+          <button type="button" class="btn-apple-secondary recenter-btn-cancel" id="btn-recenter-cancel" data-i18n="recenter.btn_cancel">Отмена</button>
           <button type="button" class="btn-apple-primary btn-recenter-start" id="btn-recenter-start">
             <div class="recenter-btn-progress" id="recenter-btn-progress"></div>
             <div class="recenter-btn-content" id="recenter-btn-content">
@@ -1648,9 +1694,14 @@
           </button>
         </div>
 
-        <!-- Cancel / Close Button -->
-        <div class="recenter-actions">
-          <button type="button" class="btn-apple-secondary" id="btn-recenter-cancel" data-i18n="recenter.btn_cancel">Закрыть</button>
+        <!-- Subtle Apple Footnote -->
+        <div class="recenter-footnote">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          <span data-i18n="recenter.game_disclaimer_desc">Сугубо для 3D-вида в приложении. В играх калибровка осей не требует центрирования.</span>
         </div>
 
       </div><!-- .recenter-body -->
@@ -1763,6 +1814,148 @@
         } else {
           fetch('http://127.0.0.1:8080/livedebug/theme?value=' + encodeURIComponent(theme), { method: 'POST' }).catch(() => {});
         }
+      }
+    }
+  };
+
+  // ── Modular Font & UI Scale Engine ─────────────────────────────────────────
+  const FontScaleManager = {
+    scale: parseFloat(localStorage.getItem('gb_font_scale')) || 1.0,
+
+    init() {
+      this.apply(this.scale, false, false);
+
+      if (window.runtime && window.runtime.EventsOn) {
+        window.runtime.EventsOn('font-scale-sync', (newScale) => {
+          if (typeof newScale === 'number' && Math.abs(this.scale - newScale) > 0.01) {
+            this.scale = newScale;
+            try {
+              localStorage.setItem('gb_font_scale', newScale.toString());
+            } catch (e) {}
+            document.documentElement.style.zoom = newScale;
+            this.syncUI(newScale);
+            window.dispatchEvent(new Event('resize'));
+            if (typeof HeaderManager !== 'undefined') HeaderManager.update();
+          }
+        });
+      }
+
+      // Keyboard zoom shortcuts: Ctrl + (+), Ctrl + (-), Ctrl + 0
+      window.addEventListener('keydown', (e) => {
+        if (!e.ctrlKey && !e.metaKey) return;
+
+        // Zoom in: Ctrl + Plus / Equal / NumpadAdd
+        if (e.key === '+' || e.key === '=' || e.code === 'Equal' || e.code === 'NumpadAdd' || e.key === 'Add') {
+          e.preventDefault();
+          this.zoomIn();
+        }
+        // Zoom out: Ctrl + Minus / Underscore / NumpadSubtract
+        else if (e.key === '-' || e.key === '_' || e.code === 'Minus' || e.code === 'NumpadSubtract' || e.key === 'Subtract') {
+          e.preventDefault();
+          this.zoomOut();
+        }
+        // Zoom reset: Ctrl + 0
+        else if (e.key === '0' || e.code === 'Digit0' || e.code === 'Numpad0') {
+          e.preventDefault();
+          this.zoomReset();
+        }
+      }, { capture: true, passive: false });
+
+      // Mouse wheel zoom: Ctrl + Wheel
+      let lastWheelTime = 0;
+      window.addEventListener('wheel', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          const now = performance.now();
+          if (now - lastWheelTime < 60) return;
+          lastWheelTime = now;
+          if (e.deltaY < 0) {
+            this.zoomIn();
+          } else if (e.deltaY > 0) {
+            this.zoomOut();
+          }
+        }
+      }, { passive: false });
+    },
+
+    zoomIn() {
+      const next = Math.min(1.40, Math.round((this.scale + 0.05) * 100) / 100);
+      this.apply(next, true, true);
+      this.notifyZoom();
+    },
+
+    zoomOut() {
+      const next = Math.max(0.80, Math.round((this.scale - 0.05) * 100) / 100);
+      this.apply(next, true, true);
+      this.notifyZoom();
+    },
+
+    zoomReset() {
+      this.apply(1.00, true, true);
+      this.notifyZoom();
+    },
+
+    notifyZoom() {
+      const label = I18n?.currentLang === 'ru' ? 'Масштаб' : 'Scale';
+      if (typeof showToast === 'function') {
+        showToast(`${label}: ${this.scale.toFixed(2)}x`);
+      }
+    },
+
+    syncUI(val) {
+      const slider = document.getElementById('setting-font-scale');
+      const badge = document.getElementById('setting-font-scale-badge');
+      if (slider) slider.value = val.toFixed(2);
+      if (badge) badge.textContent = val.toFixed(2) + 'x';
+    },
+
+    apply(scale, saveStorage = true, broadcast = true) {
+      const val = Math.max(0.80, Math.min(1.40, Number(scale) || 1.0));
+      this.scale = val;
+      if (saveStorage) {
+        try {
+          localStorage.setItem('gb_font_scale', val.toString());
+        } catch (e) {}
+      }
+      document.documentElement.style.zoom = val;
+      this.syncUI(val);
+      window.dispatchEvent(new Event('resize'));
+      if (typeof HeaderManager !== 'undefined') HeaderManager.update();
+
+      if (broadcast) {
+        if (window.go && window.go.main && window.go.main.App && window.go.main.App.SetFontScale) {
+          window.go.main.App.SetFontScale(val);
+        } else {
+          fetch('http://127.0.0.1:8080/livedebug/font-scale?value=' + encodeURIComponent(val), { method: 'POST' }).catch(() => {});
+        }
+      }
+    }
+  };
+
+  // ── Responsive Header Collapse Manager ─────────────────────────────────────
+  const HeaderManager = {
+    init() {
+      this.update();
+      window.addEventListener('resize', () => this.update());
+      const header = document.querySelector('.app-header');
+      if (header && typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(() => this.update()).observe(header);
+      }
+    },
+
+    update() {
+      const header = document.querySelector('.app-header');
+      if (!header) return;
+      const left = document.querySelector('.header-left');
+      const controls = document.querySelector('.header-controls');
+      if (!left || !controls) return;
+
+      const avail = header.clientWidth - left.offsetWidth - controls.offsetWidth - 24;
+      // When center space is under 420px or window width <= 1020px, collapse into icon-only mode
+      if (avail < 420 || window.innerWidth <= 1020) {
+        header.classList.add('header-collapsed');
+      } else {
+        header.classList.remove('header-collapsed');
       }
     }
   };
@@ -2210,9 +2403,22 @@
       return sel?.value || 'cute';
     },
 
+    getVolume() {
+      const slider = document.getElementById('setting-sound-volume');
+      if (slider) {
+        const parsed = parseInt(slider.value, 10);
+        if (!isNaN(parsed)) return parsed;
+      }
+      if (SettingsManager.currentSettings && typeof SettingsManager.currentSettings.soundVolume === 'number') {
+        return SettingsManager.currentSettings.soundVolume;
+      }
+      return 1;
+    },
+
     async play(type) {
       const mode = this.getMode();
-      if (mode === 'off') return;
+      const vol = this.getVolume();
+      if (mode === 'off' || vol <= 0) return;
 
       const now = Date.now();
       const minInterval = (type === 'defeat') ? 1200 : (type === 'goal') ? 700 : 600;
@@ -2256,6 +2462,8 @@
     },
 
     playTone(freq, startTime, duration, gainValue = 0.12, type = 'sine') {
+      const vol = this.getVolume();
+      if (vol <= 0) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
 
@@ -2265,8 +2473,9 @@
       osc.type = type;
       osc.frequency.setValueAtTime(freq, startTime);
 
+      const effectiveGain = Math.min(1.0, gainValue * vol);
       gain.gain.setValueAtTime(0.0001, startTime);
-      gain.gain.exponentialRampToValueAtTime(gainValue, startTime + 0.015);
+      gain.gain.exponentialRampToValueAtTime(effectiveGain, startTime + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
       osc.connect(gain);
@@ -2277,6 +2486,8 @@
     },
 
     playFMBell(freq, startTime, duration, gainVal = 0.16, modRatio = 2.756, modDepth = 2.4) {
+      const vol = this.getVolume();
+      if (vol <= 0) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
 
@@ -2297,8 +2508,9 @@
       modulator.connect(modGain);
       modGain.connect(carrier.frequency);
 
+      const effectiveGain = Math.min(1.0, gainVal * vol);
       mainGain.gain.setValueAtTime(0.0001, startTime);
-      mainGain.gain.exponentialRampToValueAtTime(gainVal, startTime + 0.008);
+      mainGain.gain.exponentialRampToValueAtTime(effectiveGain, startTime + 0.008);
       mainGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
 
       carrier.connect(mainGain);
@@ -2311,6 +2523,8 @@
     },
 
     playToneSweep(fromFreq, toFreq, startTime, duration, gainVal = 0.15) {
+      const vol = this.getVolume();
+      if (vol <= 0) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
       const osc = ctx.createOscillator();
@@ -2318,7 +2532,8 @@
       osc.type = 'sine';
       osc.frequency.setValueAtTime(fromFreq, startTime);
       osc.frequency.exponentialRampToValueAtTime(Math.max(10, toFreq), startTime + duration);
-      gain.gain.setValueAtTime(gainVal, startTime);
+      const effectiveGain = Math.min(1.0, gainVal * vol);
+      gain.gain.setValueAtTime(effectiveGain, startTime);
       gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
       osc.connect(gain);
       gain.connect(ctx.destination);
@@ -2432,6 +2647,9 @@
     preview() {
       const sel = document.getElementById('setting-sound-mode');
       const mode = sel ? sel.value : this.getMode();
+      if (mode === 'off') return;
+      const vol = this.getVolume();
+      if (vol <= 0) return;
       if (mode === 'windows') {
         if (window.go?.main?.App?.PlaySystemSound) {
           try { window.go.main.App.PlaySystemSound('connect'); } catch (e) {}
@@ -3850,7 +4068,7 @@
       // 1. Numerical Aim Reticle Integration (Zelda mechanics: angular velocity integration)
       const aimSpeed = 2.4; // px per degree
       this.reticleX += curY * dt * aimSpeed;
-      this.reticleY += -curX * dt * aimSpeed;
+      this.reticleY += curX * dt * aimSpeed;
 
       // Soft clamp to target viewport bounds
       const maxW = 150;
@@ -4269,6 +4487,30 @@
         SoundManager.preview();
       });
 
+      // Sound volume slider live preview
+      const volSlider = document.getElementById('setting-sound-volume');
+      const volBadge = document.getElementById('setting-sound-vol-badge');
+      if (volSlider) {
+        const updateVolUI = () => {
+          const val = parseInt(volSlider.value, 10);
+          if (volBadge) {
+            volBadge.textContent = (val === 0) ? '0 (Off)' : (val + 'x');
+          }
+        };
+        let previewDebounce = null;
+        volSlider.addEventListener('input', () => {
+          updateVolUI();
+          if (previewDebounce) clearTimeout(previewDebounce);
+          previewDebounce = setTimeout(() => {
+            SoundManager.preview();
+          }, 80);
+        });
+        volSlider.addEventListener('change', () => {
+          updateVolUI();
+          SoundManager.preview();
+        });
+      }
+
       // Theme segmented control clicks
       document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -4333,6 +4575,17 @@
           this.syncLiveFilter();
         });
       });
+
+      // Global font & UI scale slider live preview
+      const fontScaleSlider = document.getElementById('setting-font-scale');
+      const fontScaleBadge = document.getElementById('setting-font-scale-badge');
+      if (fontScaleSlider) {
+        fontScaleSlider.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value || '1.00');
+          if (fontScaleBadge) fontScaleBadge.textContent = val.toFixed(2) + 'x';
+          FontScaleManager.apply(val, false, true);
+        });
+      }
 
       // Initialize Apple-style floating infotips
       this.initTooltips();
@@ -4426,6 +4679,9 @@
           const s = await window.go.main.App.GetAppSettings();
           if (s) {
             this.currentSettings = s;
+            if (typeof s.fontScale === 'number' && s.fontScale > 0) {
+              FontScaleManager.apply(s.fontScale, true);
+            }
           }
         }
       } catch (err) {
@@ -4443,6 +4699,7 @@
 
     async open() {
       this.isOpen = true;
+      this.initialFontScale = (this.currentSettings && typeof this.currentSettings.fontScale === 'number') ? this.currentSettings.fontScale : FontScaleManager.scale;
       if (typeof HelpManager !== 'undefined' && HelpManager.isOpen) HelpManager.close(false);
       if (typeof WelcomeManager !== 'undefined' && WelcomeManager.isOpen) WelcomeManager.close(false);
       if (typeof SetupWizard !== 'undefined' && SetupWizard.isOpen) SetupWizard.close();
@@ -4567,9 +4824,22 @@
         disconnectCheckbox.checked = (s.disconnectAlert !== false);
       }
 
+      const silenceCheckbox = document.getElementById('setting-silence-disconnect');
+      if (silenceCheckbox) {
+        silenceCheckbox.checked = (s.silenceDisconnect !== false);
+      }
+
       const soundSelect = document.getElementById('setting-sound-mode');
       if (soundSelect) {
         soundSelect.value = s.soundMode || 'cute';
+      }
+
+      const volSlider = document.getElementById('setting-sound-volume');
+      const volBadge = document.getElementById('setting-sound-vol-badge');
+      if (volSlider) {
+        const vol = (typeof s.soundVolume === 'number') ? s.soundVolume : 1;
+        volSlider.value = vol;
+        if (volBadge) volBadge.textContent = (vol === 0) ? '0 (Off)' : (vol + 'x');
       }
 
       // Theme segmented control
@@ -4583,6 +4853,13 @@
       document.querySelectorAll('#setting-lang-segmented .settings-seg-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-val') === activeLang);
       });
+
+      // Global font & UI scale slider
+      const scaleVal = (s.fontScale !== undefined && s.fontScale > 0) ? Number(s.fontScale).toFixed(2) : (FontScaleManager.scale ? FontScaleManager.scale.toFixed(2) : '1.00');
+      const fontScaleSlider = document.getElementById('setting-font-scale');
+      const fontScaleBadge = document.getElementById('setting-font-scale-badge');
+      if (fontScaleSlider) fontScaleSlider.value = scaleVal;
+      if (fontScaleBadge) fontScaleBadge.textContent = Number(scaleVal).toFixed(2) + 'x';
     },
 
     resetToDefaults() {
@@ -4631,10 +4908,28 @@
         disconnectCheckbox.checked = true;
       }
 
+      const silenceCheckbox = document.getElementById('setting-silence-disconnect');
+      if (silenceCheckbox) {
+        silenceCheckbox.checked = true;
+      }
+
       const soundSelect = document.getElementById('setting-sound-mode');
       if (soundSelect) {
         soundSelect.value = 'cute';
       }
+
+      const volSlider = document.getElementById('setting-sound-volume');
+      const volBadge = document.getElementById('setting-sound-vol-badge');
+      if (volSlider) {
+        volSlider.value = 1;
+        if (volBadge) volBadge.textContent = '1x';
+      }
+
+      const fontScaleSlider = document.getElementById('setting-font-scale');
+      const fontScaleBadge = document.getElementById('setting-font-scale-badge');
+      if (fontScaleSlider) fontScaleSlider.value = '1.00';
+      if (fontScaleBadge) fontScaleBadge.textContent = '1.00x';
+      FontScaleManager.apply(1.00, false, true);
 
       this.syncLiveFilter();
     },
@@ -4693,13 +4988,17 @@
       const gyroSensitivity = parseFloat(gyroSensInput?.value || gyroSensSlider?.value || '1.00');
       const stillnessHint = !!document.getElementById('setting-stillness-hint')?.checked;
       const disconnectAlert = !!document.getElementById('setting-disconnect-alert')?.checked;
+      const silenceDisconnect = !!document.getElementById('setting-silence-disconnect')?.checked;
       const soundMode = document.getElementById('setting-sound-mode')?.value || 'cute';
+      const soundVolume = parseInt(document.getElementById('setting-sound-volume')?.value || '1', 10);
+      const fontScale = parseFloat(document.getElementById('setting-font-scale')?.value || '1.00');
       const selectedTheme = document.querySelector('#setting-theme-segmented .settings-seg-btn.active')?.getAttribute('data-val') || ThemeManager.theme || 'dark';
       const selectedLang = document.querySelector('#setting-lang-segmented .settings-seg-btn.active')?.getAttribute('data-val') || I18n.currentLang || 'ru';
 
       const payload = {
         theme: selectedTheme,
         lang: selectedLang,
+        fontScale: (isNaN(fontScale) || fontScale <= 0) ? 1.00 : fontScale,
         activeSlot: (AppState.lastState && AppState.lastState.activeSlot >= 0) ? AppState.lastState.activeSlot : 0,
         firstLaunchDone: true,
         hideAuthor: false,
@@ -4712,7 +5011,9 @@
         gyroSensitivity: isNaN(gyroSensitivity) ? 1.00 : gyroSensitivity,
         stillnessHint: stillnessHint,
         disconnectAlert: disconnectAlert,
-        soundMode: soundMode
+        silenceDisconnect: silenceDisconnect,
+        soundMode: soundMode,
+        soundVolume: isNaN(soundVolume) ? 1 : soundVolume
       };
 
       try {
@@ -4720,6 +5021,7 @@
           await window.go.main.App.SaveAppSettings(payload);
         }
         this.currentSettings = payload;
+        FontScaleManager.apply(payload.fontScale, true);
 
         // Apply theme if changed
         if (ThemeManager.theme !== selectedTheme) {
@@ -4743,6 +5045,10 @@
 
     close(renderState = true) {
       this.isOpen = false;
+      // Revert live preview font scale if closed without saving
+      const savedScale = (this.currentSettings && typeof this.currentSettings.fontScale === 'number') ? this.currentSettings.fontScale : (this.initialFontScale || 1.0);
+      FontScaleManager.apply(savedScale, true, true);
+
       TuningBench.stop();
       if (window.go?.main?.App?.SetTuningActive) {
         window.go.main.App.SetTuningActive(false);
@@ -5138,6 +5444,10 @@
       const btn = document.getElementById('btn-recenter-start');
       const btnText = document.getElementById('recenter-btn-text');
       const progress = document.getElementById('recenter-btn-progress');
+      const iconEl = document.querySelector('.recenter-btn-action-icon');
+      if (iconEl) {
+        iconEl.outerHTML = '<svg class="recenter-btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="3" x2="12" y2="7"></line><line x1="12" y1="17" x2="12" y2="21"></line><line x1="3" y1="12" x2="7" y2="12"></line><line x1="17" y1="12" x2="21" y2="12"></line><circle cx="12" cy="12" r="2.5" fill="currentColor"></circle></svg>';
+      }
       if (btn) {
         btn.className = 'btn-apple-primary btn-recenter-start';
         btn.disabled = false;
@@ -5176,7 +5486,7 @@
         btn.disabled = true;
       }
       if (btnText) {
-        btnText.textContent = I18n.t('recenter.btn_action_holding') || 'Фиксация (1 сек)...';
+        btnText.textContent = I18n.t('recenter.btn_action_holding') || 'Фиксация...';
       }
       if (progress) {
         progress.style.width = '0%';
@@ -5222,14 +5532,18 @@
       const btnText = document.getElementById('recenter-btn-text');
       const progress = document.getElementById('recenter-btn-progress');
       const alertEl = document.getElementById('recenter-moved-alert');
+      const iconEl = document.querySelector('.recenter-btn-action-icon');
 
+      if (iconEl) {
+        iconEl.outerHTML = '<svg class="recenter-btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="12" y1="3" x2="12" y2="7"></line><line x1="12" y1="17" x2="12" y2="21"></line><line x1="3" y1="12" x2="7" y2="12"></line><line x1="17" y1="12" x2="21" y2="12"></line><circle cx="12" cy="12" r="2.5" fill="currentColor"></circle></svg>';
+      }
       if (progress) progress.style.width = '0%';
       if (btn) {
         btn.className = 'btn-apple-primary btn-recenter-start';
         btn.disabled = false;
       }
       if (btnText) {
-        btnText.textContent = I18n.t('recenter.btn_retry') || 'Повторить центрирование';
+        btnText.textContent = I18n.t('recenter.btn_retry') || 'Повторить';
       }
       if (alertEl) {
         alertEl.style.display = 'flex';
@@ -5251,6 +5565,7 @@
       const btnText = document.getElementById('recenter-btn-text');
       const progress = document.getElementById('recenter-btn-progress');
       const alertEl = document.getElementById('recenter-moved-alert');
+      const iconEl = document.querySelector('.recenter-btn-action-icon');
 
       if (alertEl) alertEl.style.display = 'none';
       if (progress) progress.style.width = '100%';
@@ -5258,8 +5573,11 @@
         btn.className = 'btn-apple-primary btn-recenter-start success';
         btn.disabled = true;
       }
+      if (iconEl) {
+        iconEl.outerHTML = '<svg class="recenter-btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      }
       if (btnText) {
-        btnText.textContent = '✓ ' + (I18n.t('recenter.status_success') || 'Готово! Нейтраль зафиксирована');
+        btnText.textContent = I18n.t('recenter.status_success') || 'Готово';
       }
 
       // Reset backend AHRS orientation
@@ -5295,16 +5613,19 @@
       }, 550);
     },
 
-    // When phone connects or reconnects: show centered modal with full-screen blur
+    // When phone connects or reconnects: show centered recentering modal on main screen
     onDeviceConnected() {
-      const now = Date.now();
-      if (now - this.lastConnectPopupTs < 15000) return;
-      this.lastConnectPopupTs = now;
-
-      // Don't interrupt if calibration wizard or settings or welcome is open
+      // NEVER show during active calibration
       if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) return;
+      // Do not interrupt setup/settings wizards
+      if (typeof SetupWizard !== 'undefined' && SetupWizard.isOpen) return;
       if (typeof SettingsManager !== 'undefined' && SettingsManager.isOpen) return;
       if (typeof WelcomeManager !== 'undefined' && WelcomeManager.isOpen) return;
+      if (typeof HelpManager !== 'undefined' && HelpManager.isOpen) return;
+
+      const now = Date.now();
+      if (now - this.lastConnectPopupTs < 4000) return;
+      this.lastConnectPopupTs = now;
 
       this.open();
     },
@@ -7546,8 +7867,7 @@
           AppState._stillnessStart = 0;
           if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
             CalibrationWizard.hideDisconnectAlert();
-          }
-          if (typeof RecenterManager !== 'undefined') {
+          } else if (typeof RecenterManager !== 'undefined') {
             RecenterManager.onDeviceConnected();
           }
         });
@@ -7631,6 +7951,8 @@
   // ── Bootstrap ───────────────────────────────────────────────────────────────
   window.addEventListener('DOMContentLoaded', () => {
     ThemeManager.init();
+    FontScaleManager.init();
+    HeaderManager.init();
 
     let ready = false;
     let pollWails = null;
@@ -7641,6 +7963,7 @@
       ready = true;
       if (pollWails) clearInterval(pollWails);
       if (fallbackTimer) clearTimeout(fallbackTimer);
+      HeaderManager.update();
       await I18n.init();
       ProfileManager.init();
       RecenterManager.init();
@@ -7650,6 +7973,7 @@
       WelcomeManager.init();
       CalibrationWizard.init();
       AppState.init();
+      HeaderManager.update();
       if (typeof NetSparkline !== 'undefined') NetSparkline.render();
       ResourceMonitor.init();
       await WelcomeManager.checkFirstLaunch();

@@ -10,6 +10,8 @@ export function CopyLast20Frames():Promise<string>;
 
 export function GetAppSettings():Promise<main.AppSettings>;
 
+export function GetFontScale():Promise<number>;
+
 export function GetHideAuthor():Promise<boolean>;
 
 export function GetLang():Promise<string>;
@@ -45,6 +47,8 @@ export function SaveAppSettings(arg1:main.AppSettings):Promise<Record<string, an
 export function SaveProfile(arg1:number,arg2:string,arg3:string,arg4:string,arg5:any):Promise<string>;
 
 export function SetActiveProfile(arg1:number):Promise<string>;
+
+export function SetFontScale(arg1:number):Promise<void>;
 
 export function SetHideAuthor(arg1:boolean):Promise<void>;
 

@@ -225,6 +225,15 @@ const (
 	wsPingText     = "PING"           // client listens for this and resets its own watchdog
 )
 
+// DisconnectAllClients forcefully closes all active client WebSocket connections.
+func (s *Server) DisconnectAllClients() {
+	s.clientMu.Lock()
+	defer s.clientMu.Unlock()
+	for conn := range s.clientConns {
+		_ = conn.Close()
+	}
+}
+
 func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
