@@ -607,218 +607,324 @@
             <h2 class="setup-headline" data-i18n="settings_modal.title">Настройки</h2>
             <p class="setup-subhead" data-i18n="settings_modal.subtitle">Конфигурация серверов, портов и фильтрации для опытных пользователей</p>
 
-            <div class="settings-sections-wrap">
-              <!-- Group 1: Network & Servers -->
-              <div class="settings-section">
-                <div class="settings-section-header" data-i18n="settings_modal.group_network">Сетевые порты и серверы</div>
-                <div class="settings-grouped-card">
-                  <!-- DSU Port -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.dsu_port">Порт DSU (Cemuhook)</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.dsu_port_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                          </svg>
-                        </button>
+            <div class="settings-layout-split">
+              <!-- Left Column: Configuration Forms -->
+              <div class="settings-col-config">
+                <!-- Group 1: Network & Servers -->
+                <div class="settings-section">
+                  <div class="settings-section-header" data-i18n="settings_modal.group_network">Сетевые порты и серверы</div>
+                  <div class="settings-grouped-card">
+                    <!-- DSU Port -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.dsu_port">Порт DSU (Cemuhook)</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.dsu_port_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <input type="number" id="setting-dsu-port" class="setting-input-num" min="1024" max="65535" step="1" value="26760">
                       </div>
                     </div>
-                    <div class="setting-control">
-                      <input type="number" id="setting-dsu-port" class="setting-input-num" min="1024" max="65535" step="1" value="26760">
+
+                    <!-- HTTP Port -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.http_port">Порт HTTP (Сопряжение)</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.http_port_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <input type="number" id="setting-http-port" class="setting-input-num" min="1024" max="65535" step="1" value="8080">
+                      </div>
+                    </div>
+
+                    <!-- HTTPS Port -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.https_port">Порт HTTPS (Контроллер)</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.https_port_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <input type="number" id="setting-https-port" class="setting-input-num" min="1024" max="65535" step="1" value="8443">
+                      </div>
                     </div>
                   </div>
+                </div>
 
-                  <!-- HTTP Port -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.http_port">Порт HTTP (Сопряжение)</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.http_port_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                <!-- Group 2: Sensor & Motion Filtering -->
+                <div class="settings-section">
+                  <div class="settings-section-header" data-i18n="settings_modal.group_sensor">Сенсор и фильтрация движения</div>
+                  <div class="settings-grouped-card">
+                    <!-- Gyro 1-Euro Aim Smoothing -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.gyro_smoothing">Сглаживание прицеливания (1-Euro)</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.gyro_smoothing_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <select id="setting-gyro-smoothing" class="setting-select">
+                          <option value="0.00" data-i18n="settings_modal.smoothing_off">Выключено (Сырой сигнал)</option>
+                          <option value="0.25" data-i18n="settings_modal.smoothing_light">Лёгкое (25%)</option>
+                          <option value="0.50" data-i18n="settings_modal.smoothing_balanced" selected>Сбалансированное (50% — Рекомендуется)</option>
+                          <option value="0.75" data-i18n="settings_modal.smoothing_high">Плавное (75%)</option>
+                          <option value="1.00" data-i18n="settings_modal.smoothing_max">Максимальное (100% — Кинематограф)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- Tremor Deadband (Smoothstep) -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.gyro_deadband">Порог микро-тремора рук</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.gyro_deadband_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <select id="setting-gyro-deadband" class="setting-select">
+                          <option value="0.00" data-i18n="settings_modal.deadband_off">0.00°/s (Отключен)</option>
+                          <option value="0.05" data-i18n="settings_modal.deadband_005">0.05°/s (Минимальный)</option>
+                          <option value="0.10" data-i18n="settings_modal.deadband_010" selected>0.10°/s (Стандартный)</option>
+                          <option value="0.20" data-i18n="settings_modal.deadband_020">0.20°/s (Умеренный)</option>
+                          <option value="0.35" data-i18n="settings_modal.deadband_035">0.35°/s (Агрессивный)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <!-- DSU Sensitivity Multiplier -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.gyro_sensitivity">Чувствительность DSU</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.gyro_sensitivity_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control setting-range-control">
+                        <input type="range" id="setting-gyro-sensitivity" class="setting-range-input" min="0.50" max="2.50" step="0.05" value="1.00">
+                        <span class="setting-range-badge" id="setting-gyro-sens-badge">1.00x</span>
+                      </div>
+                    </div>
+
+                    <!-- Stillness Hint Toggle -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.stillness_hint">Подсказка о калибровке неподвижности</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.stillness_hint_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <label class="apple-toggle">
+                          <input type="checkbox" id="setting-stillness-hint" checked>
+                          <span class="apple-toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- Disconnect Blur Alert Toggle -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.disconnect_alert">Предупреждение об отключении</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.disconnect_alert_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <label class="apple-toggle">
+                          <input type="checkbox" id="setting-disconnect-alert" checked>
+                          <span class="apple-toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- Sound Alerts Mode -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.sound_mode">Звуковые сигналы событий</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_mode_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control" style="gap: 8px;">
+                        <select id="setting-sound-mode" class="setting-select">
+                          <option value="cute" data-i18n="settings_modal.sound_cute">Милая мелодия (Синтезатор)</option>
+                          <option value="windows" data-i18n="settings_modal.sound_windows">Системные звуки Windows</option>
+                          <option value="off" data-i18n="settings_modal.sound_off">Отключено</option>
+                        </select>
+                        <button type="button" class="btn-sound-preview" id="btn-sound-preview" data-i18n-tip="settings_modal.sound_preview_tip" aria-label="Preview Sound">
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                           </svg>
                         </button>
                       </div>
-                    </div>
-                    <div class="setting-control">
-                      <input type="number" id="setting-http-port" class="setting-input-num" min="1024" max="65535" step="1" value="8080">
                     </div>
                   </div>
+                </div>
 
-                  <!-- HTTPS Port -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.https_port">Порт HTTPS (Контроллер)</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.https_port_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                          </svg>
-                        </button>
+                <!-- Group 3: Interface & Appearance -->
+                <div class="settings-section">
+                  <div class="settings-section-header" data-i18n="settings_modal.group_appearance">Интерфейс и оформление</div>
+                  <div class="settings-grouped-card">
+                    <!-- Theme -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.theme">Тема оформления</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.theme_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <div class="settings-segmented-group" id="setting-theme-segmented" role="group" aria-label="Theme">
+                          <button type="button" class="settings-seg-btn" data-val="dark" data-i18n="settings_modal.theme_dark">Тёмная</button>
+                          <button type="button" class="settings-seg-btn" data-val="light" data-i18n="settings_modal.theme_light">Светлая</button>
+                        </div>
                       </div>
                     </div>
-                    <div class="setting-control">
-                      <input type="number" id="setting-https-port" class="setting-input-num" min="1024" max="65535" step="1" value="8443">
+
+                    <!-- Language -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.language">Язык интерфейса</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.language_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <div class="settings-segmented-group" id="setting-lang-segmented" role="group" aria-label="Language">
+                          <button type="button" class="settings-seg-btn" data-val="ru">Русский</button>
+                          <button type="button" class="settings-seg-btn" data-val="en">English</button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <!-- Group 2: Sensor & Safety Filters -->
-              <div class="settings-section">
-                <div class="settings-section-header" data-i18n="settings_modal.group_sensor">Сенсор и фильтрация шума</div>
-                <div class="settings-grouped-card">
-                  <!-- Gyro Deadzone -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.gyro_deadzone">Порог шума гироскопа (Deadzone)</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.gyro_deadzone_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                          </svg>
-                        </button>
+              <!-- Right Column: Interactive Real-Time Response Test Bench -->
+              <div class="settings-col-bench">
+                <div class="settings-section">
+                  <div class="settings-section-header" data-i18n="settings_modal.bench_title">Тест отклика в реальном времени</div>
+                  <div class="settings-bench-card">
+                    <!-- Live Status Header -->
+                    <div class="bench-status-bar">
+                      <div class="bench-live-pill" id="bench-live-pill">
+                        <span class="bench-live-dot"></span>
+                        <span id="bench-live-text">Live 60 Hz</span>
                       </div>
+                      <span class="bench-status-tag still" id="bench-stability-tag">Покой</span>
                     </div>
-                    <div class="setting-control">
-                      <select id="setting-gyro-deadzone" class="setting-select">
-                        <option value="0.00" data-i18n="settings_modal.deadzone_off">Отключен (0.00°/s) - чистый сигнал</option>
-                        <option value="0.05" data-i18n="settings_modal.deadzone_low">Низкий (0.05°/s)</option>
-                        <option value="0.10" data-i18n="settings_modal.deadzone_medium">Средний (0.10°/s)</option>
-                        <option value="0.20" data-i18n="settings_modal.deadzone_default">Стандартный (0.20°/s) - оптимум</option>
-                        <option value="0.35" data-i18n="settings_modal.deadzone_high">Высокий (0.35°/s)</option>
-                      </select>
-                    </div>
-                  </div>
 
-                  <!-- Stillness Hint Toggle -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.stillness_hint">Подсказка о калибровке неподвижности</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.stillness_hint_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                          </svg>
-                        </button>
+                    <!-- Zelda Aim Simulator Target Display -->
+                    <div class="bench-aim-wrap">
+                      <div class="bench-aim-header">
+                        <span class="bench-aim-title" data-i18n="settings_modal.bench_aim_title">Симулятор прицела Zelda</span>
+                        <button type="button" class="bench-btn-recenter" id="btn-bench-recenter" data-i18n="settings_modal.bench_recenter">Центр</button>
                       </div>
+                      <div class="bench-target-viewport">
+                        <div class="bench-target-cross-v"></div>
+                        <div class="bench-target-cross-h"></div>
+                        <div class="bench-target-ring r-outer"></div>
+                        <div class="bench-target-ring r-inner"></div>
+                        <div class="bench-target-center"></div>
+                        <!-- Interactive Moving Crosshair Dot -->
+                        <div class="bench-reticle-dot" id="bench-reticle-dot">
+                          <div class="bench-reticle-circle"></div>
+                          <div class="bench-reticle-sight"></div>
+                        </div>
+                      </div>
+                      <div class="bench-target-caption" data-i18n="settings_modal.bench_aim_sub">Перекрестие реагирует на скорость DSU в реальном времени</div>
                     </div>
-                    <div class="setting-control">
-                      <label class="apple-toggle">
-                        <input type="checkbox" id="setting-stillness-hint" checked>
-                        <span class="apple-toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
 
-                  <!-- Disconnect Blur Alert Toggle -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.disconnect_alert">Предупреждение об отключении</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.disconnect_alert_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                          </svg>
-                        </button>
+                    <!-- Dual-Trace Oscilloscope -->
+                    <div class="bench-osc-wrap">
+                      <div class="bench-osc-header">
+                        <div class="bench-osc-legend">
+                          <span class="osc-legend-tag raw"><span class="osc-dot raw"></span><span data-i18n="settings_modal.bench_raw_legend">Raw</span></span>
+                          <span class="osc-legend-tag filt"><span class="osc-dot filt"></span><span data-i18n="settings_modal.bench_filtered_legend">DSU</span></span>
+                        </div>
+                        <div class="bench-axis-tabs" id="bench-axis-tabs">
+                          <button type="button" class="bench-axis-tab active" data-axis="x">Pitch</button>
+                          <button type="button" class="bench-axis-tab" data-axis="y">Yaw</button>
+                          <button type="button" class="bench-axis-tab" data-axis="z">Roll</button>
+                        </div>
                       </div>
-                    </div>
-                    <div class="setting-control">
-                      <label class="apple-toggle">
-                        <input type="checkbox" id="setting-disconnect-alert" checked>
-                        <span class="apple-toggle-slider"></span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <!-- Sound Alerts Mode -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.sound_mode">Звуковые сигналы событий</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_mode_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="setting-control" style="gap: 8px;">
-                      <select id="setting-sound-mode" class="setting-select">
-                        <option value="cute" data-i18n="settings_modal.sound_cute">Милая мелодия (Синтезатор)</option>
-                        <option value="windows" data-i18n="settings_modal.sound_windows">Системные звуки Windows</option>
-                        <option value="off" data-i18n="settings_modal.sound_off">Отключено</option>
-                      </select>
-                      <button type="button" class="btn-sound-preview" id="btn-sound-preview" data-i18n-tip="settings_modal.sound_preview_tip" aria-label="Preview Sound">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Group 3: Interface & Appearance -->
-              <div class="settings-section">
-                <div class="settings-section-header" data-i18n="settings_modal.group_appearance">Интерфейс и оформление</div>
-                <div class="settings-grouped-card">
-                  <!-- Theme -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.theme">Тема оформления</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.theme_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="setting-control">
-                      <div class="settings-segmented-group" id="setting-theme-segmented" role="group" aria-label="Theme">
-                        <button type="button" class="settings-seg-btn" data-val="dark" data-i18n="settings_modal.theme_dark">Тёмная</button>
-                        <button type="button" class="settings-seg-btn" data-val="light" data-i18n="settings_modal.theme_light">Светлая</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Language -->
-                  <div class="setting-row">
-                    <div class="setting-info">
-                      <div class="setting-label-row">
-                        <span class="setting-label" data-i18n="settings_modal.language">Язык интерфейса</span>
-                        <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.language_tip" aria-label="Info">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div class="setting-control">
-                      <div class="settings-segmented-group" id="setting-lang-segmented" role="group" aria-label="Language">
-                        <button type="button" class="settings-seg-btn" data-val="ru">Русский</button>
-                        <button type="button" class="settings-seg-btn" data-val="en">English</button>
+                      <canvas id="bench-oscilloscope-canvas" class="bench-canvas" width="340" height="95"></canvas>
+                      <div class="bench-osc-footer">
+                        <span class="bench-noise-readout" id="bench-noise-stat">Подавление шума: --%</span>
+                        <span class="bench-rate-readout" id="bench-fps-stat">60 Hz</span>
                       </div>
                     </div>
                   </div>
@@ -1974,6 +2080,285 @@
     }
   };
 
+  // ── Real-Time Response Test Bench ──────────────────────────────────────────
+  const TuningBench = {
+    active: false,
+    initialized: false,
+    activeAxis: 'x', // 'x' = Pitch, 'y' = Yaw, 'z' = Roll
+    reticleX: 0,
+    reticleY: 0,
+    maxHistory: 140,
+    historyRaw: [],
+    historyFilt: [],
+    recentRawDev: [],
+    recentFiltDev: [],
+    lastFrameTs: 0,
+    rafId: null,
+
+    init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
+      // Axis tabs switching
+      const tabBtns = document.querySelectorAll('#bench-axis-tabs .bench-axis-tab');
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          tabBtns.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.activeAxis = btn.getAttribute('data-axis') || 'x';
+          this.historyRaw = [];
+          this.historyFilt = [];
+        });
+      });
+
+      // Recenter button
+      document.getElementById('btn-bench-recenter')?.addEventListener('click', () => {
+        this.recenter();
+      });
+
+      // Wails 60 Hz telemetry event
+      if (window.runtime && window.runtime.EventsOn) {
+        window.runtime.EventsOn('tuning:frame', (frame) => {
+          if (this.active) {
+            this.onFrame(frame);
+          }
+        });
+      }
+    },
+
+    start() {
+      this.active = true;
+      this.reticleX = 0;
+      this.reticleY = 0;
+      this.historyRaw = [];
+      this.historyFilt = [];
+      this.recentRawDev = [];
+      this.recentFiltDev = [];
+      this.lastFrameTs = performance.now();
+      this.renderReticle();
+
+      if (!this.rafId) {
+        const loop = () => {
+          if (!this.active) {
+            this.rafId = null;
+            return;
+          }
+          this.drawOscilloscope();
+          this.rafId = requestAnimationFrame(loop);
+        };
+        this.rafId = requestAnimationFrame(loop);
+      }
+    },
+
+    stop() {
+      this.active = false;
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+    },
+
+    recenter() {
+      this.reticleX = 0;
+      this.reticleY = 0;
+      this.renderReticle();
+    },
+
+    onFrame(frame) {
+      if (!frame) return;
+
+      const now = performance.now();
+      const dt = this.lastFrameTs ? Math.min(0.05, Math.max(0.001, (now - this.lastFrameTs) / 1000)) : 0.016;
+      this.lastFrameTs = now;
+
+      // 1. Update Aim Reticle (Zelda mechanics: DSU angular velocity integration)
+      // DSU conventions:
+      // OutX is Pitch (tilting phone up -> pitch up -> reticle moves up, negative Y in canvas)
+      // OutY is Yaw (turning phone right -> negative OutY -> reticle moves right, positive X)
+      const aimSpeed = 6.2; // px per degree
+      this.reticleX += -frame.OutY * dt * aimSpeed;
+      this.reticleY += -frame.OutX * dt * aimSpeed;
+
+      // Soft clamp to target viewport bounds
+      const viewport = document.querySelector('.bench-target-viewport');
+      const maxW = viewport ? Math.max(80, (viewport.clientWidth / 2) - 16) : 140;
+      const maxH = viewport ? Math.max(40, (viewport.clientHeight / 2) - 16) : 56;
+
+      if (this.reticleX > maxW) this.reticleX = maxW;
+      if (this.reticleX < -maxW) this.reticleX = -maxW;
+      if (this.reticleY > maxH) this.reticleY = maxH;
+      if (this.reticleY < -maxH) this.reticleY = -maxH;
+
+      this.renderReticle();
+
+      // 2. Stability and Rate Pills
+      const speed = Math.sqrt(frame.OutX * frame.OutX + frame.OutY * frame.OutY + frame.OutZ * frame.OutZ);
+      const stabilityTag = document.getElementById('bench-stability-tag');
+      if (stabilityTag) {
+        if (speed < 0.12) {
+          stabilityTag.textContent = I18n.t('settings_modal.bench_status_still') || 'Покой';
+          stabilityTag.className = 'bench-status-tag still';
+        } else if (speed < 3.2) {
+          stabilityTag.textContent = I18n.t('settings_modal.bench_status_aim') || 'Прицел';
+          stabilityTag.className = 'bench-status-tag aim';
+        } else {
+          stabilityTag.textContent = I18n.t('settings_modal.bench_status_active') || 'Движение';
+          stabilityTag.className = 'bench-status-tag active';
+        }
+      }
+
+      const rateStat = document.getElementById('bench-fps-stat');
+      if (rateStat) {
+        rateStat.textContent = `${Math.round(frame.Hz || 60)} Hz`;
+      }
+
+      // 3. Oscilloscope Data Push
+      const rawVal = (this.activeAxis === 'x') ? frame.RawX : (this.activeAxis === 'y') ? frame.RawY : frame.RawZ;
+      const filtVal = (this.activeAxis === 'x') ? frame.OutX : (this.activeAxis === 'y') ? frame.OutY : frame.OutZ;
+
+      this.historyRaw.push(rawVal);
+      this.historyFilt.push(filtVal);
+      if (this.historyRaw.length > this.maxHistory) this.historyRaw.shift();
+      if (this.historyFilt.length > this.maxHistory) this.historyFilt.shift();
+
+      // 4. Noise Reduction Calculation (RMS deviation comparison in resting/slow window)
+      this.recentRawDev.push(Math.abs(rawVal));
+      this.recentFiltDev.push(Math.abs(filtVal));
+      if (this.recentRawDev.length > 50) this.recentRawDev.shift();
+      if (this.recentFiltDev.length > 50) this.recentFiltDev.shift();
+
+      this.updateNoiseReadout(speed);
+    },
+
+    renderReticle() {
+      const dot = document.getElementById('bench-reticle-dot');
+      if (dot) {
+        dot.style.transform = `translate(calc(-50% + ${Math.round(this.reticleX)}px), calc(-50% + ${Math.round(this.reticleY)}px))`;
+      }
+    },
+
+    updateNoiseReadout(speed) {
+      const noiseEl = document.getElementById('bench-noise-stat');
+      if (!noiseEl) return;
+
+      const prefix = I18n.t('settings_modal.bench_noise_reduction') || 'Подавление шума';
+
+      if (this.recentRawDev.length < 20) {
+        noiseEl.textContent = `${prefix}: --%`;
+        return;
+      }
+
+      const avgRaw = this.recentRawDev.reduce((a, b) => a + b, 0) / this.recentRawDev.length;
+      const avgFilt = this.recentFiltDev.reduce((a, b) => a + b, 0) / this.recentFiltDev.length;
+
+      if (avgRaw < 0.05 && avgFilt === 0) {
+        noiseEl.textContent = `${prefix}: -99%`;
+        return;
+      }
+
+      if (speed < 2.5 && avgRaw > 0.03) {
+        const ratio = Math.max(0, Math.min(0.99, (avgRaw - avgFilt) / avgRaw));
+        const pct = Math.round(ratio * 100);
+        if (pct > 0) {
+          noiseEl.textContent = `${prefix}: -${pct}%`;
+        } else {
+          noiseEl.textContent = `${prefix}: 0%`;
+        }
+      } else {
+        noiseEl.textContent = `${prefix}: 0-лаг`;
+      }
+    },
+
+    drawOscilloscope() {
+      const canvas = document.getElementById('bench-oscilloscope-canvas');
+      if (!canvas) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.floor(rect.width || 340);
+      const h = Math.floor(rect.height || 95);
+
+      if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+      }
+
+      const ctx = canvas.getContext('2d');
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      // Background clear
+      ctx.clearRect(0, 0, w, h);
+
+      const centerY = h / 2;
+
+      // Center reference zero line
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.moveTo(0, centerY);
+      ctx.lineTo(w, centerY);
+      ctx.stroke();
+
+      // Top and bottom boundary guides
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+      ctx.setLineDash([2, 4]);
+      ctx.moveTo(0, centerY - h * 0.35);
+      ctx.lineTo(w, centerY - h * 0.35);
+      ctx.moveTo(0, centerY + h * 0.35);
+      ctx.lineTo(w, centerY + h * 0.35);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const n = this.historyRaw.length;
+      if (n < 2) {
+        ctx.restore();
+        return;
+      }
+
+      // Determine vertical scale dynamically
+      let maxAmp = 8.0; // minimum deg/s scale
+      for (let i = 0; i < n; i++) {
+        const ar = Math.abs(this.historyRaw[i]);
+        const af = Math.abs(this.historyFilt[i]);
+        if (ar > maxAmp) maxAmp = ar;
+        if (af > maxAmp) maxAmp = af;
+      }
+      const scale = (h * 0.42) / maxAmp;
+
+      const dx = w / (this.maxHistory - 1);
+      const startX = w - (n - 1) * dx;
+
+      // 1. Draw Raw trace (Apple Orange/Red)
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255, 69, 58, 0.70)';
+      ctx.lineWidth = 1.6;
+      for (let i = 0; i < n; i++) {
+        const x = startX + i * dx;
+        const y = centerY - this.historyRaw[i] * scale;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      // 2. Draw Filtered DSU trace (Apple Cyan/Blue)
+      ctx.beginPath();
+      ctx.strokeStyle = '#0A84FF';
+      ctx.lineWidth = 2.0;
+      for (let i = 0; i < n; i++) {
+        const x = startX + i * dx;
+        const y = centerY - this.historyFilt[i] * scale;
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+
+      ctx.restore();
+    }
+  };
+
   // ── Settings Module Manager ────────────────────────────────────────────────
   const SettingsManager = {
     isOpen: false,
@@ -2032,11 +2417,41 @@
         });
       });
 
+      // Sensitivity slider live badge and preview
+      const sensInput = document.getElementById('setting-gyro-sensitivity');
+      const sensBadge = document.getElementById('setting-gyro-sens-badge');
+      if (sensInput) {
+        sensInput.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value || '1.00');
+          if (sensBadge) sensBadge.textContent = val.toFixed(2) + 'x';
+          this.syncLiveFilter();
+        });
+      }
+
+      // Gyro filtering selects live update
+      ['setting-gyro-smoothing', 'setting-gyro-deadband'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', () => {
+          this.syncLiveFilter();
+        });
+      });
+
       // Initialize Apple-style floating infotips
       this.initTooltips();
 
+      // Initialize real-time response test bench
+      TuningBench.init();
+
       // Load initial settings silently on startup
       await this.fetchSettings();
+    },
+
+    syncLiveFilter() {
+      const smoothing = parseFloat(document.getElementById('setting-gyro-smoothing')?.value || '0.50');
+      const deadband = parseFloat(document.getElementById('setting-gyro-deadband')?.value || '0.10');
+      const sens = parseFloat(document.getElementById('setting-gyro-sensitivity')?.value || '1.00');
+      if (window.go?.main?.App?.SetTuningFilterParams) {
+        window.go.main.App.SetTuningFilterParams(smoothing, deadband, sens);
+      }
     },
 
     initTooltips() {
@@ -2134,7 +2549,7 @@
       const container = document.querySelector('.modular-container');
       if (container) {
         container.classList.add('setup-mode');
-        container.classList.remove('setup-mode-wide');
+        container.classList.add('setup-mode-wide');
       }
 
       const vOff = document.getElementById('view-offline');
@@ -2154,6 +2569,13 @@
       document.getElementById('btn-header-settings')?.classList.add('active');
 
       await this.populateUI();
+
+      // Start live test bench telemetry
+      if (window.go?.main?.App?.SetTuningActive) {
+        window.go.main.App.SetTuningActive(true);
+      }
+      this.syncLiveFilter();
+      TuningBench.start();
     },
 
     async populateUI() {
@@ -2163,7 +2585,10 @@
         dsuPort: 26760,
         httpPort: 8080,
         httpsPort: 8443,
-        gyroDeadzone: 0.20,
+        gyroDeadzone: 0.10,
+        gyroSmoothing: 0.50,
+        gyroDeadband: 0.10,
+        gyroSensitivity: 1.00,
         stillnessHint: true,
         disconnectAlert: true,
         theme: ThemeManager.theme || 'dark',
@@ -2188,20 +2613,47 @@
         httpsInput.classList.remove('error');
       }
 
-      const deadzoneSelect = document.getElementById('setting-gyro-deadzone');
-      if (deadzoneSelect) {
-        const dzVal = (s.gyroDeadzone !== undefined) ? Number(s.gyroDeadzone).toFixed(2) : '0.20';
+      // Gyro 1-Euro Aim Smoothing
+      const smoothingSelect = document.getElementById('setting-gyro-smoothing');
+      if (smoothingSelect) {
+        const smVal = (s.gyroSmoothing !== undefined) ? Number(s.gyroSmoothing).toFixed(2) : '0.50';
         let matched = false;
-        for (const opt of deadzoneSelect.options) {
-          if (Math.abs(parseFloat(opt.value) - parseFloat(dzVal)) < 0.02) {
+        for (const opt of smoothingSelect.options) {
+          if (Math.abs(parseFloat(opt.value) - parseFloat(smVal)) < 0.05) {
             opt.selected = true;
             matched = true;
             break;
           }
         }
-        if (!matched && deadzoneSelect.options.length > 0) {
-          deadzoneSelect.value = '0.20';
+        if (!matched && smoothingSelect.options.length > 0) {
+          smoothingSelect.value = '0.50';
         }
+      }
+
+      // Gyro Tremor Deadband
+      const deadbandSelect = document.getElementById('setting-gyro-deadband');
+      if (deadbandSelect) {
+        const dbVal = (s.gyroDeadband !== undefined) ? Number(s.gyroDeadband).toFixed(2) : ((s.gyroDeadzone !== undefined) ? Number(s.gyroDeadzone).toFixed(2) : '0.10');
+        let matched = false;
+        for (const opt of deadbandSelect.options) {
+          if (Math.abs(parseFloat(opt.value) - parseFloat(dbVal)) < 0.02) {
+            opt.selected = true;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched && deadbandSelect.options.length > 0) {
+          deadbandSelect.value = '0.10';
+        }
+      }
+
+      // DSU Sensitivity Multiplier
+      const sensInput = document.getElementById('setting-gyro-sensitivity');
+      const sensBadge = document.getElementById('setting-gyro-sens-badge');
+      if (sensInput) {
+        const sensVal = (s.gyroSensitivity !== undefined && s.gyroSensitivity > 0) ? Number(s.gyroSensitivity).toFixed(2) : '1.00';
+        sensInput.value = sensVal;
+        if (sensBadge) sensBadge.textContent = Number(sensVal).toFixed(2) + 'x';
       }
 
       const stillnessCheckbox = document.getElementById('setting-stillness-hint');
@@ -2251,9 +2703,21 @@
         httpsInput.classList.remove('error');
       }
 
-      const deadzoneSelect = document.getElementById('setting-gyro-deadzone');
-      if (deadzoneSelect) {
-        deadzoneSelect.value = '0.20';
+      const smoothingSelect = document.getElementById('setting-gyro-smoothing');
+      if (smoothingSelect) {
+        smoothingSelect.value = '0.50';
+      }
+
+      const deadbandSelect = document.getElementById('setting-gyro-deadband');
+      if (deadbandSelect) {
+        deadbandSelect.value = '0.10';
+      }
+
+      const sensInput = document.getElementById('setting-gyro-sensitivity');
+      const sensBadge = document.getElementById('setting-gyro-sens-badge');
+      if (sensInput) {
+        sensInput.value = '1.00';
+        if (sensBadge) sensBadge.textContent = '1.00x';
       }
 
       const stillnessCheckbox = document.getElementById('setting-stillness-hint');
@@ -2270,6 +2734,8 @@
       if (soundSelect) {
         soundSelect.value = 'cute';
       }
+
+      this.syncLiveFilter();
     },
 
     async save() {
@@ -2319,7 +2785,9 @@
         return;
       }
 
-      const gyroDeadzone = parseFloat(document.getElementById('setting-gyro-deadzone')?.value || '0.20');
+      const gyroSmoothing = parseFloat(document.getElementById('setting-gyro-smoothing')?.value || '0.50');
+      const gyroDeadband = parseFloat(document.getElementById('setting-gyro-deadband')?.value || '0.10');
+      const gyroSensitivity = parseFloat(document.getElementById('setting-gyro-sensitivity')?.value || '1.00');
       const stillnessHint = !!document.getElementById('setting-stillness-hint')?.checked;
       const disconnectAlert = !!document.getElementById('setting-disconnect-alert')?.checked;
       const soundMode = document.getElementById('setting-sound-mode')?.value || 'cute';
@@ -2335,7 +2803,10 @@
         dsuPort: dsuPort,
         httpPort: httpPort,
         httpsPort: httpsPort,
-        gyroDeadzone: isNaN(gyroDeadzone) ? 0.20 : gyroDeadzone,
+        gyroDeadzone: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
+        gyroSmoothing: isNaN(gyroSmoothing) ? 0.50 : gyroSmoothing,
+        gyroDeadband: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
+        gyroSensitivity: isNaN(gyroSensitivity) ? 1.00 : gyroSensitivity,
         stillnessHint: stillnessHint,
         disconnectAlert: disconnectAlert,
         soundMode: soundMode
@@ -2369,6 +2840,11 @@
 
     close(renderState = true) {
       this.isOpen = false;
+      TuningBench.stop();
+      if (window.go?.main?.App?.SetTuningActive) {
+        window.go.main.App.SetTuningActive(false);
+      }
+
       const vSettings = document.getElementById('view-settings');
       if (vSettings) vSettings.style.display = 'none';
 
@@ -4309,6 +4785,7 @@
     _lastStillR: 0,
     _recalHintShown: false,
     _recalHintDismissedTs: 0,
+    _reconnectCooldownTs: 0,
     _recalHintTimer: null,
     targetPitch: 0,
     targetRoll: 0,
@@ -4477,6 +4954,10 @@
       if (this._recalHintDismissedTs && (now - this._recalHintDismissedTs < 45000)) {
         return;
       }
+      // Check if settling cooldown is active after reconnect or waking from sleep (3.5 seconds)
+      if (this._reconnectCooldownTs && (now - this._reconnectCooldownTs < 3500)) {
+        return;
+      }
 
       // Calculate angular delta from last frame
       const deltaP = Math.abs(p - this._lastStillP);
@@ -4612,6 +5093,10 @@
           } else {
             SoundManager.play('disconnect');
           }
+        }
+        if (!isOffline) {
+          this._reconnectCooldownTs = Date.now();
+          this._stillnessStart = 0;
         }
         if (isOffline) {
           if (!SetupWizard?.isOpen && !HelpManager?.isOpen && !SettingsManager?.isOpen && !WelcomeManager?.isOpen) {
@@ -4837,11 +5322,17 @@
           }
         });
         window.runtime.EventsOn('device:connected', () => {
+          AppState._reconnectCooldownTs = Date.now();
+          AppState._stillnessStart = 0;
           if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
             CalibrationWizard.hideDisconnectAlert();
           }
         });
         window.runtime.EventsOn('device:visibility', (visible) => {
+          if (visible) {
+            AppState._reconnectCooldownTs = Date.now();
+            AppState._stillnessStart = 0;
+          }
           if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
             if (!visible) {
               CalibrationWizard.showDisconnectAlert();

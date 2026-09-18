@@ -22,6 +22,7 @@ import (
 
 	"gyrobridge/pkg/ca"
 	"gyrobridge/pkg/dsu"
+	"gyrobridge/pkg/filter"
 	"gyrobridge/pkg/i18n"
 	"gyrobridge/pkg/pairing"
 	"gyrobridge/pkg/server"
@@ -182,7 +183,8 @@ type App struct {
 	previewMatrix [3][3]float64
 	usePreview    bool
 	// Madgwick AHRS filter matching PadTest.exe exactly for 3D viewport synchronization
-	ahrs *MadgwickAHRS
+	ahrs           *MadgwickAHRS
+	accFilterReset atomic.Bool
 	// Latest AHRS quaternion stored atomically for lock-free read by GetState.
 	// Q0=w, Q1=x, Q2=y, Q3=z (same as AHRS return values).
 	curAhrsQ0 atomic.Uint64
@@ -215,11 +217,17 @@ type App struct {
 	// Advanced configuration settings
 	dsuPort          int
 	httpPort         int
-	httpsPort        int
-	gyroDeadzoneBits atomic.Uint64
-	stillnessHint    atomic.Bool
-	disconnectAlert  atomic.Bool
-	soundMode        string
+	httpsPort           int
+	gyroDeadzoneBits    atomic.Uint64
+	stillnessHint       atomic.Bool
+	disconnectAlert     atomic.Bool
+	soundMode           string
+	// Adaptive 1-Euro DSU filter and dynamic response parameters
+	gyroFilter          *filter.Vector3OneEuroFilter
+	gyroSmoothingBits   atomic.Uint64 // float64 (0.0 to 1.0, default 0.50)
+	gyroDeadbandBits    atomic.Uint64 // float64 (deg/s, default 0.10)
+	gyroSensitivityBits atomic.Uint64 // float64 (multiplier, default 1.00)
+	tuningActive        atomic.Bool
 }
 
 // AppSettings holds configurable parameters exposed in the settings window
@@ -236,6 +244,20 @@ type AppSettings struct {
 	StillnessHint   bool    `json:"stillnessHint"`
 	DisconnectAlert bool    `json:"disconnectAlert"`
 	SoundMode       string  `json:"soundMode"`
+	GyroSmoothing   float64 `json:"gyroSmoothing"`
+	GyroDeadband    float64 `json:"gyroDeadband"`
+	GyroSensitivity float64 `json:"gyroSensitivity"`
+}
+
+// TuningFrame conveys simultaneous raw and filtered telemetry to the frontend tuning bench
+type TuningFrame struct {
+	RawX float32 `json:"rawX"`
+	RawY float32 `json:"rawY"`
+	RawZ float32 `json:"rawZ"`
+	OutX float32 `json:"outX"`
+	OutY float32 `json:"outY"`
+	OutZ float32 `json:"outZ"`
+	Hz   float32 `json:"hz"`
 }
 
 // StepCaptureLog stores the full recorded session of a calibration gesture step
@@ -503,10 +525,14 @@ func NewApp() *App {
 		profilesDir:  profilesDir,
 		calStepLogs:  make(map[int]StepCaptureLog),
 		ahrs:         NewMadgwickAHRS(0.0), // Pure gyro integration with stationary deadband
+		gyroFilter:   filter.NewVector3OneEuroFilter(1.7, 0.015, 1.0),
 		currentTheme: "dark",
 		currentLang:  "ru",
 	}
 	app.gyroDeadzoneBits.Store(math.Float64bits(0.20))
+	app.gyroSmoothingBits.Store(math.Float64bits(0.50))
+	app.gyroDeadbandBits.Store(math.Float64bits(0.10))
+	app.gyroSensitivityBits.Store(math.Float64bits(1.00))
 	app.stillnessHint.Store(true)
 	app.disconnectAlert.Store(true)
 	app.soundMode = "cute"
@@ -576,18 +602,21 @@ func (a *App) loadSettings() {
 		return
 	}
 	var s struct {
-		Theme           string  `json:"theme"`
-		Lang            string  `json:"lang"`
-		ActiveSlot      int     `json:"activeSlot"`
-		FirstLaunchDone bool    `json:"firstLaunchDone"`
-		HideAuthor      bool    `json:"hideAuthor"`
-		DSUPort         int     `json:"dsuPort"`
-		HTTPPort        int     `json:"httpPort"`
-		HTTPSPort       int     `json:"httpsPort"`
-		GyroDeadzone    float64 `json:"gyroDeadzone"`
-		StillnessHint   *bool   `json:"stillnessHint"`
-		DisconnectAlert *bool   `json:"disconnectAlert"`
-		SoundMode       string  `json:"soundMode"`
+		Theme           string   `json:"theme"`
+		Lang            string   `json:"lang"`
+		ActiveSlot      int      `json:"activeSlot"`
+		FirstLaunchDone bool     `json:"firstLaunchDone"`
+		HideAuthor      bool     `json:"hideAuthor"`
+		DSUPort         int      `json:"dsuPort"`
+		HTTPPort        int      `json:"httpPort"`
+		HTTPSPort       int      `json:"httpsPort"`
+		GyroDeadzone    float64  `json:"gyroDeadzone"`
+		StillnessHint   *bool    `json:"stillnessHint"`
+		DisconnectAlert *bool    `json:"disconnectAlert"`
+		SoundMode       string   `json:"soundMode"`
+		GyroSmoothing   *float64 `json:"gyroSmoothing,omitempty"`
+		GyroDeadband    *float64 `json:"gyroDeadband,omitempty"`
+		GyroSensitivity *float64 `json:"gyroSensitivity,omitempty"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
@@ -634,6 +663,24 @@ func (a *App) loadSettings() {
 	} else {
 		a.soundMode = "cute"
 	}
+	if s.GyroSmoothing != nil {
+		a.gyroSmoothingBits.Store(math.Float64bits(*s.GyroSmoothing))
+	} else {
+		a.gyroSmoothingBits.Store(math.Float64bits(0.50))
+	}
+	if s.GyroDeadband != nil {
+		a.gyroDeadbandBits.Store(math.Float64bits(*s.GyroDeadband))
+	} else if s.GyroDeadzone > 0 {
+		a.gyroDeadbandBits.Store(math.Float64bits(s.GyroDeadzone))
+	} else {
+		a.gyroDeadbandBits.Store(math.Float64bits(0.10))
+	}
+	if s.GyroSensitivity != nil && *s.GyroSensitivity > 0 {
+		a.gyroSensitivityBits.Store(math.Float64bits(*s.GyroSensitivity))
+	} else {
+		a.gyroSensitivityBits.Store(math.Float64bits(1.00))
+	}
+	a.updateFilterParams()
 }
 
 // saveSettings persists theme, language, activeSlot, and preferences to settings.json
@@ -680,6 +727,13 @@ func (a *App) saveSettings() {
 		soundM = "cute"
 	}
 
+	smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
+	deadband := math.Float64frombits(a.gyroDeadbandBits.Load())
+	sensitivity := math.Float64frombits(a.gyroSensitivityBits.Load())
+	if sensitivity <= 0 {
+		sensitivity = 1.00
+	}
+
 	s := AppSettings{
 		Theme:           theme,
 		Lang:            lang,
@@ -693,6 +747,9 @@ func (a *App) saveSettings() {
 		StillnessHint:   a.stillnessHint.Load(),
 		DisconnectAlert: a.disconnectAlert.Load(),
 		SoundMode:       soundM,
+		GyroSmoothing:   smoothing,
+		GyroDeadband:    deadband,
+		GyroSensitivity: sensitivity,
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -700,6 +757,23 @@ func (a *App) saveSettings() {
 		return
 	}
 	_ = os.WriteFile(path, data, 0644)
+}
+
+func (a *App) updateFilterParams() {
+	if a.gyroFilter == nil {
+		return
+	}
+	smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
+	if smoothing <= 0 {
+		return
+	}
+	// Dynamic 1-Euro tuning: minCutoff from 3.0 Hz down to 0.4 Hz
+	minCutoff := 3.0 - smoothing*2.6
+	if minCutoff < 0.2 {
+		minCutoff = 0.2
+	}
+	beta := 0.005 + (1.0-smoothing)*0.025
+	a.gyroFilter.SetParams(minCutoff, beta, 1.0)
 }
 
 // loadProfiles reads profiles.json from disk
@@ -940,31 +1014,54 @@ func (a *App) startup(ctx context.Context) {
 
 		gyroSpeed := math.Sqrt(rx*rx + ry*ry + rz*rz)
 
-		// 1. Gyroscope deadband with soft-knee attenuation.
-		// Electronic MEMS sensor noise is ~0.05-0.15 deg/s on desk.
-		// Deadband completely eliminates stationary gyro trembling in PadTest and games.
-		// For movements above deadband, a linear soft ramp ensures smooth, zero-cliff analog feel.
-		gyroDeadband := math.Float64frombits(a.gyroDeadzoneBits.Load())
-		var ahrsRx, ahrsRy, ahrsRz float32
-		var dsuRx, dsuRy, dsuRz float32
-		if gyroDeadband <= 0 {
-			ahrsRx = float32(rx)
-			ahrsRy = float32(ry)
-			ahrsRz = float32(rz)
+		// 1. Gyroscope deadband and 1-Euro adaptive smoothing pipeline.
+		deadband := math.Float64frombits(a.gyroDeadbandBits.Load())
+		if deadband <= 0 && a.gyroDeadzoneBits.Load() > 0 {
+			deadband = math.Float64frombits(a.gyroDeadzoneBits.Load())
+		}
+		gyroDeadband := deadband
+		smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
+		sens := math.Float64frombits(a.gyroSensitivityBits.Load())
+		if sens <= 0 {
+			sens = 1.00
+		}
 
-			dsuRx = float32(rx)
-			dsuRy = -float32(ry)
-			dsuRz = float32(rz)
-		} else if gyroSpeed >= gyroDeadband {
-			scale := float32((gyroSpeed - gyroDeadband) / gyroSpeed)
+		// Raw converted velocities for AHRS and DSU (deg/s)
+		var ahrsRx, ahrsRy, ahrsRz float32
+		rawDsuRx := float32(rx)
+		rawDsuRy := -float32(ry) // Cemuhook DSU protocol convention (nose right / clockwise is negative)
+		rawDsuRz := float32(rz)
+
+		// AHRS input (clean deadbanded signal for rock-solid stationary 3D model)
+		if gyroSpeed < deadband {
+			ahrsRx = 0
+			ahrsRy = 0
+			ahrsRz = 0
+		} else {
+			scale := float32((gyroSpeed - deadband) / gyroSpeed)
 			ahrsRx = float32(rx) * scale
 			ahrsRy = float32(ry) * scale
 			ahrsRz = float32(rz) * scale
-
-			dsuRx = float32(rx) * scale
-			dsuRy = -float32(ry) * scale // Cemuhook DSU protocol convention (nose right / clockwise is negative)
-			dsuRz = float32(rz) * scale
 		}
+
+		// Step A: Anti-tremor deadband with C1-continuous Hermite smoothstep
+		dbRx := filter.ApplySmoothDeadband(float64(rawDsuRx), gyroSpeed, deadband)
+		dbRy := filter.ApplySmoothDeadband(float64(rawDsuRy), gyroSpeed, deadband)
+		dbRz := filter.ApplySmoothDeadband(float64(rawDsuRz), gyroSpeed, deadband)
+
+		// Step B: 1-Euro Adaptive Filter (reduces micro-tremor when slow, 0-lag on fast flicks)
+		var filtRx, filtRy, filtRz float64
+		if smoothing > 0 && a.gyroFilter != nil {
+			filtRx, filtRy, filtRz = a.gyroFilter.Filter(dbRx, dbRy, dbRz, startPipe)
+		} else {
+			filtRx, filtRy, filtRz = dbRx, dbRy, dbRz
+		}
+
+		// Step C: DSU Sensitivity Multiplier
+		var dsuRx, dsuRy, dsuRz float32
+		dsuRx = float32(filtRx * sens)
+		dsuRy = float32(filtRy * sens)
+		dsuRz = float32(filtRz * sens)
 
 		// 2. Accelerometer filtering and stationary table lock.
 		// PadTest's Madgwick AHRS normalizes the error vector (2*beta*s/|s| = 11.5 deg/s step),
@@ -973,7 +1070,7 @@ func (a *App) startup(ctx context.Context) {
 		// we lock Acc exactly to [0, -1.0, 0] which cancels the gradient error to 0.000000.
 		// When moving or held in hands, we apply an exponential moving average (EMA) low-pass filter
 		// to eliminate 60 Hz electrical noise while tracking true gravity smoothly.
-		if !accFilterInit {
+		if a.accFilterReset.Swap(false) || !accFilterInit {
 			accFiltered = [3]float64{ax, ay, az}
 			accFilterInit = true
 		}
@@ -1070,6 +1167,20 @@ func (a *App) startup(ctx context.Context) {
 			dsuFrame.AccZ = finalAz
 			a.dsuSrv.SendMotion(dsuFrame)
 		}
+
+		// Stream real-time telemetry to Settings test bench if active
+		if a.tuningActive.Load() && a.ctx != nil {
+			_, _, inHz := srv.PacketStats()
+			wailsRuntime.EventsEmit(a.ctx, "tuning:frame", TuningFrame{
+				RawX: rawDsuRx,
+				RawY: rawDsuRy,
+				RawZ: rawDsuRz,
+				OutX: dsuRx,
+				OutY: dsuRy,
+				OutZ: dsuRz,
+				Hz:   float32(inHz),
+			})
+		}
 	})
 
 	var disconnectTimer *time.Timer
@@ -1082,6 +1193,10 @@ func (a *App) startup(ctx context.Context) {
 			disconnectTimer = nil
 		}
 		disconnectMu.Unlock()
+
+		a.accFilterReset.Store(true)
+		a.ResetAHRS()
+		a.ResetGyroFilter()
 
 		a.hasClient.Store(true)
 		a.clientAddr = remoteAddr
@@ -1101,6 +1216,9 @@ func (a *App) startup(ctx context.Context) {
 	srv.OnClientDisconnect = func(remoteAddr string) {
 		disconnectMu.Lock()
 		defer disconnectMu.Unlock()
+
+		a.accFilterReset.Store(true)
+		a.ResetGyroFilter()
 
 		_, clients, _ := srv.PacketStats()
 		if clients > 0 {
@@ -1131,6 +1249,11 @@ func (a *App) startup(ctx context.Context) {
 	}
 
 	srv.OnClientVisibility = func(visible bool) {
+		if visible {
+			a.accFilterReset.Store(true)
+			a.ResetAHRS()
+			a.ResetGyroFilter()
+		}
 		if a.ctx != nil {
 			wailsRuntime.EventsEmit(a.ctx, "device:visibility", visible)
 		}
@@ -1952,6 +2075,13 @@ func (a *App) GetAppSettings() AppSettings {
 		soundM = "cute"
 	}
 
+	smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
+	deadband := math.Float64frombits(a.gyroDeadbandBits.Load())
+	sensitivity := math.Float64frombits(a.gyroSensitivityBits.Load())
+	if sensitivity <= 0 {
+		sensitivity = 1.00
+	}
+
 	return AppSettings{
 		Theme:           theme,
 		Lang:            lang,
@@ -1965,6 +2095,9 @@ func (a *App) GetAppSettings() AppSettings {
 		StillnessHint:   a.stillnessHint.Load(),
 		DisconnectAlert: a.disconnectAlert.Load(),
 		SoundMode:       soundM,
+		GyroSmoothing:   smoothing,
+		GyroDeadband:    deadband,
+		GyroSensitivity: sensitivity,
 	}
 }
 
@@ -2009,6 +2142,17 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 	if s.GyroDeadzone >= 0 {
 		a.gyroDeadzoneBits.Store(math.Float64bits(s.GyroDeadzone))
 	}
+	if s.GyroSmoothing >= 0 && s.GyroSmoothing <= 1.0 {
+		a.gyroSmoothingBits.Store(math.Float64bits(s.GyroSmoothing))
+	}
+	if s.GyroDeadband >= 0 && s.GyroDeadband <= 1.0 {
+		a.gyroDeadbandBits.Store(math.Float64bits(s.GyroDeadband))
+	}
+	if s.GyroSensitivity >= 0.25 && s.GyroSensitivity <= 3.0 {
+		a.gyroSensitivityBits.Store(math.Float64bits(s.GyroSensitivity))
+	}
+	a.updateFilterParams()
+
 	a.stillnessHint.Store(s.StillnessHint)
 	a.disconnectAlert.Store(s.DisconnectAlert)
 	if s.SoundMode != "" {
@@ -2031,6 +2175,32 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 		"success":      true,
 		"dsuRestarted": dsuRestarted,
 	}, nil
+}
+
+// SetTuningActive toggles 60 Hz real-time telemetry streaming for the settings test bench
+func (a *App) SetTuningActive(active bool) {
+	a.tuningActive.Store(active)
+}
+
+// SetTuningFilterParams dynamically updates filter parameters for live bench previewing without saving
+func (a *App) SetTuningFilterParams(smoothing, deadband, sensitivity float64) {
+	if smoothing >= 0 && smoothing <= 1.0 {
+		a.gyroSmoothingBits.Store(math.Float64bits(smoothing))
+	}
+	if deadband >= 0 && deadband <= 1.0 {
+		a.gyroDeadbandBits.Store(math.Float64bits(deadband))
+	}
+	if sensitivity >= 0.25 && sensitivity <= 3.0 {
+		a.gyroSensitivityBits.Store(math.Float64bits(sensitivity))
+	}
+	a.updateFilterParams()
+}
+
+// ResetGyroFilter zeroes filter history
+func (a *App) ResetGyroFilter() {
+	if a.gyroFilter != nil {
+		a.gyroFilter.Reset()
+	}
 }
 
 // PlaySystemSound plays a native Windows sound for hardware connect/disconnect

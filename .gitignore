@@ -23,3 +23,6 @@ tmp/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Internal architecture specs
+docs/internal/

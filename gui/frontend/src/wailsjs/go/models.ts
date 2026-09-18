@@ -13,6 +13,9 @@ export namespace main {
 	    stillnessHint: boolean;
 	    disconnectAlert: boolean;
 	    soundMode: string;
+	    gyroSmoothing: number;
+	    gyroDeadband: number;
+	    gyroSensitivity: number;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -32,6 +35,9 @@ export namespace main {
 	        this.stillnessHint = source["stillnessHint"];
 	        this.disconnectAlert = source["disconnectAlert"];
 	        this.soundMode = source["soundMode"];
+	        this.gyroSmoothing = source["gyroSmoothing"];
+	        this.gyroDeadband = source["gyroDeadband"];
+	        this.gyroSensitivity = source["gyroSensitivity"];
 	    }
 	}
 	export class Profile {

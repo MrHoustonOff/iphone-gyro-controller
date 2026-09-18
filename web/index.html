@@ -1134,10 +1134,25 @@ if (btnScreenlock) {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     if (wakeLockEnabled) requestWakeLock();
-    if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
+    // Zero out stale gyro velocities immediately upon waking up
+    dsuPitch = 0;
+    dsuYaw   = 0;
+    dsuRoll  = 0;
+    lastMotionTime = performance.now();
+
+    // If socket disconnected while asleep, reconnect immediately
+    if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+      if (!deliberateDisconnect) {
+        connectWSS();
+      }
+    } else if (ws.readyState === WebSocket.OPEN) {
       try { ws.send(JSON.stringify({ type: 'visibility', visible: true })); } catch (e) {}
     }
   } else if (document.visibilityState === 'hidden') {
+    // Zero out rates when entering background/lock screen
+    dsuPitch = 0;
+    dsuYaw   = 0;
+    dsuRoll  = 0;
     if (typeof ws !== 'undefined' && ws && ws.readyState === WebSocket.OPEN) {
       try { ws.send(JSON.stringify({ type: 'visibility', visible: false })); } catch (e) {}
     }
@@ -1516,6 +1531,9 @@ function onOrientation(e) {
   updateHUDLevel(curBeta, curGamma, curAlpha);
 
   if (performance.now() - lastMotionTime > 200) {
+    dsuPitch = 0;
+    dsuYaw   = 0;
+    dsuRoll  = 0;
     sendFrame();
   }
 }
@@ -1607,6 +1625,9 @@ function sendFrame() {
 setInterval(() => {
   if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
     if (performance.now() - lastMotionTime > 1200) {
+      dsuPitch = 0;
+      dsuYaw   = 0;
+      dsuRoll  = 0;
       sendFrame();
     }
   }
