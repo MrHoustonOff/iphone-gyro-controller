@@ -911,7 +911,11 @@
                     <div class="bench-aim-wrap">
                       <div class="bench-aim-header">
                         <span class="bench-aim-title" data-i18n="settings_modal.bench_aim_title">Прицел (как в Zelda)</span>
-                        <button type="button" class="bench-btn-recenter" id="btn-bench-recenter" data-i18n="settings_modal.bench_recenter">Центр</button>
+                        <div class="bench-aim-actions">
+                          <button type="button" class="bench-btn-invert" id="btn-bench-inv-x" data-i18n="settings_modal.bench_inv_x" title="Инвертировать ось X (влево / вправо)">Инв. X</button>
+                          <button type="button" class="bench-btn-invert" id="btn-bench-inv-y" data-i18n="settings_modal.bench_inv_y" title="Инвертировать ось Y (вверх / вниз)">Инв. Y</button>
+                          <button type="button" class="bench-btn-recenter" id="btn-bench-recenter" data-i18n="settings_modal.bench_recenter">Центр</button>
+                        </div>
                       </div>
                       <div class="bench-target-viewport">
                         <div class="bench-target-cross-v"></div>
@@ -2108,6 +2112,8 @@
     activeAxis: 'x', // 'x' = Pitch, 'y' = Yaw, 'z' = Roll, 'all' = 3 Stacked Graphs
     reticleX: 0,
     reticleY: 0,
+    invertX: localStorage.getItem('gb_bench_inv_x') === 'true',
+    invertY: localStorage.getItem('gb_bench_inv_y') === 'true',
     maxHistory: 140,
     historyRaw: { x: [], y: [], z: [] },
     historyFilt: { x: [], y: [], z: [] },
@@ -2139,6 +2145,26 @@
       document.getElementById('btn-bench-recenter')?.addEventListener('click', () => {
         this.recenter();
       });
+
+      // Invert X / Invert Y buttons
+      const btnInvX = document.getElementById('btn-bench-inv-x');
+      const btnInvY = document.getElementById('btn-bench-inv-y');
+      if (btnInvX) {
+        btnInvX.classList.toggle('active', this.invertX);
+        btnInvX.addEventListener('click', () => {
+          this.invertX = !this.invertX;
+          localStorage.setItem('gb_bench_inv_x', this.invertX ? 'true' : 'false');
+          btnInvX.classList.toggle('active', this.invertX);
+        });
+      }
+      if (btnInvY) {
+        btnInvY.classList.toggle('active', this.invertY);
+        btnInvY.addEventListener('click', () => {
+          this.invertY = !this.invertY;
+          localStorage.setItem('gb_bench_inv_y', this.invertY ? 'true' : 'false');
+          btnInvY.classList.toggle('active', this.invertY);
+        });
+      }
 
       // Wails 60 Hz telemetry event
       if (window.runtime && window.runtime.EventsOn) {
@@ -2299,12 +2325,14 @@
       this.setLiveState(hz);
 
       // 2. Update Aim Reticle (Zelda mechanics: DSU angular velocity integration)
-      // DSU conventions:
-      // OutX is Pitch (tilting phone up -> pitch up -> reticle moves up, negative Y in canvas)
-      // OutY is Yaw (turning phone right -> negative OutY -> reticle moves right, positive X)
+      // Natural motion (default):
+      // Turning phone right -> crosshair moves right (+X)
+      // Tilting phone up -> crosshair moves up (-Y in canvas / screen coordinates)
       const aimSpeed = 6.2; // px per degree
-      this.reticleX += -outY * dt * aimSpeed;
-      this.reticleY += -outX * dt * aimSpeed;
+      const signX = this.invertX ? -1 : 1;
+      const signY = this.invertY ? -1 : 1;
+      this.reticleX += outY * dt * aimSpeed * signX;
+      this.reticleY += -outX * dt * aimSpeed * signY;
 
       // Soft clamp to target viewport bounds
       const viewport = document.querySelector('.bench-target-viewport');

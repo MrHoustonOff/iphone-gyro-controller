@@ -335,6 +335,8 @@
     "bench_aim_title": "Zelda-Style Aim Reticle",
     "bench_aim_sub": "Crosshair tracks real-time filtered DSU angular velocity",
     "bench_recenter": "Recenter",
+    "bench_inv_x": "Inv X",
+    "bench_inv_y": "Inv Y",
     "bench_oscilloscope": "Axis Oscilloscope (Raw vs DSU)",
     "bench_raw_legend": "Raw",
     "bench_filtered_legend": "DSU",

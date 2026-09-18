@@ -335,6 +335,8 @@
     "bench_aim_title": "Прицел (как в Zelda)",
     "bench_aim_sub": "Перекрестие реагирует на скорость DSU в реальном времени",
     "bench_recenter": "Центр",
+    "bench_inv_x": "Инв. X",
+    "bench_inv_y": "Инв. Y",
     "bench_oscilloscope": "Осциллограф осей (Raw vs DSU)",
     "bench_raw_legend": "Сырой",
     "bench_filtered_legend": "DSU",
