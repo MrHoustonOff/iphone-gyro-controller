@@ -82,6 +82,40 @@ func GetLocalIPv4s() []net.IP {
 	return ips
 }
 
+// GetAllLocalIPv4s returns all active non-loopback IPv4 addresses (including LAN, tethering, and link-local).
+func GetAllLocalIPv4s() []net.IP {
+	var ips []net.IP
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return ips
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip != nil {
+				ip4 := ip.To4()
+				if ip4 != nil && !ip4.IsLoopback() && !ip4.IsUnspecified() {
+					ips = append(ips, ip4)
+				}
+			}
+		}
+	}
+	return ips
+}
+
 // GetPrimaryIP prioritizes standard 192.168.x.x home Wi-Fi subnet.
 func GetPrimaryIP(lanIPs []net.IP) string {
 	for _, ip := range lanIPs {
@@ -95,3 +129,4 @@ func GetPrimaryIP(lanIPs []net.IP) string {
 	}
 	return "127.0.0.1"
 }
+

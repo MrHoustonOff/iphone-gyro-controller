@@ -115,8 +115,9 @@ func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []
 // Start launches both servers. All routes must be registered before calling Start.
 func (s *Server) Start() error {
 	tlsConfig := &tls.Config{
-		Certificates: []tls.Certificate{*s.caManager.LeafCert},
-		MinVersion:   tls.VersionTLS12,
+		Certificates:   []tls.Certificate{*s.caManager.LeafCert},
+		GetCertificate: s.caManager.GetCertificate,
+		MinVersion:     tls.VersionTLS12,
 	}
 
 	s.httpServer = &http.Server{
@@ -230,12 +231,20 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer conn.Close()
+	conn.EnableWriteCompression(false)
 
-	// Optimize underlying TCP connection for ultra-low latency & keepalive
-	if tcpConn, ok := conn.UnderlyingConn().(*net.TCPConn); ok {
+	// Optimize underlying TCP connection for ultra-low latency & keepalive.
+	// For WSS connections, conn.UnderlyingConn() is *tls.Conn, which wraps the raw *net.TCPConn.
+	rawConn := conn.UnderlyingConn()
+	if tlsConn, ok := rawConn.(*tls.Conn); ok {
+		rawConn = tlsConn.NetConn()
+	}
+	if tcpConn, ok := rawConn.(*net.TCPConn); ok {
 		_ = tcpConn.SetNoDelay(true)
 		_ = tcpConn.SetKeepAlive(true)
 		_ = tcpConn.SetKeepAlivePeriod(10 * time.Second)
+		_ = tcpConn.SetReadBuffer(64 * 1024)
+		_ = tcpConn.SetWriteBuffer(64 * 1024)
 	}
 
 	remoteAddr := r.RemoteAddr

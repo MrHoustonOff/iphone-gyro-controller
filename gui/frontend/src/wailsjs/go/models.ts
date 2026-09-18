@@ -47,6 +47,8 @@ export namespace main {
 	    icon: string;
 	    matrix: number[][];
 	    active: boolean;
+	    gyroBias?: number[];
+	    calGravity?: number[];
 	
 	    static createFrom(source: any = {}) {
 	        return new Profile(source);
@@ -60,6 +62,8 @@ export namespace main {
 	        this.icon = source["icon"];
 	        this.matrix = source["matrix"];
 	        this.active = source["active"];
+	        this.gyroBias = source["gyroBias"];
+	        this.calGravity = source["calGravity"];
 	    }
 	}
 	export class AppState {

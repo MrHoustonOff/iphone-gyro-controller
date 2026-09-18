@@ -1138,6 +1138,7 @@ document.addEventListener('visibilitychange', () => {
     dsuPitch = 0;
     dsuYaw   = 0;
     dsuRoll  = 0;
+    motionReady = false;
     lastMotionTime = performance.now();
 
     // If socket disconnected while asleep, reconnect immediately
@@ -1496,6 +1497,7 @@ let outQx = 0, outQy = 0, outQz = 0, outQw = 1;
 let dsuPitch = 0, dsuYaw = 0, dsuRoll = 0;
 let dsuAccX = 0, dsuAccY = 0, dsuAccZ = 0;
 let lastMotionTime = 0;
+let motionReady = false;
 
 const bubble    = document.getElementById('gyro-bubble');
 const yawGroup  = document.getElementById('gyro-yaw-group');
@@ -1530,7 +1532,7 @@ function onOrientation(e) {
   // Update Visual HUD Level (60 FPS SVG animation)
   updateHUDLevel(curBeta, curGamma, curAlpha);
 
-  if (performance.now() - lastMotionTime > 200) {
+  if (motionReady && performance.now() - lastMotionTime > 200) {
     dsuPitch = 0;
     dsuYaw   = 0;
     dsuRoll  = 0;
@@ -1584,6 +1586,7 @@ function readRawAccel(e) {
 }
 
 function onMotion(e) {
+  motionReady = true;
   lastMotionTime = performance.now();
   onSensorDataReceived();
 

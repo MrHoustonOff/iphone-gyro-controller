@@ -143,3 +143,42 @@ func TestCertificateManager_MobileConfig(t *testing.T) {
 		t.Error("mobileconfig missing profile identifier")
 	}
 }
+
+func TestCertificateManager_DynamicSAN(t *testing.T) {
+	tmpDir, err := os.MkdirTemp("", "gyrobridge_dyn_test_*")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	cm, err := NewCertificateManager(tmpDir, []net.IP{net.ParseIP("192.168.1.10")}, nil)
+	if err != nil {
+		t.Fatalf("NewCertificateManager failed: %v", err)
+	}
+
+	// Dynamically add a new IP (e.g. from DHCP change or USB tethering)
+	newIP := net.ParseIP("172.20.10.2")
+	cm.AddHostIPs([]net.IP{newIP})
+
+	cert, err := cm.GetCertificate(nil)
+	if err != nil {
+		t.Fatalf("GetCertificate failed: %v", err)
+	}
+
+	leafX509, err := x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		t.Fatalf("failed to parse leaf: %v", err)
+	}
+
+	found := false
+	for _, ip := range leafX509.IPAddresses {
+		if ip.String() == "172.20.10.2" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected 172.20.10.2 to be present in dynamic leaf cert SAN")
+	}
+}
+

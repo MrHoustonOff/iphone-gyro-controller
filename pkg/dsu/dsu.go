@@ -93,6 +93,9 @@ func (s *Server) Start() error {
 		return fmt.Errorf("failed to bind DSU UDP port %d: %w", s.port, err)
 	}
 
+	_ = conn.SetReadBuffer(64 * 1024)
+	_ = conn.SetWriteBuffer(64 * 1024)
+
 	s.conn = conn
 	s.running.Store(true)
 

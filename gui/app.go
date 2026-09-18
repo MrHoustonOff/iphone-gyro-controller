@@ -45,12 +45,14 @@ const (
 
 // Profile represents a saved calibration profile with a 3x3 signed-permutation matrix.
 type Profile struct {
-	Slot   int           `json:"slot"`   // 0-3
-	Name   string        `json:"name"`   // user-visible name
-	Device string        `json:"device"` // device name e.g. "Unknown"
-	Icon   string        `json:"icon"`   // "default", "vertical", "horizontal"
-	Matrix [3][3]float64 `json:"matrix"` // signed permutation matrix
-	Active bool          `json:"active"` // is this the currently applied profile?
+	Slot       int           `json:"slot"`   // 0-5
+	Name       string        `json:"name"`   // user-visible name
+	Device     string        `json:"device"` // device name e.g. "Unknown"
+	Icon       string        `json:"icon"`   // "default", "vertical", "horizontal"
+	Matrix     [3][3]float64 `json:"matrix"` // signed permutation matrix
+	Active     bool          `json:"active"` // is this the currently applied profile?
+	GyroBias   [3]float64    `json:"gyroBias,omitempty"`
+	CalGravity [3]float64    `json:"calGravity,omitempty"`
 }
 
 // AppState represents the live state of Gyro Bridge
@@ -488,7 +490,7 @@ func NewApp() *App {
 	primaryIP := pairing.GetPrimaryIP(lanIPs)
 
 	setupURL := fmt.Sprintf("http://%s:%d/ca.mobileconfig", primaryIP, HTTPPort)
-	appURL := fmt.Sprintf("https://%s:%d/?t=%d", primaryIP, HTTPSPort, time.Now().Unix())
+	appURL := fmt.Sprintf("https://%s:%d/", primaryIP, HTTPSPort)
 
 	// Pre-generate Gamepad QR code PNG for instant display on start
 	qrBytes, err := pairing.GenerateQRPNG(appURL, 240)
@@ -842,12 +844,20 @@ func (a *App) loadProfiles() {
 	}
 	a.activeSlot = stored.ActiveSlot
 
-	// Restore active matrix
+	// Restore active matrix, bias, and gravity
 	if a.activeSlot >= 0 && a.activeSlot < 6 {
+		p := a.profiles[a.activeSlot]
 		a.matrixMu.Lock()
-		a.activeMatrix = a.profiles[a.activeSlot].Matrix
+		a.activeMatrix = p.Matrix
 		a.matrixMu.Unlock()
 		a.profiles[a.activeSlot].Active = true
+
+		if p.GyroBias != [3]float64{0, 0, 0} {
+			stored.GyroBias = p.GyroBias
+		}
+		if math.Sqrt(p.CalGravity[0]*p.CalGravity[0]+p.CalGravity[1]*p.CalGravity[1]+p.CalGravity[2]*p.CalGravity[2]) > 0.3 {
+			stored.CalGravity = p.CalGravity
+		}
 	}
 
 	a.biasMu.Lock()
@@ -921,6 +931,10 @@ func (a *App) startup(ctx context.Context) {
 	var (
 		accFiltered   [3]float64
 		accFilterInit bool
+		stillFrames   int
+		stillSumGx    float64
+		stillSumGy    float64
+		stillSumGz    float64
 	)
 
 	// 3. Web & Telemetry Server (HTTP / HTTPS)
@@ -999,6 +1013,40 @@ func (a *App) startup(ctx context.Context) {
 			a.matrixMu.RUnlock()
 		}
 
+		// Automatic resting zero-bias refinement:
+		// When the device is completely still on a flat surface:
+		// Acc magnitude is ≈ 1.0g (0.92 .. 1.08) and raw gyro rate is < 0.35 °/s
+		accMag := math.Sqrt(float64(frame.AccX*frame.AccX + frame.AccY*frame.AccY + frame.AccZ*frame.AccZ))
+		rawGyroSpeed := math.Sqrt(float64(frame.RotX*frame.RotX + frame.RotY*frame.RotY + frame.RotZ*frame.RotZ))
+
+		if !a.isCapturing.Load() && accMag >= 0.92 && accMag <= 1.08 && rawGyroSpeed < 0.35 {
+			stillFrames++
+			stillSumGx += float64(frame.RotX)
+			stillSumGy += float64(frame.RotY)
+			stillSumGz += float64(frame.RotZ)
+			if stillFrames >= 60 { // 1 full second of stationary rest
+				avgGx := stillSumGx / 60.0
+				avgGy := stillSumGy / 60.0
+				avgGz := stillSumGz / 60.0
+				stillFrames = 0
+				stillSumGx = 0
+				stillSumGy = 0
+				stillSumGz = 0
+
+				const alpha = 0.05
+				a.biasMu.Lock()
+				a.gyroBias[0] += alpha * (avgGx - a.gyroBias[0])
+				a.gyroBias[1] += alpha * (avgGy - a.gyroBias[1])
+				a.gyroBias[2] += alpha * (avgGz - a.gyroBias[2])
+				a.biasMu.Unlock()
+			}
+		} else {
+			stillFrames = 0
+			stillSumGx = 0
+			stillSumGy = 0
+			stillSumGz = 0
+		}
+
 		// Subtract gyro zero-bias before applying calibration matrix M (§1, §2 of spec)
 		a.biasMu.RLock()
 		bx, by, bz := a.gyroBias[0], a.gyroBias[1], a.gyroBias[2]
@@ -1072,7 +1120,11 @@ func (a *App) startup(ctx context.Context) {
 		// When moving or held in hands, we apply an exponential moving average (EMA) low-pass filter
 		// to eliminate 60 Hz electrical noise while tracking true gravity smoothly.
 		if a.accFilterReset.Swap(false) || !accFilterInit {
-			accFiltered = [3]float64{ax, ay, az}
+			if math.Abs(ax) < 0.10 && math.Abs(ay+1.0) < 0.12 && math.Abs(az) < 0.10 {
+				accFiltered = [3]float64{0.0, -1.0, 0.0}
+			} else {
+				accFiltered = [3]float64{ax, ay, az}
+			}
 			accFilterInit = true
 		}
 
@@ -1265,8 +1317,41 @@ func (a *App) startup(ctx context.Context) {
 	}
 
 	srv.OnClientDevice = func(device string) {
-		if device != "" {
-			a.deviceName.Store(device)
+		if device == "" {
+			return
+		}
+		a.deviceName.Store(device)
+
+		// Check if active profile already matches this device
+		a.profilesMu.RLock()
+		curSlot := a.activeSlot
+		var curMatches bool
+		if curSlot >= 0 && curSlot < 6 {
+			curDev := strings.ToLower(strings.TrimSpace(a.profiles[curSlot].Device))
+			curName := strings.ToLower(strings.TrimSpace(a.profiles[curSlot].Name))
+			inDev := strings.ToLower(strings.TrimSpace(device))
+			if curDev == inDev || strings.Contains(curDev, inDev) || strings.Contains(inDev, curDev) || strings.Contains(curName, inDev) {
+				curMatches = true
+			}
+		}
+
+		targetSlot := -1
+		if !curMatches {
+			for i, p := range a.profiles {
+				pDev := strings.ToLower(strings.TrimSpace(p.Device))
+				pName := strings.ToLower(strings.TrimSpace(p.Name))
+				inDev := strings.ToLower(strings.TrimSpace(device))
+				if p.Name != "" && (pDev == inDev || strings.Contains(pDev, inDev) || strings.Contains(inDev, pDev) || strings.Contains(pName, inDev)) {
+					targetSlot = i
+					break
+				}
+			}
+		}
+		a.profilesMu.RUnlock()
+
+		if targetSlot >= 0 {
+			a.SetActiveProfile(targetSlot)
+		} else {
 			a.emitStateChange()
 		}
 	}
@@ -1539,6 +1624,31 @@ func (a *App) startup(ctx context.Context) {
 			wailsRuntime.EventsEmit(a.ctx, "resource-stats", statsPayload)
 		}
 	})
+
+	// Background network IP watcher (detects DHCP updates, USB tethering, or Wi-Fi reconnects)
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		defer ticker.Stop()
+		for range ticker.C {
+			lanIPs := pairing.GetLocalIPv4s()
+			if len(lanIPs) == 0 {
+				continue
+			}
+			newPrimary := pairing.GetPrimaryIP(lanIPs)
+			if newPrimary != "" && newPrimary != a.primaryIP {
+				a.primaryIP = newPrimary
+				a.rebuildURLsAndQRCodes()
+				if a.caMgr != nil {
+					a.caMgr.AddHostIPs(lanIPs)
+				}
+				a.emitStateChange()
+				if a.ctx != nil {
+					wailsRuntime.EventsEmit(a.ctx, "network:ip-changed", newPrimary)
+				}
+				a.logEvent("INFO", "Network adapter change detected: primary IP updated to %s", newPrimary)
+			}
+		}
+	}()
 }
 
 // shutdown is called when the Wails application terminates
@@ -1726,14 +1836,21 @@ func (a *App) SaveProfile(slot int, name string, device string, icon string, mat
 		return fmt.Sprintf("invalid matrix: determinant is %.4f, must be -1.0", det)
 	}
 
+	a.biasMu.RLock()
+	curBias := a.gyroBias
+	a.biasMu.RUnlock()
+	curGrav := a.calGravity
+
 	a.profilesMu.Lock()
 	a.profiles[slot] = Profile{
-		Slot:   slot,
-		Name:   name,
-		Device: device,
-		Icon:   icon,
-		Matrix: matrix,
-		Active: (slot == a.activeSlot),
+		Slot:       slot,
+		Name:       name,
+		Device:     device,
+		Icon:       icon,
+		Matrix:     matrix,
+		Active:     (slot == a.activeSlot),
+		GyroBias:   curBias,
+		CalGravity: curGrav,
 	}
 	a.profilesMu.Unlock()
 
@@ -1769,12 +1886,23 @@ func (a *App) SetActiveProfile(slot int) string {
 	}
 	a.profilesMu.Unlock()
 
-	// Update active matrix
+	// Update active matrix, bias, and gravity
 	a.matrixMu.Lock()
 	if slot >= 0 {
 		a.profilesMu.RLock()
-		a.activeMatrix = a.profiles[slot].Matrix
+		targetProf := a.profiles[slot]
 		a.profilesMu.RUnlock()
+
+		a.activeMatrix = targetProf.Matrix
+
+		if targetProf.GyroBias != [3]float64{0, 0, 0} {
+			a.biasMu.Lock()
+			a.gyroBias = targetProf.GyroBias
+			a.biasMu.Unlock()
+		}
+		if math.Sqrt(targetProf.CalGravity[0]*targetProf.CalGravity[0]+targetProf.CalGravity[1]*targetProf.CalGravity[1]+targetProf.CalGravity[2]*targetProf.CalGravity[2]) > 0.3 {
+			a.calGravity = targetProf.CalGravity
+		}
 	} else {
 		a.activeMatrix = defaultMatrix3x3()
 	}
@@ -2031,7 +2159,7 @@ func (a *App) rebuildURLsAndQRCodes() {
 	}
 
 	setupURL := fmt.Sprintf("http://%s:%d/ca.mobileconfig", a.primaryIP, hPort)
-	appURL := fmt.Sprintf("https://%s:%d/?t=%d", a.primaryIP, hsPort, time.Now().Unix())
+	appURL := fmt.Sprintf("https://%s:%d/", a.primaryIP, hsPort)
 
 	qrBytes, err := pairing.GenerateQRPNG(appURL, 240)
 	if err == nil {

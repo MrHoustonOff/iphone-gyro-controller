@@ -16,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -25,6 +26,10 @@ type CertificateManager struct {
 	RootCert   *x509.Certificate
 	RootKey    *ecdsa.PrivateKey
 	LeafCert   *tls.Certificate
+	leafKey    *ecdsa.PrivateKey
+	mu         sync.RWMutex
+	knownIPs   map[string]net.IP
+	knownDNS   map[string]bool
 }
 
 // NewCertificateManager creates or loads the local Root CA and signs a Leaf certificate.
@@ -33,13 +38,47 @@ func NewCertificateManager(storageDir string, hostIPs []net.IP, hostnames []stri
 		return nil, fmt.Errorf("failed to create cert storage dir: %w", err)
 	}
 
-	cm := &CertificateManager{storageDir: storageDir}
+	cm := &CertificateManager{
+		storageDir: storageDir,
+		knownIPs:   make(map[string]net.IP),
+		knownDNS:   make(map[string]bool),
+	}
 
 	if err := cm.loadOrGenerateRootCA(); err != nil {
 		return nil, fmt.Errorf("root CA error: %w", err)
 	}
 
-	if err := cm.generateLeafCert(hostIPs, hostnames); err != nil {
+	// Register defaults
+	cm.knownIPs["127.0.0.1"] = net.ParseIP("127.0.0.1")
+	cm.knownDNS["localhost"] = true
+	cm.knownDNS["gamepad.local"] = true
+
+	for _, ip := range hostIPs {
+		if ip != nil && !ip.IsLoopback() {
+			if ip4 := ip.To4(); ip4 != nil {
+				cm.knownIPs[ip4.String()] = ip4
+			} else {
+				cm.knownIPs[ip.String()] = ip
+			}
+		}
+	}
+
+	// Proactively register all non-loopback IPv4 addresses on all host interfaces
+	for _, ip := range scanHostIPv4s() {
+		cm.knownIPs[ip.String()] = ip
+	}
+
+	for _, h := range hostnames {
+		h = strings.TrimSpace(h)
+		if h != "" {
+			cm.knownDNS[h] = true
+		}
+	}
+
+	cm.mu.Lock()
+	err := cm.generateLeafCertLocked()
+	cm.mu.Unlock()
+	if err != nil {
 		return nil, fmt.Errorf("leaf certificate error: %w", err)
 	}
 
@@ -141,10 +180,13 @@ func (cm *CertificateManager) loadOrGenerateRootCA() error {
 	return nil
 }
 
-func (cm *CertificateManager) generateLeafCert(hostIPs []net.IP, hostnames []string) error {
-	leafKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-	if err != nil {
-		return fmt.Errorf("failed to generate leaf key: %w", err)
+func (cm *CertificateManager) generateLeafCertLocked() error {
+	if cm.leafKey == nil {
+		leafKey, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+		if err != nil {
+			return fmt.Errorf("failed to generate leaf key: %w", err)
+		}
+		cm.leafKey = leafKey
 	}
 
 	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
@@ -153,31 +195,15 @@ func (cm *CertificateManager) generateLeafCert(hostIPs []net.IP, hostnames []str
 		return fmt.Errorf("failed to generate leaf serial: %w", err)
 	}
 
-	// Deduplicate and filter IPs
-	ipMap := make(map[string]net.IP)
-	ipMap["127.0.0.1"] = net.ParseIP("127.0.0.1")
-	for _, ip := range hostIPs {
-		if ip != nil && !ip.IsLoopback() {
-			ipMap[ip.String()] = ip
-		}
-	}
 	var ips []net.IP
-	for _, ip := range ipMap {
-		ips = append(ips, ip)
+	for _, ip := range cm.knownIPs {
+		if ip != nil {
+			ips = append(ips, ip)
+		}
 	}
 
-	// Deduplicate and filter DNS names
-	dnsMap := make(map[string]bool)
-	dnsMap["localhost"] = true
-	dnsMap["gamepad.local"] = true
-	for _, h := range hostnames {
-		h = strings.TrimSpace(h)
-		if h != "" {
-			dnsMap[h] = true
-		}
-	}
 	var dnsNames []string
-	for name := range dnsMap {
+	for name := range cm.knownDNS {
 		dnsNames = append(dnsNames, name)
 	}
 
@@ -198,18 +224,162 @@ func (cm *CertificateManager) generateLeafCert(hostIPs []net.IP, hostnames []str
 		DNSNames:              dnsNames,
 	}
 
-	leafDER, err := x509.CreateCertificate(rand.Reader, &template, cm.RootCert, &leafKey.PublicKey, cm.RootKey)
+	leafDER, err := x509.CreateCertificate(rand.Reader, &template, cm.RootCert, &cm.leafKey.PublicKey, cm.RootKey)
 	if err != nil {
 		return fmt.Errorf("failed to sign leaf certificate: %w", err)
 	}
 
 	tlsCert := tls.Certificate{
 		Certificate: [][]byte{leafDER, cm.RootCert.Raw},
-		PrivateKey:  leafKey,
+		PrivateKey:  cm.leafKey,
 	}
 
 	cm.LeafCert = &tlsCert
 	return nil
+}
+
+// GetCertificate dynamically inspects incoming TLS ClientHello to ensure the connecting IP is in the leaf cert SAN.
+func (cm *CertificateManager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, error) {
+	var connIP net.IP
+	if hello != nil && hello.Conn != nil {
+		if tcpAddr, ok := hello.Conn.LocalAddr().(*net.TCPAddr); ok && tcpAddr.IP != nil {
+			if ip4 := tcpAddr.IP.To4(); ip4 != nil {
+				connIP = ip4
+			} else {
+				connIP = tcpAddr.IP
+			}
+		}
+	}
+
+	serverName := ""
+	if hello != nil {
+		serverName = strings.TrimSpace(hello.ServerName)
+	}
+
+	// Fast path: check under read lock
+	cm.mu.RLock()
+	ipKnown := (connIP == nil) || (cm.knownIPs[connIP.String()] != nil)
+	dnsKnown := (serverName == "") || cm.knownDNS[serverName]
+	if ipKnown && dnsKnown && cm.LeafCert != nil {
+		cert := cm.LeafCert
+		cm.mu.RUnlock()
+		return cert, nil
+	}
+	cm.mu.RUnlock()
+
+	// Slow path: update known IPs/DNS and regenerate leaf certificate
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	needRebuild := false
+	if connIP != nil && cm.knownIPs[connIP.String()] == nil {
+		cm.knownIPs[connIP.String()] = connIP
+		needRebuild = true
+	}
+	if serverName != "" && !cm.knownDNS[serverName] {
+		cm.knownDNS[serverName] = true
+		needRebuild = true
+	}
+
+	for _, hostIP := range scanHostIPv4s() {
+		if cm.knownIPs[hostIP.String()] == nil {
+			cm.knownIPs[hostIP.String()] = hostIP
+			needRebuild = true
+		}
+	}
+
+	if needRebuild || cm.LeafCert == nil {
+		if err := cm.generateLeafCertLocked(); err != nil {
+			if cm.LeafCert != nil {
+				return cm.LeafCert, nil
+			}
+			return nil, err
+		}
+	}
+
+	return cm.LeafCert, nil
+}
+
+// AddHostIPs dynamically registers new host IPs and regenerates the leaf cert if necessary.
+func (cm *CertificateManager) AddHostIPs(ips []net.IP) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+
+	changed := false
+	for _, ip := range ips {
+		if ip != nil && !ip.IsLoopback() {
+			ipStr := ip.String()
+			if cm.knownIPs[ipStr] == nil {
+				if ip4 := ip.To4(); ip4 != nil {
+					cm.knownIPs[ipStr] = ip4
+				} else {
+					cm.knownIPs[ipStr] = ip
+				}
+				changed = true
+			}
+		}
+	}
+
+	if changed {
+		_ = cm.generateLeafCertLocked()
+	}
+}
+
+// EnsureIP checks if a specific IP is already in SAN, and regenerates leaf cert if not.
+func (cm *CertificateManager) EnsureIP(ip net.IP) bool {
+	if ip == nil {
+		return false
+	}
+	ipStr := ip.String()
+
+	cm.mu.RLock()
+	if cm.knownIPs[ipStr] != nil && cm.LeafCert != nil {
+		cm.mu.RUnlock()
+		return true
+	}
+	cm.mu.RUnlock()
+
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	if ip4 := ip.To4(); ip4 != nil {
+		cm.knownIPs[ipStr] = ip4
+	} else {
+		cm.knownIPs[ipStr] = ip
+	}
+	return cm.generateLeafCertLocked() == nil
+}
+
+func scanHostIPv4s() []net.IP {
+	var ips []net.IP
+	ifaces, err := net.Interfaces()
+	if err != nil {
+		return ips
+	}
+	for _, iface := range ifaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			var ip net.IP
+			switch v := addr.(type) {
+			case *net.IPNet:
+				ip = v.IP
+			case *net.IPAddr:
+				ip = v.IP
+			}
+			if ip != nil {
+				ip4 := ip.To4()
+				if ip4 != nil && !ip4.IsLoopback() && !ip4.IsUnspecified() {
+					ips = append(ips, ip4)
+				}
+			}
+		}
+	}
+	return ips
 }
 
 // GenerateMobileConfig produces an Apple .mobileconfig XML profile containing the Root CA certificate.
