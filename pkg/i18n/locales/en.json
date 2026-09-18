@@ -419,5 +419,24 @@
     "recal_hint": "Device is stationary but axes are off-center. If placed on a flat surface, consider recalibrating.",
     "horizon_recenter": "Horizon reset to neutral",
     "waiting_sensors": "waiting for sensors..."
+  },
+  "recenter": {
+    "btn_main": "Recenter 3D View",
+    "btn_main_tip": "Reset 3D model neutral orientation for the current phone position",
+    "modal_title": "Recenter 3D Model",
+    "modal_subtitle": "Reset baseline neutral for visualization",
+    "active_profile_label": "Active Grip Profile",
+    "modal_hold_prompt": "Hold phone steady in profile grip position «{name}»",
+    "game_disclaimer_title": "Strictly for in-app visualization",
+    "game_disclaimer_desc": "In games, axis calibration is already working continuously and does not require recentering.",
+    "status_holding": "Locking neutral: keep device still...",
+    "status_success": "Done! Neutral locked",
+    "status_moved": "Device moved! Keep steady and retry.",
+    "btn_retry": "Retry",
+    "btn_cancel": "Cancel",
+    "capsule_connected_title": "Profile Connected: «{name}»",
+    "capsule_hint": "Recommend recentering 3D view for your grip",
+    "capsule_disclaimer": "(Strictly for app visualization — games work immediately)",
+    "capsule_btn_action": "Recenter"
   }
 }

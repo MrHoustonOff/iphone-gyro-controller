@@ -231,6 +231,19 @@
             </div>
           </div>
 
+          <!-- Prominent Recenter Button for 3D View -->
+          <button type="button" class="btn-main-recenter" id="btn-main-recenter" data-i18n-tip="recenter.btn_main_tip">
+            <svg class="recenter-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="9"></circle>
+              <line x1="12" y1="3" x2="12" y2="7"></line>
+              <line x1="12" y1="17" x2="12" y2="21"></line>
+              <line x1="3" y1="12" x2="7" y2="12"></line>
+              <line x1="17" y1="12" x2="21" y2="12"></line>
+              <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+            </svg>
+            <span data-i18n="recenter.btn_main">Центрировать 3D-вид</span>
+          </button>
+
           <button type="button" class="btn-apple-primary" id="btn-pause-resume" data-i18n="controls.pause">ПАУЗА</button>
 
           <!-- Apple Profile Selection Dropdown & Calibration Action -->
@@ -1553,6 +1566,109 @@
 
     </div><!-- .cal-modal -->
   </div><!-- #cal-overlay -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Recenter 3D View Modal Dialog                                          -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <div id="recenter-overlay" class="recenter-overlay" style="display:none;" aria-modal="true" role="dialog">
+    <div class="recenter-modal">
+
+      <!-- Modal Header -->
+      <div class="recenter-header">
+        <div class="recenter-header-left">
+          <span class="recenter-title" data-i18n="recenter.modal_title">Центрирование 3D-модели</span>
+          <span class="recenter-subtitle" data-i18n="recenter.modal_subtitle">Сброс исходной нейтрали для визуализации</span>
+        </div>
+        <button type="button" class="recenter-close-btn" id="recenter-close-btn" aria-label="Close">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="recenter-body">
+
+        <!-- Active Grip Profile Badge -->
+        <div class="recenter-profile-badge">
+          <div class="recenter-profile-icon" id="recenter-modal-icon">
+            <!-- Populated dynamically with vertical/horizontal/default icon -->
+          </div>
+          <div class="recenter-profile-info">
+            <span class="recenter-profile-tag" data-i18n="recenter.active_profile_label">Активный профиль хвата</span>
+            <span class="recenter-profile-name" id="recenter-modal-name">Слот 1</span>
+          </div>
+        </div>
+
+        <!-- Main Holding Prompt -->
+        <div class="recenter-prompt-box">
+          <p class="recenter-prompt-text" id="recenter-modal-prompt">
+            Держите телефон неподвижно в исходном положении профиля «Слот 1»
+          </p>
+        </div>
+
+        <!-- Disclaimer Banner for Games -->
+        <div class="recenter-disclaimer-banner">
+          <div class="recenter-disclaimer-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <div class="recenter-disclaimer-text">
+            <strong data-i18n="recenter.game_disclaimer_title">Сугубо для визуализации в приложении</strong>
+            <span data-i18n="recenter.game_disclaimer_desc">В играх калибровка осей уже работает непрерывно и не требует центрирования.</span>
+          </div>
+        </div>
+
+        <!-- Countdown / Stillness Progress Section -->
+        <div class="recenter-progress-card">
+          <div class="recenter-progress-status-row">
+            <span class="recenter-status-text" id="recenter-status-text" data-i18n="recenter.status_holding">Фиксация нейтрали: не двигайте устройство...</span>
+            <span class="recenter-status-countdown" id="recenter-countdown-num">1.5s</span>
+          </div>
+
+          <!-- Orange -> Green Progress Bar -->
+          <div class="recenter-track">
+            <div class="recenter-bar" id="recenter-bar"></div>
+          </div>
+        </div>
+
+        <!-- Action / Retry Buttons -->
+        <div class="recenter-actions">
+          <button type="button" class="btn-apple-secondary" id="btn-recenter-cancel" data-i18n="recenter.btn_cancel">Отмена</button>
+          <button type="button" class="btn-apple-primary recenter-retry-btn" id="btn-recenter-retry" style="display:none;" data-i18n="recenter.btn_retry">Повторить</button>
+        </div>
+
+      </div><!-- .recenter-body -->
+    </div><!-- .recenter-modal -->
+  </div><!-- #recenter-overlay -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- Floating Recenter Reminder Capsule (Global toast on connect)          -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <aside id="recenter-floating-capsule" class="recenter-capsule" style="display: none;" aria-live="polite">
+    <div class="recenter-capsule-inner">
+      <div class="recenter-capsule-icon-wrap" id="recenter-capsule-icon">
+        <!-- Profile grip icon SVG -->
+      </div>
+      <div class="recenter-capsule-content">
+        <div class="recenter-capsule-title" id="recenter-capsule-title">Подключен профиль «Слот 1»</div>
+        <div class="recenter-capsule-desc">
+          <span data-i18n="recenter.capsule_hint">Рекомендуем центрировать 3D-вид для вашего хвата</span>
+          <span class="recenter-capsule-sub" data-i18n="recenter.capsule_disclaimer">(Сугубо для приложения — в играх всё работает сразу)</span>
+        </div>
+      </div>
+      <div class="recenter-capsule-actions">
+        <button type="button" class="btn-capsule-action" id="btn-capsule-recenter" data-i18n="recenter.capsule_btn_action">Центрировать</button>
+        <button type="button" class="btn-capsule-close" id="btn-capsule-close" aria-label="Dismiss">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </aside>
 
   <!-- Floating Tooltip for Settings Infotips -->
   <div id="settings-floating-tooltip" class="apple-floating-tooltip"></div>
@@ -3508,6 +3624,9 @@
       // Wails 60 Hz telemetry event
       if (window.runtime && window.runtime.EventsOn) {
         window.runtime.EventsOn('tuning:frame', (frame) => {
+          if (typeof RecenterManager !== 'undefined') {
+            RecenterManager.onFrame(frame);
+          }
           if (this.active) {
             this.onFrame(frame);
           }
@@ -4963,6 +5082,316 @@
       // Calibrate button in online view
       document.getElementById('btn-open-calibration')?.addEventListener('click', () => {
         CalibrationWizard.openToSlot(this.activeSlot);
+      });
+    }
+  };
+
+  // ── Recenter Manager (In-app 3D Horizon Baseline Reset) ───────────────────
+  const RecenterManager = {
+    isOpen: false,
+    isHolding: false,
+    hasFailed: false,
+    isSuccess: false,
+    durationMs: 1500,
+    startTime: 0,
+    rafId: null,
+    latestGyroSpeed: 0,
+    lastConnectCapsuleTs: 0,
+    capsuleDismissTimer: null,
+
+    // Called on live high-rate sensor frames to track stillness speed (deg/s)
+    onFrame(frame) {
+      if (!frame) return;
+      const rx = Number(frame.RawX != null ? frame.RawX : (frame.rawRotX != null ? frame.rawRotX : 0)) || 0;
+      const ry = Number(frame.RawY != null ? frame.RawY : (frame.rawRotY != null ? frame.rawRotY : 0)) || 0;
+      const rz = Number(frame.RawZ != null ? frame.RawZ : (frame.rawRotZ != null ? frame.rawRotZ : 0)) || 0;
+      this.latestGyroSpeed = Math.sqrt(rx * rx + ry * ry + rz * rz);
+    },
+
+    getActiveProfile() {
+      const activeIdx = (typeof ProfileManager !== 'undefined' && ProfileManager.activeSlot >= 0) ? ProfileManager.activeSlot : 0;
+      const profs = (typeof ProfileManager !== 'undefined' && ProfileManager.profiles) ? ProfileManager.profiles : [];
+      return profs[activeIdx] || {
+        slot: activeIdx,
+        name: formatSlotName(activeIdx),
+        device: 'Unknown',
+        icon: 'default'
+      };
+    },
+
+    open() {
+      const overlay = document.getElementById('recenter-overlay');
+      if (!overlay) return;
+      this.isOpen = true;
+      overlay.style.display = 'flex';
+
+      const prof = this.getActiveProfile();
+      const profName = prof.name || formatSlotName(prof.slot || 0);
+
+      const modalIcon = document.getElementById('recenter-modal-icon');
+      if (modalIcon) modalIcon.innerHTML = getProfileIconSVG(prof.icon || 'default', 24);
+
+      const modalName = document.getElementById('recenter-modal-name');
+      if (modalName) modalName.textContent = profName;
+
+      const modalPrompt = document.getElementById('recenter-modal-prompt');
+      if (modalPrompt) {
+        const rawTmpl = I18n.t('recenter.modal_hold_prompt') || 'Держите телефон неподвижно в исходном положении профиля «{name}»';
+        modalPrompt.textContent = rawTmpl.replace('{name}', profName);
+      }
+
+      this.startCountdown();
+    },
+
+    close() {
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+      this.isOpen = false;
+      this.isHolding = false;
+      const overlay = document.getElementById('recenter-overlay');
+      if (overlay) overlay.style.display = 'none';
+    },
+
+    startCountdown() {
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+
+      this.isHolding = true;
+      this.hasFailed = false;
+      this.isSuccess = false;
+
+      const bar = document.getElementById('recenter-bar');
+      const statusText = document.getElementById('recenter-status-text');
+      const countdownEl = document.getElementById('recenter-countdown-num');
+      const retryBtn = document.getElementById('btn-recenter-retry');
+
+      if (bar) {
+        bar.className = 'recenter-bar holding';
+        bar.style.width = '100%';
+      }
+      if (statusText) {
+        statusText.className = 'recenter-status-text';
+        statusText.textContent = I18n.t('recenter.status_holding') || 'Фиксация нейтрали: не двигайте устройство...';
+      }
+      if (countdownEl) {
+        countdownEl.className = 'recenter-status-countdown';
+        countdownEl.textContent = '1.5s';
+      }
+      if (retryBtn) retryBtn.style.display = 'none';
+
+      this.startTime = performance.now();
+
+      const loop = (now) => {
+        if (!this.isOpen || !this.isHolding) return;
+
+        const elapsed = now - this.startTime;
+        const remaining = Math.max(0, this.durationMs - elapsed);
+        const ratio = remaining / this.durationMs;
+
+        if (bar) bar.style.width = (ratio * 100).toFixed(1) + '%';
+        if (countdownEl) countdownEl.textContent = (remaining / 1000).toFixed(1) + 's';
+
+        // Stillness check after 120ms initial grace period
+        // Threshold: 2.8 deg/s
+        if (elapsed > 120 && this.latestGyroSpeed > 2.8) {
+          this.failMoved();
+          return;
+        }
+
+        if (remaining <= 0) {
+          this.succeed();
+          return;
+        }
+
+        this.rafId = requestAnimationFrame(loop);
+      };
+
+      this.rafId = requestAnimationFrame(loop);
+    },
+
+    failMoved() {
+      this.isHolding = false;
+      this.hasFailed = true;
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+
+      const bar = document.getElementById('recenter-bar');
+      const statusText = document.getElementById('recenter-status-text');
+      const countdownEl = document.getElementById('recenter-countdown-num');
+      const retryBtn = document.getElementById('btn-recenter-retry');
+
+      if (bar) bar.className = 'recenter-bar failed';
+      if (statusText) {
+        statusText.className = 'recenter-status-text error';
+        statusText.textContent = I18n.t('recenter.status_moved') || 'Телефон двигался! Положите неподвижно и повторите.';
+      }
+      if (countdownEl) countdownEl.textContent = '✕';
+      if (retryBtn) retryBtn.style.display = 'inline-flex';
+
+      if (typeof SoundManager !== 'undefined' && SoundManager.play) {
+        SoundManager.play('defeat');
+      }
+    },
+
+    succeed() {
+      this.isHolding = false;
+      this.isSuccess = true;
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+
+      const bar = document.getElementById('recenter-bar');
+      const statusText = document.getElementById('recenter-status-text');
+      const countdownEl = document.getElementById('recenter-countdown-num');
+      const retryBtn = document.getElementById('btn-recenter-retry');
+
+      if (bar) {
+        bar.className = 'recenter-bar success';
+        bar.style.width = '100%';
+      }
+      if (statusText) {
+        statusText.className = 'recenter-status-text success';
+        statusText.textContent = I18n.t('recenter.status_success') || 'Готово! Нейтраль зафиксирована';
+      }
+      if (countdownEl) {
+        countdownEl.className = 'recenter-status-countdown success';
+        countdownEl.textContent = '✓';
+      }
+      if (retryBtn) retryBtn.style.display = 'none';
+
+      // Reset backend AHRS orientation
+      if (window.go?.main?.App?.ResetAHRS) {
+        window.go.main.App.ResetAHRS().catch(() => {});
+      }
+
+      // Reset 3D scenes if active
+      if (typeof Scene3D !== 'undefined' && Scene3D.activeScenes) {
+        Object.values(Scene3D.activeScenes).forEach(sc => {
+          if (sc && sc.resetQuat) sc.resetQuat();
+        });
+      }
+
+      // Zero out live Euler angles in HUD
+      if (typeof AppState !== 'undefined') {
+        AppState.targetPitch = 0;
+        AppState.targetRoll = 0;
+        AppState.targetYaw = 0;
+        AppState.currentPitch = 0;
+        AppState.currentRoll = 0;
+        AppState.currentYaw = 0;
+      }
+
+      if (typeof SoundManager !== 'undefined' && SoundManager.play) {
+        SoundManager.play('goal');
+      }
+
+      setTimeout(() => {
+        if (this.isOpen && this.isSuccess) {
+          this.close();
+        }
+      }, 650);
+    },
+
+    // Floating Capsule notification logic on connect / reconnect
+    onDeviceConnected() {
+      const now = Date.now();
+      if (now - this.lastConnectCapsuleTs < 10000) return;
+      this.lastConnectCapsuleTs = now;
+
+      const capsule = document.getElementById('recenter-floating-capsule');
+      if (!capsule) return;
+
+      const prof = this.getActiveProfile();
+      const profName = prof.name || formatSlotName(prof.slot || 0);
+
+      const iconWrap = document.getElementById('recenter-capsule-icon');
+      if (iconWrap) iconWrap.innerHTML = getProfileIconSVG(prof.icon || 'default', 20);
+
+      const titleEl = document.getElementById('recenter-capsule-title');
+      if (titleEl) {
+        const rawTmpl = I18n.t('recenter.capsule_connected_title') || 'Подключен профиль «{name}»';
+        titleEl.textContent = rawTmpl.replace('{name}', profName);
+      }
+
+      capsule.classList.remove('hiding');
+      capsule.style.display = 'flex';
+
+      if (this.capsuleDismissTimer) clearTimeout(this.capsuleDismissTimer);
+      this.capsuleDismissTimer = setTimeout(() => {
+        this.dismissCapsule();
+      }, 12000);
+    },
+
+    dismissCapsule() {
+      const capsule = document.getElementById('recenter-floating-capsule');
+      if (!capsule || capsule.style.display === 'none') return;
+      if (this.capsuleDismissTimer) {
+        clearTimeout(this.capsuleDismissTimer);
+        this.capsuleDismissTimer = null;
+      }
+      capsule.classList.add('hiding');
+      setTimeout(() => {
+        capsule.style.display = 'none';
+        capsule.classList.remove('hiding');
+      }, 250);
+    },
+
+    init() {
+      // Main screen button
+      document.getElementById('btn-main-recenter')?.addEventListener('click', () => {
+        this.open();
+      });
+
+      // HUD bezel click
+      document.getElementById('gyro-hud-bezel')?.addEventListener('click', () => {
+        this.open();
+      });
+
+      // Close modal button
+      document.getElementById('recenter-close-btn')?.addEventListener('click', () => {
+        this.close();
+      });
+
+      // Cancel button in modal
+      document.getElementById('btn-recenter-cancel')?.addEventListener('click', () => {
+        this.close();
+      });
+
+      // Retry button in modal
+      document.getElementById('btn-recenter-retry')?.addEventListener('click', () => {
+        this.startCountdown();
+      });
+
+      // Overlay backdrop click
+      document.getElementById('recenter-overlay')?.addEventListener('click', (e) => {
+        if (e.target.id === 'recenter-overlay') {
+          this.close();
+        }
+      });
+
+      // Capsule Action button
+      document.getElementById('btn-capsule-recenter')?.addEventListener('click', () => {
+        this.dismissCapsule();
+        this.open();
+      });
+
+      // Capsule Close button
+      document.getElementById('btn-capsule-close')?.addEventListener('click', () => {
+        this.dismissCapsule();
+      });
+
+      // Escape key
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.isOpen) {
+          this.close();
+        }
       });
     }
   };
@@ -6902,6 +7331,9 @@
         if (!isOffline) {
           this._reconnectCooldownTs = Date.now();
           this._stillnessStart = 0;
+          if (typeof RecenterManager !== 'undefined') {
+            RecenterManager.onDeviceConnected();
+          }
         }
         if (isOffline) {
           if (!SetupWizard?.isOpen && !HelpManager?.isOpen && !SettingsManager?.isOpen && !WelcomeManager?.isOpen) {
@@ -7144,6 +7576,9 @@
       // Listen for real-time state changes from Wails backend
       if (window.runtime && window.runtime.EventsOn) {
         window.runtime.EventsOn('state:change', (state) => {
+          if (typeof RecenterManager !== 'undefined' && state) {
+            RecenterManager.onFrame({ RawX: state.rawRotX, RawY: state.rawRotY, RawZ: state.rawRotZ });
+          }
           this.render(state);
         });
         window.runtime.EventsOn('device:connection-lost', () => {
@@ -7156,6 +7591,9 @@
           AppState._stillnessStart = 0;
           if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
             CalibrationWizard.hideDisconnectAlert();
+          }
+          if (typeof RecenterManager !== 'undefined') {
+            RecenterManager.onDeviceConnected();
           }
         });
         window.runtime.EventsOn('device:disconnected', () => {
@@ -7250,6 +7688,7 @@
       if (fallbackTimer) clearTimeout(fallbackTimer);
       await I18n.init();
       ProfileManager.init();
+      RecenterManager.init();
       SetupWizard.init();
       HelpManager.init();
       SettingsManager.init();
