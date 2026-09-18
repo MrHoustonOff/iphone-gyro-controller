@@ -886,13 +886,13 @@
         <span id="txt-sub-socket">Разорвать связь</span>
       </button>
 
-      <button class="btn-sub-action active" id="btn-screenlock">
+      <button class="btn-sub-action" id="btn-screenlock">
         <svg viewBox="0 0 24 24">
           <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
           <line x1="8" y1="21" x2="16" y2="21"></line>
           <line x1="12" y1="17" x2="12" y2="21"></line>
         </svg>
-        <span id="txt-sub-screenlock">Не гасить экран: Вкл</span>
+        <span id="txt-sub-screenlock">Не гасить экран: Выкл</span>
       </button>
     </div>
 
@@ -1078,7 +1078,7 @@ document.getElementById('device-model-label').textContent = deviceModel;
 // 4. Screen Lock (WakeLock API & Silent Loop Fallback)
 // ─────────────────────────────────────────────────────────────────────────────
 let wakeLock = null;
-let wakeLockEnabled = true;
+let wakeLockEnabled = false;
 const btnScreenlock = document.getElementById('btn-screenlock');
 const txtSubScreenlock = document.getElementById('txt-sub-screenlock');
 
@@ -1160,8 +1160,8 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-// Initial WakeLock request
-requestWakeLock();
+// Initial WakeLock UI state (starts off until user taps with required browser gesture)
+updateWakeLockUI();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 5. OLED Screensaver & Anti-Touch Shield (Smart Hold & Swipe Unlock)

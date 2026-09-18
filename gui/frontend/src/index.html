@@ -2461,6 +2461,12 @@
     pitch: 0, // rad (tilt around X)
     roll: 0,  // rad (tilt around Z)
     yaw: 0,   // rad (turn around Y)
+    pitchOffset: 0,
+    rollOffset: 0,
+    yawOffset: 0,
+    lastRawPitch: 0,
+    lastRawRoll: 0,
+    lastRawYaw: 0,
     ballPos: { x: 0, z: 0 },
     ballVel: { x: 0, z: 0 },
     ballPosY: 0,
@@ -2978,6 +2984,9 @@
     },
 
     recenter() {
+      this.pitchOffset = this.lastRawPitch || 0;
+      this.rollOffset = this.lastRawRoll || 0;
+      this.yawOffset = this.lastRawYaw || 0;
       this.pitch = 0;
       this.roll = 0;
       this.yaw = 0;
@@ -2993,6 +3002,9 @@
       this.confettiParticles = [];
       this.spawnHole();
       this.updateHud();
+      if (window.go?.main?.App?.ResetAHRS) {
+        window.go.main.App.ResetAHRS().catch(() => {});
+      }
     },
 
     animateScore(type) {
@@ -3010,27 +3022,41 @@
       });
     },
 
-    onMotion(vx, vy, vz, dt) {
+    onFrame(frame) {
       if (!this.initialized || !this.platformGroup) return;
       this.isOffline = false;
 
-      const radX = vx * (Math.PI / 180);
-      const radY = vy * (Math.PI / 180);
-      const radZ = vz * (Math.PI / 180);
+      // Absolute AHRS controller attitude (100% drift-free and immune to fast-spin integration drift)
+      if (frame && typeof frame.pitch === 'number') {
+        const rawP = Number(frame.pitch || 0);
+        const rawR = Number(frame.roll || 0);
+        const rawY = Number(frame.yaw || 0);
 
-      this.pitch += radX * dt;
-      this.roll -= radZ * dt;
-      this.yaw -= radY * dt * 0.45;
+        this.lastRawPitch = rawP;
+        this.lastRawRoll = rawR;
+        this.lastRawYaw = rawY;
 
-      const maxTilt = 0.73;
-      if (this.pitch > maxTilt) this.pitch = maxTilt;
-      if (this.pitch < -maxTilt) this.pitch = -maxTilt;
-      if (this.roll > maxTilt) this.roll = maxTilt;
-      if (this.roll < -maxTilt) this.roll = -maxTilt;
+        const deg2rad = Math.PI / 180;
+        const targetP = (rawP - this.pitchOffset) * deg2rad;
+        const targetR = -(rawR - this.rollOffset) * deg2rad;
+        const targetY = -(rawY - this.yawOffset) * deg2rad;
 
-      this.platformGroup.rotation.x = this.pitch;
-      this.platformGroup.rotation.z = this.roll;
-      this.platformGroup.rotation.y = this.yaw;
+        // Smooth lerp tracking (snappy 1:1 responsive feel)
+        const factor = 0.35;
+        this.pitch += (targetP - this.pitch) * factor;
+        this.roll += (targetR - this.roll) * factor;
+        this.yaw += (targetY - this.yaw) * factor;
+
+        this.platformGroup.rotation.x = this.pitch;
+        this.platformGroup.rotation.z = this.roll;
+        this.platformGroup.rotation.y = this.yaw;
+      }
+    },
+
+    onMotion(vx, vy, vz, dt) {
+      // Retained for backward compatibility
+      if (!this.initialized || !this.platformGroup) return;
+      this.isOffline = false;
     },
 
     updatePhysics(dt) {
@@ -3257,8 +3283,9 @@
     syncDimensions(force = false) {
       const canvas = document.getElementById('bench-oscilloscope-canvas');
       if (!canvas) return;
+      const targetH = (this.activeAxis === 'all' ? 220 : 95);
       const w = Math.floor(canvas.clientWidth || 340);
-      const h = Math.floor(canvas.clientHeight || (this.activeAxis === 'all' ? 220 : 95));
+      const h = targetH;
       if (force || w !== this.cachedCanvasW || h !== this.cachedCanvasH) {
         this.cachedCanvasW = w;
         this.cachedCanvasH = h;
@@ -3577,8 +3604,8 @@
       if (this.reticleY > maxH) this.reticleY = maxH;
       if (this.reticleY < -maxH) this.reticleY = -maxH;
 
-      // 2. Numerical Platform Game Motion Rates Integration
-      PlatformGame.onMotion(curX, curY, curZ, dt);
+      // 2. Absolute Drift-Free Platform Game Motion Tracking
+      PlatformGame.onFrame(frame);
 
       // 3. Oscilloscope Multi-Axis Push (Always tracks Raw vs DSU for direct comparison)
       this.historyRaw.x.push(rawX);
@@ -3649,7 +3676,7 @@
       if (!this.hudAimYEl) this.hudAimYEl = document.getElementById('bench-hud-aim-y');
 
       if (this.reticleDotEl) {
-        this.reticleDotEl.style.transform = `translate(calc(-50% + ${Math.round(this.reticleX)}px), calc(-50% + ${Math.round(this.reticleY)}px))`;
+        this.reticleDotEl.style.transform = `translate(${Math.round(this.reticleX)}px, ${Math.round(this.reticleY)}px)`;
       }
       const aimSpeed = 2.4;
       if (this.hudAimXEl) {
@@ -3705,24 +3732,27 @@
         this.setOfflineState();
       }
 
-      if (this.cachedCanvasW <= 0) {
-        this.syncDimensions(true);
-      }
-      const w = this.cachedCanvasW || 340;
-      const h = this.cachedCanvasH || (this.activeAxis === 'all' ? 220 : 95);
-      const dpr = window.devicePixelRatio || 1;
+      const targetH = (this.activeAxis === 'all' ? 220 : 95);
+      const w = Math.floor(canvas.clientWidth || 340);
+      const h = targetH;
+      this.cachedCanvasW = w;
+      this.cachedCanvasH = h;
 
-      if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
-        canvas.width = Math.floor(w * dpr);
-        canvas.height = Math.floor(h * dpr);
+      const dpr = window.devicePixelRatio || 1;
+      const pixelW = Math.round(w * dpr);
+      const pixelH = Math.round(h * dpr);
+
+      if (canvas.width !== pixelW || canvas.height !== pixelH) {
+        canvas.width = pixelW;
+        canvas.height = pixelH;
       }
 
       const ctx = canvas.getContext('2d');
       ctx.save();
+      // Complete physical canvas buffer clear to eliminate subpixel ghosting and stretching
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-      // Background clear
-      ctx.clearRect(0, 0, w, h);
 
       // Theme-aware high contrast stroke colors for canvas elements
       const isLight = (document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light');
@@ -3816,9 +3846,9 @@
           const dx = w / (this.maxHistory - 1);
           const startX = w - (n - 1) * dx;
 
-          // Raw trace (Orange/Red)
+          // Raw trace (Apple Orange, matches legend)
           ctx.beginPath();
-          ctx.strokeStyle = isLight ? '#D70015' : 'rgba(255, 69, 58, 0.70)';
+          ctx.strokeStyle = isLight ? '#FF9500' : '#FF9F0A';
           ctx.lineWidth = isLight ? 1.6 : 1.4;
           for (let i = 0; i < n; i++) {
             const x = startX + i * dx;
@@ -3918,9 +3948,9 @@
           const dx = w / (this.maxHistory - 1);
           const startX = w - (n - 1) * dx;
 
-          // 1. Draw Raw trace (Apple Orange/Red)
+          // 1. Draw Raw trace (Apple Orange, matches legend)
           ctx.beginPath();
-          ctx.strokeStyle = isLight ? '#D70015' : 'rgba(255, 69, 58, 0.70)';
+          ctx.strokeStyle = isLight ? '#FF9500' : '#FF9F0A';
           ctx.lineWidth = isLight ? 1.8 : 1.6;
           for (let i = 0; i < n; i++) {
             const x = startX + i * dx;

@@ -4702,8 +4702,12 @@ em {
 /* Moving Zelda Bow Aim Reticle */
 .bench-reticle-dot {
   position: absolute;
+  top: 50%;
+  left: 50%;
   width: 28px;
   height: 28px;
+  margin-top: -14px;
+  margin-left: -14px;
   pointer-events: none;
   will-change: transform;
   display: flex;
@@ -4885,7 +4889,6 @@ em {
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.18);
   display: block;
-  transition: height 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .bench-canvas.mode-all {

@@ -255,13 +255,16 @@ type AppSettings struct {
 
 // TuningFrame conveys simultaneous raw and filtered telemetry to the frontend tuning bench
 type TuningFrame struct {
-	RawX float32 `json:"rawX"`
-	RawY float32 `json:"rawY"`
-	RawZ float32 `json:"rawZ"`
-	OutX float32 `json:"outX"`
-	OutY float32 `json:"outY"`
-	OutZ float32 `json:"outZ"`
-	Hz   float32 `json:"hz"`
+	RawX  float32 `json:"rawX"`
+	RawY  float32 `json:"rawY"`
+	RawZ  float32 `json:"rawZ"`
+	OutX  float32 `json:"outX"`
+	OutY  float32 `json:"outY"`
+	OutZ  float32 `json:"outZ"`
+	Hz    float32 `json:"hz"`
+	Pitch float32 `json:"pitch"`
+	Roll  float32 `json:"roll"`
+	Yaw   float32 `json:"yaw"`
 }
 
 // StepCaptureLog stores the full recorded session of a calibration gesture step
@@ -1159,12 +1162,14 @@ func (a *App) startup(ctx context.Context) {
 		corrected.AccZ = finalAz
 
 		// Update Madgwick AHRS filter.
+		var curP, curR, curY float64
 		if a.ahrs != nil {
 			if a.ahrsNeedConverge.Swap(false) {
 				a.ahrs.ConvergeToGravity(finalAx, finalAy, finalAz)
 			}
 			q0, q1, q2, q3 := a.ahrs.Update(ahrsRx, ahrsRy, ahrsRz, finalAx, finalAy, finalAz, time.Now())
 			p, r, y := a.ahrs.GetEulerAngles()
+			curP, curR, curY = p, r, y
 			a.curPitch.Store(math.Float64bits(p))
 			a.curRoll.Store(math.Float64bits(r))
 			a.curYaw.Store(math.Float64bits(y))
@@ -1229,13 +1234,16 @@ func (a *App) startup(ctx context.Context) {
 				a.lastTuningEmit.Store(nowMs)
 				_, _, inHz := srv.PacketStats()
 				wailsRuntime.EventsEmit(a.ctx, "tuning:frame", TuningFrame{
-					RawX: rawDsuRx,
-					RawY: rawDsuRy,
-					RawZ: rawDsuRz,
-					OutX: dsuRx,
-					OutY: dsuRy,
-					OutZ: dsuRz,
-					Hz:   float32(inHz),
+					RawX:  rawDsuRx,
+					RawY:  rawDsuRy,
+					RawZ:  rawDsuRz,
+					OutX:  dsuRx,
+					OutY:  dsuRy,
+					OutZ:  dsuRz,
+					Hz:    float32(inHz),
+					Pitch: float32(curP),
+					Roll:  float32(curR),
+					Yaw:   float32(curY),
 				})
 			}
 		}
