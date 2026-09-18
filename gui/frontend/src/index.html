@@ -973,10 +973,40 @@
                             <button type="button" class="bench-btn-recenter" id="btn-bench-recenter-platform" data-i18n="settings_modal.bench_recenter">Центр</button>
                           </div>
                         </div>
-                        <div class="bench-platform-viewport">
+                        <div class="bench-platform-viewport" id="bench-platform-viewport">
                           <canvas id="bench-platform-canvas"></canvas>
+                          <button type="button" class="bench-viewport-action-btn" id="btn-bench-platform-fullscreen" title="На весь экран">
+                            <svg class="icon-expand" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="15 3 21 3 21 9"></polyline>
+                              <polyline points="9 21 3 21 3 15"></polyline>
+                              <line x1="21" y1="3" x2="14" y2="10"></line>
+                              <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                            <svg class="icon-collapse" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                              <polyline points="4 14 10 14 10 20"></polyline>
+                              <polyline points="20 10 14 10 14 4"></polyline>
+                              <line x1="14" y1="10" x2="21" y2="3"></line>
+                              <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                          </button>
+                          <!-- Fullscreen Top HUD (Active in Fullscreen Mode) -->
+                          <div class="bench-fullscreen-hud" id="bench-fullscreen-hud">
+                            <div class="bench-fs-score-wrap">
+                              <span class="bench-fs-score-pill" id="bench-fs-score-pill">
+                                <span class="bench-fs-label" data-i18n="settings_modal.bench_score">Счёт</span>
+                                <span class="bench-fs-val" id="bench-fs-score">0</span>
+                              </span>
+                              <span class="bench-fs-record-pill">
+                                <span class="bench-fs-label" data-i18n="settings_modal.bench_record">Рекорд</span>
+                                <span class="bench-fs-val" id="bench-fs-record">0</span>
+                              </span>
+                            </div>
+                            <div class="bench-fs-hint" data-i18n="settings_modal.bench_fs_hint">Наклоняйте контроллер • Не уроните шарик! [Esc] Выход</div>
+                          </div>
+                          <!-- Bottom Right HUD -->
                           <div class="bench-platform-hud">
-                            <span id="bench-hud-score" class="bench-hud-score">Цели: 0</span>
+                            <span id="bench-hud-score" class="bench-hud-score">Счёт: 0</span>
+                            <span id="bench-hud-record" class="bench-hud-record">Рекорд: 0</span>
                             <span id="bench-hud-pitch">P: +0.0°</span>
                             <span id="bench-hud-roll">R: +0.0°</span>
                           </div>
@@ -1610,6 +1640,15 @@
       if (typeof Scene3D !== 'undefined' && Scene3D.updateTheme) {
         Scene3D.updateTheme(theme);
       }
+      if (typeof PlatformGame !== 'undefined' && PlatformGame.updateTheme) {
+        PlatformGame.updateTheme(theme);
+      }
+      if (typeof NetSparkline !== 'undefined' && NetSparkline.render) {
+        NetSparkline.render();
+      }
+      if (typeof TuningBench !== 'undefined' && TuningBench.drawOscilloscope && TuningBench.active) {
+        TuningBench.drawOscilloscope();
+      }
 
       document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-val') === theme);
@@ -2078,6 +2117,15 @@
       }
       this._lastPlayTs[type] = now;
 
+      if (type === 'goal') {
+        this.playCuteGoal();
+        return;
+      }
+      if (type === 'defeat') {
+        this.playCuteDefeat();
+        return;
+      }
+
       if (mode === 'windows') {
         if (window.go?.main?.App?.PlaySystemSound) {
           try {
@@ -2146,6 +2194,37 @@
       ];
       for (const n of notes) {
         this.playTone(n.f, now + n.t, n.d, n.g, 'sine');
+      }
+    },
+
+    playCuteGoal() {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      // Zelda-style uplifting triumph chord: F5 (698Hz), A5 (880Hz), C6 (1046Hz), F6 (1397Hz)
+      const notes = [
+        { f: 698.46, t: 0.00, d: 0.18, g: 0.15 },
+        { f: 880.00, t: 0.08, d: 0.20, g: 0.16 },
+        { f: 1046.50, t: 0.16, d: 0.24, g: 0.18 },
+        { f: 1396.91, t: 0.24, d: 0.45, g: 0.20 }
+      ];
+      for (const n of notes) {
+        this.playTone(n.f, now + n.t, n.d, n.g, 'sine');
+      }
+    },
+
+    playCuteDefeat() {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      // Soft gentle defeat drop: G4 (392Hz), Eb4 (311Hz), C4 (261Hz)
+      const notes = [
+        { f: 392.00, t: 0.00, d: 0.16, g: 0.14 },
+        { f: 311.13, t: 0.10, d: 0.18, g: 0.12 },
+        { f: 261.63, t: 0.20, d: 0.35, g: 0.10 }
+      ];
+      for (const n of notes) {
+        this.playTone(n.f, now + n.t, n.d, n.g, 'triangle');
       }
     },
 
@@ -2259,14 +2338,22 @@
     scene: null,
     camera: null,
     platformGroup: null,
+    slabMesh: null,
+    slabMat: null,
+    edgeLine: null,
     ballMesh: null,
     holeMesh: null,
     score: 0,
+    record: parseInt(localStorage.getItem('gb_platform_record') || '0', 10),
+    isFullscreen: false,
     pitch: 0, // rad (tilt around X)
     roll: 0,  // rad (tilt around Z)
     yaw: 0,   // rad (turn around Y)
     ballPos: { x: 0, z: 0 },
     ballVel: { x: 0, z: 0 },
+    ballPosY: 0,
+    ballVelY: 0,
+    isFalling: false,
     holePos: { x: 1.3, z: -0.4 },
     ballRadius: 0.24,
     platformSizeX: 4.6,
@@ -2312,46 +2399,21 @@
       scene.add(platformGroup);
       this.platformGroup = platformGroup;
 
-      // 1. Base stone slate slab (Myahm Agana style, elongated rectangular ratio)
+      // 1. Base stone slate slab (completely open floating platform with no walls)
+      const isLight = (document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light');
       const slabGeo = new THREE.BoxGeometry(this.platformSizeX, this.platformThickness, this.platformSizeZ);
-      const isLight = document.body.getAttribute('data-theme') === 'light';
       const slateMat = new THREE.MeshStandardMaterial({
-        color: isLight ? 0xc8cdd5 : 0x1d2028,
-        roughness: 0.72,
-        metalness: 0.32
+        color: isLight ? 0x2e3440 : 0x1d2028,
+        roughness: 0.70,
+        metalness: 0.35
       });
       const slabMesh = new THREE.Mesh(slabGeo, slateMat);
       platformGroup.add(slabMesh);
+      this.slabMesh = slabMesh;
+      this.slabMat = slateMat;
 
-      // 2. Sheikah Glowing Boundaries (Raised energy curbs)
-      const curbMat = new THREE.MeshStandardMaterial({
-        color: 0x0a84ff,
-        roughness: 0.35,
-        metalness: 0.75,
-        emissive: 0x0055aa,
-        emissiveIntensity: 0.45
-      });
-      const curbH = 0.14;
-      const curbW = 0.08;
-      const curbY = this.platformThickness / 2 + curbH / 2;
-
-      // North & South curbs (spanning platformSizeX)
-      const curbGeoZ = new THREE.BoxGeometry(this.platformSizeX, curbH, curbW);
-      const curbN = new THREE.Mesh(curbGeoZ, curbMat);
-      curbN.position.set(0, curbY, -this.platformSizeZ / 2 + curbW / 2);
-      platformGroup.add(curbN);
-      const curbS = new THREE.Mesh(curbGeoZ, curbMat);
-      curbS.position.set(0, curbY, this.platformSizeZ / 2 - curbW / 2);
-      platformGroup.add(curbS);
-
-      // East & West curbs (spanning platformSizeZ)
-      const curbGeoX = new THREE.BoxGeometry(curbW, curbH, this.platformSizeZ);
-      const curbE = new THREE.Mesh(curbGeoX, curbMat);
-      curbE.position.set(this.platformSizeX / 2 - curbW / 2, curbY, 0);
-      platformGroup.add(curbE);
-      const curbWst = new THREE.Mesh(curbGeoX, curbMat);
-      curbWst.position.set(-this.platformSizeX / 2 + curbW / 2, curbY, 0);
-      platformGroup.add(curbWst);
+      // 2. Sheikah perimeter runic edge line (flush with top surface, no curbs/walls)
+      this.createEdgeLine();
 
       // 3. Ancient Sheikah Center Concentric Rings
       const ringGeo = new THREE.RingGeometry(0.38, 0.44, 32);
@@ -2437,11 +2499,98 @@
       const ballRing = new THREE.Mesh(ballRingGeo, ballRingMat);
       ballGroup.add(ballRing);
 
-      ballGroup.position.set(0, this.platformThickness / 2 + this.ballRadius, 0);
+      this.ballPosY = this.platformThickness / 2 + this.ballRadius;
+      ballGroup.position.set(0, this.ballPosY, 0);
       platformGroup.add(ballGroup);
       this.ballMesh = ballGroup;
 
+      // Event listeners for Fullscreen Toggle and Escape key
+      document.getElementById('btn-bench-platform-fullscreen')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleFullscreen();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.isFullscreen) {
+          this.setFullscreen(false);
+        }
+      });
+
       this.recenter();
+    },
+
+    createEdgeLine() {
+      if (!this.platformGroup || !window.THREE) return;
+      if (this.edgeLine) {
+        this.platformGroup.remove(this.edgeLine);
+        if (this.edgeLine.geometry) this.edgeLine.geometry.dispose();
+      }
+      const THREE = window.THREE;
+      const hx = this.platformSizeX / 2 - 0.03;
+      const hz = this.platformSizeZ / 2 - 0.03;
+      const y = this.platformThickness / 2 + 0.003;
+      const points = [
+        new THREE.Vector3(-hx, y, -hz),
+        new THREE.Vector3(hx, y, -hz),
+        new THREE.Vector3(hx, y, hz),
+        new THREE.Vector3(-hx, y, hz),
+        new THREE.Vector3(-hx, y, -hz)
+      ];
+      const edgeGeo = new THREE.BufferGeometry().setFromPoints(points);
+      const edgeMat = new THREE.LineBasicMaterial({
+        color: 0x00e5ff,
+        transparent: true,
+        opacity: 0.75
+      });
+      this.edgeLine = new THREE.Line(edgeGeo, edgeMat);
+      this.platformGroup.add(this.edgeLine);
+    },
+
+    toggleFullscreen() {
+      this.setFullscreen(!this.isFullscreen);
+    },
+
+    setFullscreen(enable) {
+      this.isFullscreen = !!enable;
+      const vp = document.getElementById('bench-platform-viewport');
+      const btn = document.getElementById('btn-bench-platform-fullscreen');
+      if (vp) vp.classList.toggle('fullscreen', this.isFullscreen);
+
+      if (btn) {
+        const iconExpand = btn.querySelector('.icon-expand');
+        const iconCollapse = btn.querySelector('.icon-collapse');
+        if (iconExpand) iconExpand.style.display = this.isFullscreen ? 'none' : 'block';
+        if (iconCollapse) iconCollapse.style.display = this.isFullscreen ? 'block' : 'none';
+        btn.title = this.isFullscreen ? (I18n.t('settings_modal.bench_exit_fullscreen') || 'Свернуть') : (I18n.t('settings_modal.bench_fullscreen') || 'На весь экран');
+      }
+
+      // In fullscreen, expand platform even wider along X and reset mini-game score
+      if (this.isFullscreen) {
+        this.platformSizeX = 7.4;
+        this.score = 0;
+      } else {
+        this.platformSizeX = 4.6;
+      }
+
+      this.rebuildPlatformGeometry();
+      this.respawnBall();
+      this.spawnHole();
+      this.updateHud();
+    },
+
+    rebuildPlatformGeometry() {
+      if (!this.slabMesh || !window.THREE) return;
+      const THREE = window.THREE;
+      if (this.slabMesh.geometry) this.slabMesh.geometry.dispose();
+      this.slabMesh.geometry = new THREE.BoxGeometry(this.platformSizeX, this.platformThickness, this.platformSizeZ);
+      this.createEdgeLine();
+    },
+
+    updateTheme(theme) {
+      const isLight = (theme === 'light');
+      if (this.slabMat) {
+        this.slabMat.color.setHex(isLight ? 0x2e3440 : 0x1d2028);
+      }
     },
 
     spawnHole() {
@@ -2468,8 +2617,8 @@
     triggerConfetti(posX, posZ) {
       if (!this.platformGroup || !window.THREE) return;
       const THREE = window.THREE;
-      const count = 46;
-      const geom = new THREE.PlaneGeometry(0.09, 0.05);
+      const count = 48;
+      const geom = new THREE.PlaneGeometry(0.10, 0.06);
 
       for (let i = 0; i < count; i++) {
         const color = this.confettiColors[Math.floor(Math.random() * this.confettiColors.length)];
@@ -2484,8 +2633,8 @@
         mesh.position.set(posX, yPos, posZ);
 
         const angle = Math.random() * Math.PI * 2;
-        const speedH = 1.0 + Math.random() * 2.2;
-        const speedY = 2.4 + Math.random() * 3.0;
+        const speedH = 1.0 + Math.random() * 2.4;
+        const speedY = 2.5 + Math.random() * 3.2;
 
         this.platformGroup.add(mesh);
         this.confettiParticles.push({
@@ -2497,7 +2646,7 @@
           rotSpeedY: (Math.random() - 0.5) * 16,
           rotSpeedZ: (Math.random() - 0.5) * 16,
           age: 0,
-          life: 1.1 + Math.random() * 0.7
+          life: 1.2 + Math.random() * 0.7
         });
       }
     },
@@ -2532,20 +2681,28 @@
       }
     },
 
+    respawnBall() {
+      this.isFalling = false;
+      this.ballPos.x = 0;
+      this.ballPos.z = 0;
+      this.ballPosY = this.platformThickness / 2 + this.ballRadius;
+      this.ballVel.x = 0;
+      this.ballVel.z = 0;
+      this.ballVelY = 0;
+      if (this.ballMesh) {
+        this.ballMesh.scale.set(1, 1, 1);
+        this.ballMesh.position.set(0, this.ballPosY, 0);
+        this.ballMesh.rotation.set(0, 0, 0);
+      }
+    },
+
     recenter() {
       this.pitch = 0;
       this.roll = 0;
       this.yaw = 0;
-      this.ballPos.x = 0;
-      this.ballPos.z = 0;
-      this.ballVel.x = 0;
-      this.ballVel.z = 0;
+      this.respawnBall();
       if (this.platformGroup) {
         this.platformGroup.rotation.set(0, 0, 0);
-      }
-      if (this.ballMesh) {
-        this.ballMesh.position.set(0, this.platformThickness / 2 + this.ballRadius, 0);
-        this.ballMesh.rotation.set(0, 0, 0);
       }
       for (const p of this.confettiParticles) {
         if (p.mesh.parent) p.mesh.parent.remove(p.mesh);
@@ -2555,6 +2712,21 @@
       this.confettiParticles = [];
       this.spawnHole();
       this.updateHud();
+    },
+
+    animateScore(type) {
+      const els = [
+        document.getElementById('bench-hud-score'),
+        document.getElementById('bench-fs-score')
+      ];
+      const cls = (type === 'up') ? 'bench-score-up' : 'bench-score-lost';
+      els.forEach(el => {
+        if (!el) return;
+        el.classList.remove('bench-score-up', 'bench-score-lost');
+        void el.offsetWidth;
+        el.classList.add(cls);
+        setTimeout(() => el.classList.remove(cls), 500);
+      });
     },
 
     onMotion(vx, vy, vz, dt) {
@@ -2589,6 +2761,30 @@
     updatePhysics(dt) {
       if (!this.platformGroup || !this.ballMesh) return;
 
+      if (this.isFalling) {
+        // Ball plunges down into the void
+        this.ballVelY -= 32.0 * dt;
+        this.ballPosY += this.ballVelY * dt;
+        this.ballPos.x += this.ballVel.x * dt;
+        this.ballPos.z += this.ballVel.z * dt;
+
+        this.ballMesh.rotation.x += 10.0 * dt;
+        this.ballMesh.rotation.z += 10.0 * dt;
+
+        this.ballMesh.position.x = this.ballPos.x;
+        this.ballMesh.position.y = this.ballPosY;
+        this.ballMesh.position.z = this.ballPos.z;
+
+        const progress = Math.min(1.0, Math.max(0.0, -this.ballPosY / 5.0));
+        const s = Math.max(0.08, 1.0 - progress * 0.9);
+        this.ballMesh.scale.set(s, s, s);
+
+        if (this.ballPosY < -5.0) {
+          this.respawnBall();
+        }
+        return;
+      }
+
       // Gravity acceleration down inclined surface:
       // When roll < 0 (right tilted down) -> ax > 0 (accelerate right)
       // When pitch > 0 (near edge down) -> az > 0 (accelerate towards camera down slope)
@@ -2611,15 +2807,17 @@
       // Goal detection: ball enters hole!
       if (distToHole < 0.20) {
         this.score++;
+        if (this.score > this.record) {
+          this.record = this.score;
+          localStorage.setItem('gb_platform_record', this.record.toString());
+        }
         this.triggerConfetti(this.holePos.x, this.holePos.z);
         if (typeof SoundManager !== 'undefined' && SoundManager.play) {
-          SoundManager.play('calibrate_success');
+          SoundManager.play('goal');
         }
+        this.animateScore('up');
         this.spawnHole();
-        this.ballPos.x = 0;
-        this.ballPos.z = 0;
-        this.ballVel.x = 0;
-        this.ballVel.z = 0;
+        this.respawnBall();
         this.updateHud();
         return;
       }
@@ -2632,28 +2830,33 @@
       this.ballPos.x += this.ballVel.x * dt;
       this.ballPos.z += this.ballVel.z * dt;
 
-      // Collision bounds against curbs
-      const limitX = this.platformSizeX / 2 - 0.08 - this.ballRadius;
-      const limitZ = this.platformSizeZ / 2 - 0.08 - this.ballRadius;
+      // Check if ball rolls over the open edge of the platform!
+      const halfX = this.platformSizeX / 2;
+      const halfZ = this.platformSizeZ / 2;
+      const contactRadius = this.ballRadius * 0.75;
+      const overEdge = (Math.abs(this.ballPos.x) > halfX + contactRadius || Math.abs(this.ballPos.z) > halfZ + contactRadius);
 
-      if (this.ballPos.x > limitX) {
-        this.ballPos.x = limitX;
-        this.ballVel.x = -this.ballVel.x * 0.45;
-      } else if (this.ballPos.x < -limitX) {
-        this.ballPos.x = -limitX;
-        this.ballVel.x = -this.ballVel.x * 0.45;
+      if (overEdge) {
+        this.isFalling = true;
+        this.ballVelY = -1.0;
+        this.ballPosY = this.platformThickness / 2 + this.ballRadius;
+
+        // Defeat sound and score reset with shake animation
+        if (typeof SoundManager !== 'undefined' && SoundManager.play) {
+          SoundManager.play('defeat');
+        }
+        if (this.score > 0) {
+          this.animateScore('lost');
+        }
+        this.score = 0;
+        this.updateHud();
+        return;
       }
 
-      if (this.ballPos.z > limitZ) {
-        this.ballPos.z = limitZ;
-        this.ballVel.z = -this.ballVel.z * 0.45;
-      } else if (this.ballPos.z < -limitZ) {
-        this.ballPos.z = -limitZ;
-        this.ballVel.z = -this.ballVel.z * 0.45;
-      }
-
-      // Update ball mesh coordinates in platform local space
+      // Position ball on top of the slab
+      this.ballPosY = this.platformThickness / 2 + this.ballRadius;
       this.ballMesh.position.x = this.ballPos.x;
+      this.ballMesh.position.y = this.ballPosY;
       this.ballMesh.position.z = this.ballPos.z;
 
       // Non-slip rolling rotation
@@ -2663,12 +2866,22 @@
 
     updateHud() {
       const sEl = document.getElementById('bench-hud-score');
+      const rkEl = document.getElementById('bench-hud-record');
       const pEl = document.getElementById('bench-hud-pitch');
       const rEl = document.getElementById('bench-hud-roll');
-      if (sEl) {
-        const label = (typeof I18n !== 'undefined' ? I18n.t('settings_modal.bench_score') : '') || 'Цели';
-        sEl.textContent = `${label}: ${this.score}`;
-      }
+
+      const fsScoreEl = document.getElementById('bench-fs-score');
+      const fsRecordEl = document.getElementById('bench-fs-record');
+
+      const scoreLabel = (typeof I18n !== 'undefined' ? I18n.t('settings_modal.bench_score') : '') || 'Счёт';
+      const recordLabel = (typeof I18n !== 'undefined' ? I18n.t('settings_modal.bench_record') : '') || 'Рекорд';
+
+      if (sEl) sEl.textContent = `${scoreLabel}: ${this.score}`;
+      if (rkEl) rkEl.textContent = `${recordLabel}: ${this.record}`;
+
+      if (fsScoreEl) fsScoreEl.textContent = this.score.toString();
+      if (fsRecordEl) fsRecordEl.textContent = this.record.toString();
+
       if (pEl) {
         const deg = this.pitch * (180 / Math.PI);
         pEl.textContent = `P: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
@@ -3137,10 +3350,10 @@
       ctx.clearRect(0, 0, w, h);
 
       // Theme-aware high contrast stroke colors for canvas elements
-      const isLight = document.body.getAttribute('data-theme') === 'light';
-      const gridSeparator = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
-      const gridCenter = isLight ? 'rgba(0, 0, 0, 0.22)' : 'rgba(255, 255, 255, 0.15)';
-      const gridBounds = isLight ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.06)';
+      const isLight = (document.documentElement.getAttribute('data-theme') === 'light' || document.body.getAttribute('data-theme') === 'light');
+      const gridSeparator = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.08)';
+      const gridCenter = isLight ? 'rgba(0, 0, 0, 0.32)' : 'rgba(255, 255, 255, 0.18)';
+      const gridBounds = isLight ? 'rgba(0, 0, 0, 0.12)' : 'rgba(255, 255, 255, 0.06)';
 
       if (this.activeAxis === 'all') {
         // Stacked 3-Axis Oscilloscope Mode
@@ -3195,18 +3408,23 @@
             ctx.beginPath();
             ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
             ctx.fill();
+            if (isLight) {
+              ctx.strokeStyle = 'rgba(0, 0, 0, 0.16)';
+              ctx.lineWidth = 1;
+              ctx.stroke();
+            }
           } else {
             ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
           }
 
-          ctx.fillStyle = isLight ? '#1c1c1e' : '#ffffff';
+          ctx.fillStyle = isLight ? '#000000' : '#ffffff';
           ctx.fillText(title, badgeX + 6, badgeY + 12);
 
           // Numeric DSU rate readout on right of track
           const curFilt = filtArr.length ? filtArr[filtArr.length - 1] : 0;
           const liveText = `DSU: ${(curFilt >= 0 ? '+' : '')}${curFilt.toFixed(1)}°/s`;
           ctx.font = '600 10px ui-monospace, SFMono-Regular, Menlo, monospace';
-          ctx.fillStyle = '#0A84FF';
+          ctx.fillStyle = isLight ? '#0062D2' : '#0A84FF';
           const liveMetrics = ctx.measureText(liveText);
           ctx.fillText(liveText, w - liveMetrics.width - 8, badgeY + 12);
 
@@ -3225,8 +3443,8 @@
 
           // Raw trace (Orange/Red)
           ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255, 69, 58, 0.70)';
-          ctx.lineWidth = 1.4;
+          ctx.strokeStyle = isLight ? '#D70015' : 'rgba(255, 69, 58, 0.70)';
+          ctx.lineWidth = isLight ? 1.6 : 1.4;
           for (let i = 0; i < n; i++) {
             const x = startX + i * dx;
             const y = centerY - rawArr[i] * scale;
@@ -3237,8 +3455,8 @@
 
           // Filtered DSU trace (Electric Cyan/Blue)
           ctx.beginPath();
-          ctx.strokeStyle = '#0A84FF';
-          ctx.lineWidth = 1.8;
+          ctx.strokeStyle = isLight ? '#0071E3' : '#0A84FF';
+          ctx.lineWidth = 2.0;
           for (let i = 0; i < n; i++) {
             const x = startX + i * dx;
             const y = centerY - filtArr[i] * scale;
@@ -3294,17 +3512,22 @@
           ctx.beginPath();
           ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 4);
           ctx.fill();
+          if (isLight) {
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.16)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
         } else {
           ctx.fillRect(badgeX, badgeY, badgeW, badgeH);
         }
 
-        ctx.fillStyle = isLight ? '#1c1c1e' : '#ffffff';
+        ctx.fillStyle = isLight ? '#000000' : '#ffffff';
         ctx.fillText(axisTitle, badgeX + 6, badgeY + 13);
 
         const curFilt = (filtArr && filtArr.length) ? filtArr[filtArr.length - 1] : 0;
         const liveText = `DSU: ${(curFilt >= 0 ? '+' : '')}${curFilt.toFixed(1)}°/s`;
         ctx.font = '600 10.5px ui-monospace, SFMono-Regular, Menlo, monospace';
-        ctx.fillStyle = '#0A84FF';
+        ctx.fillStyle = isLight ? '#0062D2' : '#0A84FF';
         const liveMetrics = ctx.measureText(liveText);
         ctx.fillText(liveText, w - liveMetrics.width - 8, badgeY + 13);
 
@@ -3322,8 +3545,8 @@
 
           // 1. Draw Raw trace (Apple Orange/Red)
           ctx.beginPath();
-          ctx.strokeStyle = 'rgba(255, 69, 58, 0.70)';
-          ctx.lineWidth = 1.6;
+          ctx.strokeStyle = isLight ? '#D70015' : 'rgba(255, 69, 58, 0.70)';
+          ctx.lineWidth = isLight ? 1.8 : 1.6;
           for (let i = 0; i < n; i++) {
             const x = startX + i * dx;
             const y = centerY - rawArr[i] * scale;
@@ -3334,7 +3557,7 @@
 
           // 2. Draw Filtered DSU trace (Apple Cyan/Blue)
           ctx.beginPath();
-          ctx.strokeStyle = '#0A84FF';
+          ctx.strokeStyle = isLight ? '#0071E3' : '#0A84FF';
           ctx.lineWidth = 2.0;
           for (let i = 0; i < n; i++) {
             const x = startX + i * dx;

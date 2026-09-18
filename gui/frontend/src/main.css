@@ -4342,7 +4342,8 @@ em {
 }
 
 [data-theme="light"] .bench-platform-viewport {
-  background: radial-gradient(circle at 50% 40%, rgba(0, 122, 255, 0.06) 0%, rgba(0, 0, 0, 0.06) 100%);
+  background: radial-gradient(circle at 50% 40%, rgba(0, 122, 255, 0.08) 0%, rgba(0, 0, 0, 0.08) 100%);
+  border: 1.5px solid rgba(0, 0, 0, 0.14);
 }
 
 #bench-platform-canvas {
@@ -4370,8 +4371,156 @@ em {
 }
 
 [data-theme="light"] .bench-platform-hud {
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 0, 0, 0.12);
   color: #1c1c1e;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Viewport Fullscreen Toggle Button */
+.bench-viewport-action-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 0.15s, transform 0.15s;
+}
+
+[data-theme="light"] .bench-viewport-action-btn {
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #1c1c1e;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.bench-viewport-action-btn:hover {
+  background: rgba(10, 132, 255, 0.35);
+  transform: scale(1.05);
+}
+
+/* Fullscreen Mode for 3D Viewport */
+.bench-platform-viewport.fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 99999 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  border: none !important;
+  background: radial-gradient(circle at 50% 40%, rgba(10, 132, 255, 0.12) 0%, #0d1117 100%) !important;
+}
+
+[data-theme="light"] .bench-platform-viewport.fullscreen {
+  background: radial-gradient(circle at 50% 40%, rgba(0, 122, 255, 0.10) 0%, #e5e9f0 100%) !important;
+}
+
+/* Fullscreen Top HUD */
+.bench-fullscreen-hud {
+  display: none;
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  z-index: 25;
+  pointer-events: none;
+}
+
+.bench-platform-viewport.fullscreen .bench-fullscreen-hud {
+  display: flex;
+}
+
+.bench-fs-score-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.bench-fs-score-pill, .bench-fs-record-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 30px;
+  background: rgba(18, 18, 20, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .bench-fs-score-pill, [data-theme="light"] .bench-fs-record-pill {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.bench-fs-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.bench-fs-val {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  color: #FFD60A;
+}
+
+.bench-fs-record-pill .bench-fs-val {
+  color: #30D158;
+}
+
+.bench-fs-hint {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+/* Animations for score update & drop reset */
+@keyframes scoreDropShake {
+  0% { transform: scale(1); }
+  20% { transform: translateX(-5px) scale(1.15); color: #FF453A !important; }
+  40% { transform: translateX(5px) scale(1.15); color: #FF453A !important; }
+  60% { transform: translateX(-3px) scale(1.1); color: #FF453A !important; }
+  80% { transform: translateX(3px) scale(1.05); color: #FF453A !important; }
+  100% { transform: scale(1); }
+}
+
+@keyframes scoreGoalPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.28); color: #30D158 !important; }
+  100% { transform: scale(1); }
+}
+
+.bench-score-lost {
+  animation: scoreDropShake 0.48s ease;
+}
+
+.bench-score-up {
+  animation: scoreGoalPop 0.36s ease;
+}
+
+.bench-hud-record {
+  color: #30D158 !important;
+  font-weight: 700 !important;
 }
 
 /* Zelda Aim Target Reticle Display */
@@ -4742,7 +4891,8 @@ em {
 }
 
 [data-theme="light"] .bench-canvas {
-  background: rgba(0, 0, 0, 0.04);
+  background: #F2F2F7;
+  border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 .bench-osc-footer {
@@ -4759,8 +4909,27 @@ em {
   font-weight: 600;
 }
 
+[data-theme="light"] .bench-noise-readout {
+  color: #1E7E34;
+  font-weight: 700;
+}
+
 .bench-rate-readout {
   opacity: 0.8;
+}
+
+[data-theme="light"] .bench-rate-readout {
+  color: #1c1c1e;
+  opacity: 0.95;
+}
+
+[data-theme="light"] .bench-net-spark-wrap {
+  background: rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .bench-net-spark-ping {
+  color: #1c1c1e;
 }
 
 /* Settings Hint Box (Live Testing) */
