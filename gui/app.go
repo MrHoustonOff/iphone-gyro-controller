@@ -309,7 +309,9 @@ func defaultMatrix3x3() [3][3]float64 {
 // is guaranteed to map exactly to AccY = -|g|, with AccX = 0 and AccZ = 0 in Cemuhook DSU.
 // In Cemuhook DSU / PadTest, the vertical axis of the gamepad is Y (Green axis pointing UP).
 // When the controller is resting flat on a table, gravity points down along -AccY.
-func computeAccMatrix(calGravity [3]float64) [3][3]float64 {
+// pitchAxisOpt allows providing the calibrated pitch axis (Row 0 of active matrix) so
+// that AccX (lateral) is aligned with the controller's lateral axis regardless of landscape or portrait.
+func computeAccMatrix(calGravity [3]float64, pitchAxisOpt ...[3]float64) [3][3]float64 {
 	gx, gy, gz := calGravity[0], calGravity[1], calGravity[2]
 	gNorm := math.Sqrt(gx*gx + gy*gy + gz*gz)
 	if gNorm < 0.3 {
@@ -331,15 +333,34 @@ func computeAccMatrix(calGravity [3]float64) [3][3]float64 {
 
 	// Pick a reference direction for Row 0 (lateral X axis, pitch) orthogonal to row1
 	ref := [3]float64{1, 0, 0}
-	if math.Abs(uG[0]) > 0.8 {
+	if len(pitchAxisOpt) > 0 {
+		pAx := pitchAxisOpt[0]
+		if math.Abs(pAx[0])+math.Abs(pAx[1])+math.Abs(pAx[2]) > 0.5 {
+			ref = pAx
+		}
+	} else if math.Abs(uG[0]) > 0.8 {
 		ref = [3]float64{0, 0, 1}
 	}
 
-	// Gram-Schmidt for Row 0: ref - (ref · row1) * row1
+	// If ref is nearly collinear with row1, choose an alternate reference
 	dot := ref[0]*row1[0] + ref[1]*row1[1] + ref[2]*row1[2]
+	if math.Abs(math.Abs(dot)-1.0) < 0.15 {
+		if math.Abs(row1[0]) < 0.8 {
+			ref = [3]float64{1, 0, 0}
+		} else {
+			ref = [3]float64{0, 1, 0}
+		}
+		dot = ref[0]*row1[0] + ref[1]*row1[1] + ref[2]*row1[2]
+	}
+
+	// Gram-Schmidt for Row 0: ref - (ref · row1) * row1
 	row0 := [3]float64{ref[0] - dot*row1[0], ref[1] - dot*row1[1], ref[2] - dot*row1[2]}
 	r0Norm := math.Sqrt(row0[0]*row0[0] + row0[1]*row0[1] + row0[2]*row0[2])
-	row0 = [3]float64{row0[0] / r0Norm, row0[1] / r0Norm, row0[2] / r0Norm}
+	if r0Norm > 1e-4 {
+		row0 = [3]float64{row0[0] / r0Norm, row0[1] / r0Norm, row0[2] / r0Norm}
+	} else {
+		row0 = [3]float64{1, 0, 0}
+	}
 
 	// Row 2 = row0 x row1 (Z axis, longitudinal, roll)
 	row2 := [3]float64{
@@ -1063,7 +1084,7 @@ func (a *App) startup(ctx context.Context) {
 
 		// Apply matrix to rotation rate and acceleration
 		rx, ry, rz := applyMatrix(mat, rawRx, rawRy, rawRz)
-		accMat := computeAccMatrix(a.calGravity)
+		accMat := computeAccMatrix(a.calGravity, mat[0])
 		ax, ay, az := applyMatrix(accMat, float64(frame.AccX), float64(frame.AccY), float64(frame.AccZ))
 
 		gyroSpeed := math.Sqrt(rx*rx + ry*ry + rz*rz)
@@ -1093,9 +1114,9 @@ func (a *App) startup(ctx context.Context) {
 			ahrsRz = 0
 		} else {
 			scale := float32((gyroSpeed - deadband) / gyroSpeed)
-			ahrsRx = float32(rx) * scale
-			ahrsRy = float32(ry) * scale
-			ahrsRz = float32(rz) * scale
+			ahrsRx = rawDsuRx * scale
+			ahrsRy = rawDsuRy * scale
+			ahrsRz = rawDsuRz * scale
 		}
 
 		// Step A: Anti-tremor deadband with C1-continuous Hermite smoothstep
@@ -1260,7 +1281,7 @@ func (a *App) startup(ctx context.Context) {
 		}
 		disconnectMu.Unlock()
 
-		a.ahrsNeedConverge.Store(true)
+		a.ResetAHRS()
 		a.ResetGyroFilter()
 
 		a.hasClient.Store(true)
@@ -1297,13 +1318,16 @@ func (a *App) startup(ctx context.Context) {
 		if disconnectTimer != nil {
 			disconnectTimer.Stop()
 		}
-		disconnectTimer = time.AfterFunc(2500*time.Millisecond, func() {
+		disconnectTimer = time.AfterFunc(600*time.Millisecond, func() {
 			_, c, _ := srv.PacketStats()
 			if c <= 0 {
 				a.hasClient.Store(false)
 				a.connectedAt = time.Time{}
 				a.deviceName.Store("Controller")
 				a.emitStateChange()
+				if a.ctx != nil {
+					wailsRuntime.EventsEmit(a.ctx, "device:disconnected", true)
+				}
 				a.broadcastLiveDebugJSON(map[string]any{
 					"type":      "device_status",
 					"connected": false,
@@ -1865,7 +1889,7 @@ func (a *App) SaveProfile(slot int, name string, device string, icon string, mat
 		a.matrixMu.Lock()
 		a.activeMatrix = matrix
 		a.matrixMu.Unlock()
-		a.ahrsNeedConverge.Store(true)
+		a.ResetAHRS()
 	}
 
 	a.saveProfiles()
@@ -1912,7 +1936,7 @@ func (a *App) SetActiveProfile(slot int) string {
 	}
 	a.matrixMu.Unlock()
 
-	a.ahrsNeedConverge.Store(true)
+	a.ResetAHRS()
 
 	a.saveProfiles()
 	a.emitStateChange()
@@ -1929,7 +1953,7 @@ func (a *App) PreviewMatrix(matrix [3][3]float64) {
 	a.previewMatrix = matrix
 	a.usePreview = true
 	a.previewMu.Unlock()
-	a.ahrsNeedConverge.Store(true)
+	a.ResetAHRS()
 }
 
 // ClearPreview removes the temporary preview matrix and reverts to the saved activeMatrix.
@@ -1938,7 +1962,7 @@ func (a *App) ClearPreview() {
 	a.previewMu.Lock()
 	a.usePreview = false
 	a.previewMu.Unlock()
-	a.ahrsNeedConverge.Store(true)
+	a.ResetAHRS()
 }
 
 // ResetAHRS zeroes the 3D orientation filter
@@ -1947,6 +1971,102 @@ func (a *App) ResetAHRS() {
 		a.ahrs.Reset()
 		a.ahrsNeedConverge.Store(true)
 		a.broadcastLiveDebug(1, 0, 0, 0)
+	}
+}
+
+// QuickCalibrate performs a rapid 1-second calibration of zero-bias and horizon gravity.
+// Samples resting data, updates gyro bias & calGravity, recenters AHRS to (0, 0, 0),
+// and updates the active profile on disk.
+func (a *App) QuickCalibrate() map[string]any {
+	if !a.hasClient.Load() {
+		return map[string]any{
+			"success": false,
+			"error":   a.getI18nMsg("status.device_offline"),
+		}
+	}
+
+	// Capture stationary samples over 800ms
+	a.isCapturing.Store(true)
+	a.captureMu.Lock()
+	a.captureBuffer = nil
+	a.captureMu.Unlock()
+
+	time.Sleep(800 * time.Millisecond)
+
+	a.isCapturing.Store(false)
+	a.captureMu.Lock()
+	samples := a.captureBuffer
+	a.captureBuffer = nil
+	a.captureMu.Unlock()
+
+	if len(samples) < 15 {
+		return map[string]any{
+			"success": false,
+			"error":   a.getI18nMsg("calibration.error_too_few_samples"),
+		}
+	}
+
+	var sumX, sumY, sumZ float64
+	var sumAx, sumAy, sumAz float64
+	var peakSpeed float64
+	for _, s := range samples {
+		sumX += s.rot[0]
+		sumY += s.rot[1]
+		sumZ += s.rot[2]
+		sumAx += s.acc[0]
+		sumAy += s.acc[1]
+		sumAz += s.acc[2]
+		spd := math.Sqrt(s.rot[0]*s.rot[0] + s.rot[1]*s.rot[1] + s.rot[2]*s.rot[2])
+		if spd > peakSpeed {
+			peakSpeed = spd
+		}
+	}
+	n := float64(len(samples))
+	bX, bY, bZ := sumX/n, sumY/n, sumZ/n
+
+	// Check if phone was moved excessively
+	var varSum float64
+	for _, s := range samples {
+		dx := s.rot[0] - bX
+		dy := s.rot[1] - bY
+		dz := s.rot[2] - bZ
+		varSum += dx*dx + dy*dy + dz*dz
+	}
+	stdDev := math.Sqrt(varSum / n)
+	if stdDev > 2.5 || peakSpeed > 8.0 {
+		return map[string]any{
+			"success": false,
+			"error":   a.getI18nMsg("calibration.error_moved_during_rest"),
+		}
+	}
+
+	// Apply new zero-bias
+	a.biasMu.Lock()
+	a.gyroBias = [3]float64{bX, bY, bZ}
+	a.biasMu.Unlock()
+
+	// Apply new calGravity
+	gX, gY, gZ := sumAx/n, sumAy/n, sumAz/n
+	gNorm := math.Sqrt(gX*gX + gY*gY + gZ*gZ)
+	if gNorm > 0.4 {
+		a.calGravity = [3]float64{gX / gNorm, gY / gNorm, gZ / gNorm}
+	}
+
+	// If an active profile is selected, persist updated bias and gravity
+	if a.activeSlot >= 0 && a.activeSlot <= 5 {
+		a.profilesMu.Lock()
+		a.profiles[a.activeSlot].GyroBias = a.gyroBias
+		a.profiles[a.activeSlot].CalGravity = a.calGravity
+		a.profilesMu.Unlock()
+		a.saveProfiles()
+	}
+
+	// Reset AHRS to 0 pitch, roll, and yaw, and trigger gravity convergence
+	a.ResetAHRS()
+	a.emitStateChange()
+
+	return map[string]any{
+		"success": true,
 	}
 }
 

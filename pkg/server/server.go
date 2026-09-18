@@ -220,9 +220,9 @@ func (s *Server) handleWebClient(w http.ResponseWriter, r *http.Request) {
 }
 
 const (
-	wsReadDeadline = 30 * time.Second // connection dies if no client frame in this window
-	wsPingInterval = 2 * time.Second  // server→client keepalive ping interval
-	wsPingText     = "PING"           // client listens for this and resets its own watchdog
+	wsReadDeadline = 3500 * time.Millisecond // connection dies if no client frame in this window (~3.5s)
+	wsPingInterval = 1500 * time.Millisecond // server→client keepalive ping interval
+	wsPingText     = "PING"                  // client listens for this and resets its own watchdog
 )
 
 func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -325,10 +325,10 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		// Refresh read deadline periodically (every 2s) instead of every frame
-		// Eliminates ~100 redundant timer/syscalls per second while streaming!
+		// Refresh read deadline periodically (every 1s) instead of every frame
+		// Eliminates ~60 redundant timer/syscalls per second while streaming!
 		now := time.Now()
-		if now.Sub(lastDeadlineRenew) >= 2*time.Second {
+		if now.Sub(lastDeadlineRenew) >= 1*time.Second {
 			_ = conn.SetReadDeadline(now.Add(wsReadDeadline))
 			lastDeadlineRenew = now
 		}

@@ -800,6 +800,17 @@ em {
   align-items: center;
   justify-content: center;
   overflow: visible;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+}
+
+.gyro-hud-bezel:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.14);
+}
+
+.gyro-hud-bezel:active {
+  transform: scale(0.97);
 }
 
 .gyro-hud-svg {
@@ -874,8 +885,14 @@ em {
   fill: var(--dot-online);
 }
 
-.hud-level-status {
+.hud-level-action-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-top: 5px;
+}
+
+.hud-level-status {
   font-size: 11px;
   font-weight: 700;
   color: var(--text-tertiary);
@@ -886,6 +903,53 @@ em {
 
 .hud-level-status.level {
   color: var(--dot-online);
+}
+
+.btn-hud-quick-cal {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface-card);
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.btn-hud-quick-cal:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+  border-color: var(--text-secondary);
+}
+
+.btn-hud-quick-cal.calibrating {
+  opacity: 0.8;
+  pointer-events: none;
+  border-color: var(--dot-online);
+  color: var(--dot-online);
+}
+
+.btn-level-quick-cal {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 3px 9px;
+  border-radius: 5px;
+  border: 1px solid rgba(var(--apple-green-rgb), 0.35);
+  background: rgba(var(--apple-green-rgb), 0.12);
+  color: var(--dot-online);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-level-quick-cal:hover {
+  background: rgba(var(--apple-green-rgb), 0.22);
 }
 
 .metric-pill.network-health {
@@ -4152,7 +4216,17 @@ em {
   color: var(--text-secondary);
 }
 
-/* Platform HUD Goal Counter */
+/* Platform HUD Goal Counter: Only visible in fullscreen mini-game mode */
+.bench-platform-hud .bench-hud-score,
+.bench-platform-hud .bench-hud-record {
+  display: none !important;
+}
+
+.fullscreen .bench-platform-hud .bench-hud-score,
+.fullscreen .bench-platform-hud .bench-hud-record {
+  display: inline-flex !important;
+}
+
 .bench-hud-score {
   color: #FFD60A !important;
   font-weight: 700 !important;

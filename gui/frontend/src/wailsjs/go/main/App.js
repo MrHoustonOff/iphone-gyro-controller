@@ -70,6 +70,10 @@ export function PreviewMatrix(arg1) {
   return window['go']['main']['App']['PreviewMatrix'](arg1);
 }
 
+export function QuickCalibrate() {
+  return window['go']['main']['App']['QuickCalibrate']();
+}
+
 export function ResetAHRS() {
   return window['go']['main']['App']['ResetAHRS']();
 }
