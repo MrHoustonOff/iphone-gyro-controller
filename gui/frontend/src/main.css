@@ -4168,6 +4168,111 @@ em {
   color: #0A84FF;
 }
 
+/* Mini-Game Switcher Tabs in Status Bar */
+.bench-game-tabs {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(120, 120, 128, 0.14);
+  border: 1px solid var(--border);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  gap: 2px;
+}
+
+.bench-game-tab {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 2px 9px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bench-game-tab:hover {
+  color: var(--text);
+}
+
+.bench-game-tab.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.16);
+}
+
+.bench-game-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.bench-btn-feed {
+  padding: 3px 8px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  background: rgba(10, 132, 255, 0.14);
+  border: 1px solid rgba(10, 132, 255, 0.35);
+  color: #0A84FF;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.bench-btn-feed.raw {
+  background: rgba(255, 69, 58, 0.15);
+  border-color: rgba(255, 69, 58, 0.35);
+  color: #FF453A;
+}
+
+/* 3D Shrine Platform Viewport */
+.bench-platform-viewport {
+  width: 100%;
+  height: 140px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  position: relative;
+  background: radial-gradient(circle at 50% 40%, rgba(10, 132, 255, 0.08) 0%, rgba(0, 0, 0, 0.45) 100%);
+  border: 1.5px solid var(--border);
+  box-sizing: border-box;
+}
+
+[data-theme="light"] .bench-platform-viewport {
+  background: radial-gradient(circle at 50% 40%, rgba(0, 122, 255, 0.06) 0%, rgba(0, 0, 0, 0.06) 100%);
+}
+
+#bench-platform-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.bench-platform-hud {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  display: flex;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(0, 0, 0, 0.55);
+  padding: 2px 7px;
+  border-radius: 4px;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .bench-platform-hud {
+  background: rgba(255, 255, 255, 0.85);
+  color: #1c1c1e;
+}
+
 /* Zelda Aim Target Reticle Display */
 .bench-aim-wrap {
   display: flex;

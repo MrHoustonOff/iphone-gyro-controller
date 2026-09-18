@@ -898,38 +898,66 @@
                 <div class="settings-section">
                   <div class="settings-section-header" data-i18n="settings_modal.bench_title">Тест отклика в реальном времени</div>
                   <div class="settings-bench-card">
-                    <!-- Live Status Header -->
+                    <!-- Live Status Header & Mini-Game Switcher -->
                     <div class="bench-status-bar">
                       <div class="bench-live-pill offline" id="bench-live-pill">
                         <span class="bench-live-dot"></span>
                         <span id="bench-live-text" data-i18n="settings_modal.bench_offline">Офлайн</span>
                       </div>
+                      <div class="bench-game-tabs" id="bench-game-tabs" role="tablist">
+                        <button type="button" class="bench-game-tab active" data-game="aim" data-i18n="settings_modal.bench_mode_aim">Прицел</button>
+                        <button type="button" class="bench-game-tab" data-game="platform" data-i18n="settings_modal.bench_mode_platform">Платформа</button>
+                      </div>
                       <span class="bench-status-tag offline" id="bench-stability-tag" data-i18n="settings_modal.bench_status_offline">Офлайн</span>
                     </div>
 
-                    <!-- Zelda Aim Simulator Target Display -->
-                    <div class="bench-aim-wrap">
-                      <div class="bench-aim-header">
-                        <span class="bench-aim-title" data-i18n="settings_modal.bench_aim_title">Прицел (как в Zelda)</span>
-                        <div class="bench-aim-actions">
-                          <button type="button" class="bench-btn-invert" id="btn-bench-inv-x" data-i18n="settings_modal.bench_inv_x" title="Инвертировать ось X (влево / вправо)">Инв. X</button>
-                          <button type="button" class="bench-btn-invert" id="btn-bench-inv-y" data-i18n="settings_modal.bench_inv_y" title="Инвертировать ось Y (вверх / вниз)">Инв. Y</button>
-                          <button type="button" class="bench-btn-recenter" id="btn-bench-recenter" data-i18n="settings_modal.bench_recenter">Центр</button>
+                    <!-- Mini-Game 1: Zelda Bow Aim Reticle Display -->
+                    <div class="bench-game-view" id="bench-game-aim">
+                      <div class="bench-aim-wrap">
+                        <div class="bench-aim-header">
+                          <span class="bench-aim-title" data-i18n="settings_modal.bench_aim_title">Прицел (как в Zelda)</span>
+                          <div class="bench-aim-actions">
+                            <button type="button" class="bench-btn-feed" id="btn-bench-feed-aim" title="Поток данных: DSU / Сырой">DSU</button>
+                            <button type="button" class="bench-btn-invert" id="btn-bench-inv-x" data-i18n="settings_modal.bench_inv_x" title="Инвертировать ось X (влево / вправо)">Инв. X</button>
+                            <button type="button" class="bench-btn-invert" id="btn-bench-inv-y" data-i18n="settings_modal.bench_inv_y" title="Инвертировать ось Y (вверх / вниз)">Инв. Y</button>
+                            <button type="button" class="bench-btn-recenter" id="btn-bench-recenter-aim" data-i18n="settings_modal.bench_recenter">Центр</button>
+                          </div>
                         </div>
-                      </div>
-                      <div class="bench-target-viewport">
-                        <div class="bench-target-cross-v"></div>
-                        <div class="bench-target-cross-h"></div>
-                        <div class="bench-target-ring r-outer"></div>
-                        <div class="bench-target-ring r-inner"></div>
-                        <div class="bench-target-center"></div>
-                        <!-- Interactive Moving Crosshair Dot -->
-                        <div class="bench-reticle-dot" id="bench-reticle-dot">
-                          <div class="bench-reticle-circle"></div>
-                          <div class="bench-reticle-sight"></div>
+                        <div class="bench-target-viewport">
+                          <div class="bench-target-cross-v"></div>
+                          <div class="bench-target-cross-h"></div>
+                          <div class="bench-target-ring r-outer"></div>
+                          <div class="bench-target-ring r-inner"></div>
+                          <div class="bench-target-center"></div>
+                          <!-- Interactive Moving Crosshair Dot -->
+                          <div class="bench-reticle-dot" id="bench-reticle-dot">
+                            <div class="bench-reticle-circle"></div>
+                            <div class="bench-reticle-sight"></div>
+                          </div>
                         </div>
+                        <div class="bench-target-caption" data-i18n="settings_modal.bench_aim_sub">Перекрестие реагирует на скорость DSU в реальном времени</div>
                       </div>
-                      <div class="bench-target-caption" data-i18n="settings_modal.bench_aim_sub">Перекрестие реагирует на скорость DSU в реальном времени</div>
+                    </div>
+
+                    <!-- Mini-Game 2: Zelda Shrine Apparatus 3D Platform Display -->
+                    <div class="bench-game-view" id="bench-game-platform" style="display: none;">
+                      <div class="bench-aim-wrap">
+                        <div class="bench-aim-header">
+                          <span class="bench-aim-title" data-i18n="settings_modal.bench_platform_title">Платформа святилища (Zelda)</span>
+                          <div class="bench-aim-actions">
+                            <button type="button" class="bench-btn-feed" id="btn-bench-feed-platform" title="Поток данных: DSU / Сырой">DSU</button>
+                            <button type="button" class="bench-btn-recenter" id="btn-bench-recenter-platform" data-i18n="settings_modal.bench_recenter">Центр</button>
+                          </div>
+                        </div>
+                        <div class="bench-platform-viewport">
+                          <canvas id="bench-platform-canvas"></canvas>
+                          <div class="bench-platform-hud">
+                            <span id="bench-hud-pitch">P: +0.0°</span>
+                            <span id="bench-hud-roll">R: +0.0°</span>
+                          </div>
+                        </div>
+                        <div class="bench-target-caption" data-i18n="settings_modal.bench_platform_sub">3D-платформа аппарата святилища наклоняется от движений контроллера</div>
+                      </div>
                     </div>
 
                     <!-- Dual-Trace Oscilloscope -->
@@ -2105,10 +2133,292 @@
     }
   };
 
+  // ── Zelda 3D Shrine Platform Mini-Game (Apparatus Simulator) ───────────────
+  const PlatformGame = {
+    initialized: false,
+    renderer: null,
+    scene: null,
+    camera: null,
+    platformGroup: null,
+    ballMesh: null,
+    pitch: 0, // rad (tilt around X)
+    roll: 0,  // rad (tilt around Z)
+    yaw: 0,   // rad (turn around Y)
+    ballPos: { x: 0, z: 0 },
+    ballVel: { x: 0, z: 0 },
+    ballRadius: 0.26,
+    platformSize: 3.4,
+    platformThickness: 0.22,
+    lastTickTs: 0,
+
+    init() {
+      if (this.initialized) return;
+      const canvas = document.getElementById('bench-platform-canvas');
+      if (!canvas || !window.THREE) return;
+      this.initialized = true;
+
+      const THREE = window.THREE;
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      this.renderer = renderer;
+
+      const scene = new THREE.Scene();
+      this.scene = scene;
+
+      const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 50);
+      camera.position.set(0, 3.8, 5.0);
+      camera.lookAt(0, -0.1, 0);
+      this.camera = camera;
+
+      // Studio Lighting: Sheikah Shrine glow
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.1);
+      dirLight.position.set(4, 9, 6);
+      scene.add(dirLight);
+
+      const cyanPoint = new THREE.PointLight(0x00e5ff, 1.5, 12);
+      cyanPoint.position.set(0, 2.2, 0);
+      scene.add(cyanPoint);
+
+      // Platform Root Group
+      const platformGroup = new THREE.Group();
+      scene.add(platformGroup);
+      this.platformGroup = platformGroup;
+
+      // 1. Base stone slate slab (Myahm Agana style)
+      const slabGeo = new THREE.BoxGeometry(this.platformSize, this.platformThickness, this.platformSize);
+      const isLight = document.body.getAttribute('data-theme') === 'light';
+      const slateMat = new THREE.MeshStandardMaterial({
+        color: isLight ? 0xc8cdd5 : 0x1d2028,
+        roughness: 0.72,
+        metalness: 0.32
+      });
+      const slabMesh = new THREE.Mesh(slabGeo, slateMat);
+      platformGroup.add(slabMesh);
+
+      // 2. Sheikah Glowing Boundaries (Raised energy curbs)
+      const curbMat = new THREE.MeshStandardMaterial({
+        color: 0x0a84ff,
+        roughness: 0.35,
+        metalness: 0.75,
+        emissive: 0x0055aa,
+        emissiveIntensity: 0.45
+      });
+      const curbH = 0.14;
+      const curbW = 0.08;
+      const curbOffset = this.platformSize / 2 - curbW / 2;
+      const curbY = this.platformThickness / 2 + curbH / 2;
+
+      // North & South curbs
+      const curbGeoZ = new THREE.BoxGeometry(this.platformSize, curbH, curbW);
+      const curbN = new THREE.Mesh(curbGeoZ, curbMat);
+      curbN.position.set(0, curbY, -curbOffset);
+      platformGroup.add(curbN);
+      const curbS = new THREE.Mesh(curbGeoZ, curbMat);
+      curbS.position.set(0, curbY, curbOffset);
+      platformGroup.add(curbS);
+
+      // East & West curbs
+      const curbGeoX = new THREE.BoxGeometry(curbW, curbH, this.platformSize);
+      const curbE = new THREE.Mesh(curbGeoX, curbMat);
+      curbE.position.set(curbOffset, curbY, 0);
+      platformGroup.add(curbE);
+      const curbWst = new THREE.Mesh(curbGeoX, curbMat);
+      curbWst.position.set(-curbOffset, curbY, 0);
+      platformGroup.add(curbWst);
+
+      // 3. Ancient Sheikah Center Concentric Rings
+      const ringGeo = new THREE.RingGeometry(0.48, 0.54, 32);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0x00e5ff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.65
+      });
+      const centerRing = new THREE.Mesh(ringGeo, ringMat);
+      centerRing.rotation.x = -Math.PI / 2;
+      centerRing.position.y = this.platformThickness / 2 + 0.003;
+      platformGroup.add(centerRing);
+
+      const dotGeo = new THREE.CircleGeometry(0.14, 24);
+      const dotMat = new THREE.MeshBasicMaterial({
+        color: 0x00e5ff,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.75
+      });
+      const centerDot = new THREE.Mesh(dotGeo, dotMat);
+      centerDot.rotation.x = -Math.PI / 2;
+      centerDot.position.y = this.platformThickness / 2 + 0.004;
+      platformGroup.add(centerDot);
+
+      // 4. Ancient Bronze Ball with Sheikah Equator Ring
+      const ballGroup = new THREE.Group();
+      const ballGeo = new THREE.SphereGeometry(this.ballRadius, 32, 32);
+      const ballMat = new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        roughness: 0.28,
+        metalness: 0.88
+      });
+      const ballCore = new THREE.Mesh(ballGeo, ballMat);
+      ballGroup.add(ballCore);
+
+      const ballRingGeo = new THREE.TorusGeometry(this.ballRadius + 0.004, 0.012, 12, 32);
+      const ballRingMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+      const ballRing = new THREE.Mesh(ballRingGeo, ballRingMat);
+      ballGroup.add(ballRing);
+
+      ballGroup.position.set(0, this.platformThickness / 2 + this.ballRadius, 0);
+      platformGroup.add(ballGroup);
+      this.ballMesh = ballGroup;
+
+      this.recenter();
+    },
+
+    recenter() {
+      this.pitch = 0;
+      this.roll = 0;
+      this.yaw = 0;
+      this.ballPos.x = 0;
+      this.ballPos.z = 0;
+      this.ballVel.x = 0;
+      this.ballVel.z = 0;
+      if (this.platformGroup) {
+        this.platformGroup.rotation.set(0, 0, 0);
+      }
+      if (this.ballMesh) {
+        this.ballMesh.position.set(0, this.platformThickness / 2 + this.ballRadius, 0);
+        this.ballMesh.rotation.set(0, 0, 0);
+      }
+      this.updateHud();
+    },
+
+    onMotion(vx, vy, vz, dt) {
+      if (!this.initialized || !this.platformGroup) return;
+
+      // Encapsulated angular velocity integration (matching Zelda client thread)
+      const radX = vx * (Math.PI / 180);
+      const radY = vy * (Math.PI / 180);
+      const radZ = vz * (Math.PI / 180);
+
+      // Pitch: tilting phone forward (+vx) tilts platform down away (-rotation.x)
+      // Roll: tilting phone right (+vz) tilts platform down right (-rotation.z)
+      // Yaw: turning phone right (+vy) rotates platform clockwise (-rotation.y)
+      this.pitch -= radX * dt;
+      this.roll -= radZ * dt;
+      this.yaw -= radY * dt * 0.45;
+
+      // Soft clamp tilt angle to +/- 42 degrees (0.73 rad)
+      const maxTilt = 0.73;
+      if (this.pitch > maxTilt) this.pitch = maxTilt;
+      if (this.pitch < -maxTilt) this.pitch = -maxTilt;
+      if (this.roll > maxTilt) this.roll = maxTilt;
+      if (this.roll < -maxTilt) this.roll = -maxTilt;
+
+      this.platformGroup.rotation.x = this.pitch;
+      this.platformGroup.rotation.z = this.roll;
+      this.platformGroup.rotation.y = this.yaw;
+
+      this.updateHud();
+    },
+
+    updatePhysics(dt) {
+      if (!this.platformGroup || !this.ballMesh) return;
+
+      // Gravity acceleration down inclined surface
+      // roll < 0 (right tilted down) -> ax > 0 (accelerate right)
+      // pitch < 0 (front tilted down) -> az < 0 (accelerate into screen)
+      const gravity = 26.0;
+      const ax = -Math.sin(this.roll) * gravity;
+      const az = Math.sin(this.pitch) * gravity;
+
+      this.ballVel.x += ax * dt;
+      this.ballVel.z += az * dt;
+
+      // Rolling surface friction
+      const damping = Math.pow(0.95, dt * 60);
+      this.ballVel.x *= damping;
+      this.ballVel.z *= damping;
+
+      this.ballPos.x += this.ballVel.x * dt;
+      this.ballPos.z += this.ballVel.z * dt;
+
+      // Collision bounds against curbs
+      const limit = this.platformSize / 2 - 0.08 - this.ballRadius;
+      if (this.ballPos.x > limit) {
+        this.ballPos.x = limit;
+        this.ballVel.x = -this.ballVel.x * 0.45;
+      } else if (this.ballPos.x < -limit) {
+        this.ballPos.x = -limit;
+        this.ballVel.x = -this.ballVel.x * 0.45;
+      }
+
+      if (this.ballPos.z > limit) {
+        this.ballPos.z = limit;
+        this.ballVel.z = -this.ballVel.z * 0.45;
+      } else if (this.ballPos.z < -limit) {
+        this.ballPos.z = -limit;
+        this.ballVel.z = -this.ballVel.z * 0.45;
+      }
+
+      // Update ball mesh coordinates in platform local space
+      this.ballMesh.position.x = this.ballPos.x;
+      this.ballMesh.position.z = this.ballPos.z;
+
+      // Non-slip rolling rotation
+      this.ballMesh.rotation.z -= (this.ballVel.x * dt) / this.ballRadius;
+      this.ballMesh.rotation.x += (this.ballVel.z * dt) / this.ballRadius;
+    },
+
+    updateHud() {
+      const pEl = document.getElementById('bench-hud-pitch');
+      const rEl = document.getElementById('bench-hud-roll');
+      if (pEl) {
+        const deg = -this.pitch * (180 / Math.PI);
+        pEl.textContent = `P: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
+      }
+      if (rEl) {
+        const deg = -this.roll * (180 / Math.PI);
+        rEl.textContent = `R: ${(deg >= 0 ? '+' : '')}${deg.toFixed(1)}°`;
+      }
+    },
+
+    updateAndRender() {
+      if (!this.initialized || !this.renderer || !this.scene || !this.camera) return;
+
+      const now = performance.now();
+      const dt = this.lastTickTs ? Math.min(0.05, Math.max(0.001, (now - this.lastTickTs) / 1000)) : 0.016;
+      this.lastTickTs = now;
+
+      this.updatePhysics(dt);
+
+      const canvas = document.getElementById('bench-platform-canvas');
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.floor(rect.width || 340);
+        const h = Math.floor(rect.height || 140);
+        if (w > 0 && h > 0) {
+          const dpr = Math.min(window.devicePixelRatio || 1, 2);
+          if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
+            this.renderer.setSize(w, h, false);
+            this.camera.aspect = w / h;
+            this.camera.updateProjectionMatrix();
+          }
+        }
+      }
+
+      this.renderer.render(this.scene, this.camera);
+    }
+  };
+
   // ── Real-Time Response Test Bench ──────────────────────────────────────────
   const TuningBench = {
     active: false,
     initialized: false,
+    activeGame: localStorage.getItem('gb_bench_active_game') || 'aim', // 'aim' | 'platform'
+    dataFeed: localStorage.getItem('gb_bench_data_feed') || 'dsu',     // 'dsu' | 'raw'
     activeAxis: 'x', // 'x' = Pitch, 'y' = Yaw, 'z' = Roll, 'all' = 3 Stacked Graphs
     reticleX: 0,
     reticleY: 0,
@@ -2126,6 +2436,27 @@
       if (this.initialized) return;
       this.initialized = true;
 
+      // Mini-Game tabs switching ('aim' vs 'platform')
+      const gameTabs = document.querySelectorAll('#bench-game-tabs .bench-game-tab');
+      gameTabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.getAttribute('data-game') || 'aim';
+          this.switchGame(target);
+        });
+      });
+
+      // Data feed toggle buttons ('dsu' vs 'raw')
+      const btnFeedAim = document.getElementById('btn-bench-feed-aim');
+      const btnFeedPlatform = document.getElementById('btn-bench-feed-platform');
+      const onToggleFeed = () => {
+        this.dataFeed = (this.dataFeed === 'dsu') ? 'raw' : 'dsu';
+        localStorage.setItem('gb_bench_data_feed', this.dataFeed);
+        this.syncFeedButtons();
+      };
+      if (btnFeedAim) btnFeedAim.addEventListener('click', onToggleFeed);
+      if (btnFeedPlatform) btnFeedPlatform.addEventListener('click', onToggleFeed);
+      this.syncFeedButtons();
+
       // Axis tabs switching (Pitch, Yaw, Roll, All)
       const tabBtns = document.querySelectorAll('#bench-axis-tabs .bench-axis-tab');
       tabBtns.forEach(btn => {
@@ -2141,12 +2472,19 @@
         });
       });
 
-      // Recenter button
-      document.getElementById('btn-bench-recenter')?.addEventListener('click', () => {
+      // Recenter buttons
+      document.getElementById('btn-bench-recenter-aim')?.addEventListener('click', () => {
         this.recenter();
       });
+      document.getElementById('btn-bench-recenter-platform')?.addEventListener('click', () => {
+        PlatformGame.recenter();
+      });
+      document.getElementById('btn-bench-recenter')?.addEventListener('click', () => {
+        this.recenter();
+        PlatformGame.recenter();
+      });
 
-      // Invert X / Invert Y buttons
+      // Invert X / Invert Y buttons (Aim Reticle)
       const btnInvX = document.getElementById('btn-bench-inv-x');
       const btnInvY = document.getElementById('btn-bench-inv-y');
       if (btnInvX) {
@@ -2186,6 +2524,38 @@
           }
         });
       }
+    },
+
+    switchGame(target) {
+      this.activeGame = target;
+      localStorage.setItem('gb_bench_active_game', target);
+
+      const gameTabs = document.querySelectorAll('#bench-game-tabs .bench-game-tab');
+      gameTabs.forEach(b => b.classList.toggle('active', b.getAttribute('data-game') === target));
+
+      const viewAim = document.getElementById('bench-game-aim');
+      const viewPlatform = document.getElementById('bench-game-platform');
+      if (viewAim) viewAim.style.display = (target === 'aim') ? 'flex' : 'none';
+      if (viewPlatform) viewPlatform.style.display = (target === 'platform') ? 'flex' : 'none';
+
+      if (target === 'platform') {
+        PlatformGame.init();
+        PlatformGame.updateAndRender();
+      }
+    },
+
+    syncFeedButtons() {
+      const isRaw = (this.dataFeed === 'raw');
+      const label = isRaw ? (I18n.t('settings_modal.bench_feed_raw') || 'Сырой') : (I18n.t('settings_modal.bench_feed_dsu') || 'DSU');
+      const btns = [
+        document.getElementById('btn-bench-feed-aim'),
+        document.getElementById('btn-bench-feed-platform')
+      ];
+      btns.forEach(btn => {
+        if (!btn) return;
+        btn.textContent = label;
+        btn.classList.toggle('raw', isRaw);
+      });
     },
 
     setOfflineState() {
@@ -2233,7 +2603,7 @@
 
       const liveText = document.getElementById('bench-live-text');
       if (liveText) {
-        const label = I18n.t('settings_modal.bench_live') || 'Live';
+        const label = I18n.t('settings_modal.bench_live') || 'В эфире';
         liveText.textContent = `${label} ${Math.round(hz || 60)} Hz`;
       }
 
@@ -2247,6 +2617,9 @@
       this.active = true;
       this.reticleX = 0;
       this.reticleY = 0;
+      this.switchGame(this.activeGame);
+      this.syncFeedButtons();
+
       // Pre-fill history arrays with 120 zeroes so lines render continuously
       this.historyRaw = {
         x: new Array(120).fill(0),
@@ -2278,6 +2651,9 @@
             return;
           }
           this.drawOscilloscope();
+          if (this.activeGame === 'platform') {
+            PlatformGame.updateAndRender();
+          }
           this.rafId = requestAnimationFrame(loop);
         };
         this.rafId = requestAnimationFrame(loop);
@@ -2324,15 +2700,17 @@
       // 1. Switch to live status
       this.setLiveState(hz);
 
-      // 2. Update Aim Reticle (Zelda mechanics: DSU angular velocity integration)
-      // Natural motion (default):
-      // Turning phone right -> crosshair moves right (+X)
-      // Tilting phone up -> crosshair moves up (-Y in canvas / screen coordinates)
+      // Active feed selection ('dsu' or 'raw')
+      const curX = (this.dataFeed === 'raw') ? rawX : outX;
+      const curY = (this.dataFeed === 'raw') ? rawY : outY;
+      const curZ = (this.dataFeed === 'raw') ? rawZ : outZ;
+
+      // 2. Update Aim Reticle (Zelda mechanics: angular velocity integration)
       const aimSpeed = 6.2; // px per degree
       const signX = this.invertX ? -1 : 1;
       const signY = this.invertY ? -1 : 1;
-      this.reticleX += outY * dt * aimSpeed * signX;
-      this.reticleY += -outX * dt * aimSpeed * signY;
+      this.reticleX += curY * dt * aimSpeed * signX;
+      this.reticleY += -curX * dt * aimSpeed * signY;
 
       // Soft clamp to target viewport bounds
       const viewport = document.querySelector('.bench-target-viewport');
@@ -2346,7 +2724,10 @@
 
       this.renderReticle();
 
-      // 3. Stability Tag
+      // 3. Update Platform Game (Zelda apparatus motion rates integration)
+      PlatformGame.onMotion(curX, curY, curZ, dt);
+
+      // 4. Stability Tag
       const speed = Math.sqrt(outX * outX + outY * outY + outZ * outZ);
       const stabilityTag = document.getElementById('bench-stability-tag');
       if (stabilityTag) {
@@ -2362,7 +2743,7 @@
         }
       }
 
-      // 4. Oscilloscope Multi-Axis Push
+      // 5. Oscilloscope Multi-Axis Push (Always tracks Raw vs DSU for direct comparison)
       this.historyRaw.x.push(rawX);
       this.historyRaw.y.push(rawY);
       this.historyRaw.z.push(rawZ);
@@ -2379,7 +2760,7 @@
         this.historyFilt.z.shift();
       }
 
-      // 5. Noise Reduction Calculation (RMS deviation comparison in resting/slow window)
+      // 6. Noise Reduction Calculation (RMS deviation comparison in resting/slow window)
       const currentRaw = (this.activeAxis === 'y') ? rawY : (this.activeAxis === 'z') ? rawZ : rawX;
       const currentFilt = (this.activeAxis === 'y') ? outY : (this.activeAxis === 'z') ? outZ : outX;
 
