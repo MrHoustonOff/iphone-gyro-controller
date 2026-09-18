@@ -4105,6 +4105,12 @@ em {
   font-weight: 600;
   background: rgba(52, 199, 89, 0.15);
   color: #34C759;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.bench-live-pill.offline {
+  background: rgba(142, 142, 147, 0.15);
+  color: #8E8E93;
 }
 
 .bench-live-dot {
@@ -4114,6 +4120,12 @@ em {
   background: #34C759;
   box-shadow: 0 0 6px rgba(52, 199, 89, 0.8);
   animation: pulseLive 1.8s infinite ease-in-out;
+}
+
+.bench-live-pill.offline .bench-live-dot {
+  background: #8E8E93;
+  box-shadow: none;
+  animation: none;
 }
 
 @keyframes pulseLive {
@@ -4128,11 +4140,27 @@ em {
   border-radius: 6px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+  transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .bench-status-tag.still {
   background: rgba(52, 199, 89, 0.15);
   color: #34C759;
+}
+
+.bench-status-tag.aim {
+  background: rgba(10, 132, 255, 0.15);
+  color: #0A84FF;
+}
+
+.bench-status-tag.active {
+  background: rgba(255, 149, 0, 0.15);
+  color: #FF9500;
+}
+
+.bench-status-tag.offline {
+  background: rgba(142, 142, 147, 0.15);
+  color: #8E8E93;
 }
 
 .bench-status-tag.moving {
@@ -4358,6 +4386,11 @@ em {
   border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.18);
   display: block;
+  transition: height 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bench-canvas.mode-all {
+  height: 220px;
 }
 
 [data-theme="light"] .bench-canvas {

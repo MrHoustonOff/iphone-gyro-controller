@@ -83,7 +83,7 @@
       <!-- Apple Status Capsule -->
       <div class="status-capsule offline" id="badge-status">
         <span class="status-dot"></span>
-        <span class="status-text" id="status-text" data-i18n="status.offline">offline</span>
+        <span class="status-text" id="status-text" data-i18n="status.offline">Офлайн</span>
       </div>
     </div>
   </header>
@@ -149,7 +149,7 @@
                 </svg>
               </div>
               <span id="device-name" class="device-name">Controller</span>
-              <span id="device-status-badge" class="device-status-badge online" data-i18n="status.online">online</span>
+              <span id="device-status-badge" class="device-status-badge online" data-i18n="status.online">В сети</span>
             </div>
 
             <!-- Prominent Apple Inclinometer & Artificial Horizon HUD (Large 110x110) -->
@@ -880,17 +880,17 @@
                   <div class="settings-bench-card">
                     <!-- Live Status Header -->
                     <div class="bench-status-bar">
-                      <div class="bench-live-pill" id="bench-live-pill">
+                      <div class="bench-live-pill offline" id="bench-live-pill">
                         <span class="bench-live-dot"></span>
-                        <span id="bench-live-text">Live 60 Hz</span>
+                        <span id="bench-live-text" data-i18n="settings_modal.bench_offline">Офлайн</span>
                       </div>
-                      <span class="bench-status-tag still" id="bench-stability-tag">Покой</span>
+                      <span class="bench-status-tag offline" id="bench-stability-tag" data-i18n="settings_modal.bench_status_offline">Офлайн</span>
                     </div>
 
                     <!-- Zelda Aim Simulator Target Display -->
                     <div class="bench-aim-wrap">
                       <div class="bench-aim-header">
-                        <span class="bench-aim-title" data-i18n="settings_modal.bench_aim_title">Симулятор прицела Zelda</span>
+                        <span class="bench-aim-title" data-i18n="settings_modal.bench_aim_title">Прицел (как в Zelda)</span>
                         <button type="button" class="bench-btn-recenter" id="btn-bench-recenter" data-i18n="settings_modal.bench_recenter">Центр</button>
                       </div>
                       <div class="bench-target-viewport">
@@ -912,19 +912,20 @@
                     <div class="bench-osc-wrap">
                       <div class="bench-osc-header">
                         <div class="bench-osc-legend">
-                          <span class="osc-legend-tag raw"><span class="osc-dot raw"></span><span data-i18n="settings_modal.bench_raw_legend">Raw</span></span>
+                          <span class="osc-legend-tag raw"><span class="osc-dot raw"></span><span data-i18n="settings_modal.bench_raw_legend">Сырой</span></span>
                           <span class="osc-legend-tag filt"><span class="osc-dot filt"></span><span data-i18n="settings_modal.bench_filtered_legend">DSU</span></span>
                         </div>
                         <div class="bench-axis-tabs" id="bench-axis-tabs">
-                          <button type="button" class="bench-axis-tab active" data-axis="x">Pitch</button>
-                          <button type="button" class="bench-axis-tab" data-axis="y">Yaw</button>
-                          <button type="button" class="bench-axis-tab" data-axis="z">Roll</button>
+                          <button type="button" class="bench-axis-tab active" data-axis="x" data-i18n="settings_modal.bench_axis_pitch">Pitch</button>
+                          <button type="button" class="bench-axis-tab" data-axis="y" data-i18n="settings_modal.bench_axis_yaw">Yaw</button>
+                          <button type="button" class="bench-axis-tab" data-axis="z" data-i18n="settings_modal.bench_axis_roll">Roll</button>
+                          <button type="button" class="bench-axis-tab" data-axis="all" data-i18n="settings_modal.bench_axis_all">Все</button>
                         </div>
                       </div>
                       <canvas id="bench-oscilloscope-canvas" class="bench-canvas" width="340" height="95"></canvas>
                       <div class="bench-osc-footer">
                         <span class="bench-noise-readout" id="bench-noise-stat">Подавление шума: --%</span>
-                        <span class="bench-rate-readout" id="bench-fps-stat">60 Hz</span>
+                        <span class="bench-rate-readout" id="bench-fps-stat">-- Hz</span>
                       </div>
                     </div>
                   </div>
@@ -2084,12 +2085,12 @@
   const TuningBench = {
     active: false,
     initialized: false,
-    activeAxis: 'x', // 'x' = Pitch, 'y' = Yaw, 'z' = Roll
+    activeAxis: 'x', // 'x' = Pitch, 'y' = Yaw, 'z' = Roll, 'all' = 3 Stacked Graphs
     reticleX: 0,
     reticleY: 0,
     maxHistory: 140,
-    historyRaw: [],
-    historyFilt: [],
+    historyRaw: { x: [], y: [], z: [] },
+    historyFilt: { x: [], y: [], z: [] },
     recentRawDev: [],
     recentFiltDev: [],
     lastFrameTs: 0,
@@ -2099,15 +2100,18 @@
       if (this.initialized) return;
       this.initialized = true;
 
-      // Axis tabs switching
+      // Axis tabs switching (Pitch, Yaw, Roll, All)
       const tabBtns = document.querySelectorAll('#bench-axis-tabs .bench-axis-tab');
       tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
           tabBtns.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           this.activeAxis = btn.getAttribute('data-axis') || 'x';
-          this.historyRaw = [];
-          this.historyFilt = [];
+
+          const canvas = document.getElementById('bench-oscilloscope-canvas');
+          if (canvas) {
+            canvas.classList.toggle('mode-all', this.activeAxis === 'all');
+          }
         });
       });
 
@@ -2123,6 +2127,73 @@
             this.onFrame(frame);
           }
         });
+
+        window.runtime.EventsOn('device:disconnected', () => {
+          if (this.active) {
+            this.setOfflineState();
+          }
+        });
+
+        window.runtime.EventsOn('device:connected', () => {
+          if (this.active) {
+            this.setWaitingState();
+          }
+        });
+      }
+    },
+
+    setOfflineState() {
+      const livePill = document.getElementById('bench-live-pill');
+      if (livePill) livePill.classList.add('offline');
+
+      const liveText = document.getElementById('bench-live-text');
+      if (liveText) liveText.textContent = I18n.t('settings_modal.bench_offline') || 'Офлайн';
+
+      const stabilityTag = document.getElementById('bench-stability-tag');
+      if (stabilityTag) {
+        stabilityTag.textContent = I18n.t('settings_modal.bench_status_offline') || 'Офлайн';
+        stabilityTag.className = 'bench-status-tag offline';
+      }
+
+      const noiseStat = document.getElementById('bench-noise-stat');
+      if (noiseStat) {
+        const prefix = I18n.t('settings_modal.bench_noise_stat') || 'Подавление шума';
+        noiseStat.textContent = `${prefix}: --%`;
+      }
+
+      const fpsStat = document.getElementById('bench-fps-stat');
+      if (fpsStat) {
+        fpsStat.textContent = '-- Hz';
+      }
+    },
+
+    setWaitingState() {
+      const livePill = document.getElementById('bench-live-pill');
+      if (livePill) livePill.classList.add('offline');
+
+      const liveText = document.getElementById('bench-live-text');
+      if (liveText) liveText.textContent = I18n.t('settings_modal.bench_device_waiting') || 'Ожидание...';
+
+      const stabilityTag = document.getElementById('bench-stability-tag');
+      if (stabilityTag) {
+        stabilityTag.textContent = I18n.t('settings_modal.bench_status_still') || 'Покой';
+        stabilityTag.className = 'bench-status-tag still';
+      }
+    },
+
+    setLiveState(hz) {
+      const livePill = document.getElementById('bench-live-pill');
+      if (livePill) livePill.classList.remove('offline');
+
+      const liveText = document.getElementById('bench-live-text');
+      if (liveText) {
+        const label = I18n.t('settings_modal.bench_live') || 'Live';
+        liveText.textContent = `${label} ${Math.round(hz || 60)} Hz`;
+      }
+
+      const fpsStat = document.getElementById('bench-fps-stat');
+      if (fpsStat) {
+        fpsStat.textContent = `${Math.round(hz || 60)} Hz`;
       }
     },
 
@@ -2130,12 +2201,20 @@
       this.active = true;
       this.reticleX = 0;
       this.reticleY = 0;
-      this.historyRaw = [];
-      this.historyFilt = [];
+      this.historyRaw = { x: [], y: [], z: [] };
+      this.historyFilt = { x: [], y: [], z: [] };
       this.recentRawDev = [];
       this.recentFiltDev = [];
-      this.lastFrameTs = performance.now();
+      this.lastFrameTs = 0;
       this.renderReticle();
+
+      // Check current connection state
+      const isOnline = (AppState.lastState && (AppState.lastState.status === 'online' || AppState.lastState.connected));
+      if (!isOnline) {
+        this.setOfflineState();
+      } else {
+        this.setWaitingState();
+      }
 
       if (!this.rafId) {
         const loop = () => {
@@ -2156,6 +2235,13 @@
         cancelAnimationFrame(this.rafId);
         this.rafId = null;
       }
+      const canvas = document.getElementById('bench-oscilloscope-canvas');
+      if (canvas) {
+        canvas.classList.remove('mode-all');
+      }
+      this.activeAxis = 'x';
+      const tabBtns = document.querySelectorAll('#bench-axis-tabs .bench-axis-tab');
+      tabBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-axis') === 'x'));
     },
 
     recenter() {
@@ -2171,7 +2257,10 @@
       const dt = this.lastFrameTs ? Math.min(0.05, Math.max(0.001, (now - this.lastFrameTs) / 1000)) : 0.016;
       this.lastFrameTs = now;
 
-      // 1. Update Aim Reticle (Zelda mechanics: DSU angular velocity integration)
+      // 1. Switch to live status
+      this.setLiveState(frame.Hz || 60);
+
+      // 2. Update Aim Reticle (Zelda mechanics: DSU angular velocity integration)
       // DSU conventions:
       // OutX is Pitch (tilting phone up -> pitch up -> reticle moves up, negative Y in canvas)
       // OutY is Yaw (turning phone right -> negative OutY -> reticle moves right, positive X)
@@ -2191,7 +2280,7 @@
 
       this.renderReticle();
 
-      // 2. Stability and Rate Pills
+      // 3. Stability Tag
       const speed = Math.sqrt(frame.OutX * frame.OutX + frame.OutY * frame.OutY + frame.OutZ * frame.OutZ);
       const stabilityTag = document.getElementById('bench-stability-tag');
       if (stabilityTag) {
@@ -2207,23 +2296,29 @@
         }
       }
 
-      const rateStat = document.getElementById('bench-fps-stat');
-      if (rateStat) {
-        rateStat.textContent = `${Math.round(frame.Hz || 60)} Hz`;
+      // 4. Oscilloscope Multi-Axis Push
+      this.historyRaw.x.push(frame.RawX);
+      this.historyRaw.y.push(frame.RawY);
+      this.historyRaw.z.push(frame.RawZ);
+      this.historyFilt.x.push(frame.OutX);
+      this.historyFilt.y.push(frame.OutY);
+      this.historyFilt.z.push(frame.OutZ);
+
+      if (this.historyRaw.x.length > this.maxHistory) {
+        this.historyRaw.x.shift();
+        this.historyRaw.y.shift();
+        this.historyRaw.z.shift();
+        this.historyFilt.x.shift();
+        this.historyFilt.y.shift();
+        this.historyFilt.z.shift();
       }
 
-      // 3. Oscilloscope Data Push
-      const rawVal = (this.activeAxis === 'x') ? frame.RawX : (this.activeAxis === 'y') ? frame.RawY : frame.RawZ;
-      const filtVal = (this.activeAxis === 'x') ? frame.OutX : (this.activeAxis === 'y') ? frame.OutY : frame.OutZ;
+      // 5. Noise Reduction Calculation (RMS deviation comparison in resting/slow window)
+      const currentRaw = (this.activeAxis === 'y') ? frame.RawY : (this.activeAxis === 'z') ? frame.RawZ : frame.RawX;
+      const currentFilt = (this.activeAxis === 'y') ? frame.OutY : (this.activeAxis === 'z') ? frame.OutZ : frame.OutX;
 
-      this.historyRaw.push(rawVal);
-      this.historyFilt.push(filtVal);
-      if (this.historyRaw.length > this.maxHistory) this.historyRaw.shift();
-      if (this.historyFilt.length > this.maxHistory) this.historyFilt.shift();
-
-      // 4. Noise Reduction Calculation (RMS deviation comparison in resting/slow window)
-      this.recentRawDev.push(Math.abs(rawVal));
-      this.recentFiltDev.push(Math.abs(filtVal));
+      this.recentRawDev.push(Math.abs(currentRaw));
+      this.recentFiltDev.push(Math.abs(currentFilt));
       if (this.recentRawDev.length > 50) this.recentRawDev.shift();
       if (this.recentFiltDev.length > 50) this.recentFiltDev.shift();
 
@@ -2265,7 +2360,8 @@
           noiseEl.textContent = `${prefix}: 0%`;
         }
       } else {
-        noiseEl.textContent = `${prefix}: 0-лаг`;
+        const zeroLag = I18n.t('settings_modal.bench_zero_lag') || '0-задержка';
+        noiseEl.textContent = `${prefix}: ${zeroLag}`;
       }
     },
 
@@ -2273,10 +2369,16 @@
       const canvas = document.getElementById('bench-oscilloscope-canvas');
       if (!canvas) return;
 
+      // Watchdog: detect if telemetry packets stopped arriving
+      const now = performance.now();
+      if (this.lastFrameTs && (now - this.lastFrameTs > 1400)) {
+        this.setOfflineState();
+      }
+
       const rect = canvas.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
       const w = Math.floor(rect.width || 340);
-      const h = Math.floor(rect.height || 95);
+      const h = Math.floor(rect.height || (this.activeAxis === 'all' ? 220 : 95));
 
       if (canvas.width !== Math.floor(w * dpr) || canvas.height !== Math.floor(h * dpr)) {
         canvas.width = Math.floor(w * dpr);
@@ -2290,70 +2392,148 @@
       // Background clear
       ctx.clearRect(0, 0, w, h);
 
-      const centerY = h / 2;
+      if (this.activeAxis === 'all') {
+        // Stacked 3-Axis Oscilloscope Mode
+        const trackH = h / 3;
+        const axes = ['x', 'y', 'z'];
+        const titles = ['Pitch (X)', 'Yaw (Y)', 'Roll (Z)'];
 
-      // Center reference zero line
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
-      ctx.setLineDash([4, 4]);
-      ctx.lineWidth = 1;
-      ctx.moveTo(0, centerY);
-      ctx.lineTo(w, centerY);
-      ctx.stroke();
+        for (let k = 0; k < 3; k++) {
+          const axis = axes[k];
+          const topY = k * trackH;
+          const centerY = topY + trackH / 2;
 
-      // Top and bottom boundary guides
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-      ctx.setLineDash([2, 4]);
-      ctx.moveTo(0, centerY - h * 0.35);
-      ctx.lineTo(w, centerY - h * 0.35);
-      ctx.moveTo(0, centerY + h * 0.35);
-      ctx.lineTo(w, centerY + h * 0.35);
-      ctx.stroke();
-      ctx.setLineDash([]);
+          // Track separator line
+          if (k > 0) {
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.setLineDash([]);
+            ctx.lineWidth = 1;
+            ctx.moveTo(0, topY);
+            ctx.lineTo(w, topY);
+            ctx.stroke();
+          }
 
-      const n = this.historyRaw.length;
-      if (n < 2) {
-        ctx.restore();
-        return;
+          // Track center zero dashed line
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.10)';
+          ctx.setLineDash([3, 3]);
+          ctx.lineWidth = 1;
+          ctx.moveTo(0, centerY);
+          ctx.lineTo(w, centerY);
+          ctx.stroke();
+          ctx.setLineDash([]);
+
+          // Axis title label badge
+          ctx.fillStyle = 'rgba(235, 235, 245, 0.55)';
+          ctx.font = '600 10px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+          ctx.fillText(titles[k], 8, topY + 13);
+
+          const rawArr = this.historyRaw[axis];
+          const filtArr = this.historyFilt[axis];
+          const n = rawArr.length;
+          if (n < 2) continue;
+
+          let maxAmp = 8.0;
+          for (let i = 0; i < n; i++) {
+            const ar = Math.abs(rawArr[i]);
+            const af = Math.abs(filtArr[i]);
+            if (ar > maxAmp) maxAmp = ar;
+            if (af > maxAmp) maxAmp = af;
+          }
+          const scale = (trackH * 0.38) / maxAmp;
+          const dx = w / (this.maxHistory - 1);
+          const startX = w - (n - 1) * dx;
+
+          // Raw trace (Orange/Red)
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255, 69, 58, 0.70)';
+          ctx.lineWidth = 1.4;
+          for (let i = 0; i < n; i++) {
+            const x = startX + i * dx;
+            const y = centerY - rawArr[i] * scale;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+
+          // Filtered DSU trace (Electric Cyan/Blue)
+          ctx.beginPath();
+          ctx.strokeStyle = '#0A84FF';
+          ctx.lineWidth = 1.8;
+          for (let i = 0; i < n; i++) {
+            const x = startX + i * dx;
+            const y = centerY - filtArr[i] * scale;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+      } else {
+        // Single Axis Mode (Pitch, Yaw, or Roll)
+        const centerY = h / 2;
+
+        // Center reference zero line
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(w, centerY);
+        ctx.stroke();
+
+        // Top and bottom boundary guides
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.setLineDash([2, 4]);
+        ctx.moveTo(0, centerY - h * 0.35);
+        ctx.lineTo(w, centerY - h * 0.35);
+        ctx.moveTo(0, centerY + h * 0.35);
+        ctx.lineTo(w, centerY + h * 0.35);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        const rawArr = this.historyRaw[this.activeAxis] || [];
+        const filtArr = this.historyFilt[this.activeAxis] || [];
+        const n = rawArr.length;
+
+        if (n >= 2) {
+          let maxAmp = 8.0;
+          for (let i = 0; i < n; i++) {
+            const ar = Math.abs(rawArr[i]);
+            const af = Math.abs(filtArr[i]);
+            if (ar > maxAmp) maxAmp = ar;
+            if (af > maxAmp) maxAmp = af;
+          }
+          const scale = (h * 0.42) / maxAmp;
+          const dx = w / (this.maxHistory - 1);
+          const startX = w - (n - 1) * dx;
+
+          // 1. Draw Raw trace (Apple Orange/Red)
+          ctx.beginPath();
+          ctx.strokeStyle = 'rgba(255, 69, 58, 0.70)';
+          ctx.lineWidth = 1.6;
+          for (let i = 0; i < n; i++) {
+            const x = startX + i * dx;
+            const y = centerY - rawArr[i] * scale;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+
+          // 2. Draw Filtered DSU trace (Apple Cyan/Blue)
+          ctx.beginPath();
+          ctx.strokeStyle = '#0A84FF';
+          ctx.lineWidth = 2.0;
+          for (let i = 0; i < n; i++) {
+            const x = startX + i * dx;
+            const y = centerY - filtArr[i] * scale;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
       }
-
-      // Determine vertical scale dynamically
-      let maxAmp = 8.0; // minimum deg/s scale
-      for (let i = 0; i < n; i++) {
-        const ar = Math.abs(this.historyRaw[i]);
-        const af = Math.abs(this.historyFilt[i]);
-        if (ar > maxAmp) maxAmp = ar;
-        if (af > maxAmp) maxAmp = af;
-      }
-      const scale = (h * 0.42) / maxAmp;
-
-      const dx = w / (this.maxHistory - 1);
-      const startX = w - (n - 1) * dx;
-
-      // 1. Draw Raw trace (Apple Orange/Red)
-      ctx.beginPath();
-      ctx.strokeStyle = 'rgba(255, 69, 58, 0.70)';
-      ctx.lineWidth = 1.6;
-      for (let i = 0; i < n; i++) {
-        const x = startX + i * dx;
-        const y = centerY - this.historyRaw[i] * scale;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
-
-      // 2. Draw Filtered DSU trace (Apple Cyan/Blue)
-      ctx.beginPath();
-      ctx.strokeStyle = '#0A84FF';
-      ctx.lineWidth = 2.0;
-      for (let i = 0; i < n; i++) {
-        const x = startX + i * dx;
-        const y = centerY - this.historyFilt[i] * scale;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.stroke();
 
       ctx.restore();
     }

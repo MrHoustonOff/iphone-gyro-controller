@@ -58,13 +58,13 @@ func TestI18n_GetAndFallback(t *testing.T) {
 	if val := mgr.Get("ru", "app.title"); val != "Gyro Bridge" {
 		t.Errorf("expected 'Gyro Bridge', got %q", val)
 	}
-	if val := mgr.Get("ru", "status.online"); val != "online" {
-		t.Errorf("expected 'online', got %q", val)
+	if val := mgr.Get("ru", "status.online"); val != "В сети" {
+		t.Errorf("expected 'В сети', got %q", val)
 	}
 
 	// English
-	if val := mgr.Get("en", "status.online"); val != "online" {
-		t.Errorf("expected 'online', got %q", val)
+	if val := mgr.Get("en", "status.online"); val != "Online" {
+		t.Errorf("expected 'Online', got %q", val)
 	}
 
 	// Fallback to base on unknown lang
