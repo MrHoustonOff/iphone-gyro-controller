@@ -426,17 +426,16 @@
     "modal_title": "Recenter 3D Model",
     "modal_subtitle": "Reset baseline neutral for visualization",
     "active_profile_label": "Active Grip Profile",
-    "modal_hold_prompt": "Hold phone steady in profile grip position «{name}»",
+    "modal_hold_prompt": "Place phone in profile grip position «{name}» and press the button below.",
     "game_disclaimer_title": "Strictly for in-app visualization",
     "game_disclaimer_desc": "In games, axis calibration is already working continuously and does not require recentering.",
-    "status_holding": "Locking neutral: keep device still...",
+    "status_ready": "Ready to lock neutral",
+    "status_holding": "Locking neutral: keep phone still...",
     "status_success": "Done! Neutral locked",
     "status_moved": "Device moved! Keep steady and retry.",
-    "btn_retry": "Retry",
-    "btn_cancel": "Cancel",
-    "capsule_connected_title": "Profile Connected: «{name}»",
-    "capsule_hint": "Recommend recentering 3D view for your grip",
-    "capsule_disclaimer": "(Strictly for app visualization — games work immediately)",
-    "capsule_btn_action": "Recenter"
+    "btn_action": "Recenter",
+    "btn_action_holding": "Locking (1 sec)...",
+    "btn_retry": "Retry Recenter",
+    "btn_cancel": "Close"
   }
 }

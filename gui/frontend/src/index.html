@@ -229,20 +229,20 @@
               <span data-i18n="status.connected_time">Подключен</span>
               <span id="device-time" class="device-duration-val">00:00:00</span>
             </div>
-          </div>
 
-          <!-- Prominent Recenter Button for 3D View -->
-          <button type="button" class="btn-main-recenter" id="btn-main-recenter" data-i18n-tip="recenter.btn_main_tip">
-            <svg class="recenter-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="9"></circle>
-              <line x1="12" y1="3" x2="12" y2="7"></line>
-              <line x1="12" y1="17" x2="12" y2="21"></line>
-              <line x1="3" y1="12" x2="7" y2="12"></line>
-              <line x1="17" y1="12" x2="21" y2="12"></line>
-              <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
-            </svg>
-            <span data-i18n="recenter.btn_main">Центрировать 3D-вид</span>
-          </button>
+            <!-- Recenter 3D View Action inside Device Subcard -->
+            <button type="button" class="btn-main-recenter" id="btn-main-recenter" data-i18n-tip="recenter.btn_main_tip">
+              <svg class="recenter-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <line x1="12" y1="3" x2="12" y2="7"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+                <line x1="3" y1="12" x2="7" y2="12"></line>
+                <line x1="17" y1="12" x2="21" y2="12"></line>
+                <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+              </svg>
+              <span data-i18n="recenter.btn_main">Центрировать 3D-вид</span>
+            </button>
+          </div>
 
           <button type="button" class="btn-apple-primary" id="btn-pause-resume" data-i18n="controls.pause">ПАУЗА</button>
 
@@ -1598,11 +1598,21 @@
           </div>
         </div>
 
-        <!-- Main Holding Prompt -->
+        <!-- Main Instruction Prompt -->
         <div class="recenter-prompt-box">
-          <p class="recenter-prompt-text" id="recenter-modal-prompt">
-            Держите телефон неподвижно в исходном положении профиля «Слот 1»
+          <p class="recenter-prompt-text" id="recenter-modal-prompt" data-i18n="recenter.modal_hold_prompt">
+            Положите телефон в стандартное положение профиля и нажмите кнопку ниже.
           </p>
+        </div>
+
+        <!-- Warning Alert Box (shown if phone moved during the 1 sec) -->
+        <div class="recenter-moved-alert" id="recenter-moved-alert" style="display: none;">
+          <svg class="recenter-alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span data-i18n="recenter.status_moved">Телефон двигался! Положите неподвижно и повторите.</span>
         </div>
 
         <!-- Disclaimer Banner for Games -->
@@ -1620,55 +1630,32 @@
           </div>
         </div>
 
-        <!-- Countdown / Stillness Progress Section -->
-        <div class="recenter-progress-card">
-          <div class="recenter-progress-status-row">
-            <span class="recenter-status-text" id="recenter-status-text" data-i18n="recenter.status_holding">Фиксация нейтрали: не двигайте устройство...</span>
-            <span class="recenter-status-countdown" id="recenter-countdown-num">1.5s</span>
-          </div>
-
-          <!-- Orange -> Green Progress Bar -->
-          <div class="recenter-track">
-            <div class="recenter-bar" id="recenter-bar"></div>
-          </div>
+        <!-- Big 1-second Centering Button -->
+        <div class="recenter-action-area">
+          <button type="button" class="btn-apple-primary btn-recenter-start" id="btn-recenter-start">
+            <div class="recenter-btn-progress" id="recenter-btn-progress"></div>
+            <div class="recenter-btn-content" id="recenter-btn-content">
+              <svg class="recenter-btn-action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <line x1="12" y1="3" x2="12" y2="7"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+                <line x1="3" y1="12" x2="7" y2="12"></line>
+                <line x1="17" y1="12" x2="21" y2="12"></line>
+                <circle cx="12" cy="12" r="2.5" fill="currentColor"></circle>
+              </svg>
+              <span id="recenter-btn-text" data-i18n="recenter.btn_action">Центрировать</span>
+            </div>
+          </button>
         </div>
 
-        <!-- Action / Retry Buttons -->
+        <!-- Cancel / Close Button -->
         <div class="recenter-actions">
-          <button type="button" class="btn-apple-secondary" id="btn-recenter-cancel" data-i18n="recenter.btn_cancel">Отмена</button>
-          <button type="button" class="btn-apple-primary recenter-retry-btn" id="btn-recenter-retry" style="display:none;" data-i18n="recenter.btn_retry">Повторить</button>
+          <button type="button" class="btn-apple-secondary" id="btn-recenter-cancel" data-i18n="recenter.btn_cancel">Закрыть</button>
         </div>
 
       </div><!-- .recenter-body -->
     </div><!-- .recenter-modal -->
   </div><!-- #recenter-overlay -->
-
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <!-- Floating Recenter Reminder Capsule (Global toast on connect)          -->
-  <!-- ═══════════════════════════════════════════════════════════════════════ -->
-  <aside id="recenter-floating-capsule" class="recenter-capsule" style="display: none;" aria-live="polite">
-    <div class="recenter-capsule-inner">
-      <div class="recenter-capsule-icon-wrap" id="recenter-capsule-icon">
-        <!-- Profile grip icon SVG -->
-      </div>
-      <div class="recenter-capsule-content">
-        <div class="recenter-capsule-title" id="recenter-capsule-title">Подключен профиль «Слот 1»</div>
-        <div class="recenter-capsule-desc">
-          <span data-i18n="recenter.capsule_hint">Рекомендуем центрировать 3D-вид для вашего хвата</span>
-          <span class="recenter-capsule-sub" data-i18n="recenter.capsule_disclaimer">(Сугубо для приложения — в играх всё работает сразу)</span>
-        </div>
-      </div>
-      <div class="recenter-capsule-actions">
-        <button type="button" class="btn-capsule-action" id="btn-capsule-recenter" data-i18n="recenter.capsule_btn_action">Центрировать</button>
-        <button type="button" class="btn-capsule-close" id="btn-capsule-close" aria-label="Dismiss">
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-    </div>
-  </aside>
 
   <!-- Floating Tooltip for Settings Infotips -->
   <div id="settings-floating-tooltip" class="apple-floating-tooltip"></div>
@@ -5089,15 +5076,12 @@
   // ── Recenter Manager (In-app 3D Horizon Baseline Reset) ───────────────────
   const RecenterManager = {
     isOpen: false,
-    isHolding: false,
-    hasFailed: false,
-    isSuccess: false,
-    durationMs: 1500,
+    isMeasuring: false,
+    durationMs: 1000,
     startTime: 0,
     rafId: null,
     latestGyroSpeed: 0,
-    lastConnectCapsuleTs: 0,
-    capsuleDismissTimer: null,
+    lastConnectPopupTs: 0,
 
     // Called on live high-rate sensor frames to track stillness speed (deg/s)
     onFrame(frame) {
@@ -5123,6 +5107,12 @@
       const overlay = document.getElementById('recenter-overlay');
       if (!overlay) return;
       this.isOpen = true;
+      this.isMeasuring = false;
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+
       overlay.style.display = 'flex';
 
       const prof = this.getActiveProfile();
@@ -5136,11 +5126,28 @@
 
       const modalPrompt = document.getElementById('recenter-modal-prompt');
       if (modalPrompt) {
-        const rawTmpl = I18n.t('recenter.modal_hold_prompt') || 'Держите телефон неподвижно в исходном положении профиля «{name}»';
+        const rawTmpl = I18n.t('recenter.modal_hold_prompt') || 'Положите телефон в стандартное положение профиля «{name}» и нажмите кнопку ниже.';
         modalPrompt.textContent = rawTmpl.replace('{name}', profName);
       }
 
-      this.startCountdown();
+      // Hide moved warning alert
+      const alertEl = document.getElementById('recenter-moved-alert');
+      if (alertEl) alertEl.style.display = 'none';
+
+      // Reset action button state
+      const btn = document.getElementById('btn-recenter-start');
+      const btnText = document.getElementById('recenter-btn-text');
+      const progress = document.getElementById('recenter-btn-progress');
+      if (btn) {
+        btn.className = 'btn-apple-primary btn-recenter-start';
+        btn.disabled = false;
+      }
+      if (btnText) {
+        btnText.textContent = I18n.t('recenter.btn_action') || 'Центрировать';
+      }
+      if (progress) {
+        progress.style.width = '0%';
+      }
     },
 
     close() {
@@ -5149,60 +5156,51 @@
         this.rafId = null;
       }
       this.isOpen = false;
-      this.isHolding = false;
+      this.isMeasuring = false;
       const overlay = document.getElementById('recenter-overlay');
       if (overlay) overlay.style.display = 'none';
     },
 
-    startCountdown() {
-      if (this.rafId) {
-        cancelAnimationFrame(this.rafId);
-        this.rafId = null;
-      }
+    startMeasurement() {
+      if (this.isMeasuring) return;
+      this.isMeasuring = true;
 
-      this.isHolding = true;
-      this.hasFailed = false;
-      this.isSuccess = false;
+      const btn = document.getElementById('btn-recenter-start');
+      const btnText = document.getElementById('recenter-btn-text');
+      const progress = document.getElementById('recenter-btn-progress');
+      const alertEl = document.getElementById('recenter-moved-alert');
 
-      const bar = document.getElementById('recenter-bar');
-      const statusText = document.getElementById('recenter-status-text');
-      const countdownEl = document.getElementById('recenter-countdown-num');
-      const retryBtn = document.getElementById('btn-recenter-retry');
-
-      if (bar) {
-        bar.className = 'recenter-bar holding';
-        bar.style.width = '100%';
+      if (alertEl) alertEl.style.display = 'none';
+      if (btn) {
+        btn.className = 'btn-apple-primary btn-recenter-start holding';
+        btn.disabled = true;
       }
-      if (statusText) {
-        statusText.className = 'recenter-status-text';
-        statusText.textContent = I18n.t('recenter.status_holding') || 'Фиксация нейтрали: не двигайте устройство...';
+      if (btnText) {
+        btnText.textContent = I18n.t('recenter.btn_action_holding') || 'Фиксация (1 сек)...';
       }
-      if (countdownEl) {
-        countdownEl.className = 'recenter-status-countdown';
-        countdownEl.textContent = '1.5s';
+      if (progress) {
+        progress.style.width = '0%';
       }
-      if (retryBtn) retryBtn.style.display = 'none';
 
       this.startTime = performance.now();
 
       const loop = (now) => {
-        if (!this.isOpen || !this.isHolding) return;
+        if (!this.isOpen || !this.isMeasuring) return;
 
         const elapsed = now - this.startTime;
-        const remaining = Math.max(0, this.durationMs - elapsed);
-        const ratio = remaining / this.durationMs;
+        const ratio = Math.min(1, elapsed / this.durationMs);
 
-        if (bar) bar.style.width = (ratio * 100).toFixed(1) + '%';
-        if (countdownEl) countdownEl.textContent = (remaining / 1000).toFixed(1) + 's';
+        if (progress) {
+          progress.style.width = (ratio * 100).toFixed(1) + '%';
+        }
 
-        // Stillness check after 120ms initial grace period
-        // Threshold: 2.8 deg/s
-        if (elapsed > 120 && this.latestGyroSpeed > 2.8) {
+        // Stillness check after 100ms grace period: threshold 2.6 deg/s
+        if (elapsed > 100 && this.latestGyroSpeed > 2.6) {
           this.failMoved();
           return;
         }
 
-        if (remaining <= 0) {
+        if (elapsed >= this.durationMs) {
           this.succeed();
           return;
         }
@@ -5214,25 +5212,28 @@
     },
 
     failMoved() {
-      this.isHolding = false;
-      this.hasFailed = true;
+      this.isMeasuring = false;
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
         this.rafId = null;
       }
 
-      const bar = document.getElementById('recenter-bar');
-      const statusText = document.getElementById('recenter-status-text');
-      const countdownEl = document.getElementById('recenter-countdown-num');
-      const retryBtn = document.getElementById('btn-recenter-retry');
+      const btn = document.getElementById('btn-recenter-start');
+      const btnText = document.getElementById('recenter-btn-text');
+      const progress = document.getElementById('recenter-btn-progress');
+      const alertEl = document.getElementById('recenter-moved-alert');
 
-      if (bar) bar.className = 'recenter-bar failed';
-      if (statusText) {
-        statusText.className = 'recenter-status-text error';
-        statusText.textContent = I18n.t('recenter.status_moved') || 'Телефон двигался! Положите неподвижно и повторите.';
+      if (progress) progress.style.width = '0%';
+      if (btn) {
+        btn.className = 'btn-apple-primary btn-recenter-start';
+        btn.disabled = false;
       }
-      if (countdownEl) countdownEl.textContent = '✕';
-      if (retryBtn) retryBtn.style.display = 'inline-flex';
+      if (btnText) {
+        btnText.textContent = I18n.t('recenter.btn_retry') || 'Повторить центрирование';
+      }
+      if (alertEl) {
+        alertEl.style.display = 'flex';
+      }
 
       if (typeof SoundManager !== 'undefined' && SoundManager.play) {
         SoundManager.play('defeat');
@@ -5240,31 +5241,26 @@
     },
 
     succeed() {
-      this.isHolding = false;
-      this.isSuccess = true;
+      this.isMeasuring = false;
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
         this.rafId = null;
       }
 
-      const bar = document.getElementById('recenter-bar');
-      const statusText = document.getElementById('recenter-status-text');
-      const countdownEl = document.getElementById('recenter-countdown-num');
-      const retryBtn = document.getElementById('btn-recenter-retry');
+      const btn = document.getElementById('btn-recenter-start');
+      const btnText = document.getElementById('recenter-btn-text');
+      const progress = document.getElementById('recenter-btn-progress');
+      const alertEl = document.getElementById('recenter-moved-alert');
 
-      if (bar) {
-        bar.className = 'recenter-bar success';
-        bar.style.width = '100%';
+      if (alertEl) alertEl.style.display = 'none';
+      if (progress) progress.style.width = '100%';
+      if (btn) {
+        btn.className = 'btn-apple-primary btn-recenter-start success';
+        btn.disabled = true;
       }
-      if (statusText) {
-        statusText.className = 'recenter-status-text success';
-        statusText.textContent = I18n.t('recenter.status_success') || 'Готово! Нейтраль зафиксирована';
+      if (btnText) {
+        btnText.textContent = '✓ ' + (I18n.t('recenter.status_success') || 'Готово! Нейтраль зафиксирована');
       }
-      if (countdownEl) {
-        countdownEl.className = 'recenter-status-countdown success';
-        countdownEl.textContent = '✓';
-      }
-      if (retryBtn) retryBtn.style.display = 'none';
 
       // Reset backend AHRS orientation
       if (window.go?.main?.App?.ResetAHRS) {
@@ -5293,54 +5289,24 @@
       }
 
       setTimeout(() => {
-        if (this.isOpen && this.isSuccess) {
+        if (this.isOpen) {
           this.close();
         }
-      }, 650);
+      }, 550);
     },
 
-    // Floating Capsule notification logic on connect / reconnect
+    // When phone connects or reconnects: show centered modal with full-screen blur
     onDeviceConnected() {
       const now = Date.now();
-      if (now - this.lastConnectCapsuleTs < 10000) return;
-      this.lastConnectCapsuleTs = now;
+      if (now - this.lastConnectPopupTs < 15000) return;
+      this.lastConnectPopupTs = now;
 
-      const capsule = document.getElementById('recenter-floating-capsule');
-      if (!capsule) return;
+      // Don't interrupt if calibration wizard or settings or welcome is open
+      if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) return;
+      if (typeof SettingsManager !== 'undefined' && SettingsManager.isOpen) return;
+      if (typeof WelcomeManager !== 'undefined' && WelcomeManager.isOpen) return;
 
-      const prof = this.getActiveProfile();
-      const profName = prof.name || formatSlotName(prof.slot || 0);
-
-      const iconWrap = document.getElementById('recenter-capsule-icon');
-      if (iconWrap) iconWrap.innerHTML = getProfileIconSVG(prof.icon || 'default', 20);
-
-      const titleEl = document.getElementById('recenter-capsule-title');
-      if (titleEl) {
-        const rawTmpl = I18n.t('recenter.capsule_connected_title') || 'Подключен профиль «{name}»';
-        titleEl.textContent = rawTmpl.replace('{name}', profName);
-      }
-
-      capsule.classList.remove('hiding');
-      capsule.style.display = 'flex';
-
-      if (this.capsuleDismissTimer) clearTimeout(this.capsuleDismissTimer);
-      this.capsuleDismissTimer = setTimeout(() => {
-        this.dismissCapsule();
-      }, 12000);
-    },
-
-    dismissCapsule() {
-      const capsule = document.getElementById('recenter-floating-capsule');
-      if (!capsule || capsule.style.display === 'none') return;
-      if (this.capsuleDismissTimer) {
-        clearTimeout(this.capsuleDismissTimer);
-        this.capsuleDismissTimer = null;
-      }
-      capsule.classList.add('hiding');
-      setTimeout(() => {
-        capsule.style.display = 'none';
-        capsule.classList.remove('hiding');
-      }, 250);
+      this.open();
     },
 
     init() {
@@ -5354,6 +5320,11 @@
         this.open();
       });
 
+      // 1-second center action button in modal
+      document.getElementById('btn-recenter-start')?.addEventListener('click', () => {
+        this.startMeasurement();
+      });
+
       // Close modal button
       document.getElementById('recenter-close-btn')?.addEventListener('click', () => {
         this.close();
@@ -5364,27 +5335,11 @@
         this.close();
       });
 
-      // Retry button in modal
-      document.getElementById('btn-recenter-retry')?.addEventListener('click', () => {
-        this.startCountdown();
-      });
-
       // Overlay backdrop click
       document.getElementById('recenter-overlay')?.addEventListener('click', (e) => {
         if (e.target.id === 'recenter-overlay') {
           this.close();
         }
-      });
-
-      // Capsule Action button
-      document.getElementById('btn-capsule-recenter')?.addEventListener('click', () => {
-        this.dismissCapsule();
-        this.open();
-      });
-
-      // Capsule Close button
-      document.getElementById('btn-capsule-close')?.addEventListener('click', () => {
-        this.dismissCapsule();
       });
 
       // Escape key
