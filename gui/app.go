@@ -185,8 +185,9 @@ type App struct {
 	previewMatrix [3][3]float64
 	usePreview    bool
 	// Madgwick AHRS filter matching PadTest.exe exactly for 3D viewport synchronization
-	ahrs           *MadgwickAHRS
-	accFilterReset atomic.Bool
+	ahrs             *MadgwickAHRS
+	ahrsNeedConverge atomic.Bool
+	accFilterReset   atomic.Bool
 	// Latest AHRS quaternion stored atomically for lock-free read by GetState.
 	// Q0=w, Q1=x, Q2=y, Q3=z (same as AHRS return values).
 	curAhrsQ0 atomic.Uint64
@@ -536,6 +537,7 @@ func NewApp() *App {
 	app.gyroSmoothingBits.Store(math.Float64bits(0.50))
 	app.gyroDeadbandBits.Store(math.Float64bits(0.10))
 	app.gyroSensitivityBits.Store(math.Float64bits(1.00))
+	app.ahrsNeedConverge.Store(true)
 	app.stillnessHint.Store(true)
 	app.disconnectAlert.Store(true)
 	app.soundMode = "cute"
@@ -1120,18 +1122,14 @@ func (a *App) startup(ctx context.Context) {
 		// When moving or held in hands, we apply an exponential moving average (EMA) low-pass filter
 		// to eliminate 60 Hz electrical noise while tracking true gravity smoothly.
 		if a.accFilterReset.Swap(false) || !accFilterInit {
-			if math.Abs(ax) < 0.10 && math.Abs(ay+1.0) < 0.12 && math.Abs(az) < 0.10 {
-				accFiltered = [3]float64{0.0, -1.0, 0.0}
-			} else {
-				accFiltered = [3]float64{ax, ay, az}
-			}
+			accFiltered = [3]float64{ax, ay, az}
 			accFilterInit = true
 		}
 
 		isRestingOnTable := gyroSpeed < gyroDeadband &&
-			math.Abs(ax) < 0.06 &&
-			math.Abs(ay+1.0) < 0.08 &&
-			math.Abs(az) < 0.06
+			math.Abs(ax) < 0.015 &&
+			math.Abs(ay+1.0) < 0.025 &&
+			math.Abs(az) < 0.015
 
 		var finalAx, finalAy, finalAz float32
 		if isRestingOnTable {
@@ -1162,6 +1160,9 @@ func (a *App) startup(ctx context.Context) {
 
 		// Update Madgwick AHRS filter.
 		if a.ahrs != nil {
+			if a.ahrsNeedConverge.Swap(false) {
+				a.ahrs.ConvergeToGravity(finalAx, finalAy, finalAz)
+			}
 			q0, q1, q2, q3 := a.ahrs.Update(ahrsRx, ahrsRy, ahrsRz, finalAx, finalAy, finalAz, time.Now())
 			p, r, y := a.ahrs.GetEulerAngles()
 			a.curPitch.Store(math.Float64bits(p))
@@ -1251,8 +1252,7 @@ func (a *App) startup(ctx context.Context) {
 		}
 		disconnectMu.Unlock()
 
-		a.accFilterReset.Store(true)
-		a.ResetAHRS()
+		a.ahrsNeedConverge.Store(true)
 		a.ResetGyroFilter()
 
 		a.hasClient.Store(true)
@@ -1274,7 +1274,6 @@ func (a *App) startup(ctx context.Context) {
 		disconnectMu.Lock()
 		defer disconnectMu.Unlock()
 
-		a.accFilterReset.Store(true)
 		a.ResetGyroFilter()
 
 		_, clients, _ := srv.PacketStats()
@@ -1307,8 +1306,7 @@ func (a *App) startup(ctx context.Context) {
 
 	srv.OnClientVisibility = func(visible bool) {
 		if visible {
-			a.accFilterReset.Store(true)
-			a.ResetAHRS()
+			a.ahrsNeedConverge.Store(true)
 			a.ResetGyroFilter()
 		}
 		if a.ctx != nil {
@@ -1859,9 +1857,7 @@ func (a *App) SaveProfile(slot int, name string, device string, icon string, mat
 		a.matrixMu.Lock()
 		a.activeMatrix = matrix
 		a.matrixMu.Unlock()
-		if a.ahrs != nil {
-			a.ahrs.Reset()
-		}
+		a.ahrsNeedConverge.Store(true)
 	}
 
 	a.saveProfiles()
@@ -1908,9 +1904,7 @@ func (a *App) SetActiveProfile(slot int) string {
 	}
 	a.matrixMu.Unlock()
 
-	if a.ahrs != nil {
-		a.ahrs.Reset()
-	}
+	a.ahrsNeedConverge.Store(true)
 
 	a.saveProfiles()
 	a.emitStateChange()
@@ -1927,9 +1921,7 @@ func (a *App) PreviewMatrix(matrix [3][3]float64) {
 	a.previewMatrix = matrix
 	a.usePreview = true
 	a.previewMu.Unlock()
-	if a.ahrs != nil {
-		a.ahrs.Reset()
-	}
+	a.ahrsNeedConverge.Store(true)
 }
 
 // ClearPreview removes the temporary preview matrix and reverts to the saved activeMatrix.
@@ -1938,15 +1930,14 @@ func (a *App) ClearPreview() {
 	a.previewMu.Lock()
 	a.usePreview = false
 	a.previewMu.Unlock()
-	if a.ahrs != nil {
-		a.ahrs.Reset()
-	}
+	a.ahrsNeedConverge.Store(true)
 }
 
 // ResetAHRS zeroes the 3D orientation filter
 func (a *App) ResetAHRS() {
 	if a.ahrs != nil {
 		a.ahrs.Reset()
+		a.ahrsNeedConverge.Store(true)
 		a.broadcastLiveDebug(1, 0, 0, 0)
 	}
 }

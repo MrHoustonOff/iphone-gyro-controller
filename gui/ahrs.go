@@ -46,6 +46,70 @@ func (m *MadgwickAHRS) Reset() {
 	m.lastTime = time.Time{}
 }
 
+// EulerToQuaternion converts pitch, roll, yaw (in degrees) to the quaternion representation
+// used by GyroBridge, exactly matching the inverse of GetEulerAngles.
+func EulerToQuaternion(pitchDeg, rollDeg, yawDeg float64) (q0, q1, q2, q3 float32) {
+	const deg2rad = math.Pi / 180.0
+	p := pitchDeg * deg2rad * 0.5
+	r := rollDeg * deg2rad * 0.5
+	y := yawDeg * deg2rad * 0.5
+
+	cp, sp := math.Cos(p), math.Sin(p)
+	cr, sr := math.Cos(r), -math.Sin(r) // Roll right is -Z rotation in quaternion
+	cy, sy := math.Cos(y), math.Sin(y)
+
+	// Hamilton product: q = q_yaw * q_pitch * q_roll
+	w1 := cy*cp
+	x1 := cy*sp
+	y1 := sy*cp
+	z1 := -sy*sp
+
+	qw := w1*cr - z1*sr
+	qx := x1*cr + y1*sr
+	qy := y1*cr - x1*sr
+	qz := z1*cr + w1*sr
+
+	norm := math.Sqrt(qw*qw + qx*qx + qy*qy + qz*qz)
+	if norm > 1e-6 {
+		inv := 1.0 / norm
+		return float32(qw * inv), float32(qx * inv), float32(qy * inv), float32(qz * inv)
+	}
+	return 1, 0, 0, 0
+}
+
+// ConvergeToGravity rapidly aligns the quaternion pitch and roll to the measured gravity vector
+// while preserving the current yaw heading.
+func (m *MadgwickAHRS) ConvergeToGravity(accX, accY, accZ float32) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// PadTest mapping: ax = +AccX, ay = -AccY, az = -AccZ
+	ax := float64(accX)
+	ay := float64(-accY)
+	az := float64(-accZ)
+
+	norm := math.Sqrt(ax*ax + ay*ay + az*az)
+	if norm < 0.4 || norm > 1.8 {
+		return
+	}
+	ax /= norm
+	ay /= norm
+	az /= norm
+
+	// Direct closed-form physical pitch and roll from gravity vector
+	const rad2deg = 180.0 / math.Pi
+	pitch := math.Atan2(-az, -ay) * rad2deg
+	roll := -math.Atan2(ax, -ay) * rad2deg
+
+	// Extract current yaw to preserve heading
+	q0, q1, q2, q3 := float64(m.Q0), float64(m.Q1), float64(m.Q2), float64(m.Q3)
+	sq1 := q1 * q1
+	sq2 := q2 * q2
+	yaw := math.Atan2(2.0*(q0*q2+q1*q3), 1.0-2.0*(sq1+sq2)) * rad2deg
+
+	m.Q0, m.Q1, m.Q2, m.Q3 = EulerToQuaternion(pitch, roll, yaw)
+}
+
 // Update runs one integration step matching PadTest.exe (0x140832a67 - 0x140833a00) exactly.
 // Input arguments are the canonical Cemuhook DSU fields:
 //   rotX (Pitch in °/s, nose up = +, nose down = -)
