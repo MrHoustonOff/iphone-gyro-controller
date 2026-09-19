@@ -2847,9 +2847,6 @@
     recordBadgeEl: null,
 
     init() {
-      if (this.initialized) return;
-      this.initialized = true;
-
       this.vpEl = document.getElementById('bench-aim-viewport');
       this.targetsLayerEl = document.getElementById('bench-aim-targets-layer');
       this.fxLayerEl = document.getElementById('bench-aim-fx-layer');
@@ -2864,6 +2861,12 @@
       this.recordBadgeEl = document.getElementById('bench-aim-record-badge');
 
       if (this.recordEl) this.recordEl.textContent = this.record.toString();
+
+      if (this.initialized) {
+        this.syncState();
+        return;
+      }
+      this.initialized = true;
 
       // Fullscreen toggle button
       document.getElementById('btn-bench-aim-fullscreen')?.addEventListener('click', (e) => {
@@ -2905,28 +2908,51 @@
         this.setFullscreen(false);
       });
 
-      // Viewport resize observer
-      if (typeof ResizeObserver !== 'undefined' && this.vpEl) {
-        new ResizeObserver(() => {
-          this.syncDimensions();
-        }).observe(this.vpEl);
+      // Window resize and visibility listeners: guarantee target never disappears
+      window.addEventListener('resize', () => {
+        this.syncState();
+      });
+
+      // Initial target spawn (works both in windowed and fullscreen)
+      this.resetGame();
+    },
+
+    getBounds() {
+      if (this.isFullscreen) {
+        const halfW = Math.floor((window.innerWidth || 1280) / 2);
+        const halfH = Math.floor((window.innerHeight || 720) / 2);
+        return {
+          boundX: Math.max(100, halfW - 140),
+          boundYTop: Math.max(60, halfH - 160),     // Clearance for top HUD
+          boundYBottom: Math.max(60, halfH - 100),
+          maxReticleX: Math.max(160, halfW - 50),
+          maxReticleY: Math.max(100, halfH - 50)
+        };
+      } else {
+        const vp = this.vpEl || document.getElementById('bench-aim-viewport');
+        const w = vp ? (vp.clientWidth || 600) : 600;
+        const halfW = Math.floor(w / 2);
+        return {
+          boundX: Math.max(60, halfW - 80),
+          boundYTop: 36,
+          boundYBottom: 36,
+          maxReticleX: Math.max(100, halfW - 40),
+          maxReticleY: 52
+        };
       }
     },
 
-    syncDimensions() {
-      if (!this.vpEl || !this.vpEl.isConnected) {
-        this.vpEl = document.getElementById('bench-aim-viewport');
+    syncState() {
+      // Re-bind DOM elements if disconnected
+      if (!this.targetsLayerEl || !this.targetsLayerEl.isConnected) {
+        this.targetsLayerEl = document.getElementById('bench-aim-targets-layer');
       }
-      if (!this.vpEl) return;
-      const rect = this.vpEl.getBoundingClientRect();
-      this.cachedW = Math.floor(rect.width || window.innerWidth || 800);
-      this.cachedH = Math.floor(rect.height || window.innerHeight || 600);
-
-      if (this.activeTarget && this.activeTarget.el) {
-        const halfW = Math.floor(this.cachedW / 2);
-        const halfH = Math.floor(this.cachedH / 2);
-        this.activeTarget.el.style.left = (halfW + this.activeTarget.x) + 'px';
-        this.activeTarget.el.style.top = (halfH + this.activeTarget.y) + 'px';
+      if (!this.fxLayerEl || !this.fxLayerEl.isConnected) {
+        this.fxLayerEl = document.getElementById('bench-aim-fx-layer');
+      }
+      // If there is no active target or it was lost, spawn one immediately
+      if (!this.activeTarget || !this.activeTarget.el || !this.activeTarget.el.isConnected) {
+        this.spawnTarget();
       }
     },
 
@@ -2951,7 +2977,7 @@
           document.body.appendChild(vp);
         }
         vp.classList.add('fullscreen');
-        this.syncDimensions();
+        this.startLoop();
         this.resetGame();
       } else {
         vp.classList.remove('fullscreen');
@@ -2960,7 +2986,8 @@
           this._placeholder.parentNode.removeChild(this._placeholder);
           this._placeholder = null;
         }
-        this.cleanupGame();
+        this.stopLoop();
+        this.resetGame();
       }
 
       if (btn) {
@@ -2974,9 +3001,29 @@
       TuningBench.recenter();
     },
 
+    startLoop() {
+      if (this.rafId) return;
+      const loop = (now) => {
+        if (!this.isFullscreen) {
+          this.rafId = null;
+          return;
+        }
+        this.update(now);
+        this.rafId = requestAnimationFrame(loop);
+      };
+      this.rafId = requestAnimationFrame(loop);
+    },
+
+    stopLoop() {
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
+    },
+
     resetGame() {
       this.cleanupTargets();
-      this.gameState = 'ready';
+      this.gameState = this.isFullscreen ? 'ready' : 'idle';
       this.score = 0;
       this.timeLeft = 30.0;
       this.timerStartTs = 0;
@@ -3013,21 +3060,14 @@
     },
 
     spawnTarget() {
-      if (!this.isFullscreen) return;
       if (!this.targetsLayerEl || !this.targetsLayerEl.isConnected) {
         this.targetsLayerEl = document.getElementById('bench-aim-targets-layer');
       }
       if (!this.targetsLayerEl) return;
-      this.syncDimensions();
 
-      const halfW = Math.floor((this.cachedW || window.innerWidth) / 2);
-      const halfH = Math.floor((this.cachedH || window.innerHeight) / 2);
+      const bounds = this.getBounds();
 
-      const boundX = Math.max(80, halfW - 100);
-      const boundYTop = Math.max(60, halfH - 120);
-      const boundYBottom = Math.max(60, halfH - 90);
-
-      // Clean up any lingering un-hit targets
+      // Clean up any lingering un-hit targets so strictly 1 active target exists
       const lingering = this.targetsLayerEl.querySelectorAll('.bench-aim-target:not(.hit)');
       lingering.forEach(t => t.remove());
 
@@ -3035,19 +3075,19 @@
       let rx = 0;
       let ry = 0;
       for (let attempt = 0; attempt < 24; attempt++) {
-        rx = Math.floor((Math.random() * 2 - 1) * boundX);
-        ry = Math.floor(-boundYTop + Math.random() * (boundYTop + boundYBottom));
+        rx = Math.floor((Math.random() * 2 - 1) * bounds.boundX);
+        ry = Math.floor(-bounds.boundYTop + Math.random() * (bounds.boundYTop + bounds.boundYBottom));
         const dist = Math.hypot(rx - TuningBench.reticleX, ry - TuningBench.reticleY);
-        if (dist > 130) break;
+        if (dist > (this.isFullscreen ? 130 : 60)) break;
       }
-
-      const posX = halfW + rx;
-      const posY = halfH + ry;
 
       const el = document.createElement('div');
       el.className = 'bench-aim-target';
-      el.style.left = posX + 'px';
-      el.style.top = posY + 'px';
+      // Center-anchored CSS positioning: 100% immune to layout delay, window resizing or CSS zoom
+      el.style.left = '50%';
+      el.style.top = '50%';
+      el.style.marginLeft = (rx - 30) + 'px';
+      el.style.marginTop = (ry - 30) + 'px';
       el.innerHTML = `
         <div class="target-ring outer"></div>
         <div class="target-ring middle"></div>
@@ -3065,8 +3105,11 @@
     },
 
     checkHit(reticleX, reticleY) {
-      if (!this.isFullscreen || !this.activeTarget) return;
-      if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
+      if (!this.activeTarget || !this.activeTarget.el || !this.activeTarget.el.isConnected) {
+        this.spawnTarget();
+        return;
+      }
+      if (this.gameState === 'gameover') return;
 
       const dist = Math.hypot(reticleX - this.activeTarget.x, reticleY - this.activeTarget.y);
       if (dist <= this.activeTarget.hitRadius) {
@@ -3079,8 +3122,8 @@
       if (!target) return;
       this.activeTarget = null;
 
-      // If in 'ready' state, 1st target hit triggers the 30-sec countdown!
-      if (this.gameState === 'ready') {
+      // In fullscreen ready state, 1st target hit triggers the 30-sec arcade countdown!
+      if (this.isFullscreen && this.gameState === 'ready') {
         this.gameState = 'playing';
         this.timerStartTs = performance.now();
         this.timeLeft = 30.0;
@@ -3122,17 +3165,17 @@
         }, 220);
       }
 
-      // Floating +1 Popup
+      // Center-anchored Floating +1 Popup
       if (!this.fxLayerEl || !this.fxLayerEl.isConnected) {
         this.fxLayerEl = document.getElementById('bench-aim-fx-layer');
       }
       if (this.fxLayerEl) {
-        const halfW = Math.floor((this.cachedW || window.innerWidth) / 2);
-        const halfH = Math.floor((this.cachedH || window.innerHeight) / 2);
         const popup = document.createElement('div');
         popup.className = 'target-floating-score';
-        popup.style.left = (halfW + target.x) + 'px';
-        popup.style.top = (halfH + target.y) + 'px';
+        popup.style.left = '50%';
+        popup.style.top = '50%';
+        popup.style.marginLeft = (target.x - 16) + 'px';
+        popup.style.marginTop = (target.y - 16) + 'px';
         popup.textContent = '+1';
         this.fxLayerEl.appendChild(popup);
         setTimeout(() => {
@@ -3141,7 +3184,7 @@
       }
 
       // Immediately spawn next target so user always has a target to shoot
-      if (this.isFullscreen && (this.gameState === 'ready' || this.gameState === 'playing')) {
+      if (this.gameState !== 'gameover') {
         this.spawnTarget();
       }
     },
@@ -4329,7 +4372,7 @@
           if (this.activeGame === 'platform') {
             PlatformGame.syncDimensions(true);
           } else if (this.activeGame === 'aim') {
-            AimGame.syncDimensions();
+            AimGame.syncState();
           }
         }
       });
@@ -4385,6 +4428,7 @@
           PlatformGame.setFullscreen(false);
         }
         AimGame.init();
+        AimGame.syncState();
       }
     },
 
@@ -4588,23 +4632,20 @@
       const curZ = (this.dataFeed === 'raw') ? rawZ : outZ;
 
       // 1. Numerical Aim Reticle Integration (Zelda mechanics: angular velocity integration)
-      const aimSpeed = (typeof AimGame !== 'undefined' && AimGame.isFullscreen) ? Math.max(3.8, (AimGame.cachedW / 340) * 2.4) : 2.4; // px per degree
+      const aimSpeed = (typeof AimGame !== 'undefined' && AimGame.isFullscreen) ? Math.max(4.2, (window.innerWidth / 340) * 2.4) : 2.4; // px per degree
       this.reticleX += curY * dt * aimSpeed;
       this.reticleY -= curX * dt * aimSpeed;
 
-      // Dynamic viewport bounds
-      let maxW = 150;
-      let maxH = 52;
-      if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
-        maxW = Math.max(150, Math.floor((AimGame.cachedW || window.innerWidth) / 2 - 40));
-        maxH = Math.max(52, Math.floor((AimGame.cachedH || window.innerHeight) / 2 - 40));
-      }
+      // Dynamic viewport bounds from AimGame
+      const bounds = (typeof AimGame !== 'undefined' && AimGame.getBounds) ? AimGame.getBounds() : { maxReticleX: 150, maxReticleY: 52 };
+      const maxW = bounds.maxReticleX;
+      const maxH = bounds.maxReticleY;
       if (this.reticleX > maxW) this.reticleX = maxW;
       if (this.reticleX < -maxW) this.reticleX = -maxW;
       if (this.reticleY > maxH) this.reticleY = maxH;
       if (this.reticleY < -maxH) this.reticleY = -maxH;
 
-      if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
+      if (typeof AimGame !== 'undefined' && this.activeGame === 'aim') {
         AimGame.checkHit(this.reticleX, this.reticleY);
       }
 
@@ -4682,7 +4723,7 @@
       if (this.reticleDotEl) {
         this.reticleDotEl.style.transform = `translate(${Math.round(this.reticleX)}px, ${Math.round(this.reticleY)}px)`;
       }
-      const aimSpeed = (typeof AimGame !== 'undefined' && AimGame.isFullscreen) ? Math.max(3.8, (AimGame.cachedW / 340) * 2.4) : 2.4;
+      const aimSpeed = (typeof AimGame !== 'undefined' && AimGame.isFullscreen) ? Math.max(4.2, (window.innerWidth / 340) * 2.4) : 2.4;
       if (this.hudAimXEl) {
         const degX = (this.reticleX / aimSpeed);
         this.hudAimXEl.textContent = `X: ${(degX >= 0 ? '+' : '')}${degX.toFixed(1)}°`;
