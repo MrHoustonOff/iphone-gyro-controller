@@ -1011,7 +1011,46 @@
                             <button type="button" class="bench-btn-recenter" id="btn-bench-recenter-aim" data-i18n="settings_modal.bench_recenter">Центр</button>
                           </div>
                         </div>
-                        <div class="bench-target-viewport">
+                        <div class="bench-target-viewport" id="bench-aim-viewport">
+                          <!-- Fullscreen Action Toggle Button -->
+                          <button type="button" class="bench-viewport-action-btn" id="btn-bench-aim-fullscreen" data-i18n-title="settings_modal.bench_fullscreen" title="На весь экран">
+                            <svg class="icon-expand" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="15 3 21 3 21 9"></polyline>
+                              <polyline points="9 21 3 21 3 15"></polyline>
+                              <line x1="21" y1="3" x2="14" y2="10"></line>
+                              <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                            <svg class="icon-collapse" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+                              <polyline points="4 14 10 14 10 20"></polyline>
+                              <polyline points="20 10 14 10 14 4"></polyline>
+                              <line x1="14" y1="10" x2="21" y2="3"></line>
+                              <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                          </button>
+
+                          <!-- Fullscreen Aim Game Top HUD -->
+                          <div class="bench-fullscreen-hud" id="bench-aim-fs-hud" style="display: none;">
+                            <div class="bench-fs-score-wrap">
+                              <span class="bench-fs-score-pill" id="bench-aim-time-pill">
+                                <span class="bench-fs-label" data-i18n="settings_modal.bench_aim_time">Время</span>
+                                <span class="bench-fs-val" id="bench-aim-timer">30.0</span>
+                              </span>
+                              <span class="bench-fs-score-pill">
+                                <span class="bench-fs-label" data-i18n="settings_modal.bench_score">Счёт</span>
+                                <span class="bench-fs-val" id="bench-aim-score">0</span>
+                              </span>
+                              <span class="bench-fs-record-pill">
+                                <span class="bench-fs-label" data-i18n="settings_modal.bench_record">Рекорд</span>
+                                <span class="bench-fs-val" id="bench-aim-record">0</span>
+                              </span>
+                            </div>
+                            <div class="bench-fs-hint" id="bench-aim-fs-hint" data-i18n="settings_modal.bench_aim_start_hint">Сбейте 1-ю мишень для старта! • [Esc] Выход</div>
+                          </div>
+
+                          <!-- Target Layer and FX Layer -->
+                          <div class="bench-aim-targets-layer" id="bench-aim-targets-layer"></div>
+                          <div class="bench-aim-fx-layer" id="bench-aim-fx-layer"></div>
+
                           <div class="bench-target-corner tl"></div>
                           <div class="bench-target-corner tr"></div>
                           <div class="bench-target-corner bl"></div>
@@ -1033,6 +1072,28 @@
                           <div class="bench-target-hud">
                             <span id="bench-hud-aim-x">X: +0.0°</span>
                             <span id="bench-hud-aim-y">Y: +0.0°</span>
+                          </div>
+
+                          <!-- Game Over Overlay (Fullscreen) -->
+                          <div class="bench-aim-gameover-overlay" id="bench-aim-gameover" style="display: none;">
+                            <div class="bench-aim-gameover-card">
+                              <div class="bench-aim-gameover-badge" id="bench-aim-record-badge" style="display: none;" data-i18n="settings_modal.bench_aim_new_record">Новый рекорд!</div>
+                              <h3 class="bench-aim-gameover-title" data-i18n="settings_modal.bench_aim_gameover">Время вышло!</h3>
+                              <div class="bench-aim-gameover-stats">
+                                <div class="stat-item">
+                                  <span class="stat-label" data-i18n="settings_modal.bench_aim_targets_hit">Сбито мишеней</span>
+                                  <span class="stat-val" id="bench-aim-final-score">0</span>
+                                </div>
+                                <div class="stat-item">
+                                  <span class="stat-label" data-i18n="settings_modal.bench_record">Рекорд</span>
+                                  <span class="stat-val" id="bench-aim-final-record">0</span>
+                                </div>
+                              </div>
+                              <div class="bench-aim-gameover-actions">
+                                <button type="button" class="btn-action primary" id="btn-aim-play-again" data-i18n="settings_modal.bench_aim_play_again">Играть снова</button>
+                                <button type="button" class="btn-action secondary" id="btn-aim-exit" data-i18n="settings_modal.bench_aim_exit">Выйти (Esc)</button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                         <div class="bench-target-caption" data-i18n="settings_modal.bench_sensitivity_note">Отклик в тесте может отличаться от игры. <strong>Крайне рекомендуем</strong> настраивать параметры в нашем приложении, ориентируясь непосредственно на ощущения в самой игре!</div>
@@ -2758,6 +2819,371 @@
     }
   };
 
+  // ── Zelda Target Aim Reticle Mini-Game (30-Sec Target Shoot) ────────────────
+  const AimGame = {
+    initialized: false,
+    isFullscreen: false,
+    _placeholder: null,
+    gameState: 'idle', // 'idle' | 'ready' | 'playing' | 'gameover'
+    score: 0,
+    record: parseInt(localStorage.getItem('gb_aim_record') || '0', 10),
+    timeLeft: 30.0,
+    timerStartTs: 0,
+    cachedW: 0,
+    cachedH: 0,
+    activeTarget: null,
+    audioCtx: null,
+    vpEl: null,
+    targetsLayerEl: null,
+    fxLayerEl: null,
+    timePillEl: null,
+    timerEl: null,
+    scoreEl: null,
+    recordEl: null,
+    hintEl: null,
+    gameoverEl: null,
+    finalScoreEl: null,
+    finalRecordEl: null,
+    recordBadgeEl: null,
+
+    init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
+      this.vpEl = document.getElementById('bench-aim-viewport');
+      this.targetsLayerEl = document.getElementById('bench-aim-targets-layer');
+      this.fxLayerEl = document.getElementById('bench-aim-fx-layer');
+      this.timePillEl = document.getElementById('bench-aim-time-pill');
+      this.timerEl = document.getElementById('bench-aim-timer');
+      this.scoreEl = document.getElementById('bench-aim-score');
+      this.recordEl = document.getElementById('bench-aim-record');
+      this.hintEl = document.getElementById('bench-aim-fs-hint');
+      this.gameoverEl = document.getElementById('bench-aim-gameover');
+      this.finalScoreEl = document.getElementById('bench-aim-final-score');
+      this.finalRecordEl = document.getElementById('bench-aim-final-record');
+      this.recordBadgeEl = document.getElementById('bench-aim-record-badge');
+
+      if (this.recordEl) this.recordEl.textContent = this.record.toString();
+
+      // Fullscreen toggle button
+      document.getElementById('btn-bench-aim-fullscreen')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleFullscreen();
+      });
+
+      // Double-click on viewport to toggle fullscreen
+      this.vpEl?.addEventListener('dblclick', (e) => {
+        if (e.target.closest('button') || e.target.closest('.bench-aim-gameover-card')) return;
+        this.toggleFullscreen();
+      });
+
+      // Escape, Spacebar, and Enter key handling
+      document.addEventListener('keydown', (e) => {
+        if (!this.isFullscreen) return;
+        if (e.key === 'Escape') {
+          this.setFullscreen(false);
+        } else if (e.code === 'Space' || e.key === ' ') {
+          if (this.gameState === 'gameover') {
+            e.preventDefault();
+            this.resetGame();
+          } else {
+            e.preventDefault();
+            TuningBench.recenter();
+          }
+        } else if (e.key === 'Enter' && this.gameState === 'gameover') {
+          e.preventDefault();
+          this.resetGame();
+        }
+      });
+
+      // Play again and exit buttons
+      document.getElementById('btn-aim-play-again')?.addEventListener('click', () => {
+        this.resetGame();
+      });
+
+      document.getElementById('btn-aim-exit')?.addEventListener('click', () => {
+        this.setFullscreen(false);
+      });
+
+      // Viewport resize observer
+      if (typeof ResizeObserver !== 'undefined' && this.vpEl) {
+        new ResizeObserver(() => {
+          this.syncDimensions();
+        }).observe(this.vpEl);
+      }
+    },
+
+    syncDimensions() {
+      if (!this.vpEl) return;
+      const rect = this.vpEl.getBoundingClientRect();
+      this.cachedW = Math.floor(rect.width || window.innerWidth);
+      this.cachedH = Math.floor(rect.height || window.innerHeight);
+    },
+
+    toggleFullscreen() {
+      this.setFullscreen(!this.isFullscreen);
+    },
+
+    setFullscreen(enable) {
+      this.isFullscreen = !!enable;
+      const vp = this.vpEl || document.getElementById('bench-aim-viewport');
+      const btn = document.getElementById('btn-bench-aim-fullscreen');
+      if (!vp) return;
+
+      if (this.isFullscreen) {
+        if (!this._placeholder) {
+          this._placeholder = document.createElement('div');
+          this._placeholder.id = 'bench-aim-placeholder';
+          this._placeholder.style.display = 'none';
+        }
+        if (vp.parentNode && vp.parentNode !== document.body) {
+          vp.parentNode.insertBefore(this._placeholder, vp);
+          document.body.appendChild(vp);
+        }
+        vp.classList.add('fullscreen');
+        this.syncDimensions();
+        this.resetGame();
+      } else {
+        vp.classList.remove('fullscreen');
+        if (this._placeholder && this._placeholder.parentNode) {
+          this._placeholder.parentNode.insertBefore(vp, this._placeholder);
+          this._placeholder.parentNode.removeChild(this._placeholder);
+          this._placeholder = null;
+        }
+        this.cleanupGame();
+      }
+
+      if (btn) {
+        const iconExpand = btn.querySelector('.icon-expand');
+        const iconCollapse = btn.querySelector('.icon-collapse');
+        if (iconExpand) iconExpand.style.display = this.isFullscreen ? 'none' : 'block';
+        if (iconCollapse) iconCollapse.style.display = this.isFullscreen ? 'block' : 'none';
+        btn.title = this.isFullscreen ? (I18n.t('settings_modal.bench_exit_fullscreen') || 'Свернуть') : (I18n.t('settings_modal.bench_fullscreen') || 'На весь экран');
+      }
+
+      TuningBench.recenter();
+    },
+
+    resetGame() {
+      this.cleanupTargets();
+      this.gameState = 'ready';
+      this.score = 0;
+      this.timeLeft = 30.0;
+      this.timerStartTs = 0;
+
+      if (this.gameoverEl) this.gameoverEl.style.display = 'none';
+      if (this.timePillEl) this.timePillEl.classList.remove('urgent');
+      if (this.timerEl) this.timerEl.textContent = '30.0';
+      if (this.scoreEl) this.scoreEl.textContent = '0';
+      if (this.recordEl) this.recordEl.textContent = this.record.toString();
+      if (this.hintEl) {
+        this.hintEl.textContent = I18n.t('settings_modal.bench_aim_start_hint') || 'Сбейте 1-ю мишень для старта! • [Esc] Выход';
+      }
+
+      this.spawnTarget();
+    },
+
+    cleanupTargets() {
+      if (this.targetsLayerEl) this.targetsLayerEl.innerHTML = '';
+      if (this.fxLayerEl) this.fxLayerEl.innerHTML = '';
+      this.activeTarget = null;
+    },
+
+    cleanupGame() {
+      this.cleanupTargets();
+      this.gameState = 'idle';
+      if (this.gameoverEl) this.gameoverEl.style.display = 'none';
+      if (this.timePillEl) this.timePillEl.classList.remove('urgent');
+    },
+
+    spawnTarget() {
+      if (!this.isFullscreen || !this.targetsLayerEl) return;
+      this.syncDimensions();
+
+      const halfW = Math.floor((this.cachedW || window.innerWidth) / 2);
+      const halfH = Math.floor((this.cachedH || window.innerHeight) / 2);
+
+      const boundX = Math.max(120, halfW - 90);
+      const boundY = Math.max(80, halfH - 90);
+
+      // Pick a random position not too close to current reticle
+      let rx = 0;
+      let ry = 0;
+      for (let attempt = 0; attempt < 12; attempt++) {
+        rx = Math.floor((Math.random() * 2 - 1) * boundX);
+        ry = Math.floor((Math.random() * 2 - 1) * boundY);
+        const dist = Math.hypot(rx - TuningBench.reticleX, ry - TuningBench.reticleY);
+        if (dist > 140) break;
+      }
+
+      const el = document.createElement('div');
+      el.className = 'bench-aim-target';
+      el.style.left = `calc(50% + ${rx}px)`;
+      el.style.top = `calc(50% + ${ry}px)`;
+      el.innerHTML = `
+        <div class="target-ring outer"></div>
+        <div class="target-ring middle"></div>
+        <div class="target-ring inner"></div>
+        <div class="target-bullseye"></div>
+      `;
+
+      this.targetsLayerEl.appendChild(el);
+      this.activeTarget = {
+        x: rx,
+        y: ry,
+        el: el,
+        hitRadius: 36
+      };
+    },
+
+    checkHit(reticleX, reticleY) {
+      if (!this.isFullscreen || !this.activeTarget) return;
+      if (this.gameState !== 'ready' && this.gameState !== 'playing') return;
+
+      const dist = Math.hypot(reticleX - this.activeTarget.x, reticleY - this.activeTarget.y);
+      if (dist <= this.activeTarget.hitRadius) {
+        this.onHit();
+      }
+    },
+
+    onHit() {
+      const target = this.activeTarget;
+      if (!target) return;
+      this.activeTarget = null;
+
+      // If in 'ready' state, 1st target hit triggers the 30-sec countdown!
+      if (this.gameState === 'ready') {
+        this.gameState = 'playing';
+        this.timerStartTs = performance.now();
+        this.timeLeft = 30.0;
+        if (this.hintEl) {
+          this.hintEl.textContent = I18n.t('settings_modal.bench_aim_playing_hint') || '30 секунд! Сбивайте мишени • [Пробел] Центр • [Esc] Выход';
+        }
+      }
+
+      this.score++;
+      if (this.scoreEl) this.scoreEl.textContent = this.score.toString();
+
+      if (this.score > this.record) {
+        this.record = this.score;
+        try {
+          localStorage.setItem('gb_aim_record', this.record.toString());
+        } catch (e) {}
+        if (this.recordEl) this.recordEl.textContent = this.record.toString();
+      }
+
+      // Visual and Sound Shot Feedback
+      this.playHitSound();
+
+      // Flash reticle
+      const reticleEl = TuningBench.reticleDotEl || document.getElementById('bench-reticle-dot');
+      if (reticleEl) {
+        reticleEl.classList.remove('shot-flash');
+        void reticleEl.offsetWidth; // trigger reflow
+        reticleEl.classList.add('shot-flash');
+        setTimeout(() => reticleEl.classList.remove('shot-flash'), 140);
+      }
+
+      // Explode target
+      if (target.el) {
+        target.el.classList.add('hit');
+        setTimeout(() => {
+          if (target.el && target.el.parentNode) {
+            target.el.parentNode.removeChild(target.el);
+          }
+        }, 220);
+      }
+
+      // Floating +1 Popup
+      if (this.fxLayerEl) {
+        const popup = document.createElement('div');
+        popup.className = 'target-floating-score';
+        popup.style.left = `calc(50% + ${target.x}px)`;
+        popup.style.top = `calc(50% + ${target.y}px)`;
+        popup.textContent = '+1';
+        this.fxLayerEl.appendChild(popup);
+        setTimeout(() => {
+          if (popup.parentNode) popup.parentNode.removeChild(popup);
+        }, 500);
+      }
+
+      // Spawn next target after brief delay for crisp game feel
+      setTimeout(() => {
+        if (this.isFullscreen && (this.gameState === 'ready' || this.gameState === 'playing')) {
+          this.spawnTarget();
+        }
+      }, 100);
+    },
+
+    update(now) {
+      if (!this.isFullscreen) return;
+
+      if (this.gameState === 'playing') {
+        const elapsed = (now - this.timerStartTs) / 1000;
+        this.timeLeft = Math.max(0, 30.0 - elapsed);
+
+        if (this.timerEl) {
+          this.timerEl.textContent = this.timeLeft.toFixed(1);
+        }
+
+        if (this.timePillEl) {
+          this.timePillEl.classList.toggle('urgent', this.timeLeft <= 5.0);
+        }
+
+        if (this.timeLeft <= 0) {
+          this.endGame();
+        }
+      }
+    },
+
+    endGame() {
+      this.gameState = 'gameover';
+      this.cleanupTargets();
+
+      if (this.timePillEl) this.timePillEl.classList.remove('urgent');
+      if (this.timerEl) this.timerEl.textContent = '0.0';
+
+      const isNewRecord = (this.score >= this.record && this.score > 0);
+
+      if (this.recordBadgeEl) {
+        this.recordBadgeEl.style.display = isNewRecord ? 'inline-block' : 'none';
+      }
+      if (this.finalScoreEl) {
+        this.finalScoreEl.textContent = this.score.toString();
+      }
+      if (this.finalRecordEl) {
+        this.finalRecordEl.textContent = this.record.toString();
+      }
+      if (this.gameoverEl) {
+        this.gameoverEl.style.display = 'flex';
+      }
+    },
+
+    playHitSound() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        if (!this.audioCtx) this.audioCtx = new AudioContext();
+        if (this.audioCtx.state === 'suspended') {
+          this.audioCtx.resume().catch(() => {});
+        }
+        const ctx = this.audioCtx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const now = ctx.currentTime;
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(620, now);
+        osc.frequency.exponentialRampToValueAtTime(1400, now + 0.07);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      } catch (e) {}
+    }
+  };
+
   // ── Zelda 3D Shrine Platform Mini-Game (Apparatus Simulator) ───────────────
   const PlatformGame = {
     initialized: false,
@@ -3813,6 +4239,9 @@
       if (this.initialized) return;
       this.initialized = true;
 
+      // Initialize both Aim and Platform game modules
+      AimGame.init();
+
       // Mini-Game tabs switching ('aim' vs 'platform')
       const gameTabs = document.querySelectorAll('#bench-game-tabs .bench-game-tab');
       gameTabs.forEach(btn => {
@@ -3868,6 +4297,8 @@
           this.syncDimensions(true);
           if (this.activeGame === 'platform') {
             PlatformGame.syncDimensions(true);
+          } else if (this.activeGame === 'aim') {
+            AimGame.syncDimensions();
           }
         }
       });
@@ -3912,9 +4343,17 @@
       this.syncDimensions(true);
 
       if (target === 'platform') {
+        if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
+          AimGame.setFullscreen(false);
+        }
         PlatformGame.init();
         PlatformGame.syncDimensions(true);
         PlatformGame.updateAndRender();
+      } else if (target === 'aim') {
+        if (typeof PlatformGame !== 'undefined' && PlatformGame.isFullscreen) {
+          PlatformGame.setFullscreen(false);
+        }
+        AimGame.init();
       }
     },
 
@@ -4057,6 +4496,9 @@
           this.drawOscilloscope();
           if (this.activeGame === 'aim') {
             this.renderReticle();
+            if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
+              AimGame.update(performance.now());
+            }
           } else if (this.activeGame === 'platform') {
             PlatformGame.updateAndRender();
           }
@@ -4071,6 +4513,9 @@
       if (this.rafId) {
         cancelAnimationFrame(this.rafId);
         this.rafId = null;
+      }
+      if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
+        AimGame.setFullscreen(false);
       }
       if (typeof PlatformGame !== 'undefined' && PlatformGame.onDisconnect) {
         PlatformGame.onDisconnect();
@@ -4112,17 +4557,25 @@
       const curZ = (this.dataFeed === 'raw') ? rawZ : outZ;
 
       // 1. Numerical Aim Reticle Integration (Zelda mechanics: angular velocity integration)
-      const aimSpeed = 2.4; // px per degree
+      const aimSpeed = (typeof AimGame !== 'undefined' && AimGame.isFullscreen) ? Math.max(3.8, (AimGame.cachedW / 340) * 2.4) : 2.4; // px per degree
       this.reticleX += curY * dt * aimSpeed;
-      this.reticleY -= curX * dt * aimSpeed;
+      this.reticleY += curX * dt * aimSpeed;
 
-      // Soft clamp to target viewport bounds
-      const maxW = 150;
-      const maxH = 52;
+      // Dynamic viewport bounds
+      let maxW = 150;
+      let maxH = 52;
+      if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
+        maxW = Math.max(150, Math.floor((AimGame.cachedW || window.innerWidth) / 2 - 40));
+        maxH = Math.max(52, Math.floor((AimGame.cachedH || window.innerHeight) / 2 - 40));
+      }
       if (this.reticleX > maxW) this.reticleX = maxW;
       if (this.reticleX < -maxW) this.reticleX = -maxW;
       if (this.reticleY > maxH) this.reticleY = maxH;
       if (this.reticleY < -maxH) this.reticleY = -maxH;
+
+      if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
+        AimGame.checkHit(this.reticleX, this.reticleY);
+      }
 
       // 2. Absolute Drift-Free Platform Game Motion Tracking
       PlatformGame.onFrame(frame);
@@ -4198,13 +4651,13 @@
       if (this.reticleDotEl) {
         this.reticleDotEl.style.transform = `translate(${Math.round(this.reticleX)}px, ${Math.round(this.reticleY)}px)`;
       }
-      const aimSpeed = 2.4;
+      const aimSpeed = (typeof AimGame !== 'undefined' && AimGame.isFullscreen) ? Math.max(3.8, (AimGame.cachedW / 340) * 2.4) : 2.4;
       if (this.hudAimXEl) {
         const degX = (this.reticleX / aimSpeed);
         this.hudAimXEl.textContent = `X: ${(degX >= 0 ? '+' : '')}${degX.toFixed(1)}°`;
       }
       if (this.hudAimYEl) {
-        const degY = (-this.reticleY / aimSpeed);
+        const degY = (this.reticleY / aimSpeed);
         this.hudAimYEl.textContent = `Y: ${(degY >= 0 ? '+' : '')}${degY.toFixed(1)}°`;
       }
     },
@@ -5093,6 +5546,9 @@
       this.isOpen = false;
       if (typeof PlatformGame !== 'undefined' && PlatformGame.isFullscreen) {
         PlatformGame.setFullscreen(false);
+      }
+      if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
+        AimGame.setFullscreen(false);
       }
       // Revert live preview font scale if closed without saving
       const savedScale = (this.currentSettings && typeof this.currentSettings.fontScale === 'number') ? this.currentSettings.fontScale : (this.initialFontScale || 1.0);

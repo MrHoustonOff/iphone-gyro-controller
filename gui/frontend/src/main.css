@@ -4894,6 +4894,280 @@ em {
   color: #1c1c1e;
 }
 
+/* Fullscreen Mode for Aim Reticle Viewport */
+.bench-target-viewport.fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  z-index: 99999 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  background-color: #06090f !important;
+  background: radial-gradient(circle at 50% 50%, #0e1726 0%, #030508 100%) !important;
+}
+
+[data-theme="light"] .bench-target-viewport.fullscreen {
+  background-color: #e2eaf4 !important;
+  background: radial-gradient(circle at 50% 50%, #eef5fc 0%, #cbd6e4 100%) !important;
+}
+
+.bench-target-viewport.fullscreen .bench-viewport-action-btn {
+  top: 18px !important;
+  right: 18px !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 10px !important;
+}
+
+.bench-target-viewport.fullscreen .bench-target-hud {
+  bottom: 18px !important;
+  right: 18px !important;
+  font-size: 12px !important;
+  padding: 4px 10px !important;
+}
+
+.bench-target-viewport.fullscreen #bench-aim-fs-hud {
+  display: flex !important;
+}
+
+/* Urgent pulsating timer pill */
+#bench-aim-time-pill.urgent {
+  background: rgba(255, 59, 48, 0.25) !important;
+  border-color: rgba(255, 59, 48, 0.6) !important;
+  animation: urgentTimerPulse 0.5s infinite alternate ease-in-out;
+}
+#bench-aim-time-pill.urgent .bench-fs-val {
+  color: #FF3B30 !important;
+}
+
+@keyframes urgentTimerPulse {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.08); box-shadow: 0 0 16px rgba(255, 59, 48, 0.6); }
+}
+
+/* Reticle Shot Flash Effect */
+.bench-reticle-dot.shot-flash .bench-reticle-circle {
+  border-color: #00FFFF !important;
+  box-shadow: 0 0 24px #00FFFF, inset 0 0 12px #00FFFF !important;
+  transform: scale(1.35);
+  transition: transform 0.08s ease, border-color 0.08s ease;
+}
+
+.bench-reticle-dot.shot-flash .bench-reticle-sight {
+  background: #FFFFFF !important;
+  box-shadow: 0 0 14px #FFFFFF !important;
+  transform: scale(1.8);
+  transition: transform 0.08s ease;
+}
+
+/* Target Layers */
+.bench-aim-targets-layer,
+.bench-aim-fx-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 4;
+}
+
+/* Target Sheikah / Archery Sphere Design */
+.bench-aim-target {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  margin-top: -30px;
+  margin-left: -30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: targetSpawn 0.24s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+@keyframes targetSpawn {
+  0% { transform: scale(0.2); opacity: 0; }
+  70% { transform: scale(1.15); opacity: 0.9; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.bench-aim-target .target-ring.outer {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 149, 0, 0.15) 0%, rgba(255, 59, 48, 0.35) 100%);
+  border: 2px solid #FF9500;
+  box-shadow: 0 0 18px rgba(255, 149, 0, 0.5), inset 0 0 10px rgba(255, 59, 48, 0.4);
+  animation: targetPulseRing 1.8s infinite alternate ease-in-out;
+}
+
+@keyframes targetPulseRing {
+  0% { transform: scale(0.96); opacity: 0.85; }
+  100% { transform: scale(1.04); opacity: 1; box-shadow: 0 0 24px rgba(255, 149, 0, 0.8), inset 0 0 14px rgba(255, 59, 48, 0.6); }
+}
+
+.bench-aim-target .target-ring.middle {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 2px solid #FFD60A;
+  background: rgba(255, 214, 10, 0.12);
+}
+
+.bench-aim-target .target-ring.inner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #FF3B30;
+  box-shadow: 0 0 10px #FF3B30;
+}
+
+.bench-aim-target .target-bullseye {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 0 8px #FFFFFF;
+}
+
+/* Hit Explosion Animation */
+.bench-aim-target.hit {
+  animation: targetExplode 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes targetExplode {
+  0% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  40% { transform: scale(1.4); opacity: 0.9; filter: brightness(2.5); }
+  100% { transform: scale(1.8); opacity: 0; filter: brightness(3); }
+}
+
+/* Floating +1 Popups */
+.target-floating-score {
+  position: absolute;
+  margin-top: -16px;
+  margin-left: -16px;
+  font-family: var(--font-sans);
+  font-size: 18px;
+  font-weight: 800;
+  color: #FFD60A;
+  text-shadow: 0 0 10px rgba(255, 214, 10, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  animation: floatScore 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 10;
+}
+
+@keyframes floatScore {
+  0% { transform: translateY(0) scale(0.8); opacity: 0; }
+  30% { transform: translateY(-12px) scale(1.2); opacity: 1; }
+  100% { transform: translateY(-38px) scale(1); opacity: 0; }
+}
+
+/* Game Over Modal in Fullscreen */
+.bench-aim-gameover-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeInModal 0.25s ease;
+}
+
+.bench-aim-gameover-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  max-width: 360px;
+  width: 100%;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  animation: scaleInModal 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+}
+
+.bench-aim-gameover-badge {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #FF9500;
+  background: rgba(255, 149, 0, 0.15);
+  border: 1px solid rgba(255, 149, 0, 0.35);
+  padding: 3px 12px;
+  border-radius: 20px;
+  box-shadow: 0 0 12px rgba(255, 149, 0, 0.3);
+}
+
+.bench-aim-gameover-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0;
+}
+
+.bench-aim-gameover-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  box-sizing: border-box;
+}
+
+.bench-aim-gameover-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.bench-aim-gameover-stats .stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.bench-aim-gameover-stats .stat-val {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.bench-aim-gameover-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
 /* In-Game Sensitivity Recommendation Banner */
 .bench-target-caption {
   font-size: 11px;
