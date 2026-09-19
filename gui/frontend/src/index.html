@@ -4559,7 +4559,7 @@
       // 1. Numerical Aim Reticle Integration (Zelda mechanics: angular velocity integration)
       const aimSpeed = (typeof AimGame !== 'undefined' && AimGame.isFullscreen) ? Math.max(3.8, (AimGame.cachedW / 340) * 2.4) : 2.4; // px per degree
       this.reticleX += curY * dt * aimSpeed;
-      this.reticleY += curX * dt * aimSpeed;
+      this.reticleY -= curX * dt * aimSpeed;
 
       // Dynamic viewport bounds
       let maxW = 150;
@@ -4657,7 +4657,7 @@
         this.hudAimXEl.textContent = `X: ${(degX >= 0 ? '+' : '')}${degX.toFixed(1)}°`;
       }
       if (this.hudAimYEl) {
-        const degY = (this.reticleY / aimSpeed);
+        const degY = (-this.reticleY / aimSpeed);
         this.hudAimYEl.textContent = `Y: ${(degY >= 0 ? '+' : '')}${degY.toFixed(1)}°`;
       }
     },
