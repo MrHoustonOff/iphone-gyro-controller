@@ -2914,10 +2914,20 @@
     },
 
     syncDimensions() {
+      if (!this.vpEl || !this.vpEl.isConnected) {
+        this.vpEl = document.getElementById('bench-aim-viewport');
+      }
       if (!this.vpEl) return;
       const rect = this.vpEl.getBoundingClientRect();
-      this.cachedW = Math.floor(rect.width || window.innerWidth);
-      this.cachedH = Math.floor(rect.height || window.innerHeight);
+      this.cachedW = Math.floor(rect.width || window.innerWidth || 800);
+      this.cachedH = Math.floor(rect.height || window.innerHeight || 600);
+
+      if (this.activeTarget && this.activeTarget.el) {
+        const halfW = Math.floor(this.cachedW / 2);
+        const halfH = Math.floor(this.cachedH / 2);
+        this.activeTarget.el.style.left = (halfW + this.activeTarget.x) + 'px';
+        this.activeTarget.el.style.top = (halfH + this.activeTarget.y) + 'px';
+      }
     },
 
     toggleFullscreen() {
@@ -2984,7 +2994,13 @@
     },
 
     cleanupTargets() {
+      if (!this.targetsLayerEl || !this.targetsLayerEl.isConnected) {
+        this.targetsLayerEl = document.getElementById('bench-aim-targets-layer');
+      }
       if (this.targetsLayerEl) this.targetsLayerEl.innerHTML = '';
+      if (!this.fxLayerEl || !this.fxLayerEl.isConnected) {
+        this.fxLayerEl = document.getElementById('bench-aim-fx-layer');
+      }
       if (this.fxLayerEl) this.fxLayerEl.innerHTML = '';
       this.activeTarget = null;
     },
@@ -2997,29 +3013,41 @@
     },
 
     spawnTarget() {
-      if (!this.isFullscreen || !this.targetsLayerEl) return;
+      if (!this.isFullscreen) return;
+      if (!this.targetsLayerEl || !this.targetsLayerEl.isConnected) {
+        this.targetsLayerEl = document.getElementById('bench-aim-targets-layer');
+      }
+      if (!this.targetsLayerEl) return;
       this.syncDimensions();
 
       const halfW = Math.floor((this.cachedW || window.innerWidth) / 2);
       const halfH = Math.floor((this.cachedH || window.innerHeight) / 2);
 
-      const boundX = Math.max(120, halfW - 90);
-      const boundY = Math.max(80, halfH - 90);
+      const boundX = Math.max(80, halfW - 100);
+      const boundYTop = Math.max(60, halfH - 120);
+      const boundYBottom = Math.max(60, halfH - 90);
+
+      // Clean up any lingering un-hit targets
+      const lingering = this.targetsLayerEl.querySelectorAll('.bench-aim-target:not(.hit)');
+      lingering.forEach(t => t.remove());
 
       // Pick a random position not too close to current reticle
       let rx = 0;
       let ry = 0;
-      for (let attempt = 0; attempt < 12; attempt++) {
+      for (let attempt = 0; attempt < 24; attempt++) {
         rx = Math.floor((Math.random() * 2 - 1) * boundX);
-        ry = Math.floor((Math.random() * 2 - 1) * boundY);
+        ry = Math.floor(-boundYTop + Math.random() * (boundYTop + boundYBottom));
         const dist = Math.hypot(rx - TuningBench.reticleX, ry - TuningBench.reticleY);
-        if (dist > 140) break;
+        if (dist > 130) break;
       }
+
+      const posX = halfW + rx;
+      const posY = halfH + ry;
 
       const el = document.createElement('div');
       el.className = 'bench-aim-target';
-      el.style.left = `calc(50% + ${rx}px)`;
-      el.style.top = `calc(50% + ${ry}px)`;
+      el.style.left = posX + 'px';
+      el.style.top = posY + 'px';
       el.innerHTML = `
         <div class="target-ring outer"></div>
         <div class="target-ring middle"></div>
@@ -3084,7 +3112,7 @@
         setTimeout(() => reticleEl.classList.remove('shot-flash'), 140);
       }
 
-      // Explode target
+      // Explode hit target
       if (target.el) {
         target.el.classList.add('hit');
         setTimeout(() => {
@@ -3095,11 +3123,16 @@
       }
 
       // Floating +1 Popup
+      if (!this.fxLayerEl || !this.fxLayerEl.isConnected) {
+        this.fxLayerEl = document.getElementById('bench-aim-fx-layer');
+      }
       if (this.fxLayerEl) {
+        const halfW = Math.floor((this.cachedW || window.innerWidth) / 2);
+        const halfH = Math.floor((this.cachedH || window.innerHeight) / 2);
         const popup = document.createElement('div');
         popup.className = 'target-floating-score';
-        popup.style.left = `calc(50% + ${target.x}px)`;
-        popup.style.top = `calc(50% + ${target.y}px)`;
+        popup.style.left = (halfW + target.x) + 'px';
+        popup.style.top = (halfH + target.y) + 'px';
         popup.textContent = '+1';
         this.fxLayerEl.appendChild(popup);
         setTimeout(() => {
@@ -3107,12 +3140,10 @@
         }, 500);
       }
 
-      // Spawn next target after brief delay for crisp game feel
-      setTimeout(() => {
-        if (this.isFullscreen && (this.gameState === 'ready' || this.gameState === 'playing')) {
-          this.spawnTarget();
-        }
-      }, 100);
+      // Immediately spawn next target so user always has a target to shoot
+      if (this.isFullscreen && (this.gameState === 'ready' || this.gameState === 'playing')) {
+        this.spawnTarget();
+      }
     },
 
     update(now) {
