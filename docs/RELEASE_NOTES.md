@@ -1,42 +1,27 @@
-# GyroBridge v1.1.0
+# GyroBridge v1.1.1
 
 GyroBridge turns your smartphone (iOS or Android) into a high-precision, low-latency motion controller for PC games and emulators via the Cemuhook DSU protocol.
 
 ---
 
-## What's New in v1.1.0
+## What's New in v1.1.1
 
-### Real-Time Response Test Bench
-- **Interactive Multi-Mode Bench**: Integrated into Settings to verify sensor response and filter tuning live before launching games.
-- **Oscilloscope Waveform Visualizer**: Real-time canvas oscilloscope tracking Pitch, Roll, and Yaw curves with 3-axis stacked view and responsive grid scaling. Supports instant switching between raw sensor input and filtered DSU output streams.
-- **Interactive 3D Target Aiming Bench**: Fullscreen-capable 3D viewfinder with customizable sensitivity multipliers, axis inversion toggles, and direct in-game translation advice.
-- **Physics Apparatus Platform**: Real-time 3D tilt stage featuring simulated ball physics, goal detection, confetti fanfare, and disconnect safe-leveling.
+### Zelda Aim Target Shooting Mini-Game
+- **30-Second Target Challenge**: Added a target shooting mini-game directly into the Aim Test Bench. Hit targets in succession to build the highest score within a 30-second window.
+- **Immediate Synchronous Respawn**: Fixed a CSS syntax token issue in `calc()` and removed async delays; targets now respawn immediately upon hit.
+- **Center-Anchored Layout**: Targets and floating score indicators are anchored to `50% / 50%` coordinates with pixel offsets, guaranteeing complete visual stability during fullscreen transitions, window switches, and DPI zooming.
+- **Dual Mode Support**: Targets are available both in the compact settings preview widget and in full-screen expanded view.
+- **Interactive Shot Feedback**: Cyan reticle flash, Web Audio procedural harmonic chime, target explosion animation, and floating score popups.
+- **Persistent High-Score Tracking**: Highest score tracked in local storage and displayed in the fullscreen HUD and Game Over screen.
+- **Keyboard Controls**: `Space` to center gyro or restart, `Enter` to play again, `Esc` to toggle fullscreen.
 
-### Advanced Settings Hub & Sensor Pipeline
-- **Adaptive 1-Euro Filter & Deadband**: Tunable noise suppression to eliminate resting sensor jitter while preserving high-speed hand motion fidelity.
-- **Configurable Network Ports**: Independent port assignments for Cemuhook DSU (`26760`), HTTP pairing (`8080`), and HTTPS controller (`8443`) with range validation (`1024-65535`) and collision detection.
-- **Stationary Tilt & Disconnect Warning Toggles**: Configurable threshold alerts when the smartphone rests on an uneven surface or disconnects during calibration.
-- **Floating Infotips**: Glassmorphic parameter tooltips with automated boundary clamping and reset-to-defaults functionality.
+### Aim Orientation & Pitch Alignment
+- **Natural Bow Aiming**: Adjusted pitch direction so tilting the phone downward lowers the reticle and tilting upward raises it, matching standard first-person and third-person console gyro controls (e.g. Zelda: Tears of the Kingdom).
 
-### Global UI Scaling & Desktop Shortcuts
-- **Universal Scale Engine**: Global UI and font zoom adjustment (`0.80x` to `1.40x`) with continuous synchronization across both the main application window and the dedicated 3D telemetry window.
-- **Standard Desktop Shortcuts**: Fast scaling using `Ctrl +`, `Ctrl -`, and `Ctrl 0` (reset), as well as `Ctrl + MouseWheel`, with captured-phase event priority.
-- **Transient HUD Indicator**: Lightweight pill toast notification displaying the active scale factor on adjustment.
-
-### In-App 3D Gyro Recenter
-- **Dynamic Orientation Re-centering**: On-demand 1-second countdown trigger and modal with backdrop blur to re-align tracking without altering stored baseline sensor calibration.
-- **Orientation Continuity**: AHRS quaternion continuity preserved across transient network reconnections without wiping center.
-
-### Audio Cues & Connection Feedback
-- **Connection Events Audio**: Audible feedback on device connection and disconnect.
-- **Synthesized Celesta Melodies**: Real-time procedural arpeggios via Web Audio API (C5-E5-G5-C6 on connect, G5-Eb5-C5 on disconnect).
-- **Native Windows Alerts**: Non-blocking system audio via `winmm.dll` with instant preview and silent mode.
-
-### Performance & UI Hardening
-- **Responsive Header Collapse**: Automatic navigation transition into compact 36px icon mode for default window launch dimensions (`880x620`) and viewports `<= 1020px`.
-- **Viewport Layout Resilience**: Replaced relative viewport units with percentage-based sizing in 3D telemetry window to eliminate clipping artifacts under browser zoom.
-- **IPC & DOM Throttling**: Decoupled DOM updates and throttled telemetry IPC to 60Hz, preventing layout thrashing and reducing CPU usage.
-- **Live Memory Tracking**: Working set RAM monitor in header with live polling.
+### UI Resilience & Stability
+- **Auto-Recovery on Window Switching**: Automatically restores targets if the viewport loses focus, changes resolution, or switches between bench tabs.
+- **LiveDebug 3D Window Hardening**: Set enforced minimum dimensions (`880x520`) to prevent card clipping and overflow during window resizing.
+- **Shortcut Hints**: Added interface hints regarding `Ctrl +/-/0` zoom hotkeys in settings.
 
 ---
 

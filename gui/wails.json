@@ -4,7 +4,7 @@
   "outputfilename": "GyroBridge",
   "frontend:dir": "./frontend/src",
   "wailsjsdir": "./frontend/src",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": {
     "name": "MrHoustonOff",
     "email": "mrhoustonvr@yandex.ru"
@@ -12,7 +12,7 @@
   "info": {
     "companyName": "MrHoustonOff",
     "productName": "GyroBridge",
-    "productVersion": "1.1.0.0",
+    "productVersion": "1.1.1.0",
     "copyright": "Copyright 2026 MrHoustonOff",
     "comments": "Open-source smartphone motion controller bridge for Cemuhook DSU"
   }
