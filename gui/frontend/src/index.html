@@ -2899,8 +2899,10 @@
 
       dropdown.style.display = 'block';
       dropdown.style.visibility = 'hidden';
-      const dropdownWidth = dropdown.offsetWidth;
-      const dropdownHeight = dropdown.offsetHeight;
+      const zoom = parseFloat(document.documentElement.style.zoom) || (window.FontScaleManager && FontScaleManager.scale) || 1.0;
+      const ddRect = dropdown.getBoundingClientRect();
+      const dropdownWidth = ddRect.width || (dropdown.offsetWidth * zoom);
+      const dropdownHeight = ddRect.height || (dropdown.offsetHeight * zoom);
       dropdown.style.visibility = 'visible';
 
       const rect = trigger.getBoundingClientRect();
@@ -2921,8 +2923,8 @@
         dropdown.classList.remove('open-up');
       }
 
-      dropdown.style.left = `${Math.round(left)}px`;
-      dropdown.style.top = `${Math.round(top)}px`;
+      dropdown.style.left = `${Math.round(left / zoom)}px`;
+      dropdown.style.top = `${Math.round(top / zoom)}px`;
 
       requestAnimationFrame(() => {
         dropdown.classList.add('visible');
@@ -6496,18 +6498,22 @@
           return;
         }
 
-        // Measure REAL rendered dimensions
-        const ttWidth = tooltipEl.offsetWidth;
-        const ttHeight = tooltipEl.offsetHeight;
+        const zoom = parseFloat(document.documentElement.style.zoom) || (window.FontScaleManager && FontScaleManager.scale) || 1.0;
 
-        // Exact horizontal centering on target element
-        let left = rect.left + (rect.width / 2) - (ttWidth / 2);
+        // Measure REAL rendered dimensions in viewport space
+        const ttRect = tooltipEl.getBoundingClientRect();
+        const ttVisualWidth = ttRect.width || (tooltipEl.offsetWidth * zoom);
+        const ttVisualHeight = ttRect.height || (tooltipEl.offsetHeight * zoom);
+
+        // Exact horizontal centering on target element in viewport space
+        const targetCenterX = rect.left + (rect.width / 2);
+        let visualLeft = targetCenterX - (ttVisualWidth / 2);
         const margin = 12;
-        if (left < margin) {
-          left = margin;
+        if (visualLeft < margin) {
+          visualLeft = margin;
         }
-        if (left + ttWidth > window.innerWidth - margin) {
-          left = window.innerWidth - ttWidth - margin;
+        if (visualLeft + ttVisualWidth > window.innerWidth - margin) {
+          visualLeft = window.innerWidth - ttVisualWidth - margin;
         }
 
         // Avoid overlapping the app header (height ~52px)
@@ -6515,19 +6521,20 @@
         const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 52;
         const topBoundary = Math.max(margin, headerBottom + 6);
 
-        // Prefer placing 8px above target element
-        let top = rect.top - ttHeight - 8;
-        if (top < topBoundary) {
+        // Prefer placing 8px above target element in viewport space
+        let visualTop = rect.top - ttVisualHeight - 8;
+        if (visualTop < topBoundary) {
           // If not enough room above, place 8px below target element
-          top = rect.bottom + 8;
+          visualTop = rect.bottom + 8;
         }
         // If bottom extends outside viewport, clamp cleanly
-        if (top + ttHeight > window.innerHeight - margin) {
-          top = Math.max(topBoundary, window.innerHeight - ttHeight - margin);
+        if (visualTop + ttVisualHeight > window.innerHeight - margin) {
+          visualTop = Math.max(topBoundary, window.innerHeight - ttVisualHeight - margin);
         }
 
-        tooltipEl.style.left = Math.round(left) + 'px';
-        tooltipEl.style.top = Math.round(top) + 'px';
+        // Convert viewport coordinates to unzoomed CSS coordinates expected by fixed style.left / style.top
+        tooltipEl.style.left = Math.round(visualLeft / zoom) + 'px';
+        tooltipEl.style.top = Math.round(visualTop / zoom) + 'px';
       };
 
       const showTooltip = (targetEl) => {
