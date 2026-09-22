@@ -9985,36 +9985,7 @@
         btnUsb.setAttribute('aria-selected', mode === 'usb' ? 'true' : 'false');
       }
 
-      const container = document.querySelector('.modular-container');
-      const isWizardOpen = !!(SetupWizard?.isOpen || HelpManager?.isOpen || SettingsManager?.isOpen || WelcomeManager?.isOpen || CalibrationWizard?.isOpen);
-      if (container && !isWizardOpen) {
-        container.classList.toggle('usb-mode', mode === 'usb');
-      }
-
       this.updateModeGlider();
-
-      // Trigger directional slide transitions between views
-      if (prevMode && prevMode !== mode) {
-        const vOffline = document.getElementById('view-offline');
-        const vOnline = document.getElementById('view-online');
-        const vUsb = document.getElementById('view-usb-mode');
-        if (mode === 'usb' && vUsb) {
-          vUsb.classList.remove('mode-slide-in-left', 'mode-slide-in-right');
-          void vUsb.offsetWidth; // trigger reflow
-          vUsb.classList.add('mode-slide-in-right');
-        } else if (mode === 'phone') {
-          if (vOffline) {
-            vOffline.classList.remove('mode-slide-in-left', 'mode-slide-in-right');
-            void vOffline.offsetWidth;
-            vOffline.classList.add('mode-slide-in-left');
-          }
-          if (vOnline) {
-            vOnline.classList.remove('mode-slide-in-left', 'mode-slide-in-right');
-            void vOnline.offsetWidth;
-            vOnline.classList.add('mode-slide-in-left');
-          }
-        }
-      }
 
       this._lastStatus = null;
       this._lastIsOffline = null;
@@ -10023,8 +9994,49 @@
         window.go.main.App.SetInputMode(mode).catch(console.error);
       }
 
-      if (this.lastState) {
-        this.render(this.lastState);
+      const card = document.querySelector('.apple-card');
+      const isSwitching = prevMode && prevMode !== mode;
+
+      if (isSwitching && card) {
+        // Measure start height to smoothly morph card size without jarring jumps
+        const startHeight = card.offsetHeight;
+        card.style.height = `${startHeight}px`;
+        card.classList.add('morphing');
+
+        if (this.lastState) {
+          this.render(this.lastState);
+        }
+
+        const targetHeight = card.scrollHeight;
+        if (startHeight !== targetHeight) {
+          void card.offsetHeight; // force reflow
+          card.style.transition = 'height 0.32s cubic-bezier(0.16, 1, 0.3, 1)';
+          card.style.height = `${targetHeight}px`;
+
+          let cleaned = false;
+          const cleanHeight = () => {
+            if (cleaned) return;
+            cleaned = true;
+            card.removeEventListener('transitionend', onEnd);
+            card.style.height = '';
+            card.style.transition = '';
+            card.classList.remove('morphing');
+          };
+          const onEnd = (e) => {
+            if (e.target === card && e.propertyName === 'height') {
+              cleanHeight();
+            }
+          };
+          card.addEventListener('transitionend', onEnd);
+          setTimeout(cleanHeight, 350);
+        } else {
+          card.style.height = '';
+          card.classList.remove('morphing');
+        }
+      } else {
+        if (this.lastState) {
+          this.render(this.lastState);
+        }
       }
     },
 
@@ -10084,10 +10096,6 @@
       const isWizardOpen = !!(SetupWizard?.isOpen || HelpManager?.isOpen || SettingsManager?.isOpen || WelcomeManager?.isOpen || CalibrationWizard?.isOpen);
       if (cardModeHeader) {
         cardModeHeader.style.display = isWizardOpen ? 'none' : 'flex';
-      }
-      const container = document.querySelector('.modular-container');
-      if (container && !isWizardOpen) {
-        container.classList.toggle('usb-mode', this.inputMode === 'usb');
       }
 
       // Mode Branch: Stationary USB Controller Mode

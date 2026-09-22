@@ -458,11 +458,6 @@ em {
   flex-shrink: 0;
 }
 
-/* Stationary Hardware USB controller canvas (Smooth morphing expansion) */
-.modular-container.usb-mode {
-  max-width: 580px;
-}
-
 /* When Setup Wizard is open, container expands to give high-res 2-column layout */
 .modular-container.setup-mode {
   max-width: 760px;
@@ -487,6 +482,11 @@ em {
   box-shadow: var(--card-shadow);
   transition: background-color var(--transition-theme), border-color var(--transition-theme), box-shadow var(--transition-theme), padding 0.25s ease;
   overflow: visible;
+  box-sizing: border-box;
+}
+
+.apple-card.morphing {
+  overflow: hidden !important;
 }
 
 .modular-container.setup-mode .apple-card {
@@ -939,36 +939,6 @@ em {
   stroke: var(--text);
 }
 
-/* ── Directional View Transitions (Smooth Apple Crawl / Slide) ──────────────── */
-.mode-slide-in-right {
-  animation: modeSlideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.mode-slide-in-left {
-  animation: modeSlideInLeft 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-@keyframes modeSlideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(20px) scale(0.99);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
-
-@keyframes modeSlideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-20px) scale(0.99);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0) scale(1);
-  }
-}
 
 /* ── State 1: Offline Module ────────────────────────────────────────────────── */
 .offline-module {
