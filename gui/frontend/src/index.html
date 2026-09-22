@@ -93,7 +93,7 @@
 
     <!-- Top Input Mode Selector Bubble/Pill (Midway between header and card) -->
     <div class="top-mode-wrapper card-mode-header" id="card-mode-header">
-      <div class="main-mode-pill" role="tablist" aria-label="Input Mode">
+      <div class="main-mode-pill" id="card-mode-pill" data-mode="phone" role="tablist" aria-label="Input Mode">
         <div class="main-mode-glider" id="main-mode-glider"></div>
         <button type="button" class="main-mode-btn active" id="btn-mode-phone" role="tab" aria-selected="true" title="Смартфон (Wi-Fi)">
           <svg class="mode-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -362,43 +362,77 @@
           </div>
         </div>
 
-        <!-- State: USB Controller Hardware Waiting Module (Pure Apple HIG Hardware Design) -->
+        <!-- State: USB Controller Hardware Waiting Module (Pure Apple Functional Minimalism) -->
         <div class="usb-mode-module" id="view-usb-mode" style="display: none;">
-          <!-- Hardware Visual Frame with Concentric Radar Wave Glow -->
+          <!-- Apple IMU Sensor PCB Visual Frame -->
           <div class="apple-hw-hero">
             <div class="hw-radar-ring ring-1"></div>
             <div class="hw-radar-ring ring-2"></div>
             <div class="hw-device-frame">
-              <svg class="hw-controller-svg" viewBox="0 0 220 136" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg class="hw-imu-svg" viewBox="0 0 200 130" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <!-- Braided USB-C Cable entering top port -->
-                <path d="M110 0 V30" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" class="hw-cable-outer"/>
-                <path d="M110 0 V30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="hw-cable-inner"/>
-                <rect x="103" y="20" width="14" height="12" rx="3" class="hw-cable-boot"/>
-                <rect x="105" y="30" width="10" height="4" rx="1.5" class="hw-port-socket"/>
+                <path d="M100 0 V24" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" class="hw-cable-outer"/>
+                <path d="M100 0 V24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="hw-cable-inner"/>
+                <rect x="93" y="14" width="14" height="11" rx="2.5" class="hw-cable-boot"/>
+                <rect x="95" y="24" width="10" height="4" rx="1.5" class="hw-port-socket"/>
                 
-                <!-- Controller Ergonomic Shell -->
-                <path d="M52 38 C72 34 148 34 168 38 C196 44 214 74 206 108 C201 126 183 134 166 124 C150 114 142 94 126 94 H94 C78 94 70 114 54 124 C37 134 19 126 14 108 C6 74 24 44 52 38 Z" class="hw-shell-body"/>
-                <path d="M52 38 C72 34 148 34 168 38 C196 44 214 74 206 108 C201 126 183 134 166 124 C150 114 142 94 126 94 H94 C78 94 70 114 54 124 C37 134 19 126 14 108 C6 74 24 44 52 38 Z" class="hw-shell-stroke"/>
-                
-                <!-- Directional Controls (Left) -->
-                <rect x="42" y="62" width="22" height="7" rx="3.5" class="hw-dpad"/>
-                <rect x="49.5" y="54.5" width="7" height="22" rx="3.5" class="hw-dpad"/>
-                
-                <!-- Action Buttons (Right) -->
-                <circle cx="168" cy="58" r="3.2" class="hw-btn"/>
-                <circle cx="178" cy="65.5" r="3.2" class="hw-btn"/>
-                <circle cx="158" cy="65.5" r="3.2" class="hw-btn"/>
-                <circle cx="168" cy="73" r="3.2" class="hw-btn"/>
-                
-                <!-- Precision Sticks -->
-                <circle cx="82" cy="74" r="14" class="hw-stick-base"/>
-                <circle cx="82" cy="74" r="8.5" class="hw-stick-top"/>
-                <circle cx="138" cy="74" r="14" class="hw-stick-base"/>
-                <circle cx="138" cy="74" r="8.5" class="hw-stick-top"/>
-                
-                <!-- Center Breathing Status Beacon -->
-                <circle cx="110" cy="50" r="3.2" class="hw-status-beacon"/>
-                <circle cx="110" cy="50" r="9" class="hw-status-beacon-pulse"/>
+                <!-- Matte Dark PCB Board with Rounded Corners -->
+                <rect x="36" y="27" width="128" height="92" rx="12" class="hw-pcb-body"/>
+                <rect x="36" y="27" width="128" height="92" rx="12" class="hw-pcb-stroke"/>
+
+                <!-- Gold Contact Pin Headers (Left & Right) -->
+                <circle cx="45" cy="42" r="3" class="hw-gold-pin"/>
+                <circle cx="45" cy="55" r="3" class="hw-gold-pin"/>
+                <circle cx="45" cy="68" r="3" class="hw-gold-pin"/>
+                <circle cx="45" cy="81" r="3" class="hw-gold-pin"/>
+                <circle cx="45" cy="94" r="3" class="hw-gold-pin"/>
+                <circle cx="45" cy="107" r="3" class="hw-gold-pin"/>
+
+                <circle cx="155" cy="42" r="3" class="hw-gold-pin"/>
+                <circle cx="155" cy="55" r="3" class="hw-gold-pin"/>
+                <circle cx="155" cy="68" r="3" class="hw-gold-pin"/>
+                <circle cx="155" cy="81" r="3" class="hw-gold-pin"/>
+                <circle cx="155" cy="94" r="3" class="hw-gold-pin"/>
+                <circle cx="155" cy="107" r="3" class="hw-gold-pin"/>
+
+                <!-- PCB Circuit Traces -->
+                <path d="M52 42 H64 L74 54" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
+                <path d="M52 68 H66 L74 72" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
+                <path d="M52 94 H68 L76 84" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
+                <path d="M148 42 H136 L126 54" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
+                <path d="M148 68 H134 L126 72" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
+                <path d="M148 94 H132 L124 84" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
+
+                <!-- SMD Resistors / Capacitors -->
+                <rect x="74" y="36" width="9" height="5" rx="1" class="hw-smd"/>
+                <rect x="117" y="36" width="9" height="5" rx="1" class="hw-smd"/>
+                <rect x="68" y="102" width="10" height="5" rx="1" class="hw-smd"/>
+                <rect x="122" y="102" width="10" height="5" rx="1" class="hw-smd"/>
+
+                <!-- Center IMU Gyro/Accelerometer Sensor Chip (QFN IC) -->
+                <rect x="80" y="55" width="40" height="40" rx="5" class="hw-chip-body"/>
+                <rect x="80" y="55" width="40" height="40" rx="5" class="hw-chip-stroke"/>
+                <!-- IC Pin Leads -->
+                <line x1="86" y1="52" x2="86" y2="55" class="hw-chip-pin"/>
+                <line x1="93" y1="52" x2="93" y2="55" class="hw-chip-pin"/>
+                <line x1="100" y1="52" x2="100" y2="55" class="hw-chip-pin"/>
+                <line x1="107" y1="52" x2="107" y2="55" class="hw-chip-pin"/>
+                <line x1="114" y1="52" x2="114" y2="55" class="hw-chip-pin"/>
+                <line x1="86" y1="95" x2="86" y2="98" class="hw-chip-pin"/>
+                <line x1="93" y1="95" x2="93" y2="98" class="hw-chip-pin"/>
+                <line x1="100" y1="95" x2="100" y2="98" class="hw-chip-pin"/>
+                <line x1="107" y1="95" x2="107" y2="98" class="hw-chip-pin"/>
+                <line x1="114" y1="95" x2="114" y2="98" class="hw-chip-pin"/>
+
+                <!-- Gyroscope Orientation Reticle inside Chip -->
+                <circle cx="100" cy="75" r="10" class="hw-gyro-reticle"/>
+                <line x1="100" y1="62" x2="100" y2="88" class="hw-axis-line"/>
+                <line x1="87" y1="75" x2="113" y2="75" class="hw-axis-line"/>
+                <circle cx="100" cy="75" r="2.5" class="hw-axis-hub"/>
+
+                <!-- Breathing LED Beacon on PCB -->
+                <circle cx="100" cy="38" r="3" class="hw-status-beacon"/>
+                <circle cx="100" cy="38" r="8" class="hw-status-beacon-pulse"/>
               </svg>
             </div>
           </div>
@@ -406,47 +440,25 @@
           <!-- Apple Status Capsule -->
           <div class="apple-status-pill waiting">
             <span class="pulse-beacon"></span>
-            <span class="status-pill-text" data-i18n="usb_mode.status_scanning">Поиск USB-контроллера...</span>
+            <span class="status-pill-text" data-i18n="usb_mode.status_scanning">Поиск USB IMU-устройства...</span>
           </div>
 
           <!-- Headline & Description -->
-          <h2 class="apple-hw-title" data-i18n="usb_mode.title">Ожидание подключения</h2>
-          <p class="apple-hw-subtitle" data-i18n="usb_mode.desc">Подключите аппаратный модуль GyroBridge по USB-кабелю для прямого отслеживания движений.</p>
+          <h2 class="apple-hw-title" data-i18n="usb_mode.title">Ожидание IMU-датчика</h2>
+          <p class="apple-hw-subtitle" data-i18n="usb_mode.desc">Подключите совместимый IMU-модуль (гироскоп/акселерометр) по USB для прямого ввода движений.</p>
 
-          <!-- Apple Inset Hardware Specs Cards (3-column) -->
-          <div class="apple-specs-grid">
-            <div class="spec-card">
-              <div class="spec-icon-wrap">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-                </svg>
-              </div>
-              <div class="spec-value" data-i18n="usb_mode.spec_rate_val">1000 Гц</div>
-              <div class="spec-label" data-i18n="usb_mode.spec_rate_lbl">Частота опроса</div>
-            </div>
-
-            <div class="spec-card">
-              <div class="spec-icon-wrap">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 14 14"/>
-                </svg>
-              </div>
-              <div class="spec-value" data-i18n="usb_mode.spec_latency_val">&lt; 1 мс</div>
-              <div class="spec-label" data-i18n="usb_mode.spec_latency_lbl">Прямой отклик</div>
-            </div>
-
-            <div class="spec-card">
-              <div class="spec-icon-wrap">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2v6"/>
-                  <path d="m5 10 7-4 7 4v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8Z"/>
-                  <circle cx="12" cy="14" r="2"/>
-                </svg>
-              </div>
-              <div class="spec-value" data-i18n="usb_mode.spec_driver_val">Direct HID</div>
-              <div class="spec-label" data-i18n="usb_mode.spec_driver_lbl">Без драйверов</div>
-            </div>
+          <!-- Apple Inset Contract & Reference Implementation Card -->
+          <div class="apple-contract-card">
+            <span class="contract-card-hint" data-i18n="usb_mode.contract_hint">Актуальная спецификация контракта и пример реализации:</span>
+            <a href="https://github.com/MrHoustonOff/iphone-gyro-controller" target="_blank" class="apple-repo-btn" id="link-usb-repo" title="GitHub: iphone-gyro-controller">
+              <svg class="github-icon" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              <span class="repo-name">iphone-gyro-controller</span>
+              <svg class="repo-arrow" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 17L17 7M17 7H7M17 7V17"/>
+              </svg>
+            </a>
           </div>
 
           <!-- Apple Inset DSU Server Bar (Keeps all IDs for backend live updates) -->
@@ -10018,17 +10030,10 @@
     },
 
     updateModeGlider() {
-      const glider = document.getElementById('main-mode-glider');
-      const activeBtn = document.querySelector('.main-mode-btn.active');
-      const pill = document.querySelector('.main-mode-pill');
-      if (!glider || !activeBtn || !pill) return;
-      const pillRect = pill.getBoundingClientRect();
-      const btnRect = activeBtn.getBoundingClientRect();
-      if (btnRect.width === 0) return;
-      const left = btnRect.left - pillRect.left;
-      glider.style.width = `${btnRect.width}px`;
-      glider.style.transform = `translateX(${left}px)`;
-      glider.style.opacity = '1';
+      const pill = document.getElementById('card-mode-pill') || document.querySelector('.main-mode-pill');
+      if (pill) {
+        pill.setAttribute('data-mode', this.inputMode);
+      }
     },
 
     render(state) {

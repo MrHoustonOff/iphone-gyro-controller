@@ -530,9 +530,11 @@
     "usb_hint": "Direct high-speed cable feed"
   },
   "usb_mode": {
-    "title": "Waiting for Connection",
-    "desc": "Connect your GyroBridge hardware controller via USB cable for direct motion tracking.",
-    "status_scanning": "Searching for USB controller...",
+    "title": "Waiting for IMU Sensor",
+    "desc": "Connect a compatible USB IMU sensor (gyroscope/accelerometer) to stream motion data.",
+    "status_scanning": "Searching for USB IMU device...",
+    "contract_hint": "Hardware contract specifications and reference implementation:",
+    "repo_btn": "Project Repository",
     "spec_rate_val": "1000 Hz",
     "spec_rate_lbl": "Polling Rate",
     "spec_latency_val": "< 1 ms",
