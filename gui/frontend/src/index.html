@@ -365,74 +365,76 @@
         <!-- State: USB Controller Hardware Waiting Module (Pure Apple Functional Minimalism) -->
         <div class="usb-mode-module" id="view-usb-mode" style="display: none;">
           <!-- Apple IMU Sensor PCB Visual Frame -->
+          <!-- Apple IMU Sensor Visual Frame (Minimalist Apple Unibody Industrial Design) -->
           <div class="apple-hw-hero">
             <div class="hw-radar-ring ring-1"></div>
             <div class="hw-radar-ring ring-2"></div>
             <div class="hw-device-frame">
-              <svg class="hw-imu-svg" viewBox="0 0 200 130" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Braided USB-C Cable entering top port -->
-                <path d="M100 0 V24" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" class="hw-cable-outer"/>
-                <path d="M100 0 V24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="hw-cable-inner"/>
-                <rect x="93" y="14" width="14" height="11" rx="2.5" class="hw-cable-boot"/>
-                <rect x="95" y="24" width="10" height="4" rx="1.5" class="hw-port-socket"/>
+              <svg class="hw-imu-svg" viewBox="0 0 160 144" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <linearGradient id="hw-body-grad" x1="80" y1="34" x2="80" y2="126" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#2C2C2E"/>
+                    <stop offset="100%" stop-color="#161618"/>
+                  </linearGradient>
+                  <linearGradient id="hw-body-light" x1="80" y1="34" x2="80" y2="126" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#FFFFFF"/>
+                    <stop offset="100%" stop-color="#E8E8ED"/>
+                  </linearGradient>
+                  <linearGradient id="hw-bevel-grad" x1="80" y1="34" x2="80" y2="126" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="rgba(255, 255, 255, 0.18)"/>
+                    <stop offset="50%" stop-color="rgba(255, 255, 255, 0.02)"/>
+                    <stop offset="100%" stop-color="rgba(0, 0, 0, 0.25)"/>
+                  </linearGradient>
+                  <filter id="hw-jewel-glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur"/>
+                    <feMerge>
+                      <feMergeNode in="blur"/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                <!-- Braided USB-C Cable -->
+                <path d="M80 0 V24" stroke="currentColor" stroke-width="3" stroke-linecap="round" class="hw-cable-outer"/>
+                <path d="M80 0 V24" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" class="hw-cable-inner"/>
+                <!-- Minimal Aluminum Connector Boot -->
+                <rect x="73.5" y="16" width="13" height="14" rx="3" class="hw-cable-boot"/>
+                <!-- USB-C Port Entry Seam -->
+                <rect x="75" y="30" width="10" height="3" rx="1.5" class="hw-port-socket"/>
+
+                <!-- Unibody Sensor Enclosure (Continuous Curvature Squircle) -->
+                <rect x="36" y="34" width="88" height="92" rx="22" class="hw-sensor-body"/>
+                <rect x="36" y="34" width="88" height="92" rx="22" class="hw-sensor-stroke"/>
+                <rect x="37" y="35" width="86" height="90" rx="21" class="hw-sensor-bevel"/>
+
+                <!-- Recessed Precision Gyroscope Crystal Window -->
+                <circle cx="80" cy="74" r="26" class="hw-sensor-lens"/>
+                <circle cx="80" cy="74" r="26" class="hw-sensor-lens-rim"/>
+
+                <!-- 3-Axis Gyroscope Gimbal Instrument (SF Symbol Precision Motion Language) -->
+                <!-- Yaw Gimbal Ring (Equatorial) -->
+                <ellipse cx="80" cy="74" rx="19" ry="8" class="hw-gimbal-ring hw-gimbal-yaw"/>
                 
-                <!-- Matte Dark PCB Board with Rounded Corners -->
-                <rect x="36" y="27" width="128" height="92" rx="12" class="hw-pcb-body"/>
-                <rect x="36" y="27" width="128" height="92" rx="12" class="hw-pcb-stroke"/>
+                <!-- Pitch Gimbal Ring (Tilted -38°) -->
+                <g transform="rotate(-38 80 74)">
+                  <ellipse cx="80" cy="74" rx="16" ry="6.5" class="hw-gimbal-ring hw-gimbal-pitch"/>
+                </g>
 
-                <!-- Gold Contact Pin Headers (Left & Right) -->
-                <circle cx="45" cy="42" r="3" class="hw-gold-pin"/>
-                <circle cx="45" cy="55" r="3" class="hw-gold-pin"/>
-                <circle cx="45" cy="68" r="3" class="hw-gold-pin"/>
-                <circle cx="45" cy="81" r="3" class="hw-gold-pin"/>
-                <circle cx="45" cy="94" r="3" class="hw-gold-pin"/>
-                <circle cx="45" cy="107" r="3" class="hw-gold-pin"/>
+                <!-- Roll Gimbal Ring (Tilted +52°) -->
+                <g transform="rotate(52 80 74)">
+                  <ellipse cx="80" cy="74" rx="13" ry="5.5" class="hw-gimbal-ring hw-gimbal-roll"/>
+                </g>
 
-                <circle cx="155" cy="42" r="3" class="hw-gold-pin"/>
-                <circle cx="155" cy="55" r="3" class="hw-gold-pin"/>
-                <circle cx="155" cy="68" r="3" class="hw-gold-pin"/>
-                <circle cx="155" cy="81" r="3" class="hw-gold-pin"/>
-                <circle cx="155" cy="94" r="3" class="hw-gold-pin"/>
-                <circle cx="155" cy="107" r="3" class="hw-gold-pin"/>
+                <!-- Primary Orientation Vector / Coordinate Axis -->
+                <line x1="80" y1="59" x2="80" y2="89" class="hw-gimbal-axis"/>
+                <polygon points="80,57 78,62 82,62" class="hw-axis-arrow"/>
 
-                <!-- PCB Circuit Traces -->
-                <path d="M52 42 H64 L74 54" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
-                <path d="M52 68 H66 L74 72" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
-                <path d="M52 94 H68 L76 84" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
-                <path d="M148 42 H136 L126 54" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
-                <path d="M148 68 H134 L126 72" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
-                <path d="M148 94 H132 L124 84" stroke="currentColor" stroke-width="1.2" class="hw-trace"/>
+                <!-- Central Inertial Jewel (Apple Blue Beacon) -->
+                <circle cx="80" cy="74" r="6" class="hw-hub-pulse"/>
+                <circle cx="80" cy="74" r="2.8" class="hw-hub-jewel" filter="url(#hw-jewel-glow)"/>
 
-                <!-- SMD Resistors / Capacitors -->
-                <rect x="74" y="36" width="9" height="5" rx="1" class="hw-smd"/>
-                <rect x="117" y="36" width="9" height="5" rx="1" class="hw-smd"/>
-                <rect x="68" y="102" width="10" height="5" rx="1" class="hw-smd"/>
-                <rect x="122" y="102" width="10" height="5" rx="1" class="hw-smd"/>
-
-                <!-- Center IMU Gyro/Accelerometer Sensor Chip (QFN IC) -->
-                <rect x="80" y="55" width="40" height="40" rx="5" class="hw-chip-body"/>
-                <rect x="80" y="55" width="40" height="40" rx="5" class="hw-chip-stroke"/>
-                <!-- IC Pin Leads -->
-                <line x1="86" y1="52" x2="86" y2="55" class="hw-chip-pin"/>
-                <line x1="93" y1="52" x2="93" y2="55" class="hw-chip-pin"/>
-                <line x1="100" y1="52" x2="100" y2="55" class="hw-chip-pin"/>
-                <line x1="107" y1="52" x2="107" y2="55" class="hw-chip-pin"/>
-                <line x1="114" y1="52" x2="114" y2="55" class="hw-chip-pin"/>
-                <line x1="86" y1="95" x2="86" y2="98" class="hw-chip-pin"/>
-                <line x1="93" y1="95" x2="93" y2="98" class="hw-chip-pin"/>
-                <line x1="100" y1="95" x2="100" y2="98" class="hw-chip-pin"/>
-                <line x1="107" y1="95" x2="107" y2="98" class="hw-chip-pin"/>
-                <line x1="114" y1="95" x2="114" y2="98" class="hw-chip-pin"/>
-
-                <!-- Gyroscope Orientation Reticle inside Chip -->
-                <circle cx="100" cy="75" r="10" class="hw-gyro-reticle"/>
-                <line x1="100" y1="62" x2="100" y2="88" class="hw-axis-line"/>
-                <line x1="87" y1="75" x2="113" y2="75" class="hw-axis-line"/>
-                <circle cx="100" cy="75" r="2.5" class="hw-axis-hub"/>
-
-                <!-- Breathing LED Beacon on PCB -->
-                <circle cx="100" cy="38" r="3" class="hw-status-beacon"/>
-                <circle cx="100" cy="38" r="8" class="hw-status-beacon-pulse"/>
+                <!-- Precision Laser-Etched Micro-Typography -->
+                <text x="80" y="114" class="hw-sensor-label">6-AXIS IMU</text>
               </svg>
             </div>
           </div>
@@ -487,7 +489,7 @@
               <line x1="12" y1="16" x2="12" y2="12"/>
               <line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
-            <span data-i18n="usb_mode.footnote">Режим прямого проводного подключения • Wi-Fi выключен</span>
+            <span data-i18n="usb_mode.footnote">Прямая передача данных по USB • Протокол Cemuhook DSU</span>
           </div>
         </div>
 

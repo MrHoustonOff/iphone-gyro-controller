@@ -546,6 +546,6 @@
     "pill_version": "GyroBridge 2.0 Preview",
     "phone_blocked_notice": "In hardware mode, smartphone Wi-Fi connections are disabled.",
     "switch_hint": "To connect a smartphone, switch to 'Smartphone' above.",
-    "footnote": "Direct hardware USB mode • Wi-Fi is inactive"
+    "footnote": "Direct USB motion stream • Cemuhook DSU protocol"
   }
 }

@@ -619,8 +619,8 @@ em {
 .hw-device-frame {
   position: relative;
   z-index: 2;
-  width: 220px;
-  height: 136px;
+  width: 160px;
+  height: 144px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -628,121 +628,157 @@ em {
 }
 
 [data-theme="light"] .hw-device-frame {
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.08));
 }
 
-/* IMU Sensor PCB Vector Styling */
+/* Apple IMU Minimalist Hardware Styling */
 .hw-imu-svg {
   width: 100%;
   height: 100%;
   overflow: visible;
 }
 
-.hw-pcb-body {
-  fill: #1C1C1E;
+.hw-sensor-body {
+  fill: url(#hw-body-grad);
   transition: fill var(--transition-theme);
 }
 
-[data-theme="light"] .hw-pcb-body {
-  fill: #E5E5EA;
+[data-theme="light"] .hw-sensor-body {
+  fill: url(#hw-body-light);
 }
 
-.hw-pcb-stroke {
+.hw-sensor-stroke {
   fill: none;
-  stroke: var(--border);
-  stroke-width: 1.5;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1;
   transition: stroke var(--transition-theme);
 }
 
-.hw-gold-pin {
-  fill: #FFD60A;
-  opacity: 0.9;
-  filter: drop-shadow(0 0 1px rgba(255, 214, 10, 0.5));
+[data-theme="light"] .hw-sensor-stroke {
+  stroke: rgba(0, 0, 0, 0.1);
 }
 
-[data-theme="light"] .hw-gold-pin {
-  fill: #D4A017;
-}
-
-.hw-trace {
-  stroke: rgba(255, 214, 10, 0.25);
-  transition: stroke var(--transition-theme);
-}
-
-[data-theme="light"] .hw-trace {
-  stroke: rgba(180, 130, 20, 0.25);
-}
-
-.hw-smd {
-  fill: #3A3A3C;
-  stroke: var(--border);
-  stroke-width: 0.5;
-}
-
-[data-theme="light"] .hw-smd {
-  fill: #C7C7CC;
-}
-
-.hw-chip-body {
-  fill: #141416;
-  transition: fill var(--transition-theme);
-}
-
-[data-theme="light"] .hw-chip-body {
-  fill: #D1D1D6;
-}
-
-.hw-chip-stroke {
+.hw-sensor-bevel {
   fill: none;
-  stroke: var(--border-subtle);
+  stroke: url(#hw-bevel-grad);
   stroke-width: 1;
 }
 
-.hw-chip-pin {
-  stroke: #FFD60A;
+[data-theme="light"] .hw-sensor-bevel {
+  display: none;
+}
+
+.hw-sensor-lens {
+  fill: #111113;
+  transition: fill var(--transition-theme);
+}
+
+[data-theme="light"] .hw-sensor-lens {
+  fill: #F2F2F7;
+}
+
+.hw-sensor-lens-rim {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+  transition: stroke var(--transition-theme);
+}
+
+[data-theme="light"] .hw-sensor-lens-rim {
+  stroke: rgba(0, 0, 0, 0.06);
+}
+
+/* 3-Axis Gyroscope Gimbal Rings */
+.hw-gimbal-ring {
+  fill: none;
+}
+
+.hw-gimbal-yaw {
+  stroke: rgba(255, 255, 255, 0.35);
   stroke-width: 1.2;
-  opacity: 0.8;
 }
 
-[data-theme="light"] .hw-chip-pin {
-  stroke: #D4A017;
+[data-theme="light"] .hw-gimbal-yaw {
+  stroke: rgba(0, 0, 0, 0.32);
 }
 
-.hw-gyro-reticle {
+.hw-gimbal-pitch {
   stroke: #0A84FF;
   stroke-width: 1.2;
-  stroke-dasharray: 2 2;
-  animation: gyroSpinReticle 12s linear infinite;
-  transform-origin: 100px 75px;
+  opacity: 0.85;
 }
 
-[data-theme="light"] .hw-gyro-reticle {
+[data-theme="light"] .hw-gimbal-pitch {
   stroke: #0071E3;
 }
 
-@keyframes gyroSpinReticle {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-.hw-axis-line {
+.hw-gimbal-roll {
   stroke: #0A84FF;
-  stroke-width: 1.2;
-  opacity: 0.75;
+  stroke-width: 1.1;
+  stroke-dasharray: 2.5 2;
+  opacity: 0.6;
 }
 
-[data-theme="light"] .hw-axis-line {
+[data-theme="light"] .hw-gimbal-roll {
   stroke: #0071E3;
 }
 
-.hw-axis-hub {
+.hw-gimbal-axis {
+  stroke: #0A84FF;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+[data-theme="light"] .hw-gimbal-axis {
+  stroke: #0071E3;
+}
+
+.hw-axis-arrow {
   fill: #0A84FF;
 }
 
-[data-theme="light"] .hw-axis-hub {
+[data-theme="light"] .hw-axis-arrow {
   fill: #0071E3;
 }
 
+/* Inertial Jewel & Breathing Halo */
+.hw-hub-pulse {
+  fill: rgba(10, 132, 255, 0.25);
+  animation: hubBreathe 2.6s infinite ease-out;
+  transform-origin: 80px 74px;
+}
+
+[data-theme="light"] .hw-hub-pulse {
+  fill: rgba(0, 113, 227, 0.2);
+}
+
+.hw-hub-jewel {
+  fill: #0A84FF;
+}
+
+[data-theme="light"] .hw-hub-jewel {
+  fill: #0071E3;
+}
+
+@keyframes hubBreathe {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  70% { transform: scale(1.8); opacity: 0; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+/* Laser-etched Micro Typography */
+.hw-sensor-label {
+  font-family: var(--font-sans);
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  fill: var(--text-tertiary);
+  text-anchor: middle;
+  opacity: 0.65;
+  user-select: none;
+}
+
+/* USB-C Cable Components */
 .hw-cable-outer {
   stroke: var(--border-subtle);
   transition: stroke var(--transition-theme);
@@ -765,35 +801,6 @@ em {
   stroke-width: 1;
 }
 
-.hw-status-beacon {
-  fill: #0A84FF;
-  animation: beaconBreathe 2.4s infinite ease-in-out;
-}
-
-[data-theme="light"] .hw-status-beacon {
-  fill: #0071E3;
-}
-
-.hw-status-beacon-pulse {
-  fill: rgba(10, 132, 255, 0.25);
-  animation: beaconPulseRing 2.4s infinite ease-out;
-}
-
-[data-theme="light"] .hw-status-beacon-pulse {
-  fill: rgba(0, 113, 227, 0.2);
-}
-
-@keyframes beaconBreathe {
-  0%, 100% { opacity: 0.65; transform-origin: 100px 38px; transform: scale(0.95); }
-  50% { opacity: 1; transform-origin: 100px 38px; transform: scale(1.15); filter: drop-shadow(0 0 6px rgba(10, 132, 255, 0.9)); }
-}
-
-@keyframes beaconPulseRing {
-  0% { transform-origin: 100px 38px; transform: scale(0.8); opacity: 0.8; }
-  70% { transform-origin: 100px 38px; transform: scale(2); opacity: 0; }
-  100% { transform-origin: 100px 38px; transform: scale(2); opacity: 0; }
-}
-
 /* Concentric Apple Radar Rings */
 .hw-radar-ring {
   position: absolute;
@@ -801,37 +808,37 @@ em {
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px solid rgba(10, 132, 255, 0.28);
+  border: 1px solid rgba(10, 132, 255, 0.24);
   pointer-events: none;
   z-index: 1;
 }
 
 [data-theme="light"] .hw-radar-ring {
-  border-color: rgba(0, 113, 227, 0.22);
+  border-color: rgba(0, 113, 227, 0.18);
 }
 
 .hw-radar-ring.ring-1 {
-  width: 170px;
-  height: 170px;
-  animation: appleRadar 3.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+  width: 154px;
+  height: 154px;
+  animation: appleRadar 3.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
 .hw-radar-ring.ring-2 {
-  width: 220px;
-  height: 220px;
-  animation: appleRadar 3.2s cubic-bezier(0.2, 0.8, 0.2, 1) 1.6s infinite;
+  width: 196px;
+  height: 196px;
+  animation: appleRadar 3.4s cubic-bezier(0.2, 0.8, 0.2, 1) 1.7s infinite;
 }
 
 @keyframes appleRadar {
   0% {
     transform: translate(-50%, -50%) scale(0.7);
-    opacity: 0.8;
+    opacity: 0.7;
   }
   60% {
-    opacity: 0.22;
+    opacity: 0.18;
   }
   100% {
-    transform: translate(-50%, -50%) scale(1.18);
+    transform: translate(-50%, -50%) scale(1.15);
     opacity: 0;
   }
 }
