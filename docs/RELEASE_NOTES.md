@@ -1,6 +1,27 @@
-# GyroBridge v1.1.2
+# GyroBridge v1.1.3
 
 GyroBridge turns your smartphone (iOS or Android) into a high-precision, low-latency motion controller for PC games and emulators via the Cemuhook DSU protocol.
+
+---
+
+## What's New in v1.1.3
+
+### Sound Effects Mixer & New Audio Cues
+- **Detailed Sound Mixer**: Expandable drawer with individual volume sliders (0x to 3x) and play-test buttons for every event:
+  - Phone Connection (`connect`)
+  - Phone Disconnection (`disconnect`)
+  - Emulator Client Subscription (`dsu`)
+  - Orientation Recenter (`recenter`)
+  - Test Bench Goal / Target Hit (`goal`)
+  - Test Bench Ball Abyss Fall (`defeat`)
+- **New Audio Cues**: Distinct chime synthesized on Cemuhook DSU client connection and Recenter reset.
+- **Synthesizer Tuning**: Overhauled ball fall defeat sound synthesis with unblocked playback.
+
+### Action-Driven Settings & UX
+- **Instant Auto-Save**: Action-driven settings engine with immediate live persistence on change.
+- **Modified Field Indicators**: Subtle indicator dot next to any setting modified from its default value.
+- **CSS Zoom Normalization**: Floating tooltips and custom select dropdowns properly compensate for display zoom (0.8x - 1.4x).
+- **Clean Audio Controls**: Streamlined audio test buttons without intrusive tooltips.
 
 ---
 
