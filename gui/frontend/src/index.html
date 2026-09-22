@@ -6010,6 +6010,8 @@
       const soundDrawer = document.getElementById('sound-details-drawer');
       const toggleDrawer = () => {
         if (!soundDrawer) return;
+        const tt = document.getElementById('settings-floating-tooltip');
+        if (tt) { tt.classList.remove('show'); tt.style.display = 'none'; }
         const isHidden = (soundDrawer.style.display === 'none' || !soundDrawer.classList.contains('open'));
         if (isHidden) {
           soundDrawer.style.display = 'flex';
@@ -6388,40 +6390,76 @@
       const tooltipEl = document.getElementById('settings-floating-tooltip');
       if (!tooltipEl) return;
 
+      let currentTarget = null;
+
+      const hideTooltip = () => {
+        currentTarget = null;
+        tooltipEl.classList.remove('show');
+        tooltipEl.style.display = 'none';
+      };
+
+      const updateTooltipPosition = (targetEl) => {
+        if (!targetEl || !targetEl.isConnected) {
+          hideTooltip();
+          return;
+        }
+        const rect = targetEl.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) {
+          hideTooltip();
+          return;
+        }
+
+        // Measure REAL rendered dimensions
+        const ttWidth = tooltipEl.offsetWidth;
+        const ttHeight = tooltipEl.offsetHeight;
+
+        // Exact horizontal centering on target element
+        let left = rect.left + (rect.width / 2) - (ttWidth / 2);
+        const margin = 12;
+        if (left < margin) {
+          left = margin;
+        }
+        if (left + ttWidth > window.innerWidth - margin) {
+          left = window.innerWidth - ttWidth - margin;
+        }
+
+        // Avoid overlapping the app header (height ~52px)
+        const headerEl = document.querySelector('.app-header');
+        const headerBottom = headerEl ? headerEl.getBoundingClientRect().bottom : 52;
+        const topBoundary = Math.max(margin, headerBottom + 6);
+
+        // Prefer placing 8px above target element
+        let top = rect.top - ttHeight - 8;
+        if (top < topBoundary) {
+          // If not enough room above, place 8px below target element
+          top = rect.bottom + 8;
+        }
+        // If bottom extends outside viewport, clamp cleanly
+        if (top + ttHeight > window.innerHeight - margin) {
+          top = Math.max(topBoundary, window.innerHeight - ttHeight - margin);
+        }
+
+        tooltipEl.style.left = Math.round(left) + 'px';
+        tooltipEl.style.top = Math.round(top) + 'px';
+      };
+
       const showTooltip = (targetEl) => {
+        if (!targetEl || !targetEl.isConnected) return;
         const tipKey = targetEl.getAttribute('data-i18n-tip');
         if (!tipKey) return;
         const text = I18n.t(tipKey) || tipKey;
         if (!text) return;
 
+        currentTarget = targetEl;
         tooltipEl.textContent = text;
         tooltipEl.style.display = 'block';
         tooltipEl.style.visibility = 'hidden';
 
-        const rect = targetEl.getBoundingClientRect();
-        const ttWidth = Math.min(280, window.innerWidth - 24);
-        let left = rect.left + (rect.width / 2) - (ttWidth / 2);
-        if (left < 12) left = 12;
-        if (left + ttWidth > window.innerWidth - 12) left = window.innerWidth - ttWidth - 12;
+        updateTooltipPosition(targetEl);
 
-        let top = rect.top - 8 - tooltipEl.offsetHeight;
-        if (top < 12) {
-          top = rect.bottom + 8;
-        }
-        if (top + tooltipEl.offsetHeight > window.innerHeight - 12) {
-          top = Math.max(12, window.innerHeight - tooltipEl.offsetHeight - 12);
-        }
-
-        tooltipEl.style.left = left + 'px';
-        tooltipEl.style.top = top + 'px';
         tooltipEl.style.visibility = 'visible';
         void tooltipEl.offsetWidth;
         tooltipEl.classList.add('show');
-      };
-
-      const hideTooltip = () => {
-        tooltipEl.classList.remove('show');
-        tooltipEl.style.display = 'none';
       };
 
       const container = document.getElementById('view-settings');
@@ -6432,15 +6470,25 @@
           el.addEventListener('click', (e) => {
             if (el.classList.contains('setting-infotip')) {
               e.stopPropagation();
-              if (tooltipEl.classList.contains('show')) {
+              if (tooltipEl.classList.contains('show') && currentTarget === el) {
                 hideTooltip();
               } else {
                 showTooltip(el);
               }
+            } else {
+              hideTooltip();
             }
           });
         });
       }
+
+      // Hide tooltip when scrolling or resizing so it never detaches from the trigger
+      const appMain = document.querySelector('.app-main');
+      if (appMain) {
+        appMain.addEventListener('scroll', hideTooltip, { passive: true });
+      }
+      window.addEventListener('scroll', hideTooltip, { passive: true });
+      window.addEventListener('resize', hideTooltip, { passive: true });
 
       document.addEventListener('click', (e) => {
         if (!e.target.closest('[data-i18n-tip]') && !e.target.closest('#settings-floating-tooltip')) {

@@ -524,9 +524,9 @@ func TestProfileSlots6_And_SettingsPersistence(t *testing.T) {
 	}
 
 	// Test sound volumes persistence
-	defaultVols := app.getSoundVolumes()
-	if defaultVols["connect"] != 1 || defaultVols["dsu"] != 1 || defaultVols["recenter"] != 1 {
-		t.Fatalf("expected default sound volumes of 1, got %+v", defaultVols)
+	defs := defaultSoundVolumes()
+	if defs["connect"] != 1 || defs["dsu"] != 1 || defs["recenter"] != 1 {
+		t.Fatalf("expected default sound volumes of 1, got %+v", defs)
 	}
 	customVols := map[string]int{
 		"connect":    2,
