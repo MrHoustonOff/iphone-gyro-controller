@@ -170,7 +170,7 @@ It is vital to pause here and understand the fundamental physical difference:
 * **«Statistics» Tab (Telemetry):**  
   Enables real-time monitoring of connection quality: polling rate (FPS), bitrate, network ping (typically a solid <span style="color: #34c759">**1–3 ms**</span> over local Wi-Fi), and the live list of connected emulator clients with their exact IP and port.
 * **«Settings» Tab:**  
-  Configure DSU port (`26760`), select network interfaces, customize close-button behavior (minimize to system tray with ultra-low RAM usage), and switch UI language.
+  Configure DSU port (`26760`), select network interfaces, customize close-button behavior (minimize to system tray with ultra-low RAM usage), switch UI language, and customize the **global Windows recenter hotkey** (default: `Ctrl+Shift+R`) with an Apple-style interactive shortcut recorder.
 
 ![Statistics and Settings](imgs/pc-stats-and-settings.png)
 
