@@ -6,6 +6,10 @@ export function GetDeviceStatus() {
   return window['go']['main']['LiveDebugApp']['GetDeviceStatus']();
 }
 
+export function GetFullStatus() {
+  return window['go']['main']['LiveDebugApp']['GetFullStatus']();
+}
+
 export function OpenInFolder(arg1) {
   return window['go']['main']['LiveDebugApp']['OpenInFolder'](arg1);
 }

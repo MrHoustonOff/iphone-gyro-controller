@@ -41,6 +41,22 @@ func main() {
 			wailsRuntime.WindowCenter(ctx)
 		},
 		OnShutdown: app.shutdown,
+		OnBeforeClose: func(ctx context.Context) (prevent bool) {
+			if app.quitting.Load() {
+				return false
+			}
+			action := app.GetCloseAction()
+			switch action {
+			case "minimize":
+				wailsRuntime.WindowHide(ctx)
+				return true
+			case "quit":
+				return false
+			default: // "ask"
+				wailsRuntime.EventsEmit(ctx, "app:confirm-close")
+				return true
+			}
+		},
 		SingleInstanceLock: &options.SingleInstanceLock{
 			UniqueId: "gyrobridge-desktop-lock-uuid",
 			OnSecondInstanceLaunch: func(secondInstanceData options.SecondInstanceData) {

@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"math"
 	"mime"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -92,9 +93,11 @@ type AppState struct {
 	AhrsQ0 float64 `json:"ahrsQ0"`
 	AhrsQ1 float64 `json:"ahrsQ1"`
 	AhrsQ2 float64 `json:"ahrsQ2"`
-	AhrsQ3      float64 `json:"ahrsQ3"`
-	FirstLaunch bool    `json:"firstLaunch"`
-	HideAuthor  bool    `json:"hideAuthor"`
+	AhrsQ3        float64          `json:"ahrsQ3"`
+	FirstLaunch   bool             `json:"firstLaunch"`
+	HideAuthor    bool             `json:"hideAuthor"`
+	DsuClients    int              `json:"dsuClients"`
+	DsuClientList []dsu.ClientInfo `json:"dsuClientList"`
 }
 
 // captureSample holds raw 60 Hz gyro and accel readings
@@ -216,6 +219,8 @@ type App struct {
 	lastResStats atomic.Pointer[map[string]any]
 	// Advanced configuration settings
 	dsuPort          int
+	dsuMAC           string
+	dsuMACMu         sync.RWMutex
 	httpPort         int
 	httpsPort           int
 	gyroDeadzoneBits    atomic.Uint64
@@ -233,6 +238,12 @@ type App struct {
 	tuningActive        atomic.Bool
 	lastTuningEmit      atomic.Int64
 	fontScaleBits       atomic.Uint64
+	// System Tray & Window Lifecycle
+	minimizeToTray      atomic.Bool
+	closeActionMu       sync.RWMutex
+	closeAction         string // "ask", "minimize", "quit"
+	quitting            atomic.Bool
+	trayMgr             *TrayManager
 }
 
 // AppSettings holds configurable parameters exposed in the settings window
@@ -244,6 +255,7 @@ type AppSettings struct {
 	FirstLaunchDone   bool    `json:"firstLaunchDone"`
 	HideAuthor        bool    `json:"hideAuthor"`
 	DSUPort           int     `json:"dsuPort"`
+	DSUMAC            string  `json:"dsuMac"`
 	HTTPPort          int     `json:"httpPort"`
 	HTTPSPort         int     `json:"httpsPort"`
 	GyroDeadzone      float64 `json:"gyroDeadzone"`
@@ -255,6 +267,8 @@ type AppSettings struct {
 	GyroSmoothing     float64 `json:"gyroSmoothing"`
 	GyroDeadband      float64 `json:"gyroDeadband"`
 	GyroSensitivity   float64 `json:"gyroSensitivity"`
+	MinimizeToTray    bool    `json:"minimizeToTray"`
+	CloseAction       string  `json:"closeAction"`
 }
 
 // TuningFrame conveys simultaneous raw and filtered telemetry to the frontend tuning bench
@@ -551,6 +565,7 @@ func NewApp() *App {
 	app.soundMode = "cute"
 	app.soundVolume.Store(1)
 	app.deviceName.Store("Controller")
+	app.minimizeToTray.Store(true)
 
 	// Initialize 6 empty slots with default portrait matrix
 	for i := range app.profiles {
@@ -599,6 +614,35 @@ func (a *App) logEvent(level, format string, args ...any) {
 	fmt.Fprintf(f, "[%s] [%s] %s\n", ts, level, msg)
 }
 
+func formatMAC(b [6]byte) string {
+	return fmt.Sprintf("%02X:%02X:%02X:%02X:%02X:%02X", b[0], b[1], b[2], b[3], b[4], b[5])
+}
+
+func parseMAC(s string) ([6]byte, error) {
+	var b [6]byte
+	hw, err := net.ParseMAC(strings.TrimSpace(s))
+	if err != nil {
+		return b, err
+	}
+	if len(hw) != 6 {
+		return b, fmt.Errorf("MAC address must be 6 bytes")
+	}
+	copy(b[:], hw[:6])
+	return b, nil
+}
+
+func (a *App) getDSUMAC() string {
+	a.dsuMACMu.RLock()
+	defer a.dsuMACMu.RUnlock()
+	return a.dsuMAC
+}
+
+func (a *App) setDSUMAC(mac string) {
+	a.dsuMACMu.Lock()
+	a.dsuMAC = mac
+	a.dsuMACMu.Unlock()
+}
+
 // loadSettings loads theme, language, and slot preferences from settings.json
 func (a *App) loadSettings() {
 	if a.profilesDir == "" {
@@ -614,6 +658,10 @@ func (a *App) loadSettings() {
 			a.currentLang = "ru"
 		}
 		a.themeMu.Unlock()
+		if a.getDSUMAC() == "" {
+			mac := dsu.GenerateRandomMAC()
+			a.setDSUMAC(formatMAC(mac))
+		}
 		return
 	}
 	var s struct {
@@ -623,6 +671,7 @@ func (a *App) loadSettings() {
 		FirstLaunchDone   bool     `json:"firstLaunchDone"`
 		HideAuthor        bool     `json:"hideAuthor"`
 		DSUPort           int      `json:"dsuPort"`
+		DSUMAC            string   `json:"dsuMac"`
 		HTTPPort          int      `json:"httpPort"`
 		HTTPSPort         int      `json:"httpsPort"`
 		GyroDeadzone      float64  `json:"gyroDeadzone"`
@@ -635,6 +684,8 @@ func (a *App) loadSettings() {
 		GyroDeadband      *float64 `json:"gyroDeadband,omitempty"`
 		GyroSensitivity   *float64 `json:"gyroSensitivity,omitempty"`
 		FontScale         *float64 `json:"fontScale,omitempty"`
+		MinimizeToTray    *bool    `json:"minimizeToTray,omitempty"`
+		CloseAction       string   `json:"closeAction,omitempty"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
@@ -657,6 +708,13 @@ func (a *App) loadSettings() {
 		a.activeSlot = s.ActiveSlot
 	}
 	a.profilesMu.Unlock()
+
+	if parsed, err := parseMAC(s.DSUMAC); err == nil {
+		a.setDSUMAC(formatMAC(parsed))
+	} else {
+		mac := dsu.GenerateRandomMAC()
+		a.setDSUMAC(formatMAC(mac))
+	}
 
 	if s.DSUPort >= 1024 && s.DSUPort <= 65535 {
 		a.dsuPort = s.DSUPort
@@ -712,6 +770,17 @@ func (a *App) loadSettings() {
 		a.fontScaleBits.Store(math.Float64bits(*s.FontScale))
 	} else {
 		a.fontScaleBits.Store(math.Float64bits(1.00))
+	}
+	if s.CloseAction == "minimize" || s.CloseAction == "quit" || s.CloseAction == "ask" {
+		a.closeActionMu.Lock()
+		a.closeAction = s.CloseAction
+		a.closeActionMu.Unlock()
+		a.minimizeToTray.Store(s.CloseAction == "minimize")
+	} else {
+		a.closeActionMu.Lock()
+		a.closeAction = "ask"
+		a.closeActionMu.Unlock()
+		a.minimizeToTray.Store(true)
 	}
 	a.updateFilterParams()
 }
@@ -777,6 +846,13 @@ func (a *App) saveSettings() {
 		fontScale = 1.00
 	}
 
+	dsuMacStr := a.getDSUMAC()
+	if dsuMacStr == "" {
+		mac := dsu.GenerateRandomMAC()
+		dsuMacStr = formatMAC(mac)
+		a.setDSUMAC(dsuMacStr)
+	}
+
 	s := AppSettings{
 		Theme:             theme,
 		Lang:              lang,
@@ -785,6 +861,7 @@ func (a *App) saveSettings() {
 		FirstLaunchDone:   firstLaunchDone,
 		HideAuthor:        hideAuthor,
 		DSUPort:           dsuP,
+		DSUMAC:            dsuMacStr,
 		HTTPPort:          httpP,
 		HTTPSPort:         httpsP,
 		GyroDeadzone:      deadzone,
@@ -796,6 +873,8 @@ func (a *App) saveSettings() {
 		GyroSmoothing:     smoothing,
 		GyroDeadband:      deadband,
 		GyroSensitivity:   sensitivity,
+		MinimizeToTray:    a.GetCloseAction() == "minimize",
+		CloseAction:       a.GetCloseAction(),
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -938,9 +1017,137 @@ func (a *App) saveProfiles() {
 	a.saveSettings()
 }
 
+// ShowWindow restores and brings the main application window to the foreground.
+func (a *App) ShowWindow() {
+	if a.ctx != nil {
+		wailsRuntime.WindowShow(a.ctx)
+		wailsRuntime.WindowUnminimise(a.ctx)
+		wailsRuntime.WindowSetAlwaysOnTop(a.ctx, true)
+		wailsRuntime.WindowSetAlwaysOnTop(a.ctx, false)
+	}
+}
+
+// QuitApp cleanly terminates the entire application.
+func (a *App) QuitApp() {
+	a.quitting.Store(true)
+	if a.trayMgr != nil {
+		a.trayMgr.Stop()
+	}
+	if a.ctx != nil {
+		wailsRuntime.Quit(a.ctx)
+	}
+}
+
+// GetCloseAction returns the current action on window close ("ask", "minimize", "quit").
+func (a *App) GetCloseAction() string {
+	a.closeActionMu.RLock()
+	defer a.closeActionMu.RUnlock()
+	if a.closeAction == "" {
+		return "ask"
+	}
+	return a.closeAction
+}
+
+// SetCloseAction configures the action on window close.
+func (a *App) SetCloseAction(action string) {
+	if action != "ask" && action != "minimize" && action != "quit" {
+		action = "ask"
+	}
+	a.closeActionMu.Lock()
+	a.closeAction = action
+	a.closeActionMu.Unlock()
+	a.minimizeToTray.Store(action == "minimize")
+}
+
+// ConfirmCloseChoice handles user's decision from the Apple confirmation modal.
+func (a *App) ConfirmCloseChoice(action string, remember bool) {
+	if remember {
+		a.SetCloseAction(action)
+		a.saveSettings()
+	}
+	if action == "minimize" {
+		if a.ctx != nil {
+			wailsRuntime.WindowHide(a.ctx)
+		}
+	} else {
+		a.QuitApp()
+	}
+}
+
+// shouldMinimizeToTray reports whether closing the window should hide it to the system tray.
+func (a *App) shouldMinimizeToTray() bool {
+	return a.GetCloseAction() == "minimize"
+}
+
+// getActiveProfileName returns a human-readable label for the currently active profile or filter.
+func (a *App) getActiveProfileName() string {
+	a.profilesMu.RLock()
+	defer a.profilesMu.RUnlock()
+	if a.activeSlot >= 0 && a.activeSlot < len(a.profiles) {
+		name := a.profiles[a.activeSlot].Name
+		if name != "" {
+			return name
+		}
+		if a.GetLang() == "ru" {
+			return fmt.Sprintf("Слот %d", a.activeSlot+1)
+		}
+		return fmt.Sprintf("Slot %d", a.activeSlot+1)
+	}
+	smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
+	return fmt.Sprintf("1-Euro (%.0f%%)", smoothing*100)
+}
+
+// bindDSUCallbacks hooks connection lifecycle events from the DSU UDP server.
+func (a *App) bindDSUCallbacks(srv *dsu.Server) {
+	if srv == nil {
+		return
+	}
+	notify := func() {
+		clients := srv.GetClientsInfo()
+		count := len(clients)
+		if a.trayMgr != nil {
+			a.trayMgr.UpdateState()
+		}
+		if a.ctx != nil {
+			wailsRuntime.EventsEmit(a.ctx, "dsu:status", map[string]any{
+				"count":   count,
+				"clients": clients,
+			})
+		}
+		a.broadcastLiveDebugJSON(map[string]any{
+			"type":            "dsu_update",
+			"dsu_clients":     count,
+			"dsu_client_list": clients,
+		})
+	}
+	srv.OnClientConnect = func(addr *net.UDPAddr) {
+		notify()
+	}
+	srv.OnClientDisconnect = func(addr *net.UDPAddr) {
+		notify()
+	}
+}
+
+// GetDSUStatus returns the current DSU clients count and connection metadata.
+func (a *App) GetDSUStatus() map[string]any {
+	var clients []dsu.ClientInfo
+	count := 0
+	if a.dsuSrv != nil {
+		clients = a.dsuSrv.GetClientsInfo()
+		count = len(clients)
+	}
+	return map[string]any{
+		"count":   count,
+		"clients": clients,
+	}
+}
+
 // startup is called at application startup: initializes services in background
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	a.trayMgr = NewTrayManager(a)
+	a.trayMgr.Start()
 
 	// 1. Certificate Authority
 	appData := os.Getenv("APPDATA")
@@ -950,15 +1157,20 @@ func (a *App) startup(ctx context.Context) {
 	caDir := filepath.Join(appData, "gyrobridge", "ca")
 
 	lanIPs := pairing.GetLocalIPv4s()
-	caMgr, err := ca.NewCertificateManager(caDir, lanIPs, []string{"gamepad.local"})
+	caMgr, err := ca.NewCertificateManager(caDir, lanIPs, nil)
 	if err != nil {
 		fmt.Printf("[-] CA init error: %v\n", err)
-		return
 	}
 	a.caMgr = caMgr
 
-	// 2. DSU Server (UDP default 26760)
-	dsuSrv := dsu.NewServer(a.dsuPort)
+	// 2. Cemuhook DSU Server (UDP)
+	macBytes, err := parseMAC(a.getDSUMAC())
+	if err != nil {
+		macBytes = dsu.GenerateRandomMAC()
+		a.setDSUMAC(formatMAC(macBytes))
+	}
+	dsuSrv := dsu.NewServer(a.dsuPort, macBytes)
+	a.bindDSUCallbacks(dsuSrv)
 	if err := dsuSrv.Start(); err != nil {
 		fmt.Printf("[-] DSU start error: %v\n", err)
 	}
@@ -1539,8 +1751,16 @@ func (a *App) startup(ctx context.Context) {
 				}
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
+				var dsuClients []dsu.ClientInfo
+				dsuCount := 0
+				if a.dsuSrv != nil {
+					dsuClients = a.dsuSrv.GetClientsInfo()
+					dsuCount = len(dsuClients)
+				}
 				_ = json.NewEncoder(w).Encode(map[string]any{
 					"device_connected": a.hasClient.Load(),
+					"dsu_clients":      dsuCount,
+					"dsu_client_list":  dsuClients,
 				})
 			})
 			mux.HandleFunc("/livedebug/show-in-folder", func(w http.ResponseWriter, r *http.Request) {
@@ -1570,11 +1790,19 @@ func (a *App) startup(ctx context.Context) {
 				if curL == "" {
 					curL = "ru"
 				}
+				var dsuClients []dsu.ClientInfo
+				dsuCount := 0
+				if a.dsuSrv != nil {
+					dsuClients = a.dsuSrv.GetClientsInfo()
+					dsuCount = len(dsuClients)
+				}
 				syncBytes, _ := json.Marshal(map[string]any{
 					"type":             "sync",
 					"theme":            curT,
 					"lang":             curL,
 					"device_connected": a.hasClient.Load(),
+					"dsu_clients":      dsuCount,
+					"dsu_client_list":  dsuClients,
 				})
 
 				a.liveDebugMu.Lock()
@@ -1708,6 +1936,11 @@ func (a *App) startup(ctx context.Context) {
 
 // shutdown is called when the Wails application terminates
 func (a *App) shutdown(ctx context.Context) {
+	if a.trayMgr != nil {
+		a.trayMgr.Stop()
+		a.trayMgr = nil
+	}
+
 	if a.stopResmon != nil {
 		a.stopResmon()
 		a.stopResmon = nil
@@ -1832,6 +2065,8 @@ func (a *App) GetState() AppState {
 		AhrsQ3:        math.Float64frombits(a.curAhrsQ3.Load()),
 		FirstLaunch:   !a.firstLaunchDone,
 		HideAuthor:    a.hideAuthor,
+		DsuClients:    func() int { if a.dsuSrv != nil { return a.dsuSrv.ActiveClientCount() }; return 0 }(),
+		DsuClientList: func() []dsu.ClientInfo { if a.dsuSrv != nil { return a.dsuSrv.GetClientsInfo() }; return nil }(),
 	}
 }
 
@@ -2013,7 +2248,8 @@ type liveDebugMsg struct {
 	InHz            float64 `json:"in_hz,omitempty"`
 	OutHz           float64 `json:"out_hz,omitempty"`
 	PipeMs          float64 `json:"pipe_ms,omitempty"`
-	DsuClients      int     `json:"dsu_clients,omitempty"`
+	DsuClients    int              `json:"dsu_clients"`
+	DsuClientList []dsu.ClientInfo `json:"dsu_client_list,omitempty"`
 }
 
 func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32, extras ...liveDebugMsg) {
@@ -2031,6 +2267,12 @@ func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32, extras ...liveDebugMsg)
 		Q2:              q2,
 		Q3:              q3,
 	}
+
+	if a.dsuSrv != nil {
+		msg.DsuClients = a.dsuSrv.ActiveClientCount()
+		msg.DsuClientList = a.dsuSrv.GetClientsInfo()
+	}
+
 	if len(extras) > 0 {
 		e := extras[0]
 		msg.Seq = e.Seq
@@ -2054,7 +2296,10 @@ func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32, extras ...liveDebugMsg)
 		msg.InHz = e.InHz
 		msg.OutHz = e.OutHz
 		msg.PipeMs = e.PipeMs
-		msg.DsuClients = e.DsuClients
+		if e.DsuClients > 0 || len(e.DsuClientList) > 0 {
+			msg.DsuClients = e.DsuClients
+			msg.DsuClientList = e.DsuClientList
+		}
 	}
 
 	data, err := json.Marshal(msg)
@@ -2295,6 +2540,7 @@ func (a *App) GetAppSettings() AppSettings {
 		FirstLaunchDone:   firstLaunch,
 		HideAuthor:        hideAuthor,
 		DSUPort:           dsuP,
+		DSUMAC:            a.getDSUMAC(),
 		HTTPPort:          httpP,
 		HTTPSPort:         httpsP,
 		GyroDeadzone:      deadzone,
@@ -2306,6 +2552,8 @@ func (a *App) GetAppSettings() AppSettings {
 		GyroSmoothing:     smoothing,
 		GyroDeadband:      deadband,
 		GyroSensitivity:   sensitivity,
+		MinimizeToTray:    a.GetCloseAction() == "minimize",
+		CloseAction:       a.GetCloseAction(),
 	}
 }
 
@@ -2324,12 +2572,25 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 		return nil, fmt.Errorf("DSU, HTTP and HTTPS ports must be different")
 	}
 
+	if s.DSUMAC != "" {
+		if parsed, err := parseMAC(s.DSUMAC); err == nil {
+			formatted := formatMAC(parsed)
+			a.setDSUMAC(formatted)
+			if a.dsuSrv != nil {
+				a.dsuSrv.SetMACAddress(parsed)
+			}
+		}
+	}
+
 	dsuRestarted := false
 	if s.DSUPort != a.dsuPort && a.dsuSrv != nil {
 		a.dsuSrv.Stop()
-		newDsu := dsu.NewServer(s.DSUPort)
+		macBytes, _ := parseMAC(a.getDSUMAC())
+		newDsu := dsu.NewServer(s.DSUPort, macBytes)
+		a.bindDSUCallbacks(newDsu)
 		if err := newDsu.Start(); err != nil {
-			oldDsu := dsu.NewServer(a.dsuPort)
+			oldDsu := dsu.NewServer(a.dsuPort, macBytes)
+			a.bindDSUCallbacks(oldDsu)
 			_ = oldDsu.Start()
 			a.dsuSrv = oldDsu
 			return nil, fmt.Errorf("failed to bind DSU port %d: %w", s.DSUPort, err)
@@ -2364,6 +2625,11 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 	a.stillnessHint.Store(s.StillnessHint)
 	a.disconnectAlert.Store(s.DisconnectAlert)
 	a.silenceDisconnect.Store(s.SilenceDisconnect)
+	if s.CloseAction != "" {
+		a.SetCloseAction(s.CloseAction)
+	} else {
+		a.minimizeToTray.Store(s.MinimizeToTray)
+	}
 	if s.SoundVolume >= 0 && s.SoundVolume <= 3 {
 		a.soundVolume.Store(int32(s.SoundVolume))
 	}
@@ -2398,6 +2664,18 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 		"success":      true,
 		"dsuRestarted": dsuRestarted,
 	}, nil
+}
+
+// RegenerateDSUMAC generates a fresh MAC address, updates the server, and persists to settings
+func (a *App) RegenerateDSUMAC() string {
+	newMAC := dsu.GenerateRandomMAC()
+	macStr := formatMAC(newMAC)
+	a.setDSUMAC(macStr)
+	if a.dsuSrv != nil {
+		a.dsuSrv.SetMACAddress(newMAC)
+	}
+	a.saveSettings()
+	return macStr
 }
 
 // SetTuningActive toggles 60 Hz real-time telemetry streaming for the settings test bench

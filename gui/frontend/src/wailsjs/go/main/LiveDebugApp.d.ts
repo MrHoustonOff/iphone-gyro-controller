@@ -3,6 +3,8 @@
 
 export function GetDeviceStatus():Promise<boolean>;
 
+export function GetFullStatus():Promise<Record<string, any>>;
+
 export function OpenInFolder(arg1:string):Promise<void>;
 
 export function ResetAHRS():Promise<void>;

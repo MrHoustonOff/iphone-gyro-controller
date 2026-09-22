@@ -6,6 +6,10 @@ export function ClearPreview() {
   return window['go']['main']['App']['ClearPreview']();
 }
 
+export function ConfirmCloseChoice(arg1, arg2) {
+  return window['go']['main']['App']['ConfirmCloseChoice'](arg1, arg2);
+}
+
 export function CopyCalibrationReport() {
   return window['go']['main']['App']['CopyCalibrationReport']();
 }
@@ -16,6 +20,14 @@ export function CopyLast20Frames() {
 
 export function GetAppSettings() {
   return window['go']['main']['App']['GetAppSettings']();
+}
+
+export function GetCloseAction() {
+  return window['go']['main']['App']['GetCloseAction']();
+}
+
+export function GetDSUStatus() {
+  return window['go']['main']['App']['GetDSUStatus']();
 }
 
 export function GetFontScale() {
@@ -74,6 +86,14 @@ export function PreviewMatrix(arg1) {
   return window['go']['main']['App']['PreviewMatrix'](arg1);
 }
 
+export function QuitApp() {
+  return window['go']['main']['App']['QuitApp']();
+}
+
+export function RegenerateDSUMAC() {
+  return window['go']['main']['App']['RegenerateDSUMAC']();
+}
+
 export function ResetAHRS() {
   return window['go']['main']['App']['ResetAHRS']();
 }
@@ -92,6 +112,10 @@ export function SaveProfile(arg1, arg2, arg3, arg4, arg5) {
 
 export function SetActiveProfile(arg1) {
   return window['go']['main']['App']['SetActiveProfile'](arg1);
+}
+
+export function SetCloseAction(arg1) {
+  return window['go']['main']['App']['SetCloseAction'](arg1);
 }
 
 export function SetFontScale(arg1) {
@@ -120,6 +144,10 @@ export function SetTuningFilterParams(arg1, arg2, arg3) {
 
 export function SetWindowTheme(arg1) {
   return window['go']['main']['App']['SetWindowTheme'](arg1);
+}
+
+export function ShowWindow() {
+  return window['go']['main']['App']['ShowWindow']();
 }
 
 export function StartCapture() {

@@ -2,6 +2,8 @@
 
 # GyroBridge
 
+> 📖 **Comprehensive User Guide**: [English User Guide](docs/guide.en.md) | [Русскоязычное руководство](docs/guide.ru.md)
+
 GyroBridge turns your smartphone (iOS or Android) into a high-precision, low-latency motion controller for PC games and emulators using the Cemuhook DSU protocol.
 
 ![GyroBridge Core Interface](docs/imgs/core%20screen.jpg)

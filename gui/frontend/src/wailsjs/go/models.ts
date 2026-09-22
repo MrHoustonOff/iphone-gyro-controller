@@ -1,3 +1,28 @@
+export namespace dsu {
+	
+	export class ClientInfo {
+	    address: string;
+	    ip: string;
+	    port: number;
+	    lastSeenMs: number;
+	    active: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new ClientInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.address = source["address"];
+	        this.ip = source["ip"];
+	        this.port = source["port"];
+	        this.lastSeenMs = source["lastSeenMs"];
+	        this.active = source["active"];
+	    }
+	}
+
+}
+
 export namespace main {
 	
 	export class AppSettings {
@@ -8,6 +33,7 @@ export namespace main {
 	    firstLaunchDone: boolean;
 	    hideAuthor: boolean;
 	    dsuPort: number;
+	    dsuMac: string;
 	    httpPort: number;
 	    httpsPort: number;
 	    gyroDeadzone: number;
@@ -19,6 +45,8 @@ export namespace main {
 	    gyroSmoothing: number;
 	    gyroDeadband: number;
 	    gyroSensitivity: number;
+	    minimizeToTray: boolean;
+	    closeAction: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -33,6 +61,7 @@ export namespace main {
 	        this.firstLaunchDone = source["firstLaunchDone"];
 	        this.hideAuthor = source["hideAuthor"];
 	        this.dsuPort = source["dsuPort"];
+	        this.dsuMac = source["dsuMac"];
 	        this.httpPort = source["httpPort"];
 	        this.httpsPort = source["httpsPort"];
 	        this.gyroDeadzone = source["gyroDeadzone"];
@@ -44,6 +73,8 @@ export namespace main {
 	        this.gyroSmoothing = source["gyroSmoothing"];
 	        this.gyroDeadband = source["gyroDeadband"];
 	        this.gyroSensitivity = source["gyroSensitivity"];
+	        this.minimizeToTray = source["minimizeToTray"];
+	        this.closeAction = source["closeAction"];
 	    }
 	}
 	export class Profile {
@@ -102,6 +133,8 @@ export namespace main {
 	    ahrsQ3: number;
 	    firstLaunch: boolean;
 	    hideAuthor: boolean;
+	    dsuClients: number;
+	    dsuClientList: dsu.ClientInfo[];
 	
 	    static createFrom(source: any = {}) {
 	        return new AppState(source);
@@ -142,6 +175,8 @@ export namespace main {
 	        this.ahrsQ3 = source["ahrsQ3"];
 	        this.firstLaunch = source["firstLaunch"];
 	        this.hideAuthor = source["hideAuthor"];
+	        this.dsuClients = source["dsuClients"];
+	        this.dsuClientList = this.convertValues(source["dsuClientList"], dsu.ClientInfo);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

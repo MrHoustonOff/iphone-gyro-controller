@@ -1,6 +1,25 @@
-# GyroBridge v1.1.1
+# GyroBridge v1.1.2
 
 GyroBridge turns your smartphone (iOS or Android) into a high-precision, low-latency motion controller for PC games and emulators via the Cemuhook DSU protocol.
+
+---
+
+## What's New in v1.1.2
+
+### Cemuhook DSU Protocol Compliance & Multi-Slot Fixes
+- **Strict Packet Sizing**: Fixed Cemuhook `PortInfo` response packet length strictly to 32 bytes (eliminating 4 extra padding bytes) and `VersionResponse` to 24 bytes, resolving CRC32 checksum rejections (`PortInfo is invalid!`) in Cemu 2.x and other emulators.
+- **Multi-Slot Port Querying**: Full support for multi-slot `ListPorts` requests (slots 0..3) with instantaneous responses for each requested index, eliminating 3-second connection timeouts in Cemu.
+
+### Apple-Inspired Connection Banners & Dynamic UI
+- **Dual-State DSU Connection Banner**:
+  - Subdued amber warning banner (`Waiting for emulators`) when listening on port 26760 with zero connected clients.
+  - Active emerald banner (`Emulator Connected`) displaying live client IP, ephemeral port, and real-time pulse indicator once subscribed.
+- **Zero Layout Shifts**: Main interface card height locked strictly at 68px across all connection state transitions.
+- **Live Connected Client Monitoring**: Real-time connected emulator diagnostics in both the main window and LiveDebug window with instant connect/disconnect callbacks.
+
+### Comprehensive User Documentation
+- **New Guides**: Published complete, visual guides in Russian ([`docs/guide.ru.md`](guide.ru.md)) and English ([`docs/guide.en.md`](guide.en.md)).
+- **Cemu Socket Quirk Documentation**: Detailed breakdown of Cemu's UDP socket lifecycle when starting before or after GyroBridge, with both instant in-game and startup solutions.
 
 ---
 

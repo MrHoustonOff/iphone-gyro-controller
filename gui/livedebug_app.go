@@ -100,6 +100,21 @@ func (a *LiveDebugApp) GetDeviceStatus() bool {
 	return st.DeviceConnected
 }
 
+// GetFullStatus checks full connection and DSU status directly from core server via Go HTTP.
+func (a *LiveDebugApp) GetFullStatus() map[string]any {
+	client := &http.Client{Timeout: 500 * time.Millisecond}
+	resp, err := client.Get(fmt.Sprintf("http://127.0.0.1:%d/livedebug/status", HTTPPort))
+	if err != nil || resp == nil {
+		return nil
+	}
+	defer resp.Body.Close()
+	var st map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&st); err != nil {
+		return nil
+	}
+	return st
+}
+
 func (a *LiveDebugApp) shutdown(ctx context.Context) {
 }
 

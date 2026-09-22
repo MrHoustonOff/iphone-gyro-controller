@@ -2,6 +2,8 @@
 
 # GyroBridge
 
+> 📖 **Подробное руководство пользователя**: [Русскоязычное руководство](guide.ru.md) | [English User Guide](guide.en.md)
+
 GyroBridge превращает ваш смартфон (iOS или Android) в высокоточный гироскопический контроллер для ПК-игр и эмуляторов с низкой задержкой по протоколу Cemuhook DSU.
 
 ![Главный интерфейс GyroBridge](imgs/core%20screen.jpg)

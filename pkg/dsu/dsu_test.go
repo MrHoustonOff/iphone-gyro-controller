@@ -200,3 +200,97 @@ func BenchmarkSendMotion(b *testing.B) {
 	}
 }
 
+func TestDSU_FixedMACAndImmediatePadDataReply(t *testing.T) {
+	fixedMAC := [6]byte{0x00, 0x13, 0x37, 0xAA, 0xBB, 0xCC}
+	srv := NewServer(0, fixedMAC)
+	if err := srv.Start(); err != nil {
+		t.Fatalf("failed to start server: %v", err)
+	}
+	defer srv.Stop()
+
+	if srv.MACAddress() != fixedMAC {
+		t.Fatalf("expected MAC %v, got %v", fixedMAC, srv.MACAddress())
+	}
+
+	serverAddr := srv.conn.LocalAddr().(*net.UDPAddr)
+	clientConn, err := net.DialUDP("udp", nil, serverAddr)
+	if err != nil {
+		t.Fatalf("failed to dial server: %v", err)
+	}
+	defer clientConn.Close()
+
+	// Send MsgTypePadData (0x100002)
+	req := make([]byte, 20)
+	copy(req[0:4], "DSUC")
+	binary.LittleEndian.PutUint16(req[4:6], 1001)
+	binary.LittleEndian.PutUint16(req[6:8], 4)
+	binary.LittleEndian.PutUint32(req[12:16], 0x1234)
+	binary.LittleEndian.PutUint32(req[16:20], MsgTypePadData)
+	crc := crc32.ChecksumIEEE(req)
+	binary.LittleEndian.PutUint32(req[8:12], crc)
+
+	if _, err := clientConn.Write(req); err != nil {
+		t.Fatalf("failed to write PadData request: %v", err)
+	}
+
+	// Server must immediately respond with PadData packet
+	clientConn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+	buf := make([]byte, 256)
+	n, err := clientConn.Read(buf)
+	if err != nil {
+		t.Fatalf("server did not reply immediately to MsgTypePadData: %v", err)
+	}
+	if n != 100 {
+		t.Fatalf("expected 100 bytes PadData reply, got %d", n)
+	}
+	// Check MAC in packet
+	receivedMAC := buf[24:30]
+	for i := 0; i < 6; i++ {
+		if receivedMAC[i] != fixedMAC[i] {
+			t.Errorf("MAC mismatch at byte %d: got 0x%02X, want 0x%02X", i, receivedMAC[i], fixedMAC[i])
+		}
+	}
+}
+
+func TestDSU_IdleHeartbeat(t *testing.T) {
+	srv := NewServer(0)
+	if err := srv.Start(); err != nil {
+		t.Fatalf("failed to start server: %v", err)
+	}
+	defer srv.Stop()
+
+	serverAddr := srv.conn.LocalAddr().(*net.UDPAddr)
+	clientConn, err := net.DialUDP("udp", nil, serverAddr)
+	if err != nil {
+		t.Fatalf("failed to dial server: %v", err)
+	}
+	defer clientConn.Close()
+
+	// Register subscription
+	req := make([]byte, 20)
+	copy(req[0:4], "DSUC")
+	binary.LittleEndian.PutUint16(req[4:6], 1001)
+	binary.LittleEndian.PutUint16(req[6:8], 4)
+	binary.LittleEndian.PutUint32(req[12:16], 0x9999)
+	binary.LittleEndian.PutUint32(req[16:20], MsgTypePadData)
+	crc := crc32.ChecksumIEEE(req)
+	binary.LittleEndian.PutUint32(req[8:12], crc)
+	_, _ = clientConn.Write(req)
+
+	// Consume immediate response
+	buf := make([]byte, 256)
+	clientConn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+	_, _ = clientConn.Read(buf)
+
+	// Wait for idle heartbeat packet (~16-50ms)
+	clientConn.SetReadDeadline(time.Now().Add(500 * time.Millisecond))
+	n, err := clientConn.Read(buf)
+	if err != nil {
+		t.Fatalf("heartbeat packet not received: %v", err)
+	}
+	if n != 100 {
+		t.Fatalf("expected 100 byte heartbeat packet, got %d", n)
+	}
+}
+
+

@@ -136,6 +136,14 @@
     "title": "Axis Calibration",
     "view_disclaimer": "3D orientation may differ from your physical grip"
   },
+  "close_modal": {
+    "title": "Close or Minimize to Tray?",
+    "desc": "GyroBridge can continue running in the system tray so motion streaming to your emulator is not interrupted.",
+    "remember": "Remember my choice",
+    "minimize": "Minimize to Tray",
+    "quit": "Quit",
+    "cancel": "Cancel"
+  },
   "controls": {
     "pause": "PAUSE",
     "resume": "RESUME"
@@ -298,6 +306,14 @@
     "dsu_port": "DSU Port (Cemuhook)",
     "dsu_port_desc": "UDP motion server port for emulators (default: 26760)",
     "dsu_port_tip": "UDP port for the Cemuhook DSU motion server. Enter this exact port in your emulator's motion settings (Cemu, RPCS3, Ryujinx, Dolphin, etc.). Default: 26760.",
+    "dsu_mac": "DSU MAC Address",
+    "dsu_mac_desc": "Unique virtual controller hardware address",
+    "dsu_mac_tip": "Persistent hardware MAC address of the virtual controller. Emulators bind motion controls directly to this address.",
+    "dsu_mac_regen": "Regenerate",
+    "dsu_mac_regen_title": "Regenerate MAC Address?",
+    "dsu_mac_regen_tip": "Generate a new virtual MAC address",
+    "dsu_mac_regen_confirm": "Regenerate MAC address? Existing controller bindings in Cemu, Yuzu and other emulators will need to be re-selected.",
+    "dsu_mac_regen_success": "MAC address regenerated successfully",
     "http_port": "HTTP Port (Pairing)",
     "http_port_desc": "TCP web server pairing port (default: 8080)",
     "http_port_tip": "Local TCP port for smartphone initial pairing and iOS certificate profile download. Default: 8080.",
@@ -385,6 +401,15 @@
     "silence_disconnect": "Disconnect on Sensor Silence",
     "silence_disconnect_desc": "Drop connection after 2s of frozen or missing sensor data",
     "silence_disconnect_tip": "Instantly disconnect when the phone screen turns off or sensor data freezes for 2 seconds, preventing corrupted calibration or stuck DSU output.",
+    "minimize_to_tray": "Minimize to System Tray",
+    "minimize_to_tray_desc": "Hides window to tray on close, keeping streaming active",
+    "minimize_to_tray_tip": "When closing the window, hides it into the Windows notification area so gyro motion streaming remains uninterrupted during gameplay.",
+    "close_action": "Action on Window Close",
+    "close_action_desc": "Behavior when clicking the window close button",
+    "close_action_tip": "Choose what happens when clicking the close button: ask each time, minimize to notification area, or terminate the application.",
+    "close_action_ask": "Ask every time",
+    "close_action_minimize": "Minimize to System Tray",
+    "close_action_quit": "Quit Application",
     "sound_mode": "Connection Audio Cues",
     "sound_mode_tip": "Play an audio chime when the smartphone connects or suddenly disconnects.",
     "sound_cute": "Cute Chime (Synthesized)",
@@ -435,7 +460,14 @@
     "paused": "Paused",
     "recal_hint": "Device is stationary but axes are off-center. If placed on a flat surface, consider recalibrating.",
     "horizon_recenter": "Horizon reset to neutral",
-    "waiting_sensors": "waiting for sensors..."
+    "waiting_sensors": "waiting for sensors...",
+    "dsu_waiting": "Waiting for emulators",
+    "dsu_idle_notice": "No clients or emulators listening for motion",
+    "dsu_clients_count": "DSU: %d active",
+    "dsu_clients_count_plural": "DSU: %d active",
+    "dsu_connected": "Emulator connected",
+    "dsu_connected_plural": "%d emulators connected",
+    "dsu_title": "Cemuhook DSU Server"
   },
   "recenter": {
     "btn_main": "Recenter 3D View",

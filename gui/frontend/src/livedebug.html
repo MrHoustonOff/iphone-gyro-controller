@@ -1160,6 +1160,56 @@
       box-shadow: 0 0 6px #34C759;
     }
 
+    .dsu-clients-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      width: 100%;
+      padding: 3px 6px;
+      max-height: 48px;
+      overflow-y: auto;
+    }
+
+    .dsu-client-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 3px 7px;
+      border-radius: var(--radius-sm);
+      background: rgba(52, 199, 89, 0.08);
+      border: 1px solid rgba(52, 199, 89, 0.22);
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--text-primary);
+      transition: all 0.2s ease;
+    }
+
+    .dsu-client-left {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .dsu-client-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #34C759;
+      box-shadow: 0 0 6px rgba(52, 199, 89, 0.7);
+    }
+
+    .dsu-client-tag {
+      font-size: 8.5px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      color: #34C759;
+      background: rgba(52, 199, 89, 0.15);
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+
     /* Floating Apple HIG Tooltip */
     #stats-floating-tooltip {
       position: fixed;
@@ -1681,10 +1731,11 @@
                 <span class="stat-desc-inline" id="desc-dsu-clients" data-i18n="live_debug.dsu_desc_waiting">Ожидание эмулятора</span>
               </div>
               <div class="stat-chart-wrap dsu-status-wrap">
-                <div class="dsu-status-box">
+                <div class="dsu-status-box" id="dsu-default-box">
                   <span class="dsu-pulse-dot" id="dsu-pulse-dot"></span>
                   <span class="dsu-badge-title">Cemuhook DSU</span>
                 </div>
+                <div class="dsu-clients-list" id="dsu-clients-list" style="display: none;"></div>
               </div>
             </div>
 
@@ -2838,7 +2889,25 @@
         .catch(() => {});
 
       async function checkDeviceStatus() {
-        if (window.go?.main?.LiveDebugApp?.GetDeviceStatus) {
+        if (window.go?.main?.LiveDebugApp?.GetFullStatus) {
+          try {
+            const st = await window.go.main.LiveDebugApp.GetFullStatus();
+            if (st) {
+              if (typeof st.device_connected === 'boolean') {
+                if (st.device_connected) {
+                  lastFrameTime = performance.now();
+                  if (!isPhoneConnected) setPhoneConnected(true);
+                } else if (lastFrameTime === 0 || performance.now() - lastFrameTime > 4000) {
+                  setPhoneConnected(false);
+                }
+              }
+              if (typeof st.dsu_clients !== 'undefined' || typeof st.dsu_client_list !== 'undefined') {
+                updateDsuStatus(st.dsu_clients, st.dsu_client_list);
+              }
+              return;
+            }
+          } catch (e) {}
+        } else if (window.go?.main?.LiveDebugApp?.GetDeviceStatus) {
           try {
             const connected = await window.go.main.LiveDebugApp.GetDeviceStatus();
             if (typeof connected === 'boolean') {
@@ -2848,19 +2917,23 @@
               } else if (lastFrameTime === 0 || performance.now() - lastFrameTime > 4000) {
                 setPhoneConnected(false);
               }
-              return;
             }
           } catch (e) {}
         }
         fetch(`${coreBaseUrl}/livedebug/status`)
           .then(r => r.json())
           .then(d => {
-            if (d && typeof d.device_connected === 'boolean') {
-              if (d.device_connected) {
-                lastFrameTime = performance.now();
-                if (!isPhoneConnected) setPhoneConnected(true);
-              } else if (lastFrameTime === 0 || performance.now() - lastFrameTime > 4000) {
-                setPhoneConnected(false);
+            if (d) {
+              if (typeof d.device_connected === 'boolean') {
+                if (d.device_connected) {
+                  lastFrameTime = performance.now();
+                  if (!isPhoneConnected) setPhoneConnected(true);
+                } else if (lastFrameTime === 0 || performance.now() - lastFrameTime > 4000) {
+                  setPhoneConnected(false);
+                }
+              }
+              if (typeof d.dsu_clients !== 'undefined' || typeof d.dsu_client_list !== 'undefined') {
+                updateDsuStatus(d.dsu_clients, d.dsu_client_list);
               }
             }
           })
@@ -3553,6 +3626,64 @@
         }
       }, 100);
 
+      function updateDsuStatus(dsuClients, dsuClientList) {
+        let count = 0;
+        if (typeof dsuClients === 'number') {
+          count = dsuClients;
+        } else if (Array.isArray(dsuClientList)) {
+          count = dsuClientList.length;
+        }
+        const valDsuClientsEl = document.getElementById('val-dsu-clients');
+        const chipDsuClientsEl = document.getElementById('chip-dsu-clients');
+        const descDsuClientsEl = document.getElementById('desc-dsu-clients');
+        const dsuStatusDotEl = document.getElementById('dsu-status-dot');
+        const dsuPulseDotEl = document.getElementById('dsu-pulse-dot');
+        const defaultBoxEl = document.getElementById('dsu-default-box');
+        const clientsListEl = document.getElementById('dsu-clients-list');
+        const dict = (typeof DICTIONARY !== 'undefined' && DICTIONARY[currentLang]) ? DICTIONARY[currentLang] : {};
+
+        if (valDsuClientsEl) valDsuClientsEl.textContent = count;
+        if (dsuStatusDotEl) {
+          dsuStatusDotEl.style.backgroundColor = count > 0 ? '#34C759' : 'var(--text-secondary)';
+        }
+        if (dsuPulseDotEl) {
+          dsuPulseDotEl.classList.toggle('active', count > 0);
+        }
+        if (chipDsuClientsEl) {
+          chipDsuClientsEl.className = count > 0 ? 'stat-chip green' : 'stat-chip muted';
+          const activeWord = dict["live_debug.dsu_clients_active"] || (currentLang === 'ru' ? 'активных' : 'active');
+          chipDsuClientsEl.textContent = `${count} ${activeWord}`;
+        }
+        if (descDsuClientsEl) {
+          descDsuClientsEl.textContent = count > 0
+            ? (dict["live_debug.dsu_desc_streaming"] || (currentLang === 'ru' ? 'Передача данных' : 'Streaming data'))
+            : (dict["live_debug.dsu_desc_waiting"] || (currentLang === 'ru' ? 'Ожидание эмулятора' : 'Waiting for emulator'));
+        }
+
+        if (clientsListEl && defaultBoxEl) {
+          if (count > 0 && Array.isArray(dsuClientList) && dsuClientList.length > 0) {
+            defaultBoxEl.style.display = 'none';
+            clientsListEl.style.display = 'flex';
+            clientsListEl.innerHTML = dsuClientList.map(c => {
+              const addr = c.address || (c.ip + ':' + c.port);
+              const isAct = c.active !== false;
+              const tagLabel = isAct ? (currentLang === 'ru' ? 'АКТИВЕН' : 'ACTIVE') : (currentLang === 'ru' ? 'ОЖИДАНИЕ' : 'IDLE');
+              return `<div class="dsu-client-pill" title="${addr}">
+                <div class="dsu-client-left">
+                  <span class="dsu-client-dot" style="${isAct ? '' : 'background: #FF9500; box-shadow: none;'}"></span>
+                  <span class="dsu-client-ip">${addr}</span>
+                </div>
+                <span class="dsu-client-tag" style="${isAct ? '' : 'color: #FF9500; background: rgba(255, 149, 0, 0.15);'}">${tagLabel}</span>
+              </div>`;
+            }).join('');
+          } else {
+            defaultBoxEl.style.display = 'inline-flex';
+            clientsListEl.style.display = 'none';
+            clientsListEl.innerHTML = '';
+          }
+        }
+      }
+
       function updateTelemetryStats(data) {
         lastTelemetryData = data;
         const now = performance.now();
@@ -3705,29 +3836,8 @@
           outGzHistory.shift();
         }
 
-        const dsuClients = typeof data.dsu_clients === 'number' ? data.dsu_clients : 0;
-        const valDsuClientsEl = document.getElementById('val-dsu-clients');
-        const chipDsuClientsEl = document.getElementById('chip-dsu-clients');
-        const descDsuClientsEl = document.getElementById('desc-dsu-clients');
-        const dsuStatusDotEl = document.getElementById('dsu-status-dot');
-        const dsuPulseDotEl = document.getElementById('dsu-pulse-dot');
-
-        if (valDsuClientsEl) valDsuClientsEl.textContent = dsuClients;
-        if (dsuStatusDotEl) {
-          dsuStatusDotEl.style.backgroundColor = dsuClients > 0 ? '#34C759' : 'var(--text-secondary)';
-        }
-        if (dsuPulseDotEl) {
-          dsuPulseDotEl.classList.toggle('active', dsuClients > 0);
-        }
-        if (chipDsuClientsEl) {
-          chipDsuClientsEl.className = dsuClients > 0 ? 'stat-chip green' : 'stat-chip muted';
-          const activeWord = dict["live_debug.dsu_clients_active"] || (currentLang === 'ru' ? 'активных' : 'active');
-          chipDsuClientsEl.textContent = `${dsuClients} ${activeWord}`;
-        }
-        if (descDsuClientsEl) {
-          descDsuClientsEl.textContent = dsuClients > 0
-            ? (dict["live_debug.dsu_desc_streaming"] || "Streaming data")
-            : (dict["live_debug.dsu_desc_waiting"] || "Waiting for emulator");
+        if (typeof data.dsu_clients !== 'undefined' || typeof data.dsu_client_list !== 'undefined') {
+          updateDsuStatus(data.dsu_clients, data.dsu_client_list);
         }
 
         // Trigger immediate flush if first frame
@@ -3970,6 +4080,12 @@
           return;
         }
 
+        // DSU clients update event
+        if (data.type === 'dsu_update') {
+          updateDsuStatus(data.dsu_clients, data.dsu_client_list);
+          return;
+        }
+
         // Sync frame on connection
         if (data.type === 'sync') {
           if (data.theme && data.theme !== currentTheme) applyTheme(data.theme, false);
@@ -3981,6 +4097,9 @@
             } else if (lastFrameTime === 0) {
               setPhoneConnected(false);
             }
+          }
+          if (typeof data.dsu_clients !== 'undefined' || typeof data.dsu_client_list !== 'undefined') {
+            updateDsuStatus(data.dsu_clients, data.dsu_client_list);
           }
           return;
         }
@@ -4057,6 +4176,14 @@
             try {
               const data = (typeof payload === 'string') ? JSON.parse(payload) : payload;
               handleTelemetryData(data);
+            } catch (e) {}
+          });
+          window.runtime.EventsOn('dsu:status', (payload) => {
+            try {
+              const data = (typeof payload === 'string') ? JSON.parse(payload) : payload;
+              if (data) {
+                updateDsuStatus(data.count, data.clients);
+              }
             } catch (e) {}
           });
           checkDeviceStatus();

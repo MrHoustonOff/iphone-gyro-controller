@@ -110,6 +110,25 @@
             <span id="url-copy-badge" class="copy-badge" data-i18n="qr.copy">Копировать</span>
           </div>
 
+          <!-- Apple HIG DSU Server & Clients Banner -->
+          <div class="dsu-home-banner warning" id="offline-dsu-banner">
+            <div class="dsu-home-top">
+              <div class="dsu-home-meta">
+                <span class="status-dot" id="offline-dsu-dot"></span>
+                <span class="dsu-home-title" data-i18n="status.dsu_title">Cemuhook DSU Server</span>
+                <span class="dsu-home-port">:26760</span>
+              </div>
+              <span class="dsu-home-chip amber" id="offline-dsu-chip" data-i18n="status.dsu_waiting">Ожидание эмуляторов</span>
+            </div>
+            <div class="dsu-home-body" id="offline-dsu-body">
+              <div class="dsu-home-idle-row" id="offline-dsu-idle-row">
+                <span class="dsu-home-idle-dot"></span>
+                <span class="dsu-home-idle-msg" data-i18n="status.dsu_idle_notice">Ни один клиент (эмулятор) не принимает данные</span>
+              </div>
+              <div class="dsu-home-clients-list" id="offline-dsu-clients-list" style="display: none;"></div>
+            </div>
+          </div>
+
           <button type="button" class="btn-apple-secondary" id="btn-master-setup" data-i18n="nav.setup">Запустить настройку</button>
         </div>
 
@@ -242,6 +261,25 @@
               </svg>
               <span data-i18n="recenter.btn_main">Центрировать 3D-вид</span>
             </button>
+          </div>
+
+          <!-- Apple HIG DSU Server & Clients Banner in Online View -->
+          <div class="dsu-home-banner warning" id="online-dsu-banner">
+            <div class="dsu-home-top">
+              <div class="dsu-home-meta">
+                <span class="status-dot" id="online-dsu-dot"></span>
+                <span class="dsu-home-title" data-i18n="status.dsu_title">Cemuhook DSU Server</span>
+                <span class="dsu-home-port">:26760</span>
+              </div>
+              <span class="dsu-home-chip amber" id="online-dsu-chip" data-i18n="status.dsu_waiting">Ожидание эмуляторов</span>
+            </div>
+            <div class="dsu-home-body" id="online-dsu-body">
+              <div class="dsu-home-idle-row" id="online-dsu-idle-row">
+                <span class="dsu-home-idle-dot"></span>
+                <span class="dsu-home-idle-msg" data-i18n="status.dsu_idle_notice">Ни один клиент (эмулятор) не принимает данные</span>
+              </div>
+              <div class="dsu-home-clients-list" id="online-dsu-clients-list" style="display: none;"></div>
+            </div>
           </div>
 
           <button type="button" class="btn-apple-primary" id="btn-pause-resume" data-i18n="controls.pause">ПАУЗА</button>
@@ -646,6 +684,33 @@
                       </div>
                     </div>
 
+                    <!-- DSU MAC Address -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.dsu_mac">MAC-адрес DSU</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.dsu_mac_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <div class="setting-control-group">
+                          <input type="text" id="setting-dsu-mac" class="setting-input-mac" value="00:13:37:00:00:01" readonly spellcheck="false">
+                          <button type="button" id="btn-regen-dsu-mac" class="btn-setting-action" data-i18n-tip="settings_modal.dsu_mac_regen_tip" aria-label="Regenerate MAC">
+                            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="23 4 23 10 17 10"></polyline>
+                              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     <!-- HTTP Port -->
                     <div class="setting-row">
                       <div class="setting-info">
@@ -843,6 +908,29 @@
                           <input type="checkbox" id="setting-silence-disconnect" checked>
                           <span class="apple-toggle-slider"></span>
                         </label>
+                      </div>
+                    </div>
+
+                    <!-- Action on Window Close (Cross) -->
+                    <div class="setting-row">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.close_action">Действие при закрытии (крестик)</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.close_action_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="setting-control">
+                        <select id="setting-close-action" class="setting-select">
+                          <option value="ask" data-i18n="settings_modal.close_action_ask">Спрашивать каждый раз</option>
+                          <option value="minimize" data-i18n="settings_modal.close_action_minimize">Сворачивать в трей</option>
+                          <option value="quit" data-i18n="settings_modal.close_action_quit">Закрывать приложение</option>
+                        </select>
                       </div>
                     </div>
 
@@ -1249,6 +1337,68 @@
 
   <!-- Subtle Notification Toast -->
   <div id="toast" class="toast-msg"></div>
+
+  <!-- Authentic Apple HIG Confirmation Modal Overlay -->
+  <div class="apple-dialog-overlay" id="apple-confirm-modal" style="display: none;" aria-modal="true" role="dialog">
+    <div class="apple-dialog-card">
+      <div class="apple-dialog-icon-wrap">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <div class="apple-dialog-title" id="apple-confirm-title"></div>
+      <div class="apple-dialog-message" id="apple-confirm-message"></div>
+      <div class="apple-dialog-actions">
+        <button type="button" class="btn-apple-secondary apple-dialog-btn" id="apple-confirm-cancel">Отмена</button>
+        <button type="button" class="btn-apple-primary apple-dialog-btn" id="apple-confirm-ok">Сгенерировать</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Authentic Apple HIG Close / Minimize Confirmation Sheet Modal Overlay -->
+  <div class="apple-dialog-overlay" id="apple-close-modal" style="display: none;" aria-modal="true" role="dialog">
+    <div class="apple-close-card">
+      <div class="apple-close-icon-wrap">
+        <svg viewBox="0 0 28 28" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Window frame -->
+          <rect x="3" y="4" width="22" height="15" rx="3.5"></rect>
+          <!-- Window header bar -->
+          <line x1="3" y1="9" x2="25" y2="9"></line>
+          <!-- Window header control dots -->
+          <circle cx="6.5" cy="6.5" r="0.9" fill="currentColor"></circle>
+          <circle cx="9.5" cy="6.5" r="0.9" fill="currentColor"></circle>
+          <!-- Minimize into tray motion arrow -->
+          <path d="M14 12.5v5.5m0 0l-2.5-2.5m2.5 2.5l2.5-2.5"></path>
+          <!-- System tray baseline indicator -->
+          <path d="M8 23.5h12" stroke-width="2.2"></path>
+        </svg>
+      </div>
+      <div class="apple-close-title" data-i18n="close_modal.title">Закрыть или свернуть в трей?</div>
+      <div class="apple-close-message" data-i18n="close_modal.desc">GyroBridge может продолжить работу в системном трее, чтобы соединение с эмулятором и передача гироскопа не прерывались.</div>
+
+      <!-- Ultra-Refined Apple Squircle Checkbox -->
+      <label class="apple-close-remember-row" for="apple-close-remember">
+        <span class="apple-close-checkbox-custom">
+          <input type="checkbox" id="apple-close-remember" class="apple-close-checkbox-native">
+          <span class="apple-close-checkbox-box">
+            <svg viewBox="0 0 12 10" width="11" height="9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1.5 5 4.5 8 10.5 1.5"></polyline>
+            </svg>
+          </span>
+        </span>
+        <span class="apple-close-remember-text" data-i18n="close_modal.remember">Запомнить мой выбор</span>
+      </label>
+
+      <!-- Apple Action Buttons (No uppercase, balanced weights) -->
+      <div class="apple-close-actions">
+        <button type="button" class="apple-close-btn apple-close-btn-cancel" id="apple-close-btn-cancel" data-i18n="close_modal.cancel">Отмена</button>
+        <button type="button" class="apple-close-btn apple-close-btn-quit" id="apple-close-btn-quit" data-i18n="close_modal.quit">Закрыть</button>
+        <button type="button" class="apple-close-btn apple-close-btn-minimize" id="apple-close-btn-minimize" data-i18n="close_modal.minimize">Свернуть в трей</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ═══════════════════════════════════════════════════════════════════════ -->
   <!-- Calibration Wizard Modal Overlay                                       -->
@@ -2072,6 +2222,10 @@
       document.querySelectorAll('#setting-lang-segmented .settings-seg-btn').forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-val') === this.currentLang);
       });
+
+      if (typeof AppleSelect !== 'undefined' && AppleSelect.refreshAll) {
+        AppleSelect.refreshAll();
+      }
     },
 
     async setLanguage(lang, broadcast = true) {
@@ -2154,6 +2308,421 @@
       toast.classList.remove('visible');
     }, 2000);
   }
+
+  // ── Authentic Apple HIG Confirmation Modal ──────────────────────────────────
+  function showAppleConfirm({ title, message, okText, cancelText }) {
+    return new Promise((resolve) => {
+      const overlay = document.getElementById('apple-confirm-modal');
+      const titleEl = document.getElementById('apple-confirm-title');
+      const msgEl = document.getElementById('apple-confirm-message');
+      const okBtn = document.getElementById('apple-confirm-ok');
+      const cancelBtn = document.getElementById('apple-confirm-cancel');
+
+      if (!overlay || !okBtn || !cancelBtn) {
+        resolve(true);
+        return;
+      }
+
+      if (titleEl) titleEl.textContent = title || '';
+      if (msgEl) msgEl.textContent = message || '';
+      if (okText) okBtn.textContent = okText;
+      if (cancelText) cancelBtn.textContent = cancelText;
+
+      overlay.style.display = 'flex';
+      overlay.offsetHeight; // force reflow for smooth scale & opacity
+      overlay.classList.add('visible');
+
+      const cleanup = (result) => {
+        overlay.classList.remove('visible');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 180);
+        window.removeEventListener('keydown', onKey);
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+        overlay.removeEventListener('click', onOverlay);
+        resolve(result);
+      };
+
+      const onOk = () => cleanup(true);
+      const onCancel = () => cleanup(false);
+      const onOverlay = (e) => {
+        if (e.target === overlay) cleanup(false);
+      };
+      const onKey = (e) => {
+        if (e.key === 'Escape') cleanup(false);
+        else if (e.key === 'Enter') cleanup(true);
+      };
+
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      overlay.addEventListener('click', onOverlay);
+      window.addEventListener('keydown', onKey);
+    });
+  }
+
+  // ── Authentic Apple HIG Close/Minimize Dialog ──────────────────────────────
+  const AppleCloseDialog = {
+    isOpen: false,
+    show() {
+      if (this.isOpen) return;
+      const overlay = document.getElementById('apple-close-modal');
+      const rememberCheckbox = document.getElementById('apple-close-remember');
+      const minBtn = document.getElementById('apple-close-btn-minimize');
+      const quitBtn = document.getElementById('apple-close-btn-quit');
+      const cancelBtn = document.getElementById('apple-close-btn-cancel');
+
+      if (!overlay) return;
+      this.isOpen = true;
+
+      if (window.I18n && typeof window.I18n.applyDOM === 'function') {
+        window.I18n.applyDOM(overlay);
+      }
+
+      if (rememberCheckbox) rememberCheckbox.checked = false;
+
+      overlay.style.display = 'flex';
+      overlay.offsetHeight; // reflow for smooth Apple scale transition
+      overlay.classList.add('visible');
+
+      const cleanup = () => {
+        this.isOpen = false;
+        overlay.classList.remove('visible');
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 180);
+        window.removeEventListener('keydown', onKey);
+        minBtn?.removeEventListener('click', onMin);
+        quitBtn?.removeEventListener('click', onQuit);
+        cancelBtn?.removeEventListener('click', onCancel);
+        overlay.removeEventListener('click', onOverlay);
+      };
+
+      const onMin = async () => {
+        const remember = !!rememberCheckbox?.checked;
+        cleanup();
+        if (remember) {
+          const sel = document.getElementById('setting-close-action');
+          if (sel) sel.value = 'minimize';
+        }
+        if (window.go?.main?.App?.ConfirmCloseChoice) {
+          await window.go.main.App.ConfirmCloseChoice('minimize', remember);
+        }
+      };
+
+      const onQuit = async () => {
+        const remember = !!rememberCheckbox?.checked;
+        cleanup();
+        if (remember) {
+          const sel = document.getElementById('setting-close-action');
+          if (sel) sel.value = 'quit';
+        }
+        if (window.go?.main?.App?.ConfirmCloseChoice) {
+          await window.go.main.App.ConfirmCloseChoice('quit', remember);
+        }
+      };
+
+      const onCancel = () => cleanup();
+
+      const onOverlay = (e) => {
+        if (e.target === overlay) cleanup();
+      };
+
+      const onKey = (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          cleanup();
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          onMin();
+        }
+      };
+
+      minBtn?.addEventListener('click', onMin);
+      quitBtn?.addEventListener('click', onQuit);
+      cancelBtn?.addEventListener('click', onCancel);
+      overlay.addEventListener('click', onOverlay);
+      window.addEventListener('keydown', onKey);
+
+      minBtn?.focus();
+    },
+
+    init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
+      const register = () => {
+        if (window.runtime && typeof window.runtime.EventsOn === 'function') {
+          window.runtime.EventsOn('app:confirm-close', () => {
+            AppleCloseDialog.show();
+          });
+          return true;
+        }
+        return false;
+      };
+
+      if (!register()) {
+        const interval = setInterval(() => {
+          if (register()) {
+            clearInterval(interval);
+          }
+        }, 40);
+        setTimeout(() => clearInterval(interval), 10000);
+      }
+    }
+  };
+
+  AppleCloseDialog.init();
+
+  // ── Apple HIG Pop-up Button & Dropdown Select Manager ──────────────────────
+  const AppleSelect = {
+    instances: new Map(),
+    activeDropdown: null,
+    activeTrigger: null,
+
+    init() {
+      const selects = document.querySelectorAll('.setting-select, .cal-axis-select');
+      selects.forEach(sel => this.attach(sel));
+
+      // Close on document click outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.apple-select-trigger') && !e.target.closest('.apple-select-dropdown')) {
+          this.closeAll();
+        }
+      });
+
+      // Close on scroll or resize
+      window.addEventListener('resize', () => this.closeAll(), { passive: true });
+      window.addEventListener('wheel', (e) => {
+        if (this.activeDropdown && !this.activeDropdown.contains(e.target)) {
+          this.closeAll();
+        }
+      }, { passive: true });
+
+      // Close on Escape
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.activeDropdown) {
+          this.closeAll();
+        }
+      });
+    },
+
+    attach(select) {
+      if (!select || this.instances.has(select)) return;
+      if (select.dataset.appleSelectReady === 'true') return;
+      select.dataset.appleSelectReady = 'true';
+
+      // Hide native select visually
+      select.classList.add('apple-select-native-hidden');
+
+      // Create Trigger Button
+      const trigger = document.createElement('button');
+      trigger.type = 'button';
+      trigger.className = 'apple-select-trigger';
+      if (select.id) trigger.id = `select-trigger-${select.id}`;
+      trigger.setAttribute('aria-haspopup', 'listbox');
+      trigger.setAttribute('aria-expanded', 'false');
+
+      const label = document.createElement('span');
+      label.className = 'apple-select-label';
+
+      const arrows = document.createElement('span');
+      arrows.className = 'apple-select-arrows';
+      arrows.innerHTML = `
+        <svg viewBox="0 0 10 14" width="9" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="2 5 5 2 8 5"></polyline>
+          <polyline points="2 9 5 12 8 9"></polyline>
+        </svg>
+      `;
+
+      trigger.appendChild(label);
+      trigger.appendChild(arrows);
+
+      // Insert trigger right after native select
+      select.parentNode.insertBefore(trigger, select.nextSibling);
+
+      // Create Dropdown Container (appended to document.body for zero-clipping)
+      const dropdown = document.createElement('div');
+      dropdown.className = 'apple-select-dropdown';
+      dropdown.setAttribute('role', 'listbox');
+      dropdown.style.display = 'none';
+      document.body.appendChild(dropdown);
+
+      const syncUI = () => {
+        dropdown.innerHTML = '';
+        const options = Array.from(select.options);
+        const selectedVal = select.value;
+
+        let activeOptText = '';
+
+        options.forEach((opt, idx) => {
+          const item = document.createElement('div');
+          item.className = 'apple-select-option';
+          item.setAttribute('role', 'option');
+          item.dataset.value = opt.value;
+
+          const isSelected = (opt.value === selectedVal) || (!selectedVal && idx === select.selectedIndex);
+          if (isSelected) {
+            item.classList.add('selected');
+            item.setAttribute('aria-selected', 'true');
+            activeOptText = opt.textContent;
+          }
+
+          const check = document.createElement('span');
+          check.className = 'apple-select-check';
+          check.innerHTML = `
+            <svg viewBox="0 0 12 10" width="10" height="8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1.5 5 4.5 8 10.5 1.5"></polyline>
+            </svg>
+          `;
+
+          const text = document.createElement('span');
+          text.className = 'apple-select-opt-text';
+          text.textContent = opt.textContent;
+
+          item.appendChild(check);
+          item.appendChild(text);
+
+          item.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (select.value !== opt.value) {
+              select.value = opt.value;
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+              select.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            this.closeAll();
+            trigger.focus();
+          });
+
+          dropdown.appendChild(item);
+        });
+
+        if (!activeOptText && select.options[select.selectedIndex]) {
+          activeOptText = select.options[select.selectedIndex].textContent;
+        }
+        label.textContent = activeOptText;
+      };
+
+      syncUI();
+
+      // Trigger Click
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.activeDropdown === dropdown) {
+          this.closeAll();
+        } else {
+          this.open(trigger, dropdown);
+        }
+      });
+
+      // Trigger Keyboard Navigation
+      trigger.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (this.activeDropdown !== dropdown) {
+            this.open(trigger, dropdown);
+          } else {
+            const items = Array.from(dropdown.querySelectorAll('.apple-select-option'));
+            const currentIdx = select.selectedIndex;
+            if (e.key === 'ArrowDown' && currentIdx < items.length - 1) {
+              select.selectedIndex = currentIdx + 1;
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (e.key === 'ArrowUp' && currentIdx > 0) {
+              select.selectedIndex = currentIdx - 1;
+              select.dispatchEvent(new Event('change', { bubbles: true }));
+            } else if (e.key === 'Enter' || e.key === ' ') {
+              this.closeAll();
+            }
+          }
+        }
+      });
+
+      // Intercept select.value property changes
+      const proto = HTMLSelectElement.prototype;
+      const nativeDescriptor = Object.getOwnPropertyDescriptor(proto, 'value');
+      if (nativeDescriptor) {
+        Object.defineProperty(select, 'value', {
+          get() {
+            return nativeDescriptor.get.call(this);
+          },
+          set(val) {
+            nativeDescriptor.set.call(this, val);
+            syncUI();
+          },
+          configurable: true
+        });
+      }
+
+      // Native change listener
+      select.addEventListener('change', syncUI);
+
+      this.instances.set(select, { trigger, dropdown, syncUI });
+    },
+
+    open(trigger, dropdown) {
+      this.closeAll();
+
+      dropdown.style.display = 'block';
+      dropdown.style.visibility = 'hidden';
+      const dropdownWidth = dropdown.offsetWidth;
+      const dropdownHeight = dropdown.offsetHeight;
+      dropdown.style.visibility = 'visible';
+
+      const rect = trigger.getBoundingClientRect();
+      let left = rect.right - dropdownWidth;
+      if (left < 10) left = rect.left;
+      if (left + dropdownWidth > window.innerWidth - 10) {
+        left = window.innerWidth - dropdownWidth - 10;
+      }
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      let top;
+      if (spaceBelow < dropdownHeight + 12 && spaceAbove > dropdownHeight) {
+        top = rect.top - dropdownHeight - 5;
+        dropdown.classList.add('open-up');
+      } else {
+        top = rect.bottom + 5;
+        dropdown.classList.remove('open-up');
+      }
+
+      dropdown.style.left = `${Math.round(left)}px`;
+      dropdown.style.top = `${Math.round(top)}px`;
+
+      requestAnimationFrame(() => {
+        dropdown.classList.add('visible');
+        trigger.classList.add('active');
+        trigger.setAttribute('aria-expanded', 'true');
+      });
+
+      this.activeDropdown = dropdown;
+      this.activeTrigger = trigger;
+    },
+
+    closeAll() {
+      if (this.activeDropdown) {
+        this.activeDropdown.classList.remove('visible');
+        const d = this.activeDropdown;
+        setTimeout(() => {
+          if (!d.classList.contains('visible')) {
+            d.style.display = 'none';
+          }
+        }, 140);
+        this.activeDropdown = null;
+      }
+      if (this.activeTrigger) {
+        this.activeTrigger.classList.remove('active');
+        this.activeTrigger.setAttribute('aria-expanded', 'false');
+        this.activeTrigger = null;
+      }
+    },
+
+    refreshAll() {
+      this.instances.forEach(({ syncUI }) => {
+        syncUI();
+      });
+    }
+  };
 
   // ── Universal Copy Chip Helper ──────────────────────────────────────────────
   function setupCopyChip(chipId, badgeId, getUrlFn) {
@@ -5105,6 +5674,30 @@
         });
       });
 
+      // Regenerate DSU MAC Address
+      document.getElementById('btn-regen-dsu-mac')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btn-regen-dsu-mac');
+        const title = I18n.t('settings_modal.dsu_mac_regen_title') || 'Сгенерировать новый MAC?';
+        const message = I18n.t('settings_modal.dsu_mac_regen_confirm') || 'Текущие привязки контроллера в эмуляторах (Cemu, Yuzu) потребуется выбрать заново.';
+        const okText = I18n.t('settings_modal.dsu_mac_regen') || 'Сгенерировать';
+        const cancelText = I18n.t('settings_modal.btn_cancel') || 'Отмена';
+
+        const confirmed = await showAppleConfirm({ title, message, okText, cancelText });
+        if (!confirmed) return;
+
+        try {
+          btn?.classList.add('spinning');
+          const newMac = await window.go.main.App.RegenerateDSUMAC();
+          const macInput = document.getElementById('setting-dsu-mac');
+          if (macInput) macInput.value = newMac;
+          showToast(I18n.t('settings_modal.dsu_mac_regen_success') || 'MAC-адрес успешно обновлен');
+          setTimeout(() => btn?.classList.remove('spinning'), 500);
+        } catch (err) {
+          btn?.classList.remove('spinning');
+          console.error('Failed to regenerate MAC:', err);
+        }
+      });
+
       // Sensitivity slider and direct numeric input bi-directional sync
       const sensSlider = document.getElementById('setting-gyro-sensitivity');
       const sensNumInput = document.getElementById('setting-gyro-sens-input');
@@ -5166,6 +5759,11 @@
 
       // Load initial settings silently on startup
       await this.fetchSettings();
+
+      // Initialize Apple-styled custom pop-up dropdowns
+      if (typeof AppleSelect !== 'undefined') {
+        AppleSelect.init();
+      }
     },
 
     syncLiveFilter() {
@@ -5330,6 +5928,11 @@
         dsuInput.classList.remove('error');
       }
 
+      const dsuMacInput = document.getElementById('setting-dsu-mac');
+      if (dsuMacInput) {
+        dsuMacInput.value = s.dsuMac || '00:13:37:00:00:01';
+      }
+
       const httpInput = document.getElementById('setting-http-port');
       if (httpInput) {
         httpInput.value = s.httpPort || 8080;
@@ -5400,6 +6003,11 @@
         silenceCheckbox.checked = (s.silenceDisconnect !== false);
       }
 
+      const closeActionSelect = document.getElementById('setting-close-action');
+      if (closeActionSelect) {
+        closeActionSelect.value = s.closeAction || (s.minimizeToTray ? 'minimize' : 'ask');
+      }
+
       const soundSelect = document.getElementById('setting-sound-mode');
       if (soundSelect) {
         soundSelect.value = s.soundMode || 'cute';
@@ -5431,6 +6039,10 @@
       const fontScaleBadge = document.getElementById('setting-font-scale-badge');
       if (fontScaleSlider) fontScaleSlider.value = scaleVal;
       if (fontScaleBadge) fontScaleBadge.textContent = Number(scaleVal).toFixed(2) + 'x';
+
+      if (typeof AppleSelect !== 'undefined') {
+        AppleSelect.refreshAll();
+      }
     },
 
     resetToDefaults() {
@@ -5484,6 +6096,11 @@
         silenceCheckbox.checked = true;
       }
 
+      const closeActionSelectReset = document.getElementById('setting-close-action');
+      if (closeActionSelectReset) {
+        closeActionSelectReset.value = 'ask';
+      }
+
       const soundSelect = document.getElementById('setting-sound-mode');
       if (soundSelect) {
         soundSelect.value = 'cute';
@@ -5503,6 +6120,9 @@
       FontScaleManager.apply(1.00, false, true);
 
       this.syncLiveFilter();
+      if (typeof AppleSelect !== 'undefined') {
+        AppleSelect.refreshAll();
+      }
     },
 
     async save() {
@@ -5566,6 +6186,8 @@
       const selectedTheme = document.querySelector('#setting-theme-segmented .settings-seg-btn.active')?.getAttribute('data-val') || ThemeManager.theme || 'dark';
       const selectedLang = document.querySelector('#setting-lang-segmented .settings-seg-btn.active')?.getAttribute('data-val') || I18n.currentLang || 'ru';
 
+      const dsuMac = document.getElementById('setting-dsu-mac')?.value?.trim() || '';
+
       const payload = {
         theme: selectedTheme,
         lang: selectedLang,
@@ -5574,6 +6196,7 @@
         firstLaunchDone: true,
         hideAuthor: false,
         dsuPort: dsuPort,
+        dsuMac: dsuMac,
         httpPort: httpPort,
         httpsPort: httpsPort,
         gyroDeadzone: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
@@ -5583,6 +6206,8 @@
         stillnessHint: stillnessHint,
         disconnectAlert: disconnectAlert,
         silenceDisconnect: silenceDisconnect,
+        closeAction: document.getElementById('setting-close-action')?.value || 'ask',
+        minimizeToTray: document.getElementById('setting-close-action')?.value === 'minimize',
         soundMode: soundMode,
         soundVolume: isNaN(soundVolume) ? 1 : soundVolume
       };
@@ -8121,9 +8746,79 @@
       }
     },
 
+    _lastDsuCount: null,
+    _lastDsuClientsJson: '',
+
+    updateDSU(count, clients) {
+      count = typeof count === 'number' ? count : (Array.isArray(clients) ? clients.length : 0);
+      clients = Array.isArray(clients) ? clients : [];
+      const clientsJson = JSON.stringify(clients);
+
+      if (this._lastDsuCount === count && this._lastDsuClientsJson === clientsJson) {
+        return;
+      }
+      this._lastDsuCount = count;
+      this._lastDsuClientsJson = clientsJson;
+
+      const isOnline = count > 0;
+      const clientWord = isOnline 
+        ? (count === 1 ? (I18n.t('status.dsu_connected') || 'Эмулятор подключен') : (I18n.t('status.dsu_connected_plural') || 'Подключено эмуляторов: %d').replace('%d', count))
+        : (I18n.t('status.dsu_waiting') || 'Ожидание эмуляторов');
+
+      const updateBanner = (prefix) => {
+        const banner = document.getElementById(`${prefix}-dsu-banner`);
+        const dot = document.getElementById(`${prefix}-dsu-dot`);
+        const chip = document.getElementById(`${prefix}-dsu-chip`);
+        const idleRow = document.getElementById(`${prefix}-dsu-idle-row`);
+        const clientsList = document.getElementById(`${prefix}-dsu-clients-list`);
+
+        if (!banner || !chip) return;
+
+        banner.className = `dsu-home-banner ${isOnline ? 'active' : 'warning'}`;
+        chip.className = `dsu-home-chip ${isOnline ? 'green' : 'amber'}`;
+        chip.textContent = clientWord;
+
+        if (dot) {
+          dot.style.backgroundColor = isOnline ? '#34C759' : '#FF9F0A';
+          dot.className = `status-dot ${isOnline ? 'online' : ''}`;
+        }
+
+        if (isOnline) {
+          if (idleRow) idleRow.style.display = 'none';
+          if (clientsList) {
+            clientsList.style.display = 'flex';
+            clientsList.innerHTML = clients.map(c => {
+              const addr = c.address || (c.ip + ':' + c.port);
+              const isAct = c.active !== false;
+              return `<div class="dsu-home-client-tag">
+                <div class="dsu-home-client-left">
+                  <span class="dsu-client-pulse ${isAct ? 'green' : 'amber'}"></span>
+                  <span class="dsu-client-addr">${addr}</span>
+                </div>
+                <span class="dsu-client-status-badge ${isAct ? 'green' : 'amber'}">${isAct ? 'ACTIVE' : 'IDLE'}</span>
+              </div>`;
+            }).join('');
+          }
+        } else {
+          if (idleRow) idleRow.style.display = 'flex';
+          if (clientsList) {
+            clientsList.style.display = 'none';
+            clientsList.innerHTML = '';
+          }
+        }
+      };
+
+      updateBanner('offline');
+      updateBanner('online');
+    },
+
     render(state) {
       this.lastState = state;
       if (!state) return;
+
+      if (typeof state.dsuClients !== 'undefined' || typeof state.dsuClientList !== 'undefined') {
+        this.updateDSU(state.dsuClients, state.dsuClientList);
+      }
 
       if (window._liveDebugWin && !window._liveDebugWin.closed && window._liveDebugWin.updateFromState) {
         try {
@@ -8466,12 +9161,27 @@
             }
           }
         });
+        window.runtime.EventsOn('dsu:status', (payload) => {
+          try {
+            const data = (typeof payload === 'string') ? JSON.parse(payload) : payload;
+            if (data) {
+              AppState.updateDSU(data.count, data.clients);
+            }
+          } catch (e) {}
+        });
       }
 
       // Initial state load
       if (window.go && window.go.main && window.go.main.App) {
         const state = await window.go.main.App.GetState();
         this.render(state);
+        if (window.go.main.App.GetDSUStatus) {
+          window.go.main.App.GetDSUStatus().then((dsu) => {
+            if (dsu) {
+              AppState.updateDSU(dsu.count, dsu.clients);
+            }
+          }).catch(() => {});
+        }
       }
     }
   };
@@ -8530,6 +9240,9 @@
     ThemeManager.init();
     FontScaleManager.init();
     HeaderManager.init();
+    if (typeof AppleSelect !== 'undefined') {
+      AppleSelect.init();
+    }
 
     let ready = false;
     let pollWails = null;
@@ -8547,6 +9260,10 @@
       SetupWizard.init();
       HelpManager.init();
       SettingsManager.init();
+      AppleCloseDialog.init();
+      if (typeof AppleSelect !== 'undefined') {
+        AppleSelect.init();
+      }
       WelcomeManager.init();
       CalibrationWizard.init();
       AppState.init();

@@ -4,11 +4,17 @@ import {main} from '../models';
 
 export function ClearPreview():Promise<void>;
 
+export function ConfirmCloseChoice(arg1:string,arg2:boolean):Promise<void>;
+
 export function CopyCalibrationReport():Promise<string>;
 
 export function CopyLast20Frames():Promise<string>;
 
 export function GetAppSettings():Promise<main.AppSettings>;
+
+export function GetCloseAction():Promise<string>;
+
+export function GetDSUStatus():Promise<Record<string, any>>;
 
 export function GetFontScale():Promise<number>;
 
@@ -38,6 +44,10 @@ export function PlaySystemSound(arg1:string):Promise<void>;
 
 export function PreviewMatrix(arg1:any):Promise<void>;
 
+export function QuitApp():Promise<void>;
+
+export function RegenerateDSUMAC():Promise<string>;
+
 export function ResetAHRS():Promise<void>;
 
 export function ResetGyroFilter():Promise<void>;
@@ -47,6 +57,8 @@ export function SaveAppSettings(arg1:main.AppSettings):Promise<Record<string, an
 export function SaveProfile(arg1:number,arg2:string,arg3:string,arg4:string,arg5:any):Promise<string>;
 
 export function SetActiveProfile(arg1:number):Promise<string>;
+
+export function SetCloseAction(arg1:string):Promise<void>;
 
 export function SetFontScale(arg1:number):Promise<void>;
 
@@ -61,6 +73,8 @@ export function SetTuningActive(arg1:boolean):Promise<void>;
 export function SetTuningFilterParams(arg1:number,arg2:number,arg3:number):Promise<void>;
 
 export function SetWindowTheme(arg1:string):Promise<void>;
+
+export function ShowWindow():Promise<void>;
 
 export function StartCapture():Promise<void>;
 
