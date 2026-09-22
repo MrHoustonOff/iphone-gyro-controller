@@ -530,13 +530,20 @@
     "usb_hint": "Direct high-speed cable feed"
   },
   "usb_mode": {
-    "title": "Waiting for USB Device",
-    "desc": "Connect your GyroBridge hardware controller via USB cable for direct high-precision motion tracking.",
-    "status_scanning": "Scanning for device...",
+    "title": "Waiting for Connection",
+    "desc": "Connect your GyroBridge hardware controller via USB cable for direct motion tracking.",
+    "status_scanning": "Searching for USB controller...",
+    "spec_rate_val": "1000 Hz",
+    "spec_rate_lbl": "Polling Rate",
+    "spec_latency_val": "< 1 ms",
+    "spec_latency_lbl": "Direct Response",
+    "spec_driver_val": "Direct HID",
+    "spec_driver_lbl": "Driverless",
     "pill_usb": "USB 2.0 Direct Feed",
     "pill_latency": "Zero Wi-Fi Latency",
     "pill_version": "GyroBridge 2.0 Preview",
     "phone_blocked_notice": "In hardware mode, smartphone Wi-Fi connections are disabled.",
-    "switch_hint": "To connect a smartphone, switch to 'Smartphone' above."
+    "switch_hint": "To connect a smartphone, switch to 'Smartphone' above.",
+    "footnote": "Direct hardware USB mode • Wi-Fi is inactive"
   }
 }

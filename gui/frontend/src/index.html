@@ -94,6 +94,7 @@
     <!-- Top Input Mode Selector Bubble/Pill (Midway between header and card) -->
     <div class="top-mode-wrapper card-mode-header" id="card-mode-header">
       <div class="main-mode-pill" role="tablist" aria-label="Input Mode">
+        <div class="main-mode-glider" id="main-mode-glider"></div>
         <button type="button" class="main-mode-btn active" id="btn-mode-phone" role="tab" aria-selected="true" title="Смартфон (Wi-Fi)">
           <svg class="mode-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
@@ -361,45 +362,94 @@
           </div>
         </div>
 
-        <!-- State: USB Controller Hardware Waiting Module -->
+        <!-- State: USB Controller Hardware Waiting Module (Pure Apple HIG Hardware Design) -->
         <div class="usb-mode-module" id="view-usb-mode" style="display: none;">
-          <!-- Hardware Visual Frame with Breathing Pulse Glow -->
-          <div class="usb-frame-wrap">
-            <div class="usb-pulse-ring"></div>
-            <div class="usb-frame">
-              <svg class="usb-hardware-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="18" y="8" width="28" height="14" rx="3" stroke-width="2.5"/>
-                <line x1="26" y1="12" x2="26" y2="15" stroke-width="2"/>
-                <line x1="38" y1="12" x2="38" y2="15" stroke-width="2"/>
-                <path d="M22 22v10a10 10 0 0 0 10 10 10 10 0 0 0 10-10V22" stroke-width="2.5"/>
-                <path d="M32 42v14" stroke-width="2.5"/>
-                <circle cx="32" cy="56" r="3" fill="currentColor"/>
-                <path d="M22 36l-6 6" stroke-width="2"/>
-                <rect x="12" y="42" width="6" height="6" rx="1" stroke-width="1.8"/>
-                <path d="M42 36l6 6" stroke-width="2"/>
-                <circle cx="50" cy="45" r="3" stroke-width="1.8"/>
+          <!-- Hardware Visual Frame with Concentric Radar Wave Glow -->
+          <div class="apple-hw-hero">
+            <div class="hw-radar-ring ring-1"></div>
+            <div class="hw-radar-ring ring-2"></div>
+            <div class="hw-device-frame">
+              <svg class="hw-controller-svg" viewBox="0 0 220 136" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Braided USB-C Cable entering top port -->
+                <path d="M110 0 V30" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" class="hw-cable-outer"/>
+                <path d="M110 0 V30" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="hw-cable-inner"/>
+                <rect x="103" y="20" width="14" height="12" rx="3" class="hw-cable-boot"/>
+                <rect x="105" y="30" width="10" height="4" rx="1.5" class="hw-port-socket"/>
+                
+                <!-- Controller Ergonomic Shell -->
+                <path d="M52 38 C72 34 148 34 168 38 C196 44 214 74 206 108 C201 126 183 134 166 124 C150 114 142 94 126 94 H94 C78 94 70 114 54 124 C37 134 19 126 14 108 C6 74 24 44 52 38 Z" class="hw-shell-body"/>
+                <path d="M52 38 C72 34 148 34 168 38 C196 44 214 74 206 108 C201 126 183 134 166 124 C150 114 142 94 126 94 H94 C78 94 70 114 54 124 C37 134 19 126 14 108 C6 74 24 44 52 38 Z" class="hw-shell-stroke"/>
+                
+                <!-- Directional Controls (Left) -->
+                <rect x="42" y="62" width="22" height="7" rx="3.5" class="hw-dpad"/>
+                <rect x="49.5" y="54.5" width="7" height="22" rx="3.5" class="hw-dpad"/>
+                
+                <!-- Action Buttons (Right) -->
+                <circle cx="168" cy="58" r="3.2" class="hw-btn"/>
+                <circle cx="178" cy="65.5" r="3.2" class="hw-btn"/>
+                <circle cx="158" cy="65.5" r="3.2" class="hw-btn"/>
+                <circle cx="168" cy="73" r="3.2" class="hw-btn"/>
+                
+                <!-- Precision Sticks -->
+                <circle cx="82" cy="74" r="14" class="hw-stick-base"/>
+                <circle cx="82" cy="74" r="8.5" class="hw-stick-top"/>
+                <circle cx="138" cy="74" r="14" class="hw-stick-base"/>
+                <circle cx="138" cy="74" r="8.5" class="hw-stick-top"/>
+                
+                <!-- Center Breathing Status Beacon -->
+                <circle cx="110" cy="50" r="3.2" class="hw-status-beacon"/>
+                <circle cx="110" cy="50" r="9" class="hw-status-beacon-pulse"/>
               </svg>
             </div>
           </div>
 
-          <!-- Apple Status Chip -->
-          <div class="usb-status-chip">
-            <span class="usb-status-dot"></span>
-            <span class="usb-status-chip-text" data-i18n="usb_mode.status_scanning">Поиск устройства...</span>
+          <!-- Apple Status Capsule -->
+          <div class="apple-status-pill waiting">
+            <span class="pulse-beacon"></span>
+            <span class="status-pill-text" data-i18n="usb_mode.status_scanning">Поиск USB-контроллера...</span>
           </div>
 
           <!-- Headline & Description -->
-          <h2 class="usb-headline" data-i18n="usb_mode.title">Ожидание USB-устройства</h2>
-          <p class="usb-description" data-i18n="usb_mode.desc">Подключите аппаратный контроллер GyroBridge по USB-кабелю для прямого отслеживания движений.</p>
+          <h2 class="apple-hw-title" data-i18n="usb_mode.title">Ожидание подключения</h2>
+          <p class="apple-hw-subtitle" data-i18n="usb_mode.desc">Подключите аппаратный модуль GyroBridge по USB-кабелю для прямого отслеживания движений.</p>
 
-          <!-- Hardware Spec Badges (Apple HIG pill badges) -->
-          <div class="usb-specs-row">
-            <span class="usb-spec-pill" data-i18n="usb_mode.pill_usb">USB 2.0 Прямой канал</span>
-            <span class="usb-spec-pill" data-i18n="usb_mode.pill_latency">Нулевой пинг Wi-Fi</span>
-            <span class="usb-spec-pill highlight" data-i18n="usb_mode.pill_version">GyroBridge 2.0 Preview</span>
+          <!-- Apple Inset Hardware Specs Cards (3-column) -->
+          <div class="apple-specs-grid">
+            <div class="spec-card">
+              <div class="spec-icon-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                </svg>
+              </div>
+              <div class="spec-value" data-i18n="usb_mode.spec_rate_val">1000 Гц</div>
+              <div class="spec-label" data-i18n="usb_mode.spec_rate_lbl">Частота опроса</div>
+            </div>
+
+            <div class="spec-card">
+              <div class="spec-icon-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 14 14"/>
+                </svg>
+              </div>
+              <div class="spec-value" data-i18n="usb_mode.spec_latency_val">&lt; 1 мс</div>
+              <div class="spec-label" data-i18n="usb_mode.spec_latency_lbl">Прямой отклик</div>
+            </div>
+
+            <div class="spec-card">
+              <div class="spec-icon-wrap">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v6"/>
+                  <path d="m5 10 7-4 7 4v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8Z"/>
+                  <circle cx="12" cy="14" r="2"/>
+                </svg>
+              </div>
+              <div class="spec-value" data-i18n="usb_mode.spec_driver_val">Direct HID</div>
+              <div class="spec-label" data-i18n="usb_mode.spec_driver_lbl">Без драйверов</div>
+            </div>
           </div>
 
-          <!-- Live Cemuhook DSU Server & Clients Banner -->
+          <!-- Apple Inset DSU Server Bar (Keeps all IDs for backend live updates) -->
           <div class="dsu-home-banner warning" id="usb-dsu-banner">
             <div class="dsu-home-top">
               <div class="dsu-home-meta">
@@ -407,7 +457,7 @@
                 <span class="dsu-home-title" data-i18n="status.dsu_title">Cemuhook DSU Server</span>
                 <span class="dsu-home-port">:26760</span>
               </div>
-              <span class="dsu-home-chip amber" id="usb-dsu-chip" data-i18n="status.dsu_waiting">Ожидание эмуляторов</span>
+              <span class="dsu-home-chip amber" id="usb-dsu-chip" data-i18n="status.dsu_waiting">Ожидание эмулятора</span>
             </div>
             <div class="dsu-home-body" id="usb-dsu-body">
               <div class="dsu-home-idle-row" id="usb-dsu-idle-row">
@@ -419,16 +469,13 @@
           </div>
 
           <!-- Footnote Notice -->
-          <div class="usb-footnote">
-            <svg class="usb-footnote-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <div class="apple-hw-footnote">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="16" x2="12" y2="12"/>
               <line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
-            <span class="usb-footnote-text">
-              <span data-i18n="usb_mode.phone_blocked_notice">В стационарном режиме подключение смартфонов по Wi-Fi отключено.</span>
-              <span class="usb-footnote-switch" data-i18n="usb_mode.switch_hint">Для подключения телефона переключитесь на «Смартфон» выше.</span>
-            </span>
+            <span data-i18n="usb_mode.footnote">Режим прямого проводного подключения • Wi-Fi выключен</span>
           </div>
         </div>
 
@@ -2550,6 +2597,10 @@
       if (typeof AppleSelect !== 'undefined' && AppleSelect.refreshAll) {
         AppleSelect.refreshAll();
       }
+
+      if (typeof AppState !== 'undefined' && AppState.updateModeGlider) {
+        setTimeout(() => AppState.updateModeGlider(), 10);
+      }
     },
 
     async setLanguage(lang, broadcast = true) {
@@ -3149,6 +3200,7 @@
       if (container) {
         container.classList.add('setup-mode');
         container.classList.remove('setup-mode-wide');
+        container.classList.remove('usb-mode');
       }
       const viewOffline = document.getElementById('view-offline');
       const viewOnline = document.getElementById('view-online');
@@ -3299,6 +3351,7 @@
       if (container) {
         container.classList.add('setup-mode');
         container.classList.remove('setup-mode-wide');
+        container.classList.remove('usb-mode');
       }
 
       const vOff = document.getElementById('view-offline');
@@ -6723,6 +6776,7 @@
       if (container) {
         container.classList.add('setup-mode');
         container.classList.add('setup-mode-wide');
+        container.classList.remove('usb-mode');
       }
 
       const vOff = document.getElementById('view-offline');
@@ -7355,6 +7409,7 @@
       if (container) {
         container.classList.add('setup-mode');
         container.classList.remove('setup-mode-wide');
+        container.classList.remove('usb-mode');
       }
 
       const vOff = document.getElementById('view-offline');
@@ -9905,6 +9960,7 @@
 
     setInputMode(mode, fromBackend = false) {
       if (mode !== 'usb') mode = 'phone';
+      const prevMode = this.inputMode;
       this.inputMode = mode;
 
       const btnPhone = document.getElementById('btn-mode-phone');
@@ -9918,6 +9974,37 @@
         btnUsb.setAttribute('aria-selected', mode === 'usb' ? 'true' : 'false');
       }
 
+      const container = document.querySelector('.modular-container');
+      const isWizardOpen = !!(SetupWizard?.isOpen || HelpManager?.isOpen || SettingsManager?.isOpen || WelcomeManager?.isOpen || CalibrationWizard?.isOpen);
+      if (container && !isWizardOpen) {
+        container.classList.toggle('usb-mode', mode === 'usb');
+      }
+
+      this.updateModeGlider();
+
+      // Trigger directional slide transitions between views
+      if (prevMode && prevMode !== mode) {
+        const vOffline = document.getElementById('view-offline');
+        const vOnline = document.getElementById('view-online');
+        const vUsb = document.getElementById('view-usb-mode');
+        if (mode === 'usb' && vUsb) {
+          vUsb.classList.remove('mode-slide-in-left', 'mode-slide-in-right');
+          void vUsb.offsetWidth; // trigger reflow
+          vUsb.classList.add('mode-slide-in-right');
+        } else if (mode === 'phone') {
+          if (vOffline) {
+            vOffline.classList.remove('mode-slide-in-left', 'mode-slide-in-right');
+            void vOffline.offsetWidth;
+            vOffline.classList.add('mode-slide-in-left');
+          }
+          if (vOnline) {
+            vOnline.classList.remove('mode-slide-in-left', 'mode-slide-in-right');
+            void vOnline.offsetWidth;
+            vOnline.classList.add('mode-slide-in-left');
+          }
+        }
+      }
+
       this._lastStatus = null;
       this._lastIsOffline = null;
 
@@ -9928,6 +10015,20 @@
       if (this.lastState) {
         this.render(this.lastState);
       }
+    },
+
+    updateModeGlider() {
+      const glider = document.getElementById('main-mode-glider');
+      const activeBtn = document.querySelector('.main-mode-btn.active');
+      const pill = document.querySelector('.main-mode-pill');
+      if (!glider || !activeBtn || !pill) return;
+      const pillRect = pill.getBoundingClientRect();
+      const btnRect = activeBtn.getBoundingClientRect();
+      if (btnRect.width === 0) return;
+      const left = btnRect.left - pillRect.left;
+      glider.style.width = `${btnRect.width}px`;
+      glider.style.transform = `translateX(${left}px)`;
+      glider.style.opacity = '1';
     },
 
     render(state) {
@@ -9979,6 +10080,10 @@
       const isWizardOpen = !!(SetupWizard?.isOpen || HelpManager?.isOpen || SettingsManager?.isOpen || WelcomeManager?.isOpen || CalibrationWizard?.isOpen);
       if (cardModeHeader) {
         cardModeHeader.style.display = isWizardOpen ? 'none' : 'flex';
+      }
+      const container = document.querySelector('.modular-container');
+      if (container && !isWizardOpen) {
+        container.classList.toggle('usb-mode', this.inputMode === 'usb');
       }
 
       // Mode Branch: Stationary USB Controller Mode
@@ -10254,6 +10359,9 @@
           this.setInputMode('usb');
         }
       });
+
+      window.addEventListener('resize', () => this.updateModeGlider());
+      setTimeout(() => this.updateModeGlider(), 60);
 
       // Master setup button
       document.getElementById('btn-master-setup')?.addEventListener('click', () => {

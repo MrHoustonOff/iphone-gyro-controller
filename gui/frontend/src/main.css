@@ -454,8 +454,13 @@ em {
   flex-direction: column;
   align-items: center;
   margin: 0 auto;
-  transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
+}
+
+/* Stationary Hardware USB controller canvas (Smooth morphing expansion) */
+.modular-container.usb-mode {
+  max-width: 580px;
 }
 
 /* When Setup Wizard is open, container expands to give high-res 2-column layout */
@@ -507,36 +512,64 @@ em {
 }
 
 .main-mode-pill {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  background-color: var(--surface-elevated);
-  padding: 4px;
+  background-color: var(--segmented-bg);
+  padding: 3px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border-subtle);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  gap: 4px;
+  isolation: isolate;
+  gap: 0;
 }
 
-[data-theme="light"] .main-mode-pill {
-  background-color: #E5E5EA;
-  border-color: rgba(0, 0, 0, 0.08);
+.main-mode-glider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 0;
+  border-radius: var(--radius-pill);
+  background-color: var(--segmented-active);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.16), 0 0 1px rgba(0, 0, 0, 0.12);
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), width 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0;
+}
+
+[data-theme="light"] .main-mode-glider {
+  background-color: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.08);
 }
 
 .main-mode-btn {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: transparent;
+  background: transparent !important;
   border: none;
-  color: var(--text-secondary);
+  color: var(--segmented-text);
   font-family: var(--font-sans);
   font-size: 13.5px;
   font-weight: 600;
-  padding: 6px 14px;
+  padding: 6px 16px;
   border-radius: var(--radius-pill);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: color var(--transition-fast), opacity var(--transition-fast);
   line-height: 1.2;
+}
+
+.main-mode-btn:hover {
+  color: var(--text);
+}
+
+.main-mode-btn.active {
+  color: var(--segmented-text-active);
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .main-mode-btn .mode-icon {
@@ -545,33 +578,12 @@ em {
   transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
-.main-mode-btn:hover {
-  color: var(--text);
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-[data-theme="light"] .main-mode-btn:hover {
-  background-color: rgba(0, 0, 0, 0.04);
-}
-
-.main-mode-btn.active {
-  background-color: var(--surface);
-  color: var(--text);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.12);
-}
-
-[data-theme="light"] .main-mode-btn.active {
-  background-color: #FFFFFF;
-  color: #000000;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.08);
-}
-
 .main-mode-btn.active .mode-icon {
   opacity: 1;
   color: var(--apple-blue);
 }
 
-/* ── USB Mode Module (Stationary Hardware Tracker) ──────────────────────────── */
+/* ── USB Mode Module (Apple HIG Hardware Interface) ────────────────────────── */
 .usb-mode-module {
   width: 100%;
   display: flex;
@@ -580,197 +592,337 @@ em {
   animation: fadeInModule 0.24s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.usb-frame-wrap {
+/* Apple Hardware Hero Illustration */
+.apple-hw-hero {
   position: relative;
-  width: 96px;
-  height: 96px;
+  width: 100%;
+  height: 144px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 18px;
+  margin-top: 2px;
+  margin-bottom: 16px;
 }
 
-.usb-frame {
+.hw-device-frame {
   position: relative;
-  width: 80px;
-  height: 80px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, rgba(100, 210, 255, 0.14) 0%, rgba(10, 132, 255, 0.06) 100%);
-  border: 1px solid rgba(100, 210, 255, 0.3);
+  z-index: 2;
+  width: 220px;
+  height: 136px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(10, 132, 255, 0.15);
+  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.4));
+}
+
+[data-theme="light"] .hw-device-frame {
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.1));
+}
+
+.hw-controller-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.hw-shell-body {
+  fill: var(--surface-elevated);
+  transition: fill var(--transition-theme);
+}
+
+.hw-shell-stroke {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1.5;
+  transition: stroke var(--transition-theme);
+}
+
+.hw-cable-outer {
+  stroke: var(--border-subtle);
+  transition: stroke var(--transition-theme);
+}
+
+.hw-cable-inner {
+  stroke: var(--accent);
+  opacity: 0.85;
+}
+
+.hw-cable-boot {
+  fill: var(--surface-hover);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.hw-port-socket {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.hw-dpad,
+.hw-btn {
+  fill: var(--surface-hover);
+  stroke: var(--border);
+  stroke-width: 0.75;
+  transition: fill var(--transition-theme), stroke var(--transition-theme);
+}
+
+.hw-stick-base {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1.2;
+}
+
+.hw-stick-top {
+  fill: var(--surface-hover);
+  stroke: var(--border-subtle);
+  stroke-width: 1;
+}
+
+.hw-status-beacon {
+  fill: #0A84FF;
+  animation: beaconBreathe 2.4s infinite ease-in-out;
+}
+
+[data-theme="light"] .hw-status-beacon {
+  fill: #0071E3;
+}
+
+.hw-status-beacon-pulse {
+  fill: rgba(10, 132, 255, 0.25);
+  animation: beaconPulseRing 2.4s infinite ease-out;
+}
+
+[data-theme="light"] .hw-status-beacon-pulse {
+  fill: rgba(0, 113, 227, 0.2);
+}
+
+@keyframes beaconBreathe {
+  0%, 100% { opacity: 0.65; transform-origin: 110px 50px; transform: scale(0.95); }
+  50% { opacity: 1; transform-origin: 110px 50px; transform: scale(1.15); filter: drop-shadow(0 0 6px rgba(10, 132, 255, 0.9)); }
+}
+
+@keyframes beaconPulseRing {
+  0% { transform-origin: 110px 50px; transform: scale(0.8); opacity: 0.8; }
+  70% { transform-origin: 110px 50px; transform: scale(1.8); opacity: 0; }
+  100% { transform-origin: 110px 50px; transform: scale(1.8); opacity: 0; }
+}
+
+/* Concentric Apple Radar Rings */
+.hw-radar-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(10, 132, 255, 0.28);
+  pointer-events: none;
   z-index: 1;
 }
 
-[data-theme="light"] .usb-frame {
-  background: linear-gradient(135deg, rgba(0, 113, 227, 0.12) 0%, rgba(0, 113, 227, 0.04) 100%);
-  border-color: rgba(0, 113, 227, 0.25);
-  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.12);
+[data-theme="light"] .hw-radar-ring {
+  border-color: rgba(0, 113, 227, 0.22);
 }
 
-.usb-hardware-icon {
-  width: 44px;
-  height: 44px;
-  color: #64D2FF;
-  animation: usbIconBreathe 3s infinite ease-in-out;
+.hw-radar-ring.ring-1 {
+  width: 170px;
+  height: 170px;
+  animation: appleRadar 3.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
-[data-theme="light"] .usb-hardware-icon {
-  color: #0071E3;
+.hw-radar-ring.ring-2 {
+  width: 220px;
+  height: 220px;
+  animation: appleRadar 3.2s cubic-bezier(0.2, 0.8, 0.2, 1) 1.6s infinite;
 }
 
-.usb-pulse-ring {
-  position: absolute;
-  inset: -6px;
-  border-radius: 28px;
-  border: 1.5px solid rgba(100, 210, 255, 0.4);
-  animation: usbPulse 2.8s infinite ease-out;
-  pointer-events: none;
-}
-
-[data-theme="light"] .usb-pulse-ring {
-  border-color: rgba(0, 113, 227, 0.4);
-}
-
-@keyframes usbPulse {
+@keyframes appleRadar {
   0% {
-    transform: scale(0.88);
+    transform: translate(-50%, -50%) scale(0.7);
     opacity: 0.8;
   }
-  50% {
-    transform: scale(1.08);
-    opacity: 0.25;
+  60% {
+    opacity: 0.22;
   }
   100% {
-    transform: scale(1.18);
+    transform: translate(-50%, -50%) scale(1.18);
     opacity: 0;
   }
 }
 
-@keyframes usbIconBreathe {
-  0%, 100% {
-    transform: scale(1);
-    filter: drop-shadow(0 0 2px rgba(100, 210, 255, 0.3));
-  }
-  50% {
-    transform: scale(1.05);
-    filter: drop-shadow(0 0 10px rgba(100, 210, 255, 0.65));
-  }
-}
-
-.usb-status-chip {
+/* Apple Status Capsule */
+.apple-status-pill {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 4px 12px;
+  gap: 8px;
+  padding: 5px 14px;
   border-radius: var(--radius-pill);
-  background: rgba(100, 210, 255, 0.12);
-  border: 1px solid rgba(100, 210, 255, 0.28);
-  margin-bottom: 14px;
+  background: rgba(10, 132, 255, 0.08);
+  border: 1px solid rgba(10, 132, 255, 0.22);
+  margin-bottom: 12px;
 }
 
-[data-theme="light"] .usb-status-chip {
-  background: rgba(0, 113, 227, 0.1);
-  border-color: rgba(0, 113, 227, 0.22);
+[data-theme="light"] .apple-status-pill {
+  background: rgba(0, 113, 227, 0.07);
+  border-color: rgba(0, 113, 227, 0.2);
 }
 
-.usb-status-dot {
+.apple-status-pill .pulse-beacon {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background-color: #64D2FF;
-  animation: pulseDot 1.8s infinite ease-in-out;
+  background-color: #0A84FF;
+  animation: pulseDot 2s infinite ease-in-out;
 }
 
-[data-theme="light"] .usb-status-dot {
+[data-theme="light"] .apple-status-pill .pulse-beacon {
   background-color: #0071E3;
 }
 
-.usb-status-chip-text {
-  font-size: 12px;
+.apple-status-pill .status-pill-text {
+  font-family: var(--font-sans);
+  font-size: 12.5px;
   font-weight: 600;
-  color: #64D2FF;
-  letter-spacing: 0.02em;
-}
-
-[data-theme="light"] .usb-status-chip-text {
-  color: #0071E3;
-}
-
-.usb-headline {
-  font-size: clamp(20px, 2.5vw, 24px);
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 8px;
-  letter-spacing: -0.02em;
-}
-
-.usb-description {
-  font-size: clamp(13px, 1.6vw, 15px);
-  color: var(--text-secondary);
-  line-height: 1.45;
-  max-width: 400px;
-  margin-bottom: 20px;
-}
-
-.usb-specs-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 22px;
-  width: 100%;
-}
-
-.usb-spec-pill {
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  background: var(--surface-elevated);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
+  color: #0A84FF;
   letter-spacing: -0.01em;
 }
 
-.usb-spec-pill.highlight {
-  background: rgba(10, 132, 255, 0.12);
-  border-color: rgba(10, 132, 255, 0.3);
-  color: var(--apple-blue);
+[data-theme="light"] .apple-status-pill .status-pill-text {
+  color: #0071E3;
 }
 
-.usb-footnote {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: var(--radius-md);
-  background: var(--surface-hover);
-  border: 1px solid var(--border-subtle);
-  margin-top: 14px;
-  max-width: 440px;
-  text-align: left;
+/* Apple Typography */
+.apple-hw-title {
+  font-size: clamp(20px, 2.4vw, 24px);
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
 }
 
-.usb-footnote-icon {
-  flex-shrink: 0;
-  margin-top: 2px;
-  stroke: var(--text-tertiary);
-}
-
-.usb-footnote-text {
-  font-size: 12px;
-  line-height: 1.4;
+.apple-hw-subtitle {
+  font-size: clamp(13px, 1.5vw, 14.5px);
   color: var(--text-secondary);
+  line-height: 1.45;
+  max-width: 440px;
+  margin: 0 0 20px 0;
 }
 
-.usb-footnote-switch {
-  display: block;
-  margin-top: 2px;
+/* Apple Inset Hardware Specs Grid */
+.apple-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 460px) {
+  .apple-specs-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.spec-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 10px;
+  border-radius: var(--radius-md);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  transition: all var(--transition-fast);
+}
+
+.spec-card:hover {
+  background: var(--surface-hover);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.spec-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(10, 132, 255, 0.1);
+  color: #0A84FF;
+  margin-bottom: 6px;
+}
+
+[data-theme="light"] .spec-icon-wrap {
+  background: rgba(0, 113, 227, 0.09);
+  color: #0071E3;
+}
+
+.spec-value {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  margin-bottom: 3px;
+}
+
+.spec-label {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
   color: var(--text-tertiary);
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+
+/* Footnote Notice */
+.apple-hw-footnote {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 14px;
+}
+
+.apple-hw-footnote svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
+/* ── Directional View Transitions (Smooth Apple Crawl / Slide) ──────────────── */
+.mode-slide-in-right {
+  animation: modeSlideInRight 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.mode-slide-in-left {
+  animation: modeSlideInLeft 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes modeSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes modeSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
 }
 
 /* ── State 1: Offline Module ────────────────────────────────────────────────── */
