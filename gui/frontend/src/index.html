@@ -3332,11 +3332,6 @@
         return;
       }
 
-      if (type === 'defeat') {
-        if (typeof PlatformGame !== 'undefined' && PlatformGame.isOffline) return;
-        if (typeof TuningBench !== 'undefined' && TuningBench.isOffline) return;
-      }
-
       this._lastPlayTs[type] = now;
       this._curEffectiveVol = this.getEffectiveVolume(type, force) || 1.0;
 
@@ -3345,7 +3340,13 @@
         return;
       }
       if (type === 'defeat') {
-        this.playCuteDefeat();
+        if (mode === 'windows') {
+          if (window.go?.main?.App?.PlaySystemSound) {
+            try { window.go.main.App.PlaySystemSound('defeat'); } catch (e) {}
+          }
+        } else {
+          this.playCuteDefeat();
+        }
         return;
       }
       if (type === 'recenter') {
@@ -3468,30 +3469,34 @@
       osc.stop(startTime + duration);
     },
 
-    playVoidPlunge(startTime) {
+    playVoidPlunge(startTime, gainVal = 0.28, duration = 0.55) {
+      const vol = this._curEffectiveVol || this.getMasterVolume();
+      if (vol <= 0) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
-      const bufferSize = Math.floor(ctx.sampleRate * 0.45);
+      const bufferSize = Math.floor(ctx.sampleRate * duration);
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
       for (let i = 0; i < bufferSize; i++) {
-        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.35));
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.65));
       }
       const noise = ctx.createBufferSource();
       noise.buffer = buffer;
       const filter = ctx.createBiquadFilter();
-      filter.type = 'bandpass';
-      filter.Q.value = 3.2;
-      filter.frequency.setValueAtTime(920, startTime);
-      filter.frequency.exponentialRampToValueAtTime(80, startTime + 0.40);
+      filter.type = 'lowpass';
+      filter.Q.value = 2.2;
+      filter.frequency.setValueAtTime(2200, startTime);
+      filter.frequency.exponentialRampToValueAtTime(240, startTime + duration * 0.88);
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.12, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.42);
+      const effectiveGain = Math.min(1.0, gainVal * vol);
+      gain.gain.setValueAtTime(0.001, startTime);
+      gain.gain.exponentialRampToValueAtTime(effectiveGain, startTime + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(ctx.destination);
       noise.start(startTime);
-      noise.stop(startTime + 0.45);
+      noise.stop(startTime + duration);
     },
 
     playCuteConnect() {
@@ -3574,22 +3579,28 @@
       const ctx = this.getAudioContext();
       if (!ctx) return;
       const now = ctx.currentTime;
-      // Zelda shrine orb falling into the bottomless abyss:
-      // 1. Descending crystal chime
-      const notes = [
-        { f: 622.25, t: 0.00, d: 0.26, g: 0.15 }, // Eb5
-        { f: 523.25, t: 0.09, d: 0.30, g: 0.14 }, // C5
-        { f: 415.30, t: 0.18, d: 0.35, g: 0.13 }, // Ab4
-        { f: 349.23, t: 0.28, d: 0.50, g: 0.12 }  // F4
+      // Zelda shrine orb plunging into the bottomless abyss:
+      // 1. Cascading crystal FM bells (melancholy descending arpeggio, rich & punchy)
+      const chimes = [
+        { f: 783.99, t: 0.00, d: 0.32, g: 0.24, r: 2.756, m: 2.0 }, // G5
+        { f: 622.25, t: 0.10, d: 0.35, g: 0.25, r: 2.756, m: 2.0 }, // Eb5
+        { f: 523.25, t: 0.20, d: 0.38, g: 0.26, r: 2.756, m: 2.2 }, // C5
+        { f: 415.30, t: 0.30, d: 0.42, g: 0.27, r: 2.756, m: 2.2 }, // Ab4
+        { f: 349.23, t: 0.40, d: 0.58, g: 0.28, r: 2.756, m: 2.4 }  // F4
       ];
-      for (const n of notes) {
-        this.playTone(n.f, now + n.t, n.d, n.g, 'triangle');
-        this.playTone(n.f * 2.0, now + n.t, n.d * 0.4, n.g * 0.25, 'sine');
+      for (const n of chimes) {
+        this.playFMBell(n.f, now + n.t, n.d, n.g, n.r, n.m);
       }
-      // 2. Void abyss plunge whoosh (filtered white noise sweep)
-      this.playVoidPlunge(now);
-      // 3. Sub-bass abyss drop
-      this.playToneSweep(110, 35, now, 0.45, 0.18);
+
+      // 2. Visceral pitch plunge slide (880Hz -> 180Hz descending whistle glide)
+      this.playToneSweep(880, 180, now + 0.02, 0.48, 0.24);
+
+      // 3. Resonant abyss wind plunge (rushing air whoosh)
+      this.playVoidPlunge(now + 0.02, 0.28, 0.52);
+
+      // 4. Distant cavern floor impact strike ("DUNNNN" resonant gong)
+      this.playFMBell(115, now + 0.44, 0.48, 0.32, 1.5, 2.6);
+      this.playTone(95, now + 0.44, 0.35, 0.26, 'sine');
     },
 
     preview(type) {

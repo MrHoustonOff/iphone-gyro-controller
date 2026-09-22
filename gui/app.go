@@ -2841,6 +2841,9 @@ func (a *App) PlaySystemSound(soundType string) {
 	case "recenter":
 		soundName = "CCSelect"
 		fallbackPath = `C:\Windows\Media\Windows Navigation Start.wav`
+	case "defeat":
+		soundName = "SystemHand"
+		fallbackPath = `C:\Windows\Media\Windows Hardware Fail.wav`
 	default:
 		return
 	}
