@@ -6,41 +6,25 @@ GyroBridge turns your smartphone (iOS or Android) into a high-precision, low-lat
 
 ## What's New in v1.1.2
 
+### System Tray & Background Operation
+- **Minimize to System Tray**: GyroBridge can now run unobtrusively in the Windows notification area with near-zero resource consumption (~15 MB RAM, 0% CPU).
+- **Tray Context Menu**: Right-click the tray icon to quickly show/hide the main window, pause/resume motion streaming, or exit the application cleanly.
+- **Dynamic Tray Status**: The tray icon reflects connection state, indicating whether a streaming session is active or idle.
+
 ### Cemuhook DSU Protocol Compliance & Multi-Slot Fixes
-- **Strict Packet Sizing**: Fixed Cemuhook `PortInfo` response packet length strictly to 32 bytes (eliminating 4 extra padding bytes) and `VersionResponse` to 24 bytes, resolving CRC32 checksum rejections (`PortInfo is invalid!`) in Cemu 2.x and other emulators.
+- **Strict Packet Sizing**: Fixed Cemuhook `PortInfo` response packet length strictly to 32 bytes (eliminating 4 extra trailing bytes) and `VersionResponse` to 24 bytes, resolving CRC32 checksum rejections (`PortInfo is invalid!`) in Cemu 2.x and other emulators.
 - **Multi-Slot Port Querying**: Full support for multi-slot `ListPorts` requests (slots 0..3) with instantaneous responses for each requested index, eliminating 3-second connection timeouts in Cemu.
 
-### Apple-Inspired Connection Banners & Dynamic UI
+### UI & Telemetry Refinements
 - **Dual-State DSU Connection Banner**:
-  - Subdued amber warning banner (`Waiting for emulators`) when listening on port 26760 with zero connected clients.
-  - Active emerald banner (`Emulator Connected`) displaying live client IP, ephemeral port, and real-time pulse indicator once subscribed.
+  - Waiting state: subtle amber notification (`Waiting for emulators`) when listening on port 26760 with zero connected clients.
+  - Active state: green indicator (`Emulator Connected`) displaying live client IP, ephemeral port, and real-time pulse indicator once subscribed.
 - **Zero Layout Shifts**: Main interface card height locked strictly at 68px across all connection state transitions.
 - **Live Connected Client Monitoring**: Real-time connected emulator diagnostics in both the main window and LiveDebug window with instant connect/disconnect callbacks.
 
 ### Comprehensive User Documentation
 - **New Guides**: Published complete, visual guides in Russian ([`docs/guide.ru.md`](guide.ru.md)) and English ([`docs/guide.en.md`](guide.en.md)).
-- **Cemu Socket Quirk Documentation**: Detailed breakdown of Cemu's UDP socket lifecycle when starting before or after GyroBridge, with both instant in-game and startup solutions.
-
----
-
-## What's New in v1.1.1
-
-### Zelda Aim Target Shooting Mini-Game
-- **30-Second Target Challenge**: Added a target shooting mini-game directly into the Aim Test Bench. Hit targets in succession to build the highest score within a 30-second window.
-- **Immediate Synchronous Respawn**: Fixed a CSS syntax token issue in `calc()` and removed async delays; targets now respawn immediately upon hit.
-- **Center-Anchored Layout**: Targets and floating score indicators are anchored to `50% / 50%` coordinates with pixel offsets, guaranteeing complete visual stability during fullscreen transitions, window switches, and DPI zooming.
-- **Dual Mode Support**: Targets are available both in the compact settings preview widget and in full-screen expanded view.
-- **Interactive Shot Feedback**: Cyan reticle flash, Web Audio procedural harmonic chime, target explosion animation, and floating score popups.
-- **Persistent High-Score Tracking**: Highest score tracked in local storage and displayed in the fullscreen HUD and Game Over screen.
-- **Keyboard Controls**: `Space` to center gyro or restart, `Enter` to play again, `Esc` to toggle fullscreen.
-
-### Aim Orientation & Pitch Alignment
-- **Natural Bow Aiming**: Adjusted pitch direction so tilting the phone downward lowers the reticle and tilting upward raises it, matching standard first-person and third-person console gyro controls (e.g. Zelda: Tears of the Kingdom).
-
-### UI Resilience & Stability
-- **Auto-Recovery on Window Switching**: Automatically restores targets if the viewport loses focus, changes resolution, or switches between bench tabs.
-- **LiveDebug 3D Window Hardening**: Set enforced minimum dimensions (`880x520`) to prevent card clipping and overflow during window resizing.
-- **Shortcut Hints**: Added interface hints regarding `Ctrl +/-/0` zoom hotkeys in settings.
+- **Cemu Socket Lifecycle Documentation**: Detailed breakdown of Cemu's UDP socket lifecycle when starting before or after GyroBridge, with both instant in-game and startup solutions.
 
 ---
 
@@ -72,26 +56,9 @@ No installation required. Download, run, and connect.
 
 - **Native Multi-Architecture Support**: Official release builds for both Windows x86_64 and ARM64.
 - **Pure GUI Application**: Clean startup with zero console pop-up (`GyroBridge.exe`).
+- **System Tray Integration**: Background operation with tray menu, show/hide shortcuts, and quit confirmation.
 - **Interactive Test Bench**: Real-time oscilloscope, 3D target viewfinder, and apparatus tilt mini-bench.
 - **Advanced Settings Hub**: Custom network ports, gyro noise filtering, and theme customization.
 - **Global UI Scaling**: Dynamic zoom (`0.80x` - `1.40x`) with `Ctrl +/-/0` shortcut support.
 - **Audio Feedback**: Melodic chimes or native Windows sounds on connect and disconnect.
 - **3D Gesture Calibration**: Guided motion wizard with resting gravity capture and validation.
-- **6 Profile Slots**: Store independent device profiles with automatic persistence.
-- **Stationary Tilt Warning**: Discreet banner when the phone rests stationary on an unlevel surface.
-- **Dedicated 3D Telemetry Viewport**: Real-time orientation and DSU stream health diagnostics.
-- **RAM Monitor**: Live working set memory tracking.
-- **Bilingual Interface**: Full English and Russian support with 100% key parity.
-- **Open-Source**: Licensed under the MIT License.
-
----
-
-## Security, Antivirus & Transparency
-
-GyroBridge is 100% free, open-source software under the MIT license. It does not collect telemetry, contains no analytics or ads, and makes zero external network connections (all communication is strictly restricted to your local Wi-Fi network between your PC and phone).
-
-Because GyroBridge is an independent open-source project without a paid enterprise digital signature certificate ($400+/year EV Code Signing), automated machine-learning heuristics in some antivirus engines (such as Microsoft Defender generic `!ml` tags) may initially flag freshly compiled Go binaries.
-
-If you have any security reservations:
-1. **Audit the Code**: Every line of code is open in this repository. You can inspect it yourself or pass it to any AI assistant (ChatGPT, Claude, Gemini) for an independent audit.
-2. **Build from Source**: You can compile `GyroBridge.exe` directly on your PC using the official Go and Wails toolchains in just a couple of minutes.
