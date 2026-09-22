@@ -431,6 +431,14 @@
     "font_scale_tip": "Global font and interface scaling factor (default: 1.00x). You can also press Ctrl + and Ctrl - to adjust scale, Ctrl 0 to reset, or scroll the mouse wheel while holding Ctrl.",
     "font_scale_hotkeys": "Ctrl + / Ctrl - (zoom) • Ctrl 0 (reset)",
     "font_scale_hud": "Scale",
+    "group_hotkeys": "Global Hotkeys (Windows)",
+    "hotkey_recenter": "Recenter Virtual Orientation",
+    "hotkey_recenter_desc": "Global shortcut to reset gyro orientation directly inside games",
+    "hotkey_recenter_tip": "Global Windows shortcut (RegisterHotKey). Works inside any active window or full-screen game (Cemu, RPCS3, Yuzu, etc.), instantly resetting virtual orientation back to neutral baseline.",
+    "hotkey_record_prompt": "Press shortcut keys...",
+    "hotkey_record_modifier_req": "Press a key with Ctrl, Alt, or Shift",
+    "hotkey_clear_tip": "Clear shortcut",
+    "hotkey_none": "Not assigned",
     "btn_reset": "Reset to Defaults",
     "btn_reset_tip": "Restore all ports and sensor parameters back to factory defaults.",
     "btn_cancel": "Cancel",
@@ -485,6 +493,7 @@
     "btn_action": "Recenter",
     "btn_action_holding": "Locking...",
     "btn_retry": "Retry",
-    "btn_cancel": "Cancel"
+    "btn_cancel": "Cancel",
+    "toast_hotkey": "🎯 Aim Recentered (Hotkey)"
   }
 }

@@ -244,31 +244,37 @@ type App struct {
 	closeAction         string // "ask", "minimize", "quit"
 	quitting            atomic.Bool
 	trayMgr             *TrayManager
+	// Global Windows Hotkeys
+	hotkeyRecenterEnabled atomic.Bool
+	hotkeyRecenterKeyMu   sync.RWMutex
+	hotkeyRecenterKey     string
 }
 
 // AppSettings holds configurable parameters exposed in the settings window
 type AppSettings struct {
-	Theme             string  `json:"theme"`
-	Lang              string  `json:"lang"`
-	FontScale         float64 `json:"fontScale"`
-	ActiveSlot        int     `json:"activeSlot"`
-	FirstLaunchDone   bool    `json:"firstLaunchDone"`
-	HideAuthor        bool    `json:"hideAuthor"`
-	DSUPort           int     `json:"dsuPort"`
-	DSUMAC            string  `json:"dsuMac"`
-	HTTPPort          int     `json:"httpPort"`
-	HTTPSPort         int     `json:"httpsPort"`
-	GyroDeadzone      float64 `json:"gyroDeadzone"`
-	StillnessHint     bool    `json:"stillnessHint"`
-	DisconnectAlert   bool    `json:"disconnectAlert"`
-	SilenceDisconnect bool    `json:"silenceDisconnect"`
-	SoundMode         string  `json:"soundMode"`
-	SoundVolume       int     `json:"soundVolume"`
-	GyroSmoothing     float64 `json:"gyroSmoothing"`
-	GyroDeadband      float64 `json:"gyroDeadband"`
-	GyroSensitivity   float64 `json:"gyroSensitivity"`
-	MinimizeToTray    bool    `json:"minimizeToTray"`
-	CloseAction       string  `json:"closeAction"`
+	Theme                 string  `json:"theme"`
+	Lang                  string  `json:"lang"`
+	FontScale             float64 `json:"fontScale"`
+	ActiveSlot            int     `json:"activeSlot"`
+	FirstLaunchDone       bool    `json:"firstLaunchDone"`
+	HideAuthor            bool    `json:"hideAuthor"`
+	DSUPort               int     `json:"dsuPort"`
+	DSUMAC                string  `json:"dsuMac"`
+	HTTPPort              int     `json:"httpPort"`
+	HTTPSPort             int     `json:"httpsPort"`
+	GyroDeadzone          float64 `json:"gyroDeadzone"`
+	StillnessHint         bool    `json:"stillnessHint"`
+	DisconnectAlert       bool    `json:"disconnectAlert"`
+	SilenceDisconnect     bool    `json:"silenceDisconnect"`
+	SoundMode             string  `json:"soundMode"`
+	SoundVolume           int     `json:"soundVolume"`
+	GyroSmoothing         float64 `json:"gyroSmoothing"`
+	GyroDeadband          float64 `json:"gyroDeadband"`
+	GyroSensitivity       float64 `json:"gyroSensitivity"`
+	MinimizeToTray        bool    `json:"minimizeToTray"`
+	CloseAction           string  `json:"closeAction"`
+	HotkeyRecenterEnabled bool    `json:"hotkeyRecenterEnabled"`
+	HotkeyRecenterKey     string  `json:"hotkeyRecenterKey"`
 }
 
 // TuningFrame conveys simultaneous raw and filtered telemetry to the frontend tuning bench
@@ -566,6 +572,8 @@ func NewApp() *App {
 	app.soundVolume.Store(1)
 	app.deviceName.Store("Controller")
 	app.minimizeToTray.Store(true)
+	app.hotkeyRecenterEnabled.Store(true)
+	app.hotkeyRecenterKey = "Ctrl+Shift+R"
 
 	// Initialize 6 empty slots with default portrait matrix
 	for i := range app.profiles {
@@ -684,8 +692,10 @@ func (a *App) loadSettings() {
 		GyroDeadband      *float64 `json:"gyroDeadband,omitempty"`
 		GyroSensitivity   *float64 `json:"gyroSensitivity,omitempty"`
 		FontScale         *float64 `json:"fontScale,omitempty"`
-		MinimizeToTray    *bool    `json:"minimizeToTray,omitempty"`
-		CloseAction       string   `json:"closeAction,omitempty"`
+		MinimizeToTray        *bool    `json:"minimizeToTray,omitempty"`
+		CloseAction           string   `json:"closeAction,omitempty"`
+		HotkeyRecenterEnabled *bool    `json:"hotkeyRecenterEnabled,omitempty"`
+		HotkeyRecenterKey     string   `json:"hotkeyRecenterKey,omitempty"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
@@ -782,6 +792,16 @@ func (a *App) loadSettings() {
 		a.closeActionMu.Unlock()
 		a.minimizeToTray.Store(true)
 	}
+	if s.HotkeyRecenterEnabled != nil {
+		a.hotkeyRecenterEnabled.Store(*s.HotkeyRecenterEnabled)
+	} else {
+		a.hotkeyRecenterEnabled.Store(true)
+	}
+	if s.HotkeyRecenterKey != "" {
+		a.setHotkeyRecenterKey(s.HotkeyRecenterKey)
+	} else {
+		a.setHotkeyRecenterKey("Ctrl+Shift+R")
+	}
 	a.updateFilterParams()
 }
 
@@ -873,8 +893,10 @@ func (a *App) saveSettings() {
 		GyroSmoothing:     smoothing,
 		GyroDeadband:      deadband,
 		GyroSensitivity:   sensitivity,
-		MinimizeToTray:    a.GetCloseAction() == "minimize",
-		CloseAction:       a.GetCloseAction(),
+		MinimizeToTray:        a.GetCloseAction() == "minimize",
+		CloseAction:           a.GetCloseAction(),
+		HotkeyRecenterEnabled: a.hotkeyRecenterEnabled.Load(),
+		HotkeyRecenterKey:     a.getHotkeyRecenterKey(),
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -1148,6 +1170,7 @@ func (a *App) startup(ctx context.Context) {
 
 	a.trayMgr = NewTrayManager(a)
 	a.trayMgr.Start()
+	a.trayMgr.UpdateHotkey(a.hotkeyRecenterEnabled.Load(), a.getHotkeyRecenterKey())
 
 	// 1. Certificate Authority
 	appData := os.Getenv("APPDATA")
@@ -2221,6 +2244,29 @@ func (a *App) ResetAHRS() {
 	}
 }
 
+func (a *App) getHotkeyRecenterKey() string {
+	a.hotkeyRecenterKeyMu.RLock()
+	defer a.hotkeyRecenterKeyMu.RUnlock()
+	if a.hotkeyRecenterKey == "" {
+		return "Ctrl+Shift+R"
+	}
+	return a.hotkeyRecenterKey
+}
+
+func (a *App) setHotkeyRecenterKey(key string) {
+	a.hotkeyRecenterKeyMu.Lock()
+	defer a.hotkeyRecenterKeyMu.Unlock()
+	a.hotkeyRecenterKey = key
+}
+
+// TriggerRecenterFromHotkey is invoked by the Windows global hotkey to reset orientation.
+func (a *App) TriggerRecenterFromHotkey() {
+	a.ResetAHRS()
+	if a.ctx != nil {
+		wailsRuntime.EventsEmit(a.ctx, "recenter:triggered", "hotkey")
+	}
+}
+
 type liveDebugMsg struct {
 	DeviceConnected bool    `json:"device_connected"`
 	Q0              float32 `json:"q0"`
@@ -2552,8 +2598,10 @@ func (a *App) GetAppSettings() AppSettings {
 		GyroSmoothing:     smoothing,
 		GyroDeadband:      deadband,
 		GyroSensitivity:   sensitivity,
-		MinimizeToTray:    a.GetCloseAction() == "minimize",
-		CloseAction:       a.GetCloseAction(),
+		MinimizeToTray:        a.GetCloseAction() == "minimize",
+		CloseAction:           a.GetCloseAction(),
+		HotkeyRecenterEnabled: a.hotkeyRecenterEnabled.Load(),
+		HotkeyRecenterKey:     a.getHotkeyRecenterKey(),
 	}
 }
 
@@ -2650,6 +2698,14 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 		a.currentLang = s.Lang
 	}
 	a.themeMu.Unlock()
+
+	a.hotkeyRecenterEnabled.Store(s.HotkeyRecenterEnabled)
+	if s.HotkeyRecenterKey != "" {
+		a.setHotkeyRecenterKey(s.HotkeyRecenterKey)
+	}
+	if a.trayMgr != nil {
+		a.trayMgr.UpdateHotkey(s.HotkeyRecenterEnabled, a.getHotkeyRecenterKey())
+	}
 
 	curScale := math.Float64frombits(a.fontScaleBits.Load())
 	a.broadcastLiveDebugJSON(map[string]any{

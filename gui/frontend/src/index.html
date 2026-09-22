@@ -985,7 +985,54 @@
                   </div>
                 </div>
 
-                <!-- Group 3: Interface & Appearance -->
+                <!-- Group: Global Windows Hotkeys -->
+                <div class="settings-section">
+                  <div class="settings-section-header" data-i18n="settings_modal.group_hotkeys">Горячие клавиши (Windows)</div>
+                  <div class="settings-grouped-card">
+                    <!-- Recenter Hotkey Row -->
+                    <div class="setting-row" id="row-hotkey-recenter">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.hotkey_recenter">Центровка прицела (Recenter)</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.hotkey_recenter_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                        <span class="setting-subtext" data-i18n="settings_modal.hotkey_recenter_desc">Глобальное сочетание клавиш для сброса ориентации прямо в игре</span>
+                      </div>
+                      <div class="setting-control" style="gap: 10px;">
+                        <div class="apple-hotkey-control" id="apple-hotkey-control">
+                          <button type="button" class="apple-hotkey-recorder" id="setting-hotkey-recorder" title="Нажмите, чтобы изменить сочетание клавиш">
+                            <span class="apple-hotkey-keys" id="setting-hotkey-keys">
+                              <kbd class="apple-key">Ctrl</kbd>
+                              <span class="apple-key-sep">+</span>
+                              <kbd class="apple-key">Shift</kbd>
+                              <span class="apple-key-sep">+</span>
+                              <kbd class="apple-key">R</kbd>
+                            </span>
+                            <span class="apple-hotkey-recording-label" id="setting-hotkey-recording-label" style="display: none;" data-i18n="settings_modal.hotkey_record_prompt">Нажмите сочетание клавиш...</span>
+                          </button>
+                          <button type="button" class="btn-hotkey-clear" id="btn-hotkey-clear" data-i18n-tip="settings_modal.hotkey_clear_tip" aria-label="Clear Hotkey">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <line x1="18" y1="6" x2="6" y2="18"></line>
+                              <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                          </button>
+                        </div>
+                        <label class="apple-toggle">
+                          <input type="checkbox" id="setting-hotkey-recenter-enabled" checked>
+                          <span class="apple-toggle-slider"></span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Group 4: Interface & Appearance -->
                 <div class="settings-section">
                   <div class="settings-section-header" data-i18n="settings_modal.group_appearance">Интерфейс и оформление</div>
                   <div class="settings-grouped-card">
@@ -5597,10 +5644,27 @@
     isOpen: false,
     initialized: false,
     currentSettings: null,
+    hotkeyRecenterKey: 'Ctrl+Shift+R',
+    isRecordingHotkey: false,
+    hotkeyKeyDownHandler: null,
 
     async init() {
       if (this.initialized) return;
       this.initialized = true;
+
+      // Global Windows Hotkey Recorder
+      document.getElementById('setting-hotkey-recorder')?.addEventListener('click', () => {
+        this.startRecordingHotkey();
+      });
+
+      document.getElementById('btn-hotkey-clear')?.addEventListener('click', () => {
+        this.hotkeyRecenterKey = '';
+        this.renderHotkeyBadge('');
+      });
+
+      document.getElementById('setting-hotkey-recenter-enabled')?.addEventListener('change', (e) => {
+        document.getElementById('apple-hotkey-control')?.classList.toggle('disabled', !e.target.checked);
+      });
 
       // Header button toggle
       document.getElementById('btn-header-settings')?.addEventListener('click', () => {
@@ -5764,6 +5828,183 @@
       if (typeof AppleSelect !== 'undefined') {
         AppleSelect.init();
       }
+    },
+
+    renderHotkeyBadge(keyStr) {
+      const keysEl = document.getElementById('setting-hotkey-keys');
+      if (!keysEl) return;
+      keysEl.innerHTML = '';
+      if (!keyStr) {
+        const emptySpan = document.createElement('span');
+        emptySpan.className = 'apple-hotkey-empty';
+        emptySpan.setAttribute('data-i18n', 'settings_modal.hotkey_none');
+        emptySpan.textContent = I18n.t('settings_modal.hotkey_none') || 'Не назначено';
+        keysEl.appendChild(emptySpan);
+        return;
+      }
+      const parts = keyStr.split('+');
+      parts.forEach((p, idx) => {
+        if (idx > 0) {
+          const sep = document.createElement('span');
+          sep.className = 'apple-key-sep';
+          sep.textContent = '+';
+          keysEl.appendChild(sep);
+        }
+        const kbd = document.createElement('kbd');
+        kbd.className = 'apple-key';
+        kbd.textContent = p.trim();
+        keysEl.appendChild(kbd);
+      });
+    },
+
+    startRecordingHotkey() {
+      if (this.isRecordingHotkey) return;
+      this.isRecordingHotkey = true;
+
+      const recorder = document.getElementById('setting-hotkey-recorder');
+      const keysEl = document.getElementById('setting-hotkey-keys');
+      const labelEl = document.getElementById('setting-hotkey-recording-label');
+
+      recorder?.classList.add('recording');
+      if (keysEl) keysEl.style.display = 'none';
+      if (labelEl) {
+        labelEl.style.display = 'inline';
+        labelEl.textContent = I18n.t('settings_modal.hotkey_record_prompt') || 'Нажмите сочетание клавиш...';
+      }
+
+      this.hotkeyKeyDownHandler = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Cancel on Escape
+        if (e.key === 'Escape') {
+          this.stopRecordingHotkey(true);
+          return;
+        }
+
+        // Clear on Backspace or Delete without modifiers
+        if ((e.key === 'Backspace' || e.key === 'Delete') && !e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
+          this.hotkeyRecenterKey = '';
+          this.stopRecordingHotkey(false);
+          return;
+        }
+
+        // Pure modifier pressed: show modifier in real-time
+        const isModifier = ['Control', 'Alt', 'Shift', 'Meta'].includes(e.key);
+        if (isModifier) {
+          const currentMods = [];
+          if (e.ctrlKey) currentMods.push('Ctrl');
+          if (e.altKey) currentMods.push('Alt');
+          if (e.shiftKey) currentMods.push('Shift');
+          if (e.metaKey) currentMods.push('Win');
+          if (labelEl && currentMods.length > 0) {
+            labelEl.textContent = currentMods.join(' + ') + ' + ...';
+          }
+          return;
+        }
+
+        // Non-modifier key pressed!
+        const hasMod = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+        const isFKey = /^F([1-9]|1[0-2])$/.test(e.key) || /^F([1-9]|1[0-2])$/.test(e.code);
+
+        // Validation: Require modifier OR F1-F12
+        if (!hasMod && !isFKey) {
+          if (labelEl) {
+            labelEl.textContent = I18n.t('settings_modal.hotkey_record_modifier_req') || 'Нажмите клавишу с Ctrl, Alt или Shift';
+            recorder?.classList.add('shake');
+            setTimeout(() => recorder?.classList.remove('shake'), 400);
+          }
+          return;
+        }
+
+        // Resolve canonical key name from e.code
+        let keyName = '';
+        if (/^Key[A-Z]$/.test(e.code)) {
+          keyName = e.code.replace('Key', '');
+        } else if (/^Digit[0-9]$/.test(e.code)) {
+          keyName = e.code.replace('Digit', '');
+        } else if (/^F([1-9]|1[0-2])$/.test(e.code)) {
+          keyName = e.code;
+        } else if (/^Numpad[0-9]$/.test(e.code)) {
+          keyName = 'Num' + e.code.replace('Numpad', '');
+        } else {
+          switch (e.code) {
+            case 'Space': keyName = 'Space'; break;
+            case 'Tab': keyName = 'Tab'; break;
+            case 'Backquote': keyName = '~'; break;
+            case 'Minus': keyName = '-'; break;
+            case 'Equal': keyName = '='; break;
+            case 'BracketLeft': keyName = '['; break;
+            case 'BracketRight': keyName = ']'; break;
+            case 'Semicolon': keyName = ';'; break;
+            case 'Quote': keyName = "'"; break;
+            case 'Comma': keyName = ','; break;
+            case 'Period': keyName = '.'; break;
+            case 'Slash': keyName = '/'; break;
+            case 'Backslash': keyName = '\\'; break;
+            case 'NumpadAdd': keyName = 'NumAdd'; break;
+            case 'NumpadSubtract': keyName = 'NumSubtract'; break;
+            case 'NumpadMultiply': keyName = 'NumMultiply'; break;
+            case 'NumpadDivide': keyName = 'NumDivide'; break;
+            case 'NumpadDecimal': keyName = 'NumDecimal'; break;
+            case 'Home': keyName = 'Home'; break;
+            case 'End': keyName = 'End'; break;
+            case 'PageUp': keyName = 'PageUp'; break;
+            case 'PageDown': keyName = 'PageDown'; break;
+            case 'Insert': keyName = 'Insert'; break;
+            default:
+              if (e.key && e.key.length === 1) {
+                keyName = e.key.toUpperCase();
+              } else {
+                keyName = e.key || '';
+              }
+          }
+        }
+
+        if (!keyName) return;
+
+        const mods = [];
+        if (e.ctrlKey) mods.push('Ctrl');
+        if (e.altKey) mods.push('Alt');
+        if (e.shiftKey) mods.push('Shift');
+        if (e.metaKey) mods.push('Win');
+
+        this.hotkeyRecenterKey = [...mods, keyName].join('+');
+        this.stopRecordingHotkey(false);
+      };
+
+      window.addEventListener('keydown', this.hotkeyKeyDownHandler, { capture: true });
+
+      // Click outside to cancel
+      const clickOutsideHandler = (e) => {
+        if (!e.target.closest('#setting-hotkey-recorder')) {
+          this.stopRecordingHotkey(true);
+          document.removeEventListener('pointerdown', clickOutsideHandler);
+        }
+      };
+      setTimeout(() => {
+        document.addEventListener('pointerdown', clickOutsideHandler);
+      }, 50);
+    },
+
+    stopRecordingHotkey(cancelled = false) {
+      if (!this.isRecordingHotkey) return;
+      this.isRecordingHotkey = false;
+
+      if (this.hotkeyKeyDownHandler) {
+        window.removeEventListener('keydown', this.hotkeyKeyDownHandler, { capture: true });
+        this.hotkeyKeyDownHandler = null;
+      }
+
+      const recorder = document.getElementById('setting-hotkey-recorder');
+      const keysEl = document.getElementById('setting-hotkey-keys');
+      const labelEl = document.getElementById('setting-hotkey-recording-label');
+
+      recorder?.classList.remove('recording');
+      if (keysEl) keysEl.style.display = 'inline-flex';
+      if (labelEl) labelEl.style.display = 'none';
+
+      this.renderHotkeyBadge(this.hotkeyRecenterKey);
     },
 
     syncLiveFilter() {
@@ -6040,6 +6281,15 @@
       if (fontScaleSlider) fontScaleSlider.value = scaleVal;
       if (fontScaleBadge) fontScaleBadge.textContent = Number(scaleVal).toFixed(2) + 'x';
 
+      // Global Recenter Hotkey
+      this.hotkeyRecenterKey = s.hotkeyRecenterKey || 'Ctrl+Shift+R';
+      const hkToggle = document.getElementById('setting-hotkey-recenter-enabled');
+      if (hkToggle) {
+        hkToggle.checked = (s.hotkeyRecenterEnabled !== false);
+      }
+      document.getElementById('apple-hotkey-control')?.classList.toggle('disabled', hkToggle && !hkToggle.checked);
+      this.renderHotkeyBadge(this.hotkeyRecenterKey);
+
       if (typeof AppleSelect !== 'undefined') {
         AppleSelect.refreshAll();
       }
@@ -6118,6 +6368,15 @@
       if (fontScaleSlider) fontScaleSlider.value = '1.00';
       if (fontScaleBadge) fontScaleBadge.textContent = '1.00x';
       FontScaleManager.apply(1.00, false, true);
+
+      // Global Recenter Hotkey
+      this.hotkeyRecenterKey = 'Ctrl+Shift+R';
+      const hkToggleReset = document.getElementById('setting-hotkey-recenter-enabled');
+      if (hkToggleReset) {
+        hkToggleReset.checked = true;
+      }
+      document.getElementById('apple-hotkey-control')?.classList.remove('disabled');
+      this.renderHotkeyBadge(this.hotkeyRecenterKey);
 
       this.syncLiveFilter();
       if (typeof AppleSelect !== 'undefined') {
@@ -6209,7 +6468,9 @@
         closeAction: document.getElementById('setting-close-action')?.value || 'ask',
         minimizeToTray: document.getElementById('setting-close-action')?.value === 'minimize',
         soundMode: soundMode,
-        soundVolume: isNaN(soundVolume) ? 1 : soundVolume
+        soundVolume: isNaN(soundVolume) ? 1 : soundVolume,
+        hotkeyRecenterEnabled: !!document.getElementById('setting-hotkey-recenter-enabled')?.checked,
+        hotkeyRecenterKey: this.hotkeyRecenterKey || 'Ctrl+Shift+R'
       };
 
       try {
@@ -6871,6 +7132,50 @@
           this.close();
         }
       });
+
+      // Listen to backend global Windows hotkey trigger
+      if (window.runtime?.EventsOn) {
+        window.runtime.EventsOn('recenter:triggered', () => {
+          // Reset 3D scenes if active
+          if (typeof Scene3D !== 'undefined' && Scene3D.activeScenes) {
+            Object.values(Scene3D.activeScenes).forEach(sc => {
+              if (sc && sc.resetQuat) sc.resetQuat();
+            });
+          }
+
+          // Zero out live Euler angles in HUD
+          if (typeof AppState !== 'undefined') {
+            AppState.targetPitch = 0;
+            AppState.targetRoll = 0;
+            AppState.targetYaw = 0;
+            AppState.currentPitch = 0;
+            AppState.currentRoll = 0;
+            AppState.currentYaw = 0;
+          }
+
+          // Reset Test Bench if active
+          if (typeof TuningBench !== 'undefined' && TuningBench.active) {
+            TuningBench.recenter();
+            if (typeof PlatformGame !== 'undefined') PlatformGame.recenter();
+          }
+
+          // Audio feedback chime
+          if (typeof SoundManager !== 'undefined' && SoundManager.play) {
+            SoundManager.play('goal');
+          }
+
+          // Visual pulse on main recenter button
+          const btn = document.getElementById('btn-main-recenter');
+          if (btn) {
+            btn.classList.add('btn-recenter-hotkey-flash');
+            setTimeout(() => btn.classList.remove('btn-recenter-hotkey-flash'), 650);
+          }
+
+          // Apple-style toast notification
+          const msg = I18n.t('recenter.toast_hotkey') || '🎯 Прицел отцентрирован (Хоткей)';
+          showToast(msg);
+        });
+      }
     }
   };
 

@@ -6930,3 +6930,185 @@ em {
   stroke: currentColor;
   opacity: 0.75;
 }
+
+/* ==========================================================================
+   Apple-Style Global Hotkey Recorder
+   ========================================================================== */
+
+.apple-hotkey-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity var(--transition-fast), filter var(--transition-fast);
+}
+
+.apple-hotkey-control.disabled {
+  opacity: 0.38;
+  pointer-events: none;
+  filter: grayscale(0.8);
+}
+
+.apple-hotkey-recorder {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 9px;
+  cursor: pointer;
+  outline: none;
+  font-family: inherit;
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  user-select: none;
+}
+
+[data-theme="light"] .apple-hotkey-recorder {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.apple-hotkey-recorder:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+  transform: translateY(-0.5px);
+}
+
+[data-theme="light"] .apple-hotkey-recorder:hover {
+  background: rgba(0, 0, 0, 0.07);
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.apple-hotkey-recorder:active {
+  transform: translateY(0.5px) scale(0.99);
+}
+
+.apple-hotkey-recorder.recording {
+  background: rgba(0, 122, 255, 0.12);
+  border-color: var(--apple-blue, #007AFF);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.35);
+  animation: appleHotkeyPulse 1.4s infinite ease-in-out;
+}
+
+@keyframes appleHotkeyPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(0, 122, 255, 0.15);
+  }
+}
+
+.apple-hotkey-keys {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.apple-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--text, #FFFFFF);
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  letter-spacing: -0.01em;
+}
+
+[data-theme="light"] .apple-key {
+  color: #1D1D1F;
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-bottom-width: 2px;
+  border-bottom-color: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.apple-key-sep {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  user-select: none;
+}
+
+[data-theme="light"] .apple-key-sep {
+  color: rgba(0, 0, 0, 0.35);
+}
+
+.apple-hotkey-recording-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--apple-blue, #007AFF);
+  letter-spacing: -0.01em;
+}
+
+.apple-hotkey-empty {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+}
+
+.btn-hotkey-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary, rgba(255, 255, 255, 0.4));
+  cursor: pointer;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.btn-hotkey-clear:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text, #FFFFFF);
+  transform: scale(1.08);
+}
+
+[data-theme="light"] .btn-hotkey-clear:hover {
+  background: rgba(0, 0, 0, 0.07);
+  color: #1D1D1F;
+}
+
+.btn-hotkey-clear:active {
+  transform: scale(0.92);
+}
+
+/* Pulsing effect on main recenter button upon hotkey trigger */
+.btn-recenter-hotkey-flash {
+  animation: recenterHotkeyFlash 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes recenterHotkeyFlash {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0.8);
+    transform: scale(0.97);
+  }
+  40% {
+    box-shadow: 0 0 0 10px rgba(0, 122, 255, 0);
+    transform: scale(1.04);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 122, 255, 0);
+    transform: scale(1);
+  }
+}
+

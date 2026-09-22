@@ -47,6 +47,8 @@ export namespace main {
 	    gyroSensitivity: number;
 	    minimizeToTray: boolean;
 	    closeAction: string;
+	    hotkeyRecenterEnabled: boolean;
+	    hotkeyRecenterKey: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -75,6 +77,8 @@ export namespace main {
 	        this.gyroSensitivity = source["gyroSensitivity"];
 	        this.minimizeToTray = source["minimizeToTray"];
 	        this.closeAction = source["closeAction"];
+	        this.hotkeyRecenterEnabled = source["hotkeyRecenterEnabled"];
+	        this.hotkeyRecenterKey = source["hotkeyRecenterKey"];
 	    }
 	}
 	export class Profile {

@@ -144,6 +144,12 @@ type TrayManager struct {
 	lastEmuCount int
 	lastProfile  string
 	lastLang     string
+
+	hotkeyMu      sync.RWMutex
+	hotkeyEnabled bool
+	hotkeyMods    uint32
+	hotkeyVK      uint32
+	hotkeyStr     string
 }
 
 // NewTrayManager initializes a pure Win32 tray manager.
@@ -168,6 +174,7 @@ func (tm *TrayManager) Stop() {
 	tm.stopOnce.Do(func() {
 		close(tm.stopChan)
 		if tm.hwnd != 0 {
+			pUnregisterHotKey.Call(tm.hwnd, uintptr(ID_HOTKEY_RECENTER))
 			tm.nidMu.Lock()
 			pShellNotifyIconW.Call(NIM_DELETE, uintptr(unsafe.Pointer(&tm.nid)))
 			tm.nidMu.Unlock()
@@ -216,6 +223,16 @@ func (tm *TrayManager) trayLoop(readyChan chan struct{}) {
 				return 0
 			}
 
+		case WM_UPDATE_HOTKEY:
+			tm.applyHotkey(hwnd)
+			return 0
+
+		case WM_HOTKEY:
+			if wParam == uintptr(ID_HOTKEY_RECENTER) {
+				tm.app.TriggerRecenterFromHotkey()
+				return 0
+			}
+
 		case WM_CLOSE:
 			pDestroyWindow.Call(hwnd)
 			return 0
@@ -261,6 +278,10 @@ func (tm *TrayManager) trayLoop(readyChan chan struct{}) {
 
 	pShellNotifyIconW.Call(NIM_ADD, uintptr(unsafe.Pointer(&tm.nid)))
 	tm.ready.Store(true)
+
+	// Register global hotkey if already configured
+	tm.applyHotkey(hwnd)
+
 	close(readyChan)
 
 	// 5. Message pump
@@ -275,8 +296,59 @@ func (tm *TrayManager) trayLoop(readyChan chan struct{}) {
 	}
 
 	// 6. Cleanup
+	pUnregisterHotKey.Call(hwnd, uintptr(ID_HOTKEY_RECENTER))
 	pShellNotifyIconW.Call(NIM_DELETE, uintptr(unsafe.Pointer(&tm.nid)))
 	tm.ready.Store(false)
+}
+
+// UpdateHotkey parses and updates the global recenter hotkey registration.
+func (tm *TrayManager) UpdateHotkey(enabled bool, keyStr string) {
+	var mods, vk uint32
+	var err error
+	if enabled && keyStr != "" {
+		mods, vk, err = ParseHotkey(keyStr)
+		if err != nil {
+			fmt.Printf("[-] Failed to parse hotkey '%s': %v\n", keyStr, err)
+			enabled = false
+		}
+	} else {
+		enabled = false
+	}
+
+	tm.hotkeyMu.Lock()
+	tm.hotkeyEnabled = enabled
+	tm.hotkeyMods = mods
+	tm.hotkeyVK = vk
+	tm.hotkeyStr = keyStr
+	hwnd := tm.hwnd
+	tm.hotkeyMu.Unlock()
+
+	if hwnd != 0 {
+		pPostMessageW.Call(hwnd, WM_UPDATE_HOTKEY, 0, 0)
+	}
+}
+
+func (tm *TrayManager) applyHotkey(hwnd uintptr) {
+	if hwnd == 0 {
+		return
+	}
+	pUnregisterHotKey.Call(hwnd, uintptr(ID_HOTKEY_RECENTER))
+
+	tm.hotkeyMu.RLock()
+	enabled := tm.hotkeyEnabled
+	mods := tm.hotkeyMods
+	vk := tm.hotkeyVK
+	keyStr := tm.hotkeyStr
+	tm.hotkeyMu.RUnlock()
+
+	if enabled && vk != 0 {
+		ret, _, _ := pRegisterHotKey.Call(hwnd, uintptr(ID_HOTKEY_RECENTER), uintptr(mods|MOD_NOREPEAT), uintptr(vk))
+		if ret == 0 {
+			fmt.Printf("[-] Failed to register global Windows hotkey: %s (id %d)\n", keyStr, ID_HOTKEY_RECENTER)
+		} else {
+			fmt.Printf("[+] Registered global Windows hotkey: %s (id %d)\n", keyStr, ID_HOTKEY_RECENTER)
+		}
+	}
 }
 
 func (tm *TrayManager) showContextMenu(hwnd uintptr) {

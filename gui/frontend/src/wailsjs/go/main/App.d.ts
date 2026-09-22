@@ -82,6 +82,8 @@ export function StopCapture(arg1:number):Promise<main.CaptureResult>;
 
 export function TogglePause():Promise<main.AppState>;
 
+export function TriggerRecenterFromHotkey():Promise<void>;
+
 export function ValidateCalibration(arg1:any,arg2:any):Promise<main.ValidationResult>;
 
 export function ValidateSync():Promise<Array<string>>;
