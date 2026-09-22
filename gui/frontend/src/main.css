@@ -619,186 +619,181 @@ em {
 .hw-device-frame {
   position: relative;
   z-index: 2;
-  width: 160px;
-  height: 144px;
+  width: 100%;
+  max-width: 300px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 14px 28px rgba(0, 0, 0, 0.4));
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.28));
 }
 
 [data-theme="light"] .hw-device-frame {
-  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.08));
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.06));
 }
 
-/* Apple IMU Minimalist Hardware Styling */
-.hw-imu-svg {
+/* ── Apple Hardware Chain Vector Styling ────────────────────────────────────── */
+.hw-chain-svg {
   width: 100%;
   height: 100%;
   overflow: visible;
 }
 
-.hw-sensor-body {
-  fill: url(#hw-body-grad);
-  transition: fill var(--transition-theme);
-}
-
-[data-theme="light"] .hw-sensor-body {
-  fill: url(#hw-body-light);
-}
-
-.hw-sensor-stroke {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.12);
-  stroke-width: 1;
+/* USB Cable & Connector */
+.chain-cable {
+  stroke: var(--border-subtle);
   transition: stroke var(--transition-theme);
 }
 
-[data-theme="light"] .hw-sensor-stroke {
-  stroke: rgba(0, 0, 0, 0.1);
-}
-
-.hw-sensor-bevel {
-  fill: none;
-  stroke: url(#hw-bevel-grad);
+.chain-usb-plug {
+  fill: var(--surface-hover);
+  stroke: var(--border);
   stroke-width: 1;
 }
 
-[data-theme="light"] .hw-sensor-bevel {
-  display: none;
+.chain-usb-port {
+  fill: var(--surface);
+  stroke: var(--border);
+  stroke-width: 1;
 }
 
-.hw-sensor-lens {
-  fill: #111113;
+/* Board Bodies (MCU & IMU) */
+.chain-board-body {
+  fill: #1C1C1E;
   transition: fill var(--transition-theme);
 }
 
-[data-theme="light"] .hw-sensor-lens {
+[data-theme="light"] .chain-board-body {
+  fill: #FFFFFF;
+}
+
+.chain-board-stroke {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.12);
+  stroke-width: 1.2;
+  transition: stroke var(--transition-theme);
+}
+
+[data-theme="light"] .chain-board-stroke {
+  stroke: rgba(0, 0, 0, 0.12);
+}
+
+/* MCU Pin Headers */
+.chain-pin {
+  fill: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="light"] .chain-pin {
+  fill: rgba(0, 0, 0, 0.12);
+}
+
+/* Processor & Sensor Chips */
+.chain-chip-body {
+  fill: #141416;
+  transition: fill var(--transition-theme);
+}
+
+[data-theme="light"] .chain-chip-body {
   fill: #F2F2F7;
 }
 
-.hw-sensor-lens-rim {
+.chain-chip-stroke {
   fill: none;
   stroke: rgba(255, 255, 255, 0.08);
   stroke-width: 1;
   transition: stroke var(--transition-theme);
 }
 
-[data-theme="light"] .hw-sensor-lens-rim {
-  stroke: rgba(0, 0, 0, 0.06);
+[data-theme="light"] .chain-chip-stroke {
+  stroke: rgba(0, 0, 0, 0.08);
 }
 
-/* 3-Axis Gyroscope Gimbal Rings */
-.hw-gimbal-ring {
-  fill: none;
-}
-
-.hw-gimbal-yaw {
-  stroke: rgba(255, 255, 255, 0.35);
-  stroke-width: 1.2;
-}
-
-[data-theme="light"] .hw-gimbal-yaw {
-  stroke: rgba(0, 0, 0, 0.32);
-}
-
-.hw-gimbal-pitch {
-  stroke: #0A84FF;
-  stroke-width: 1.2;
-  opacity: 0.85;
-}
-
-[data-theme="light"] .hw-gimbal-pitch {
-  stroke: #0071E3;
-}
-
-.hw-gimbal-roll {
-  stroke: #0A84FF;
-  stroke-width: 1.1;
-  stroke-dasharray: 2.5 2;
-  opacity: 0.6;
-}
-
-[data-theme="light"] .hw-gimbal-roll {
-  stroke: #0071E3;
-}
-
-.hw-gimbal-axis {
-  stroke: #0A84FF;
-  stroke-width: 1.4;
-  stroke-linecap: round;
-}
-
-[data-theme="light"] .hw-gimbal-axis {
-  stroke: #0071E3;
-}
-
-.hw-axis-arrow {
-  fill: #0A84FF;
-}
-
-[data-theme="light"] .hw-axis-arrow {
-  fill: #0071E3;
-}
-
-/* Inertial Jewel & Breathing Halo */
-.hw-hub-pulse {
-  fill: rgba(10, 132, 255, 0.25);
-  animation: hubBreathe 2.6s infinite ease-out;
-  transform-origin: 80px 74px;
-}
-
-[data-theme="light"] .hw-hub-pulse {
-  fill: rgba(0, 113, 227, 0.2);
-}
-
-.hw-hub-jewel {
-  fill: #0A84FF;
-}
-
-[data-theme="light"] .hw-hub-jewel {
-  fill: #0071E3;
-}
-
-@keyframes hubBreathe {
-  0% { transform: scale(0.8); opacity: 0.8; }
-  70% { transform: scale(1.8); opacity: 0; }
-  100% { transform: scale(1.8); opacity: 0; }
-}
-
-/* Laser-etched Micro Typography */
-.hw-sensor-label {
+.chain-chip-label {
   font-family: var(--font-sans);
-  font-size: 7.5px;
+  font-size: 8px;
   font-weight: 700;
-  letter-spacing: 1.8px;
+  letter-spacing: 0.8px;
+  fill: var(--text);
+  text-anchor: middle;
+  opacity: 0.9;
+  user-select: none;
+}
+
+.chain-board-label {
+  font-family: var(--font-sans);
+  font-size: 6.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
   fill: var(--text-tertiary);
   text-anchor: middle;
   opacity: 0.65;
   user-select: none;
 }
 
-/* USB-C Cable Components */
-.hw-cable-outer {
-  stroke: var(--border-subtle);
-  transition: stroke var(--transition-theme);
-}
-
-.hw-cable-inner {
-  stroke: var(--accent);
+.chain-mcu-led {
+  fill: #34C759;
   opacity: 0.85;
 }
 
-.hw-cable-boot {
-  fill: var(--surface-hover);
-  stroke: var(--border);
-  stroke-width: 1;
+/* Interconnect Bus Wires (VCC, GND, SDA, SCL) */
+.chain-wire {
+  stroke-width: 2;
+  stroke-linecap: round;
+  transition: stroke var(--transition-theme);
 }
 
-.hw-port-socket {
-  fill: var(--surface);
-  stroke: var(--border);
+.wire-vcc { stroke: #FF9F0A; opacity: 0.85; }
+.wire-gnd { stroke: #8E8E93; opacity: 0.75; }
+.wire-sda { stroke: #0A84FF; opacity: 0.95; }
+.wire-scl { stroke: #30D158; opacity: 0.9; }
+
+[data-theme="light"] .wire-vcc { stroke: #FF9500; }
+[data-theme="light"] .wire-gnd { stroke: #636366; }
+[data-theme="light"] .wire-sda { stroke: #0071E3; }
+[data-theme="light"] .wire-scl { stroke: #28CD41; }
+
+.chain-wire-pad {
+  stroke: none;
+}
+.pad-vcc { fill: #FF9F0A; }
+.pad-gnd { fill: #8E8E93; }
+.pad-sda { fill: #0A84FF; }
+.pad-scl { fill: #30D158; }
+
+/* IMU Orientation Crosshair */
+.chain-imu-axis {
+  stroke: #0A84FF;
   stroke-width: 1;
+  stroke-linecap: round;
+}
+
+[data-theme="light"] .chain-imu-axis {
+  stroke: #0071E3;
+}
+
+/* IMU Module Breathing Beacon */
+.chain-imu-led {
+  fill: #0A84FF;
+}
+
+[data-theme="light"] .chain-imu-led {
+  fill: #0071E3;
+}
+
+.chain-imu-pulse {
+  fill: rgba(10, 132, 255, 0.25);
+  animation: beaconPulse 2.4s infinite ease-out;
+  transform-origin: 251px 28px;
+}
+
+[data-theme="light"] .chain-imu-pulse {
+  fill: rgba(0, 113, 227, 0.2);
+}
+
+@keyframes beaconPulse {
+  0% { transform: scale(0.8); opacity: 0.8; }
+  70% { transform: scale(2.2); opacity: 0; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
 
 /* Concentric Apple Radar Rings */
@@ -808,24 +803,24 @@ em {
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px solid rgba(10, 132, 255, 0.24);
+  border: 1px solid rgba(10, 132, 255, 0.22);
   pointer-events: none;
   z-index: 1;
 }
 
 [data-theme="light"] .hw-radar-ring {
-  border-color: rgba(0, 113, 227, 0.18);
+  border-color: rgba(0, 113, 227, 0.16);
 }
 
 .hw-radar-ring.ring-1 {
-  width: 154px;
-  height: 154px;
+  width: 160px;
+  height: 160px;
   animation: appleRadar 3.4s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
 .hw-radar-ring.ring-2 {
-  width: 196px;
-  height: 196px;
+  width: 210px;
+  height: 210px;
   animation: appleRadar 3.4s cubic-bezier(0.2, 0.8, 0.2, 1) 1.7s infinite;
 }
 
