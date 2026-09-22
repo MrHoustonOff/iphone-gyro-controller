@@ -38,6 +38,10 @@ export function GetHideAuthor() {
   return window['go']['main']['App']['GetHideAuthor']();
 }
 
+export function GetInputMode() {
+  return window['go']['main']['App']['GetInputMode']();
+}
+
 export function GetLang() {
   return window['go']['main']['App']['GetLang']();
 }
@@ -124,6 +128,10 @@ export function SetFontScale(arg1) {
 
 export function SetHideAuthor(arg1) {
   return window['go']['main']['App']['SetHideAuthor'](arg1);
+}
+
+export function SetInputMode(arg1) {
+  return window['go']['main']['App']['SetInputMode'](arg1);
 }
 
 export function SetLang(arg1) {

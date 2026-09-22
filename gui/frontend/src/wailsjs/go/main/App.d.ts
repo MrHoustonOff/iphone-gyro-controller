@@ -20,6 +20,8 @@ export function GetFontScale():Promise<number>;
 
 export function GetHideAuthor():Promise<boolean>;
 
+export function GetInputMode():Promise<string>;
+
 export function GetLang():Promise<string>;
 
 export function GetLanguages():Promise<Array<string>>;
@@ -63,6 +65,8 @@ export function SetCloseAction(arg1:string):Promise<void>;
 export function SetFontScale(arg1:number):Promise<void>;
 
 export function SetHideAuthor(arg1:boolean):Promise<void>;
+
+export function SetInputMode(arg1:string):Promise<string>;
 
 export function SetLang(arg1:string):Promise<void>;
 

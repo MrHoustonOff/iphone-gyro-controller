@@ -501,7 +501,8 @@
     "dsu_clients_count_plural": "DSU: %d active",
     "dsu_connected": "Emulator connected",
     "dsu_connected_plural": "%d emulators connected",
-    "dsu_title": "Cemuhook DSU Server"
+    "dsu_title": "Cemuhook DSU Server",
+    "waiting_usb": "Waiting for USB"
   },
   "recenter": {
     "btn_main": "Recenter 3D View",
@@ -521,5 +522,21 @@
     "btn_retry": "Retry",
     "btn_cancel": "Cancel",
     "toast_hotkey": "🎯 Aim Recentered (Hotkey)"
+  },
+  "mode": {
+    "phone": "Smartphone",
+    "usb": "USB Controller",
+    "phone_hint": "Wireless in-browser sensors",
+    "usb_hint": "Direct high-speed cable feed"
+  },
+  "usb_mode": {
+    "title": "Waiting for USB Device",
+    "desc": "Connect your GyroBridge hardware controller via USB cable for direct high-precision motion tracking.",
+    "status_scanning": "Scanning for device...",
+    "pill_usb": "USB 2.0 Direct Feed",
+    "pill_latency": "Zero Wi-Fi Latency",
+    "pill_version": "GyroBridge 2.0 Preview",
+    "phone_blocked_notice": "In hardware mode, smartphone Wi-Fi connections are disabled.",
+    "switch_hint": "To connect a smartphone, switch to 'Smartphone' above."
   }
 }

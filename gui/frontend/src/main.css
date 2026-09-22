@@ -370,6 +370,25 @@ em {
   background-color: var(--dot-paused);
 }
 
+.status-capsule.waiting-usb {
+  border-color: rgba(100, 210, 255, 0.35);
+  background: rgba(100, 210, 255, 0.08);
+}
+
+.status-capsule.waiting-usb .status-dot {
+  background-color: #64D2FF;
+  animation: pulse-online 2s infinite ease-in-out;
+}
+
+[data-theme="light"] .status-capsule.waiting-usb {
+  border-color: rgba(0, 113, 227, 0.3);
+  background: rgba(0, 113, 227, 0.06);
+}
+
+[data-theme="light"] .status-capsule.waiting-usb .status-dot {
+  background-color: #0071E3;
+}
+
 @keyframes pulse-online {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(1.25); }
@@ -465,6 +484,283 @@ em {
 
 .modular-container.setup-mode.setup-mode-wide .apple-card {
   padding: clamp(28px, 3.5vw, 38px) clamp(28px, 4vw, 44px);
+}
+
+/* ── Top Input Mode Segmented Pill ─────────────────────────────────────────── */
+.card-mode-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 22px;
+  animation: fadeInModule 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.main-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--surface-elevated);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  gap: 4px;
+}
+
+[data-theme="light"] .main-mode-pill {
+  background-color: #E5E5EA;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.main-mode-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  line-height: 1.2;
+}
+
+.main-mode-btn .mode-icon {
+  stroke: currentColor;
+  opacity: 0.8;
+  transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.main-mode-btn:hover {
+  color: var(--text);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="light"] .main-mode-btn:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.main-mode-btn.active {
+  background-color: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18), 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .main-mode-btn.active {
+  background-color: #FFFFFF;
+  color: #000000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.main-mode-btn.active .mode-icon {
+  opacity: 1;
+  color: var(--apple-blue);
+}
+
+/* ── USB Mode Module (Stationary Hardware Tracker) ──────────────────────────── */
+.usb-mode-module {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeInModule 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.usb-frame-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.usb-frame {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, rgba(100, 210, 255, 0.14) 0%, rgba(10, 132, 255, 0.06) 100%);
+  border: 1px solid rgba(100, 210, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(10, 132, 255, 0.15);
+  z-index: 1;
+}
+
+[data-theme="light"] .usb-frame {
+  background: linear-gradient(135deg, rgba(0, 113, 227, 0.12) 0%, rgba(0, 113, 227, 0.04) 100%);
+  border-color: rgba(0, 113, 227, 0.25);
+  box-shadow: 0 8px 24px rgba(0, 113, 227, 0.12);
+}
+
+.usb-hardware-icon {
+  width: 44px;
+  height: 44px;
+  color: #64D2FF;
+  animation: usbIconBreathe 3s infinite ease-in-out;
+}
+
+[data-theme="light"] .usb-hardware-icon {
+  color: #0071E3;
+}
+
+.usb-pulse-ring {
+  position: absolute;
+  inset: -6px;
+  border-radius: 28px;
+  border: 1.5px solid rgba(100, 210, 255, 0.4);
+  animation: usbPulse 2.8s infinite ease-out;
+  pointer-events: none;
+}
+
+[data-theme="light"] .usb-pulse-ring {
+  border-color: rgba(0, 113, 227, 0.4);
+}
+
+@keyframes usbPulse {
+  0% {
+    transform: scale(0.88);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.25;
+  }
+  100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+
+@keyframes usbIconBreathe {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(100, 210, 255, 0.3));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 10px rgba(100, 210, 255, 0.65));
+  }
+}
+
+.usb-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(100, 210, 255, 0.12);
+  border: 1px solid rgba(100, 210, 255, 0.28);
+  margin-bottom: 14px;
+}
+
+[data-theme="light"] .usb-status-chip {
+  background: rgba(0, 113, 227, 0.1);
+  border-color: rgba(0, 113, 227, 0.22);
+}
+
+.usb-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #64D2FF;
+  animation: pulseDot 1.8s infinite ease-in-out;
+}
+
+[data-theme="light"] .usb-status-dot {
+  background-color: #0071E3;
+}
+
+.usb-status-chip-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64D2FF;
+  letter-spacing: 0.02em;
+}
+
+[data-theme="light"] .usb-status-chip-text {
+  color: #0071E3;
+}
+
+.usb-headline {
+  font-size: clamp(20px, 2.5vw, 24px);
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+.usb-description {
+  font-size: clamp(13px, 1.6vw, 15px);
+  color: var(--text-secondary);
+  line-height: 1.45;
+  max-width: 400px;
+  margin-bottom: 20px;
+}
+
+.usb-specs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 22px;
+  width: 100%;
+}
+
+.usb-spec-pill {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  letter-spacing: -0.01em;
+}
+
+.usb-spec-pill.highlight {
+  background: rgba(10, 132, 255, 0.12);
+  border-color: rgba(10, 132, 255, 0.3);
+  color: var(--apple-blue);
+}
+
+.usb-footnote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-hover);
+  border: 1px solid var(--border-subtle);
+  margin-top: 14px;
+  max-width: 440px;
+  text-align: left;
+}
+
+.usb-footnote-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+  stroke: var(--text-tertiary);
+}
+
+.usb-footnote-text {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.usb-footnote-switch {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-tertiary);
 }
 
 /* ── State 1: Offline Module ────────────────────────────────────────────────── */

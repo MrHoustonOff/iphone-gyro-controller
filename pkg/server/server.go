@@ -64,6 +64,9 @@ type Server struct {
 	OnClientVisibility func(visible bool)
 	GetIsPaused        func() bool
 
+	inputModeMu sync.RWMutex
+	inputMode   string // "phone" (default) or "usb"
+
 	clientMu    sync.Mutex
 	clientConns map[*websocket.Conn]*sync.Mutex
 }
@@ -83,6 +86,7 @@ func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []
 		HTTPMux:     httpMux,
 		HTTPSMux:    httpsMux,
 		clientConns: make(map[*websocket.Conn]*sync.Mutex),
+		inputMode:   "phone",
 		upgrader: websocket.Upgrader{
 			ReadBufferSize:  1024,
 			WriteBufferSize: 1024,
@@ -96,10 +100,12 @@ func NewServer(caMgr *ca.CertificateManager, httpPort, httpsPort int, webHTML []
 	httpMux.HandleFunc("/ca.mobileconfig", s.handleMobileConfig)
 	httpMux.HandleFunc("/ca.crt", s.handleRawCACert)
 	httpMux.HandleFunc("/api/pause", s.handleAPIPause)
+	httpMux.HandleFunc("/api/mode", s.handleAPIMode)
 
 	httpsMux.HandleFunc("/ca.mobileconfig", s.handleMobileConfig)
 	httpsMux.HandleFunc("/ca.crt", s.handleRawCACert)
 	httpsMux.HandleFunc("/api/pause", s.handleAPIPause)
+	httpsMux.HandleFunc("/api/mode", s.handleAPIMode)
 	httpsMux.HandleFunc("/ws", s.handleWebSocket)
 	httpsMux.HandleFunc("/", s.handleWebClient)
 
@@ -234,7 +240,75 @@ func (s *Server) DisconnectAllClients() {
 	}
 }
 
+// SetInputMode changes the active input mode ("phone" or "usb").
+// When switching to "usb", it broadcasts a mode change to any connected phone clients and closes them.
+func (s *Server) SetInputMode(mode string) {
+	if mode != "usb" {
+		mode = "phone"
+	}
+	s.inputModeMu.Lock()
+	prev := s.inputMode
+	s.inputMode = mode
+	s.inputModeMu.Unlock()
+
+	if mode == "usb" && prev != "usb" {
+		s.BroadcastModeBlocked("usb")
+		s.DisconnectAllClients()
+	}
+}
+
+// GetInputMode returns the current input mode ("phone" or "usb").
+func (s *Server) GetInputMode() string {
+	s.inputModeMu.RLock()
+	defer s.inputModeMu.RUnlock()
+	if s.inputMode == "" {
+		return "phone"
+	}
+	return s.inputMode
+}
+
+// BroadcastModeBlocked notifies all connected WebSocket clients that the mode has changed to a blocked state.
+func (s *Server) BroadcastModeBlocked(mode string) {
+	s.clientMu.Lock()
+	defer s.clientMu.Unlock()
+	payload, _ := json.Marshal(map[string]interface{}{
+		"type":    "mode",
+		"mode":    mode,
+		"blocked": true,
+	})
+	for conn, writeMu := range s.clientConns {
+		writeMu.Lock()
+		_ = conn.SetWriteDeadline(time.Now().Add(500 * time.Millisecond))
+		_ = conn.WriteMessage(websocket.TextMessage, payload)
+		writeMu.Unlock()
+	}
+}
+
+func (s *Server) handleAPIMode(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"mode": s.GetInputMode(),
+	})
+}
+
 func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	// If server is in USB/hardware mode, phone connections are disallowed
+	if s.GetInputMode() == "usb" {
+		conn, err := s.upgrader.Upgrade(w, r, nil)
+		if err == nil {
+			payload, _ := json.Marshal(map[string]interface{}{
+				"type":    "mode",
+				"mode":    "usb",
+				"blocked": true,
+			})
+			_ = conn.SetWriteDeadline(time.Now().Add(1 * time.Second))
+			_ = conn.WriteMessage(websocket.TextMessage, payload)
+			_ = conn.Close()
+		}
+		return
+	}
+
 	conn, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return

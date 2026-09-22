@@ -501,7 +501,8 @@
     "dsu_clients_count_plural": "DSU: %d активных",
     "dsu_connected": "Эмулятор подключен",
     "dsu_connected_plural": "Подключено эмуляторов: %d",
-    "dsu_title": "Сервер Cemuhook DSU"
+    "dsu_title": "Сервер Cemuhook DSU",
+    "waiting_usb": "Ожидание USB"
   },
   "recenter": {
     "btn_main": "Центрировать 3D-вид",
@@ -521,5 +522,21 @@
     "btn_retry": "Повторить",
     "btn_cancel": "Отмена",
     "toast_hotkey": "🎯 Прицел отцентрирован (Хоткей)"
+  },
+  "mode": {
+    "phone": "Смартфон",
+    "usb": "USB-контроллер",
+    "phone_hint": "Беспроводной датчик в браузере",
+    "usb_hint": "Прямое подключение по кабелю"
+  },
+  "usb_mode": {
+    "title": "Ожидание USB-устройства",
+    "desc": "Подключите аппаратный контроллер GyroBridge по USB-кабелю для прямого отслеживания движений.",
+    "status_scanning": "Поиск устройства...",
+    "pill_usb": "USB 2.0 Прямой канал",
+    "pill_latency": "Нулевой пинг Wi-Fi",
+    "pill_version": "GyroBridge 2.0 Preview",
+    "phone_blocked_notice": "В стационарном режиме подключение смартфонов по Wi-Fi отключено.",
+    "switch_hint": "Для подключения телефона переключитесь на «Смартфон» выше."
   }
 }

@@ -98,6 +98,7 @@ type AppState struct {
 	HideAuthor    bool             `json:"hideAuthor"`
 	DsuClients    int              `json:"dsuClients"`
 	DsuClientList []dsu.ClientInfo `json:"dsuClientList"`
+	InputMode     string           `json:"inputMode"`
 }
 
 // captureSample holds raw 60 Hz gyro and accel readings
@@ -250,6 +251,9 @@ type App struct {
 	hotkeyRecenterEnabled atomic.Bool
 	hotkeyRecenterKeyMu   sync.RWMutex
 	hotkeyRecenterKey     string
+	// Input Mode ("phone" vs "usb")
+	inputModeMu sync.RWMutex
+	inputMode   string
 }
 
 // AppSettings holds configurable parameters exposed in the settings window
@@ -278,6 +282,7 @@ type AppSettings struct {
 	CloseAction           string  `json:"closeAction"`
 	HotkeyRecenterEnabled bool    `json:"hotkeyRecenterEnabled"`
 	HotkeyRecenterKey     string  `json:"hotkeyRecenterKey"`
+	InputMode             string  `json:"inputMode,omitempty"`
 }
 
 // TuningFrame conveys simultaneous raw and filtered telemetry to the frontend tuning bench
@@ -743,6 +748,7 @@ func (a *App) loadSettings() {
 		CloseAction           string   `json:"closeAction,omitempty"`
 		HotkeyRecenterEnabled *bool    `json:"hotkeyRecenterEnabled,omitempty"`
 		HotkeyRecenterKey     string   `json:"hotkeyRecenterKey,omitempty"`
+		InputMode             string   `json:"inputMode,omitempty"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
@@ -854,6 +860,13 @@ func (a *App) loadSettings() {
 	} else {
 		a.setHotkeyRecenterKey("Ctrl+Shift+R")
 	}
+	a.inputModeMu.Lock()
+	if s.InputMode == "usb" {
+		a.inputMode = "usb"
+	} else {
+		a.inputMode = "phone"
+	}
+	a.inputModeMu.Unlock()
 	a.updateFilterParams()
 }
 
@@ -950,6 +963,7 @@ func (a *App) saveSettings() {
 		CloseAction:           a.GetCloseAction(),
 		HotkeyRecenterEnabled: a.hotkeyRecenterEnabled.Load(),
 		HotkeyRecenterKey:     a.getHotkeyRecenterKey(),
+		InputMode:             a.GetInputMode(),
 	}
 
 	data, err := json.MarshalIndent(s, "", "  ")
@@ -1921,6 +1935,7 @@ func (a *App) startup(ctx context.Context) {
 	if err := srv.Start(); err != nil {
 		fmt.Printf("[-] Server start error: %v\n", err)
 	}
+	srv.SetInputMode(a.GetInputMode())
 	a.srv = srv
 
 	// Orientation heartbeat (15 Hz = 66ms) for smooth main GUI telemetry
@@ -2143,6 +2158,7 @@ func (a *App) GetState() AppState {
 		HideAuthor:    a.hideAuthor,
 		DsuClients:    func() int { if a.dsuSrv != nil { return a.dsuSrv.ActiveClientCount() }; return 0 }(),
 		DsuClientList: func() []dsu.ClientInfo { if a.dsuSrv != nil { return a.dsuSrv.GetClientsInfo() }; return nil }(),
+		InputMode:     a.GetInputMode(),
 	}
 }
 
@@ -2656,6 +2672,7 @@ func (a *App) GetAppSettings() AppSettings {
 		CloseAction:           a.GetCloseAction(),
 		HotkeyRecenterEnabled: a.hotkeyRecenterEnabled.Load(),
 		HotkeyRecenterKey:     a.getHotkeyRecenterKey(),
+		InputMode:             a.GetInputMode(),
 	}
 }
 
@@ -2816,6 +2833,44 @@ func (a *App) ResetGyroFilter() {
 	if a.gyroFilter != nil {
 		a.gyroFilter.Reset()
 	}
+}
+
+// GetInputMode returns the active input mode ("phone" or "usb").
+func (a *App) GetInputMode() string {
+	a.inputModeMu.RLock()
+	defer a.inputModeMu.RUnlock()
+	if a.inputMode == "" {
+		return "phone"
+	}
+	return a.inputMode
+}
+
+// SetInputMode changes the active input mode ("phone" or "usb"), synchronizes with server and emits state.
+func (a *App) SetInputMode(mode string) string {
+	if mode != "usb" {
+		mode = "phone"
+	}
+	a.inputModeMu.Lock()
+	prev := a.inputMode
+	a.inputMode = mode
+	a.inputModeMu.Unlock()
+
+	if a.srv != nil {
+		a.srv.SetInputMode(mode)
+	}
+
+	if mode == "usb" && a.hasClient.Load() {
+		a.hasClient.Store(false)
+	}
+
+	if prev != mode {
+		a.saveSettings()
+		a.emitStateChange()
+		if a.ctx != nil {
+			wailsRuntime.EventsEmit(a.ctx, "input-mode-changed", mode)
+		}
+	}
+	return mode
 }
 
 // PlaySystemSound plays a native Windows sound for hardware connect/disconnect

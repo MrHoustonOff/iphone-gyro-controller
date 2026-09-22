@@ -93,6 +93,27 @@
     <div class="modular-container">
       <div class="apple-card">
 
+        <!-- Top Input Mode Selector Bubble/Pill -->
+        <div class="card-mode-header" id="card-mode-header">
+          <div class="main-mode-pill" role="tablist" aria-label="Input Mode">
+            <button type="button" class="main-mode-btn active" id="btn-mode-phone" role="tab" aria-selected="true" title="Смартфон (Wi-Fi)">
+              <svg class="mode-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+                <path d="M12 18h.01"/>
+              </svg>
+              <span data-i18n="mode.phone">Смартфон</span>
+            </button>
+            <button type="button" class="main-mode-btn" id="btn-mode-usb" role="tab" aria-selected="false" title="USB-контроллер">
+              <svg class="mode-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v6"/>
+                <path d="m5 10 7-4 7 4v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8Z"/>
+                <circle cx="12" cy="14" r="2"/>
+              </svg>
+              <span data-i18n="mode.usb">USB-контроллер</span>
+            </button>
+          </div>
+        </div>
+
         <!-- State 1: Offline Module (Phone NOT connected) -->
         <div class="offline-module" id="view-offline">
           <div class="card-caption" data-i18n="qr.scan_hint">Отсканируйте камерой телефона для подключения:</div>
@@ -336,6 +357,77 @@
                 <span data-i18n="calibration.btn_calibrate">Калибровать</span>
               </button>
             </div>
+          </div>
+        </div>
+
+        <!-- State: USB Controller Hardware Waiting Module -->
+        <div class="usb-mode-module" id="view-usb-mode" style="display: none;">
+          <!-- Hardware Visual Frame with Breathing Pulse Glow -->
+          <div class="usb-frame-wrap">
+            <div class="usb-pulse-ring"></div>
+            <div class="usb-frame">
+              <svg class="usb-hardware-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="18" y="8" width="28" height="14" rx="3" stroke-width="2.5"/>
+                <line x1="26" y1="12" x2="26" y2="15" stroke-width="2"/>
+                <line x1="38" y1="12" x2="38" y2="15" stroke-width="2"/>
+                <path d="M22 22v10a10 10 0 0 0 10 10 10 10 0 0 0 10-10V22" stroke-width="2.5"/>
+                <path d="M32 42v14" stroke-width="2.5"/>
+                <circle cx="32" cy="56" r="3" fill="currentColor"/>
+                <path d="M22 36l-6 6" stroke-width="2"/>
+                <rect x="12" y="42" width="6" height="6" rx="1" stroke-width="1.8"/>
+                <path d="M42 36l6 6" stroke-width="2"/>
+                <circle cx="50" cy="45" r="3" stroke-width="1.8"/>
+              </svg>
+            </div>
+          </div>
+
+          <!-- Apple Status Chip -->
+          <div class="usb-status-chip">
+            <span class="usb-status-dot"></span>
+            <span class="usb-status-chip-text" data-i18n="usb_mode.status_scanning">Поиск устройства...</span>
+          </div>
+
+          <!-- Headline & Description -->
+          <h2 class="usb-headline" data-i18n="usb_mode.title">Ожидание USB-устройства</h2>
+          <p class="usb-description" data-i18n="usb_mode.desc">Подключите аппаратный контроллер GyroBridge по USB-кабелю для прямого отслеживания движений.</p>
+
+          <!-- Hardware Spec Badges (Apple HIG pill badges) -->
+          <div class="usb-specs-row">
+            <span class="usb-spec-pill" data-i18n="usb_mode.pill_usb">USB 2.0 Прямой канал</span>
+            <span class="usb-spec-pill" data-i18n="usb_mode.pill_latency">Нулевой пинг Wi-Fi</span>
+            <span class="usb-spec-pill highlight" data-i18n="usb_mode.pill_version">GyroBridge 2.0 Preview</span>
+          </div>
+
+          <!-- Live Cemuhook DSU Server & Clients Banner -->
+          <div class="dsu-home-banner warning" id="usb-dsu-banner">
+            <div class="dsu-home-top">
+              <div class="dsu-home-meta">
+                <span class="status-dot" id="usb-dsu-dot"></span>
+                <span class="dsu-home-title" data-i18n="status.dsu_title">Cemuhook DSU Server</span>
+                <span class="dsu-home-port">:26760</span>
+              </div>
+              <span class="dsu-home-chip amber" id="usb-dsu-chip" data-i18n="status.dsu_waiting">Ожидание эмуляторов</span>
+            </div>
+            <div class="dsu-home-body" id="usb-dsu-body">
+              <div class="dsu-home-idle-row" id="usb-dsu-idle-row">
+                <span class="dsu-home-idle-dot"></span>
+                <span class="dsu-home-idle-msg" data-i18n="status.dsu_idle_notice">Ни один клиент (эмулятор) не принимает данные</span>
+              </div>
+              <div class="dsu-home-clients-list" id="usb-dsu-clients-list" style="display: none;"></div>
+            </div>
+          </div>
+
+          <!-- Footnote Notice -->
+          <div class="usb-footnote">
+            <svg class="usb-footnote-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span class="usb-footnote-text">
+              <span data-i18n="usb_mode.phone_blocked_notice">В стационарном режиме подключение смартфонов по Wi-Fi отключено.</span>
+              <span class="usb-footnote-switch" data-i18n="usb_mode.switch_hint">Для подключения телефона переключитесь на «Смартфон» выше.</span>
+            </span>
           </div>
         </div>
 
@@ -3063,10 +3155,14 @@
       }
       const viewOffline = document.getElementById('view-offline');
       const viewOnline = document.getElementById('view-online');
+      const viewUsb = document.getElementById('view-usb-mode');
+      const cardModeHeader = document.getElementById('card-mode-header');
       const viewSetup = document.getElementById('view-setup');
 
       if (viewOffline) viewOffline.style.display = 'none';
       if (viewOnline) viewOnline.style.display = 'none';
+      if (viewUsb) viewUsb.style.display = 'none';
+      if (cardModeHeader) cardModeHeader.style.display = 'none';
       if (viewSetup) viewSetup.style.display = 'flex';
 
       this.showScreen('select');
@@ -3210,6 +3306,8 @@
 
       const vOff = document.getElementById('view-offline');
       const vOn = document.getElementById('view-online');
+      const vUsb = document.getElementById('view-usb-mode');
+      const vModeHeader = document.getElementById('card-mode-header');
       const vSet = document.getElementById('view-setup');
       const vSettings = document.getElementById('view-settings');
       const vWelcome = document.getElementById('view-welcome');
@@ -3217,6 +3315,8 @@
 
       if (vOff) vOff.style.display = 'none';
       if (vOn) vOn.style.display = 'none';
+      if (vUsb) vUsb.style.display = 'none';
+      if (vModeHeader) vModeHeader.style.display = 'none';
       if (vSet) vSet.style.display = 'none';
       if (vSettings) vSettings.style.display = 'none';
       if (vWelcome) vWelcome.style.display = 'none';
@@ -6630,6 +6730,8 @@
 
       const vOff = document.getElementById('view-offline');
       const vOn = document.getElementById('view-online');
+      const vUsb = document.getElementById('view-usb-mode');
+      const vModeHeader = document.getElementById('card-mode-header');
       const vSet = document.getElementById('view-setup');
       const vHelp = document.getElementById('view-help');
       const vWelcome = document.getElementById('view-welcome');
@@ -6637,6 +6739,8 @@
 
       if (vOff) vOff.style.display = 'none';
       if (vOn) vOn.style.display = 'none';
+      if (vUsb) vUsb.style.display = 'none';
+      if (vModeHeader) vModeHeader.style.display = 'none';
       if (vSet) vSet.style.display = 'none';
       if (vHelp) vHelp.style.display = 'none';
       if (vWelcome) vWelcome.style.display = 'none';
@@ -7258,6 +7362,8 @@
 
       const vOff = document.getElementById('view-offline');
       const vOn = document.getElementById('view-online');
+      const vUsb = document.getElementById('view-usb-mode');
+      const vModeHeader = document.getElementById('card-mode-header');
       const vSet = document.getElementById('view-setup');
       const vHelp = document.getElementById('view-help');
       const vSettings = document.getElementById('view-settings');
@@ -7265,6 +7371,8 @@
 
       if (vOff) vOff.style.display = 'none';
       if (vOn) vOn.style.display = 'none';
+      if (vUsb) vUsb.style.display = 'none';
+      if (vModeHeader) vModeHeader.style.display = 'none';
       if (vSet) vSet.style.display = 'none';
       if (vHelp) vHelp.style.display = 'none';
       if (vSettings) vSettings.style.display = 'none';
@@ -9793,11 +9901,45 @@
 
       updateBanner('offline');
       updateBanner('online');
+      updateBanner('usb');
+    },
+
+    inputMode: 'phone',
+
+    setInputMode(mode, fromBackend = false) {
+      if (mode !== 'usb') mode = 'phone';
+      this.inputMode = mode;
+
+      const btnPhone = document.getElementById('btn-mode-phone');
+      const btnUsb = document.getElementById('btn-mode-usb');
+      if (btnPhone) {
+        btnPhone.classList.toggle('active', mode === 'phone');
+        btnPhone.setAttribute('aria-selected', mode === 'phone' ? 'true' : 'false');
+      }
+      if (btnUsb) {
+        btnUsb.classList.toggle('active', mode === 'usb');
+        btnUsb.setAttribute('aria-selected', mode === 'usb' ? 'true' : 'false');
+      }
+
+      this._lastStatus = null;
+      this._lastIsOffline = null;
+
+      if (!fromBackend && window.go?.main?.App?.SetInputMode) {
+        window.go.main.App.SetInputMode(mode).catch(console.error);
+      }
+
+      if (this.lastState) {
+        this.render(this.lastState);
+      }
     },
 
     render(state) {
       this.lastState = state;
       if (!state) return;
+
+      if (state.inputMode && state.inputMode !== this.inputMode) {
+        this.setInputMode(state.inputMode, true);
+      }
 
       if (typeof state.dsuClients !== 'undefined' || typeof state.dsuClientList !== 'undefined') {
         this.updateDSU(state.dsuClients, state.dsuClientList);
@@ -9811,23 +9953,12 @@
 
       const viewOffline = document.getElementById('view-offline');
       const viewOnline = document.getElementById('view-online');
+      const viewUsb = document.getElementById('view-usb-mode');
+      const cardModeHeader = document.getElementById('card-mode-header');
       const badgeStatus = document.getElementById('badge-status');
       const statusText = document.getElementById('status-text');
       const btnPause = document.getElementById('btn-pause-resume');
       const linkLiveDebug = document.getElementById('link-live-debug');
-
-      // Status capsule: only mutate DOM when status actually changes
-      if (this._lastStatus !== state.status) {
-        this._lastStatus = state.status;
-        badgeStatus.className = `status-capsule ${state.status}`;
-        statusText.setAttribute('data-i18n', `status.${state.status}`);
-        statusText.innerHTML = renderMarkdown(I18n.t(`status.${state.status}`));
-      }
-
-      // If controller just connected while setup was open, auto-close setup to show controller!
-      if (state.status !== 'offline' && SetupWizard.isOpen) {
-        SetupWizard.close();
-      }
 
       // Populate QR codes and URLs for Android and iOS Setup screens
       const imgQrAndroid = document.getElementById('img-qr-android');
@@ -9846,6 +9977,60 @@
       const linkUrlSetupText = document.getElementById('link-url-setup-text');
       if (linkUrlSetupText && state.setupUrl) {
         linkUrlSetupText.textContent = state.setupUrl;
+      }
+
+      const isWizardOpen = !!(SetupWizard?.isOpen || HelpManager?.isOpen || SettingsManager?.isOpen || WelcomeManager?.isOpen || CalibrationWizard?.isOpen);
+      if (cardModeHeader) {
+        cardModeHeader.style.display = isWizardOpen ? 'none' : 'flex';
+      }
+
+      // Mode Branch: Stationary USB Controller Mode
+      if (this.inputMode === 'usb') {
+        if (viewOffline) viewOffline.style.display = 'none';
+        if (viewOnline) viewOnline.style.display = 'none';
+        if (viewUsb && !isWizardOpen) viewUsb.style.display = 'flex';
+        if (linkLiveDebug) linkLiveDebug.style.display = 'none';
+        this.hideRecalHint(true);
+
+        if (this._lastStatus !== 'waiting_usb') {
+          this._lastStatus = 'waiting_usb';
+          if (badgeStatus) badgeStatus.className = 'status-capsule waiting-usb';
+          if (statusText) {
+            statusText.setAttribute('data-i18n', 'status.waiting_usb');
+            statusText.innerHTML = renderMarkdown(I18n.t('status.waiting_usb'));
+          }
+        }
+
+        // Author signature visibility
+        const authorSig = document.getElementById('author-signature');
+        const helpAuthorSig = document.getElementById('help-author-sig');
+        const setupAuthorSig = document.getElementById('setup-author-sig');
+        if (state.hideAuthor) {
+          if (authorSig) authorSig.style.display = 'none';
+          if (helpAuthorSig) helpAuthorSig.style.display = 'none';
+          if (setupAuthorSig) setupAuthorSig.style.display = 'none';
+        } else {
+          if (authorSig) authorSig.style.display = '';
+          if (helpAuthorSig) helpAuthorSig.style.display = '';
+          if (setupAuthorSig) setupAuthorSig.style.display = '';
+        }
+        return;
+      }
+
+      // Phone mode: ensure USB view is hidden
+      if (viewUsb) viewUsb.style.display = 'none';
+
+      // Status capsule: only mutate DOM when status actually changes
+      if (this._lastStatus !== state.status) {
+        this._lastStatus = state.status;
+        badgeStatus.className = `status-capsule ${state.status}`;
+        statusText.setAttribute('data-i18n', `status.${state.status}`);
+        statusText.innerHTML = renderMarkdown(I18n.t(`status.${state.status}`));
+      }
+
+      // If controller just connected while setup was open, auto-close setup to show controller!
+      if (state.status !== 'offline' && SetupWizard.isOpen) {
+        SetupWizard.close();
       }
 
       const isOffline = (state.status === 'offline');
@@ -10055,6 +10240,24 @@
         }
       });
 
+      // Mode segmented control buttons (Smartphone vs USB Controller)
+      document.getElementById('btn-mode-phone')?.addEventListener('click', () => {
+        if (this.inputMode !== 'phone') {
+          if (typeof SoundManager !== 'undefined' && SoundManager.play) {
+            SoundManager.play('click');
+          }
+          this.setInputMode('phone');
+        }
+      });
+      document.getElementById('btn-mode-usb')?.addEventListener('click', () => {
+        if (this.inputMode !== 'usb') {
+          if (typeof SoundManager !== 'undefined' && SoundManager.play) {
+            SoundManager.play('click');
+          }
+          this.setInputMode('usb');
+        }
+      });
+
       // Master setup button
       document.getElementById('btn-master-setup')?.addEventListener('click', () => {
         SetupWizard.open();
@@ -10152,12 +10355,24 @@
             }
           } catch (e) {}
         });
+        window.runtime.EventsOn('input-mode-changed', (mode) => {
+          if (mode && mode !== AppState.inputMode) {
+            AppState.setInputMode(mode, true);
+          }
+        });
       }
 
       // Initial state load
       if (window.go && window.go.main && window.go.main.App) {
         const state = await window.go.main.App.GetState();
         this.render(state);
+        if (window.go.main.App.GetInputMode) {
+          window.go.main.App.GetInputMode().then((m) => {
+            if (m && m !== AppState.inputMode) {
+              AppState.setInputMode(m, true);
+            }
+          }).catch(() => {});
+        }
         if (window.go.main.App.GetDSUStatus) {
           window.go.main.App.GetDSUStatus().then((dsu) => {
             if (dsu) {

@@ -50,6 +50,7 @@ export namespace main {
 	    closeAction: string;
 	    hotkeyRecenterEnabled: boolean;
 	    hotkeyRecenterKey: string;
+	    inputMode?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppSettings(source);
@@ -81,6 +82,7 @@ export namespace main {
 	        this.closeAction = source["closeAction"];
 	        this.hotkeyRecenterEnabled = source["hotkeyRecenterEnabled"];
 	        this.hotkeyRecenterKey = source["hotkeyRecenterKey"];
+	        this.inputMode = source["inputMode"];
 	    }
 	}
 	export class Profile {
@@ -141,6 +143,7 @@ export namespace main {
 	    hideAuthor: boolean;
 	    dsuClients: number;
 	    dsuClientList: dsu.ClientInfo[];
+	    inputMode: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new AppState(source);
@@ -183,6 +186,7 @@ export namespace main {
 	        this.hideAuthor = source["hideAuthor"];
 	        this.dsuClients = source["dsuClients"];
 	        this.dsuClientList = this.convertValues(source["dsuClientList"], dsu.ClientInfo);
+	        this.inputMode = source["inputMode"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

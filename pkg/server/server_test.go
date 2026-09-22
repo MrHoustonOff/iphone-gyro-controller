@@ -407,3 +407,65 @@ func TestServer_QuaternionToEuler(t *testing.T) {
 	}
 }
 
+func TestServer_InputMode(t *testing.T) {
+	srv, cleanup := setupTestServer(t)
+	defer cleanup()
+
+	// Default mode is phone
+	if srv.GetInputMode() != "phone" {
+		t.Fatalf("expected default mode 'phone', got %q", srv.GetInputMode())
+	}
+
+	// Test GET /api/mode returns "phone"
+	req := httptest.NewRequest("GET", "/api/mode", nil)
+	w := httptest.NewRecorder()
+	srv.handleAPIMode(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+	var modeResp map[string]string
+	_ = json.Unmarshal(w.Body.Bytes(), &modeResp)
+	if modeResp["mode"] != "phone" {
+		t.Fatalf("expected mode 'phone', got %q", modeResp["mode"])
+	}
+
+	// Switch to USB mode
+	srv.SetInputMode("usb")
+	if srv.GetInputMode() != "usb" {
+		t.Fatalf("expected mode 'usb', got %q", srv.GetInputMode())
+	}
+
+	// Test GET /api/mode returns "usb"
+	w2 := httptest.NewRecorder()
+	srv.handleAPIMode(w2, req)
+	_ = json.Unmarshal(w2.Body.Bytes(), &modeResp)
+	if modeResp["mode"] != "usb" {
+		t.Fatalf("expected mode 'usb', got %q", modeResp["mode"])
+	}
+
+	// Test WebSocket rejection in USB mode
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ws", srv.handleWebSocket)
+	ts := httptest.NewServer(mux)
+	defer ts.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(ts.URL, "http") + "/ws"
+	conn, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
+	if err != nil {
+		t.Fatalf("expected websocket upgrade to succeed to receive rejection frame: %v", err)
+	}
+	defer conn.Close()
+
+	_, msg, err := conn.ReadMessage()
+	if err != nil {
+		t.Fatalf("expected to read rejection message: %v", err)
+	}
+	var blockedMsg map[string]any
+	if err := json.Unmarshal(msg, &blockedMsg); err != nil {
+		t.Fatalf("failed to parse rejection JSON: %v", err)
+	}
+	if blockedMsg["type"] != "mode" || blockedMsg["mode"] != "usb" || blockedMsg["blocked"] != true {
+		t.Fatalf("unexpected rejection payload: %+v", blockedMsg)
+	}
+}
+
