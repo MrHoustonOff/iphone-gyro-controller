@@ -265,6 +265,7 @@ em {
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ── Theme Toggle Icon Button ───────────────────────────────────────────────── */
@@ -338,7 +339,9 @@ em {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 14px;
+  height: 36px;
+  box-sizing: border-box;
+  padding: 0 14px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--border);
   background: var(--surface);
@@ -347,6 +350,7 @@ em {
   letter-spacing: 0.02em;
   text-transform: lowercase;
   transition: all var(--transition-theme);
+  flex-shrink: 0;
 }
 
 .status-dot {
@@ -411,8 +415,9 @@ em {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding: clamp(16px, 3vh, 32px) clamp(16px, 3vw, 32px) 48px;
+  padding: 0 clamp(16px, 3vw, 32px) 48px;
   width: 100%;
+  position: relative;
   scrollbar-gutter: stable;
 }
 
@@ -448,7 +453,7 @@ em {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin: auto 0;
+  margin: 0 auto;
   transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
 }
@@ -456,6 +461,7 @@ em {
 /* When Setup Wizard is open, container expands to give high-res 2-column layout */
 .modular-container.setup-mode {
   max-width: 760px;
+  margin-top: clamp(16px, 2.5vh, 28px);
 }
 
 .modular-container.setup-mode.setup-mode-wide {
@@ -487,12 +493,16 @@ em {
 }
 
 /* ── Top Input Mode Segmented Pill ─────────────────────────────────────────── */
+.top-mode-wrapper,
 .card-mode-header {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  margin-bottom: 22px;
+  margin-top: clamp(14px, 2.5vh, 26px);
+  margin-bottom: clamp(14px, 2.5vh, 26px);
+  flex-shrink: 0;
+  z-index: 5;
   animation: fadeInModule 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -4339,13 +4349,15 @@ em {
 }
 
 .header-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
   pointer-events: auto;
+  z-index: 2;
 }
 
 .header-nav-bubbles {

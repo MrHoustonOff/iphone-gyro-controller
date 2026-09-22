@@ -90,29 +90,30 @@
 
   <!-- Main View Area (Modular Inset Grouped Card) -->
   <main class="app-main">
+
+    <!-- Top Input Mode Selector Bubble/Pill (Midway between header and card) -->
+    <div class="top-mode-wrapper card-mode-header" id="card-mode-header">
+      <div class="main-mode-pill" role="tablist" aria-label="Input Mode">
+        <button type="button" class="main-mode-btn active" id="btn-mode-phone" role="tab" aria-selected="true" title="Смартфон (Wi-Fi)">
+          <svg class="mode-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
+            <path d="M12 18h.01"/>
+          </svg>
+          <span data-i18n="mode.phone">Смартфон</span>
+        </button>
+        <button type="button" class="main-mode-btn" id="btn-mode-usb" role="tab" aria-selected="false" title="USB-контроллер">
+          <svg class="mode-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v6"/>
+            <path d="m5 10 7-4 7 4v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8Z"/>
+            <circle cx="12" cy="14" r="2"/>
+          </svg>
+          <span data-i18n="mode.usb">USB-контроллер</span>
+        </button>
+      </div>
+    </div>
+
     <div class="modular-container">
       <div class="apple-card">
-
-        <!-- Top Input Mode Selector Bubble/Pill -->
-        <div class="card-mode-header" id="card-mode-header">
-          <div class="main-mode-pill" role="tablist" aria-label="Input Mode">
-            <button type="button" class="main-mode-btn active" id="btn-mode-phone" role="tab" aria-selected="true" title="Смартфон (Wi-Fi)">
-              <svg class="mode-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
-                <path d="M12 18h.01"/>
-              </svg>
-              <span data-i18n="mode.phone">Смартфон</span>
-            </button>
-            <button type="button" class="main-mode-btn" id="btn-mode-usb" role="tab" aria-selected="false" title="USB-контроллер">
-              <svg class="mode-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2v6"/>
-                <path d="m5 10 7-4 7 4v8a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-8Z"/>
-                <circle cx="12" cy="14" r="2"/>
-              </svg>
-              <span data-i18n="mode.usb">USB-контроллер</span>
-            </button>
-          </div>
-        </div>
 
         <!-- State 1: Offline Module (Phone NOT connected) -->
         <div class="offline-module" id="view-offline">
@@ -2485,13 +2486,9 @@
     update() {
       const header = document.querySelector('.app-header');
       if (!header) return;
-      const left = document.querySelector('.header-left');
-      const controls = document.querySelector('.header-controls');
-      if (!left || !controls) return;
 
-      const avail = header.clientWidth - left.offsetWidth - controls.offsetWidth - 24;
-      // When center space is under 420px or window width <= 1020px, collapse into icon-only mode
-      if (avail < 420 || window.innerWidth <= 1020) {
+      // Stable width-based collapse check - independent of dynamic badge text length
+      if (window.innerWidth <= 1020) {
         header.classList.add('header-collapsed');
       } else {
         header.classList.remove('header-collapsed');
