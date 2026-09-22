@@ -982,6 +982,192 @@
                         <span id="setting-sound-vol-badge" class="setting-value-badge" style="min-width: 44px; text-align: center;">1x</span>
                       </div>
                     </div>
+
+                    <!-- Sound Details Drawer Toggle -->
+                    <div class="setting-row sound-details-toggle-row" id="row-sound-details-toggle">
+                      <div class="setting-info">
+                        <div class="setting-label-row">
+                          <span class="setting-label" data-i18n="settings_modal.sound_details_toggle">Детальная настройка звуков</span>
+                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_details_tip" aria-label="Info">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <line x1="12" y1="16" x2="12" y2="12"></line>
+                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                          </button>
+                        </div>
+                        <span class="setting-subtext" data-i18n="settings_modal.sound_details_desc">Индивидуальная громкость для каждого события</span>
+                      </div>
+                      <div class="setting-control">
+                        <button type="button" class="btn-sound-details-toggle" id="btn-sound-details-toggle" aria-expanded="false">
+                          <span id="btn-sound-details-text" data-i18n="settings_modal.sound_details_btn">Настроить</span>
+                          <svg class="sound-disclosure-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Expandable Sound Details Drawer -->
+                    <div class="sound-details-drawer" id="sound-details-drawer" style="display: none;">
+                      
+                      <!-- Item 1: Phone Connect -->
+                      <div class="sound-detail-row">
+                        <div class="sound-detail-info">
+                          <div class="sound-detail-label-row">
+                            <span class="sound-detail-name" data-i18n="settings_modal.sound_phone_connect">Подключение телефона</span>
+                            <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_phone_connect_tip" aria-label="Info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                              </svg>
+                            </button>
+                          </div>
+                          <span class="sound-detail-desc" data-i18n="settings_modal.sound_phone_connect_desc">Смартфон подключился по Wi-Fi</span>
+                        </div>
+                        <div class="sound-detail-control">
+                          <input type="range" id="setting-sound-vol-connect" class="setting-slider sound-individual-slider" data-sound="connect" min="0" max="3" step="1" value="1">
+                          <span id="setting-sound-badge-connect" class="setting-value-badge sound-detail-badge">1x</span>
+                          <button type="button" class="btn-sound-detail-play" data-sound="connect" data-i18n-tip="settings_modal.sound_play_tip" aria-label="Play Sound">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                              <polygon points="6 4 19 12 6 20 6 4"></polygon>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Item 2: Phone Disconnect -->
+                      <div class="sound-detail-row">
+                        <div class="sound-detail-info">
+                          <div class="sound-detail-label-row">
+                            <span class="sound-detail-name" data-i18n="settings_modal.sound_phone_disconnect">Отключение телефона</span>
+                            <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_phone_disconnect_tip" aria-label="Info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                              </svg>
+                            </button>
+                          </div>
+                          <span class="sound-detail-desc" data-i18n="settings_modal.sound_phone_disconnect_desc">Потеря связи или засыпание экрана</span>
+                        </div>
+                        <div class="sound-detail-control">
+                          <input type="range" id="setting-sound-vol-disconnect" class="setting-slider sound-individual-slider" data-sound="disconnect" min="0" max="3" step="1" value="1">
+                          <span id="setting-sound-badge-disconnect" class="setting-value-badge sound-detail-badge">1x</span>
+                          <button type="button" class="btn-sound-detail-play" data-sound="disconnect" data-i18n-tip="settings_modal.sound_play_tip" aria-label="Play Sound">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                              <polygon points="6 4 19 12 6 20 6 4"></polygon>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Item 3: DSU Emulator Connected -->
+                      <div class="sound-detail-row">
+                        <div class="sound-detail-info">
+                          <div class="sound-detail-label-row">
+                            <span class="sound-detail-name" data-i18n="settings_modal.sound_dsu_connect">Клиент эмулятора (DSU)</span>
+                            <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_dsu_connect_tip" aria-label="Info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                              </svg>
+                            </button>
+                          </div>
+                          <span class="sound-detail-desc" data-i18n="settings_modal.sound_dsu_connect_desc">Эмулятор подключился к серверу движения</span>
+                        </div>
+                        <div class="sound-detail-control">
+                          <input type="range" id="setting-sound-vol-dsu" class="setting-slider sound-individual-slider" data-sound="dsu" min="0" max="3" step="1" value="1">
+                          <span id="setting-sound-badge-dsu" class="setting-value-badge sound-detail-badge">1x</span>
+                          <button type="button" class="btn-sound-detail-play" data-sound="dsu" data-i18n-tip="settings_modal.sound_play_tip" aria-label="Play Sound">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                              <polygon points="6 4 19 12 6 20 6 4"></polygon>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Item 4: Orientation Recenter -->
+                      <div class="sound-detail-row">
+                        <div class="sound-detail-info">
+                          <div class="sound-detail-label-row">
+                            <span class="sound-detail-name" data-i18n="settings_modal.sound_recenter">Сброс ориентации (Recenter)</span>
+                            <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_recenter_tip" aria-label="Info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                              </svg>
+                            </button>
+                          </div>
+                          <span class="sound-detail-desc" data-i18n="settings_modal.sound_recenter_desc">Фиксация нейтрали прицела и 3D-модели</span>
+                        </div>
+                        <div class="sound-detail-control">
+                          <input type="range" id="setting-sound-vol-recenter" class="setting-slider sound-individual-slider" data-sound="recenter" min="0" max="3" step="1" value="1">
+                          <span id="setting-sound-badge-recenter" class="setting-value-badge sound-detail-badge">1x</span>
+                          <button type="button" class="btn-sound-detail-play" data-sound="recenter" data-i18n-tip="settings_modal.sound_play_tip" aria-label="Play Sound">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                              <polygon points="6 4 19 12 6 20 6 4"></polygon>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Item 5: Bench Goal Hit -->
+                      <div class="sound-detail-row">
+                        <div class="sound-detail-info">
+                          <div class="sound-detail-label-row">
+                            <span class="sound-detail-name" data-i18n="settings_modal.sound_bench_goal">Стенд: Попадание в цель</span>
+                            <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_bench_goal_tip" aria-label="Info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                              </svg>
+                            </button>
+                          </div>
+                          <span class="sound-detail-desc" data-i18n="settings_modal.sound_bench_goal_desc">Успешный выстрел по мишени или лунка</span>
+                        </div>
+                        <div class="sound-detail-control">
+                          <input type="range" id="setting-sound-vol-goal" class="setting-slider sound-individual-slider" data-sound="goal" min="0" max="3" step="1" value="1">
+                          <span id="setting-sound-badge-goal" class="setting-value-badge sound-detail-badge">1x</span>
+                          <button type="button" class="btn-sound-detail-play" data-sound="goal" data-i18n-tip="settings_modal.sound_play_tip" aria-label="Play Sound">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                              <polygon points="6 4 19 12 6 20 6 4"></polygon>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Item 6: Bench Platform Defeat -->
+                      <div class="sound-detail-row">
+                        <div class="sound-detail-info">
+                          <div class="sound-detail-label-row">
+                            <span class="sound-detail-name" data-i18n="settings_modal.sound_bench_defeat">Стенд: Падение шара</span>
+                            <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.sound_bench_defeat_tip" aria-label="Info">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                              </svg>
+                            </button>
+                          </div>
+                          <span class="sound-detail-desc" data-i18n="settings_modal.sound_bench_defeat_desc">Падение шара с платформы или срыв покоя</span>
+                        </div>
+                        <div class="sound-detail-control">
+                          <input type="range" id="setting-sound-vol-defeat" class="setting-slider sound-individual-slider" data-sound="defeat" min="0" max="3" step="1" value="1">
+                          <span id="setting-sound-badge-defeat" class="setting-value-badge sound-detail-badge">1x</span>
+                          <button type="button" class="btn-sound-detail-play" data-sound="defeat" data-i18n-tip="settings_modal.sound_play_tip" aria-label="Play Sound">
+                            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+                              <polygon points="6 4 19 12 6 20 6 4"></polygon>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+
+                    </div>
                   </div>
                 </div>
 
@@ -3058,7 +3244,16 @@
   // ── Sound Alerts Manager ───────────────────────────────────────────────────
   const SoundManager = {
     audioCtx: null,
-    _lastPlayTs: { connect: 0, disconnect: 0, goal: 0, defeat: 0 },
+    soundVolumes: {
+      connect: 1,
+      disconnect: 1,
+      dsu: 1,
+      recenter: 1,
+      goal: 1,
+      defeat: 1
+    },
+    _lastPlayTs: { connect: 0, disconnect: 0, dsu: 0, recenter: 0, goal: 0, defeat: 0 },
+    _curEffectiveVol: 1,
 
     getAudioContext() {
       if (!this.audioCtx) {
@@ -3081,7 +3276,7 @@
       return sel?.value || 'cute';
     },
 
-    getVolume() {
+    getMasterVolume() {
       const slider = document.getElementById('setting-sound-volume');
       if (slider) {
         const parsed = parseInt(slider.value, 10);
@@ -3093,14 +3288,47 @@
       return 1;
     },
 
-    async play(type) {
+    getVolume(type) {
+      const master = this.getMasterVolume();
+      if (master <= 0) return 0;
+      if (!type) return master;
+
+      let individual = 1;
+      const el = document.getElementById(`setting-sound-vol-${type}`);
+      if (el) {
+        const parsed = parseInt(el.value, 10);
+        if (!isNaN(parsed)) individual = parsed;
+      } else if (this.soundVolumes && typeof this.soundVolumes[type] === 'number') {
+        individual = this.soundVolumes[type];
+      } else if (SettingsManager.currentSettings?.soundVolumes && typeof SettingsManager.currentSettings.soundVolumes[type] === 'number') {
+        individual = SettingsManager.currentSettings.soundVolumes[type];
+      }
+
+      if (individual <= 0) return 0;
+      return individual;
+    },
+
+    getEffectiveVolume(type, force = false) {
+      const master = this.getMasterVolume();
+      if (master <= 0 && !force) return 0;
+      let ind = this.getVolume(type);
+      if (force && ind <= 0) ind = 1;
+      if (ind <= 0) return 0;
+      const effMaster = (master > 0) ? master : 1;
+      return Math.min(3.0, (effMaster * ind) / 1.0);
+    },
+
+    async play(type, force = false) {
       const mode = this.getMode();
-      const vol = this.getVolume();
-      if (mode === 'off' || vol <= 0) return;
+      const masterVol = this.getMasterVolume();
+      if (!force && (mode === 'off' || masterVol <= 0)) return;
+
+      const indVol = this.getVolume(type);
+      if (!force && indVol <= 0) return;
 
       const now = Date.now();
-      const minInterval = (type === 'defeat') ? 1200 : (type === 'goal') ? 700 : 600;
-      if (this._lastPlayTs[type] && now - this._lastPlayTs[type] < minInterval) {
+      const minInterval = (type === 'defeat') ? 1200 : (type === 'goal') ? 700 : (type === 'recenter') ? 140 : 600;
+      if (!force && this._lastPlayTs[type] && now - this._lastPlayTs[type] < minInterval) {
         return;
       }
 
@@ -3110,6 +3338,7 @@
       }
 
       this._lastPlayTs[type] = now;
+      this._curEffectiveVol = this.getEffectiveVolume(type, force) || 1.0;
 
       if (type === 'goal') {
         this.playCuteGoal();
@@ -3117,6 +3346,26 @@
       }
       if (type === 'defeat') {
         this.playCuteDefeat();
+        return;
+      }
+      if (type === 'recenter') {
+        if (mode === 'windows') {
+          if (window.go?.main?.App?.PlaySystemSound) {
+            try { window.go.main.App.PlaySystemSound('recenter'); } catch (e) {}
+          }
+        } else {
+          this.playCuteRecenter();
+        }
+        return;
+      }
+      if (type === 'dsu') {
+        if (mode === 'windows') {
+          if (window.go?.main?.App?.PlaySystemSound) {
+            try { window.go.main.App.PlaySystemSound('dsu'); } catch (e) {}
+          }
+        } else {
+          this.playCuteDSUConnect();
+        }
         return;
       }
 
@@ -3140,7 +3389,7 @@
     },
 
     playTone(freq, startTime, duration, gainValue = 0.12, type = 'sine') {
-      const vol = this.getVolume();
+      const vol = this._curEffectiveVol || this.getMasterVolume();
       if (vol <= 0) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
@@ -3164,7 +3413,7 @@
     },
 
     playFMBell(freq, startTime, duration, gainVal = 0.16, modRatio = 2.756, modDepth = 2.4) {
-      const vol = this.getVolume();
+      const vol = this._curEffectiveVol || this.getMasterVolume();
       if (vol <= 0) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
@@ -3201,7 +3450,7 @@
     },
 
     playToneSweep(fromFreq, toFreq, startTime, duration, gainVal = 0.15) {
-      const vol = this.getVolume();
+      const vol = this._curEffectiveVol || this.getMasterVolume();
       if (vol <= 0) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
@@ -3276,6 +3525,27 @@
       }
     },
 
+    playCuteDSUConnect() {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      // Bright crystalline 2-tone FM bell chime:
+      // Note 1: E6 (1318.51 Hz) - crisp bright chime
+      // Note 2: A6 (1760.00 Hz) - rising resolving bell
+      this.playFMBell(1318.51, now + 0.00, 0.26, 0.16, 2.756, 2.2);
+      this.playFMBell(1760.00, now + 0.10, 0.44, 0.18, 2.756, 2.2);
+    },
+
+    playCuteRecenter() {
+      const ctx = this.getAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      // Tactile electronic crosshair zero-lock snap:
+      this.playTone(220, now, 0.035, 0.18, 'triangle');
+      this.playTone(880.00, now + 0.015, 0.10, 0.14, 'sine');
+      this.playFMBell(1108.73, now + 0.045, 0.22, 0.16, 2.0, 1.5);
+    },
+
     playCuteGoal() {
       const ctx = this.getAudioContext();
       if (!ctx) return;
@@ -3322,12 +3592,14 @@
       this.playToneSweep(110, 35, now, 0.45, 0.18);
     },
 
-    preview() {
+    preview(type) {
+      if (type) {
+        this.play(type, true);
+        return;
+      }
       const sel = document.getElementById('setting-sound-mode');
       const mode = sel ? sel.value : this.getMode();
       if (mode === 'off') return;
-      const vol = this.getVolume();
-      if (vol <= 0) return;
       if (mode === 'windows') {
         if (window.go?.main?.App?.PlaySystemSound) {
           try { window.go.main.App.PlaySystemSound('connect'); } catch (e) {}
@@ -3851,6 +4123,11 @@
 
     playHitSound() {
       try {
+        if (typeof SoundManager !== 'undefined') {
+          if (SoundManager.getMode() === 'off') return;
+          const vol = SoundManager.getEffectiveVolume('goal');
+          if (vol <= 0) return;
+        }
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
         if (!this.audioCtx) this.audioCtx = new AudioContext();
@@ -3864,7 +4141,8 @@
         osc.type = 'sine';
         osc.frequency.setValueAtTime(620, now);
         osc.frequency.exponentialRampToValueAtTime(1400, now + 0.07);
-        gain.gain.setValueAtTime(0.25, now);
+        const effVol = (typeof SoundManager !== 'undefined' && SoundManager.getEffectiveVolume) ? SoundManager.getEffectiveVolume('goal') : 1;
+        gain.gain.setValueAtTime(0.25 * effVol, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -5715,6 +5993,83 @@
         });
       }
 
+      // Expandable sound drawer toggle
+      const drawerToggleBtn = document.getElementById('btn-sound-details-toggle');
+      const drawerRow = document.getElementById('row-sound-details-toggle');
+      const soundDrawer = document.getElementById('sound-details-drawer');
+      const toggleDrawer = () => {
+        if (!soundDrawer) return;
+        const isHidden = (soundDrawer.style.display === 'none' || !soundDrawer.classList.contains('open'));
+        if (isHidden) {
+          soundDrawer.style.display = 'flex';
+          void soundDrawer.offsetHeight;
+          soundDrawer.classList.add('open');
+          drawerToggleBtn?.classList.add('open');
+          drawerToggleBtn?.setAttribute('aria-expanded', 'true');
+        } else {
+          soundDrawer.classList.remove('open');
+          drawerToggleBtn?.classList.remove('open');
+          drawerToggleBtn?.setAttribute('aria-expanded', 'false');
+          setTimeout(() => {
+            if (!soundDrawer.classList.contains('open')) {
+              soundDrawer.style.display = 'none';
+            }
+          }, 240);
+        }
+      };
+
+      drawerToggleBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDrawer();
+      });
+
+      drawerRow?.addEventListener('click', (e) => {
+        if (e.target.closest('.setting-infotip') || e.target.closest('#btn-sound-details-toggle')) return;
+        toggleDrawer();
+      });
+
+      // Individual sound sliders and play buttons
+      document.querySelectorAll('.sound-individual-slider').forEach(slider => {
+        const soundKey = slider.getAttribute('data-sound');
+        const badge = document.getElementById(`setting-sound-badge-${soundKey}`);
+        const updateSoundSliderUI = (preview = false) => {
+          const val = parseInt(slider.value, 10);
+          if (badge) {
+            badge.textContent = (val === 0) ? (I18n.t('settings_modal.sound_off') || 'Выкл') : (val + 'x');
+          }
+          if (SoundManager.soundVolumes) {
+            SoundManager.soundVolumes[soundKey] = val;
+          }
+          if (preview) {
+            SoundManager.play(soundKey, true);
+          }
+        };
+
+        let sliderDebounce = null;
+        slider.addEventListener('input', () => {
+          updateSoundSliderUI(false);
+          if (sliderDebounce) clearTimeout(sliderDebounce);
+          sliderDebounce = setTimeout(() => {
+            updateSoundSliderUI(true);
+          }, 80);
+        });
+
+        slider.addEventListener('change', () => {
+          updateSoundSliderUI(true);
+        });
+      });
+
+      // Sound play preview buttons
+      document.querySelectorAll('.btn-sound-detail-play').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const soundKey = btn.getAttribute('data-sound');
+          if (soundKey) {
+            SoundManager.play(soundKey, true);
+          }
+        });
+      });
+
       // Theme segmented control clicks
       document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(btn => {
         btn.addEventListener('click', () => {
@@ -6259,8 +6614,20 @@
       if (volSlider) {
         const vol = (typeof s.soundVolume === 'number') ? s.soundVolume : 1;
         volSlider.value = vol;
-        if (volBadge) volBadge.textContent = (vol === 0) ? '0 (Off)' : (vol + 'x');
+        if (volBadge) volBadge.textContent = (vol === 0) ? (I18n.t('settings_modal.sound_off') || '0 (Off)') : (vol + 'x');
       }
+
+      // Individual sound volumes
+      const soundKeys = ['connect', 'disconnect', 'dsu', 'recenter', 'goal', 'defeat'];
+      const soundVols = s.soundVolumes || SoundManager.soundVolumes || {};
+      soundKeys.forEach(key => {
+        const slider = document.getElementById(`setting-sound-vol-${key}`);
+        const badge = document.getElementById(`setting-sound-badge-${key}`);
+        const val = (typeof soundVols[key] === 'number') ? soundVols[key] : 1;
+        if (slider) slider.value = val;
+        if (badge) badge.textContent = (val === 0) ? (I18n.t('settings_modal.sound_off') || 'Выкл') : (val + 'x');
+        if (SoundManager.soundVolumes) SoundManager.soundVolumes[key] = val;
+      });
 
       // Theme segmented control
       const activeTheme = s.theme || ThemeManager.theme || 'dark';
@@ -6363,6 +6730,15 @@
         if (volBadge) volBadge.textContent = '1x';
       }
 
+      // Reset individual sound sliders
+      ['connect', 'disconnect', 'dsu', 'recenter', 'goal', 'defeat'].forEach(key => {
+        const slider = document.getElementById(`setting-sound-vol-${key}`);
+        const badge = document.getElementById(`setting-sound-badge-${key}`);
+        if (slider) slider.value = 1;
+        if (badge) badge.textContent = '1x';
+        if (SoundManager.soundVolumes) SoundManager.soundVolumes[key] = 1;
+      });
+
       const fontScaleSlider = document.getElementById('setting-font-scale');
       const fontScaleBadge = document.getElementById('setting-font-scale-badge');
       if (fontScaleSlider) fontScaleSlider.value = '1.00';
@@ -6447,6 +6823,14 @@
 
       const dsuMac = document.getElementById('setting-dsu-mac')?.value?.trim() || '';
 
+      const soundVolumes = {};
+      ['connect', 'disconnect', 'dsu', 'recenter', 'goal', 'defeat'].forEach(key => {
+        const slider = document.getElementById(`setting-sound-vol-${key}`);
+        const val = parseInt(slider?.value || '1', 10);
+        soundVolumes[key] = isNaN(val) ? 1 : val;
+      });
+      SoundManager.soundVolumes = soundVolumes;
+
       const payload = {
         theme: selectedTheme,
         lang: selectedLang,
@@ -6469,6 +6853,7 @@
         minimizeToTray: document.getElementById('setting-close-action')?.value === 'minimize',
         soundMode: soundMode,
         soundVolume: isNaN(soundVolume) ? 1 : soundVolume,
+        soundVolumes: soundVolumes,
         hotkeyRecenterEnabled: !!document.getElementById('setting-hotkey-recenter-enabled')?.checked,
         hotkeyRecenterKey: this.hotkeyRecenterKey || 'Ctrl+Shift+R'
       };
@@ -7066,7 +7451,7 @@
       }
 
       if (typeof SoundManager !== 'undefined' && SoundManager.play) {
-        SoundManager.play('goal');
+        SoundManager.play('recenter');
       }
 
       setTimeout(() => {
@@ -7161,7 +7546,7 @@
 
           // Audio feedback chime
           if (typeof SoundManager !== 'undefined' && SoundManager.play) {
-            SoundManager.play('goal');
+            SoundManager.play('recenter');
           }
 
           // Visual pulse on main recenter button
@@ -9062,8 +9447,15 @@
       if (this._lastDsuCount === count && this._lastDsuClientsJson === clientsJson) {
         return;
       }
+      const prevDsuCount = this._lastDsuCount;
       this._lastDsuCount = count;
       this._lastDsuClientsJson = clientsJson;
+
+      if (prevDsuCount !== null && count > prevDsuCount) {
+        if (typeof SoundManager !== 'undefined' && SoundManager.play) {
+          SoundManager.play('dsu');
+        }
+      }
 
       const isOnline = count > 0;
       const clientWord = isOnline 

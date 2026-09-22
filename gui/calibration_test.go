@@ -523,10 +523,33 @@ func TestProfileSlots6_And_SettingsPersistence(t *testing.T) {
 		t.Fatalf("expected reloaded app to have lang = en, got %s", appReload.GetLang())
 	}
 
+	// Test sound volumes persistence
+	defaultVols := app.getSoundVolumes()
+	if defaultVols["connect"] != 1 || defaultVols["dsu"] != 1 || defaultVols["recenter"] != 1 {
+		t.Fatalf("expected default sound volumes of 1, got %+v", defaultVols)
+	}
+	customVols := map[string]int{
+		"connect":    2,
+		"disconnect": 1,
+		"dsu":        3,
+		"recenter":   0,
+		"goal":       1,
+		"defeat":     2,
+	}
+	app.setSoundVolumes(customVols)
+	app.saveSettings()
+
 	// Test logs persistence
 	app.logEvent("TEST", "Test log message")
 	logPath := filepath.Join(tempDir, "logs", "gyrobridge.log")
 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
 		t.Fatalf("gyrobridge.log was not created at %s", logPath)
+	}
+
+	// Verify sound volumes reloaded
+	appReload.loadSettings()
+	reloadedVols := appReload.getSoundVolumes()
+	if reloadedVols["dsu"] != 3 || reloadedVols["recenter"] != 0 || reloadedVols["connect"] != 2 {
+		t.Fatalf("expected reloaded sound volumes to match, got %+v", reloadedVols)
 	}
 }

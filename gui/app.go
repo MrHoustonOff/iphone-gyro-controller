@@ -229,6 +229,8 @@ type App struct {
 	silenceDisconnect   atomic.Bool
 	soundMode           string
 	soundVolume         atomic.Int32
+	soundVolumesMu      sync.RWMutex
+	soundVolumes        map[string]int
 	lastSensorChangeTs  atomic.Int64
 	// Adaptive 1-Euro DSU filter and dynamic response parameters
 	gyroFilter          *filter.Vector3OneEuroFilter
@@ -266,9 +268,10 @@ type AppSettings struct {
 	StillnessHint         bool    `json:"stillnessHint"`
 	DisconnectAlert       bool    `json:"disconnectAlert"`
 	SilenceDisconnect     bool    `json:"silenceDisconnect"`
-	SoundMode             string  `json:"soundMode"`
-	SoundVolume           int     `json:"soundVolume"`
-	GyroSmoothing         float64 `json:"gyroSmoothing"`
+	SoundMode             string         `json:"soundMode"`
+	SoundVolume           int            `json:"soundVolume"`
+	SoundVolumes          map[string]int `json:"soundVolumes,omitempty"`
+	GyroSmoothing         float64        `json:"gyroSmoothing"`
 	GyroDeadband          float64 `json:"gyroDeadband"`
 	GyroSensitivity       float64 `json:"gyroSensitivity"`
 	MinimizeToTray        bool    `json:"minimizeToTray"`
@@ -570,6 +573,7 @@ func NewApp() *App {
 	app.silenceDisconnect.Store(true)
 	app.soundMode = "cute"
 	app.soundVolume.Store(1)
+	app.soundVolumes = defaultSoundVolumes()
 	app.deviceName.Store("Controller")
 	app.minimizeToTray.Store(true)
 	app.hotkeyRecenterEnabled.Store(true)
@@ -651,6 +655,48 @@ func (a *App) setDSUMAC(mac string) {
 	a.dsuMACMu.Unlock()
 }
 
+func defaultSoundVolumes() map[string]int {
+	return map[string]int{
+		"connect":    1,
+		"disconnect": 1,
+		"dsu":        1,
+		"recenter":   1,
+		"goal":       1,
+		"defeat":     1,
+	}
+}
+
+func (a *App) getSoundVolumes() map[string]int {
+	a.soundVolumesMu.RLock()
+	defer a.soundVolumesMu.RUnlock()
+	if a.soundVolumes == nil {
+		return defaultSoundVolumes()
+	}
+	cp := make(map[string]int, len(a.soundVolumes))
+	for k, v := range a.soundVolumes {
+		cp[k] = v
+	}
+	return cp
+}
+
+func (a *App) setSoundVolumes(m map[string]int) {
+	a.soundVolumesMu.Lock()
+	defer a.soundVolumesMu.Unlock()
+	defs := defaultSoundVolumes()
+	for k := range defs {
+		if v, ok := m[k]; ok {
+			if v < 0 {
+				defs[k] = 0
+			} else if v > 3 {
+				defs[k] = 3
+			} else {
+				defs[k] = v
+			}
+		}
+	}
+	a.soundVolumes = defs
+}
+
 // loadSettings loads theme, language, and slot preferences from settings.json
 func (a *App) loadSettings() {
 	if a.profilesDir == "" {
@@ -686,9 +732,10 @@ func (a *App) loadSettings() {
 		StillnessHint     *bool    `json:"stillnessHint"`
 		DisconnectAlert   *bool    `json:"disconnectAlert"`
 		SilenceDisconnect *bool    `json:"silenceDisconnect"`
-		SoundMode         string   `json:"soundMode"`
-		SoundVolume       *int     `json:"soundVolume"`
-		GyroSmoothing     *float64 `json:"gyroSmoothing,omitempty"`
+		SoundMode         string         `json:"soundMode"`
+		SoundVolume       *int           `json:"soundVolume"`
+		SoundVolumes      map[string]int `json:"soundVolumes,omitempty"`
+		GyroSmoothing     *float64       `json:"gyroSmoothing,omitempty"`
 		GyroDeadband      *float64 `json:"gyroDeadband,omitempty"`
 		GyroSensitivity   *float64 `json:"gyroSensitivity,omitempty"`
 		FontScale         *float64 `json:"fontScale,omitempty"`
@@ -758,6 +805,11 @@ func (a *App) loadSettings() {
 		a.soundVolume.Store(int32(*s.SoundVolume))
 	} else {
 		a.soundVolume.Store(1)
+	}
+	if s.SoundVolumes != nil {
+		a.setSoundVolumes(s.SoundVolumes)
+	} else {
+		a.setSoundVolumes(defaultSoundVolumes())
 	}
 	if s.GyroSmoothing != nil {
 		a.gyroSmoothingBits.Store(math.Float64bits(*s.GyroSmoothing))
@@ -890,6 +942,7 @@ func (a *App) saveSettings() {
 		SilenceDisconnect: a.silenceDisconnect.Load(),
 		SoundMode:         soundM,
 		SoundVolume:       vol,
+		SoundVolumes:      a.getSoundVolumes(),
 		GyroSmoothing:     smoothing,
 		GyroDeadband:      deadband,
 		GyroSensitivity:   sensitivity,
@@ -2595,6 +2648,7 @@ func (a *App) GetAppSettings() AppSettings {
 		SilenceDisconnect: a.silenceDisconnect.Load(),
 		SoundMode:         soundM,
 		SoundVolume:       vol,
+		SoundVolumes:      a.getSoundVolumes(),
 		GyroSmoothing:     smoothing,
 		GyroDeadband:      deadband,
 		GyroSensitivity:   sensitivity,
@@ -2680,6 +2734,9 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 	}
 	if s.SoundVolume >= 0 && s.SoundVolume <= 3 {
 		a.soundVolume.Store(int32(s.SoundVolume))
+	}
+	if s.SoundVolumes != nil {
+		a.setSoundVolumes(s.SoundVolumes)
 	}
 	if s.SoundMode != "" {
 		a.soundMode = s.SoundMode
@@ -2778,6 +2835,12 @@ func (a *App) PlaySystemSound(soundType string) {
 	case "disconnect":
 		soundName = "DeviceDisconnect"
 		fallbackPath = `C:\Windows\Media\Windows Hardware Remove.wav`
+	case "dsu":
+		soundName = "DeviceConnect"
+		fallbackPath = `C:\Windows\Media\Windows Notify System Generic.wav`
+	case "recenter":
+		soundName = "CCSelect"
+		fallbackPath = `C:\Windows\Media\Windows Navigation Start.wav`
 	default:
 		return
 	}
