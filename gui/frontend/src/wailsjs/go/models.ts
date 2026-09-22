@@ -42,6 +42,7 @@ export namespace main {
 	    silenceDisconnect: boolean;
 	    soundMode: string;
 	    soundVolume: number;
+	    soundVolumes?: Record<string, number>;
 	    gyroSmoothing: number;
 	    gyroDeadband: number;
 	    gyroSensitivity: number;
@@ -72,6 +73,7 @@ export namespace main {
 	        this.silenceDisconnect = source["silenceDisconnect"];
 	        this.soundMode = source["soundMode"];
 	        this.soundVolume = source["soundVolume"];
+	        this.soundVolumes = source["soundVolumes"];
 	        this.gyroSmoothing = source["gyroSmoothing"];
 	        this.gyroDeadband = source["gyroDeadband"];
 	        this.gyroSensitivity = source["gyroSensitivity"];
