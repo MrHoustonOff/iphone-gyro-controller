@@ -666,7 +666,7 @@
                   <div class="settings-section-header" data-i18n="settings_modal.group_network">Сетевые порты и серверы</div>
                   <div class="settings-grouped-card">
                     <!-- DSU Port -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="dsuPort">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.dsu_port">Порт DSU (Cemuhook)</span>
@@ -685,7 +685,7 @@
                     </div>
 
                     <!-- DSU MAC Address -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="dsuMac">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.dsu_mac">MAC-адрес DSU</span>
@@ -712,7 +712,7 @@
                     </div>
 
                     <!-- HTTP Port -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="httpPort">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.http_port">Порт HTTP (Сопряжение)</span>
@@ -731,7 +731,7 @@
                     </div>
 
                     <!-- HTTPS Port -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="httpsPort">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.https_port">Порт HTTPS (Контроллер)</span>
@@ -766,7 +766,7 @@
                     </div>
 
                     <!-- Gyro 1-Euro Aim Smoothing -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="gyroSmoothing">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.gyro_smoothing">Сглаживание прицеливания (1-Euro)</span>
@@ -791,7 +791,7 @@
                     </div>
 
                     <!-- Tremor Deadband (Smoothstep) -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="gyroDeadband">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.gyro_deadband">Порог микро-тремора рук</span>
@@ -816,7 +816,7 @@
                     </div>
 
                     <!-- DSU Sensitivity Multiplier -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="gyroSensitivity">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.gyro_sensitivity">Чувствительность DSU</span>
@@ -846,7 +846,7 @@
                   <div class="settings-section-header" data-i18n="settings_modal.group_behavior">Поведение и оповещения</div>
                   <div class="settings-grouped-card">
                     <!-- Stillness Hint Toggle -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="stillnessHint">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.stillness_hint">Подсказка о калибровке неподвижности</span>
@@ -868,7 +868,7 @@
                     </div>
 
                     <!-- Disconnect Blur Alert Toggle -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="disconnectAlert">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.disconnect_alert">Предупреждение об отключении</span>
@@ -890,7 +890,7 @@
                     </div>
 
                     <!-- Silence Disconnect Watchdog Toggle -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="silenceDisconnect">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.silence_disconnect">Принудительный разрыв при засыпании</span>
@@ -912,7 +912,7 @@
                     </div>
 
                     <!-- Action on Window Close (Cross) -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="closeAction">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.close_action">Действие при закрытии (крестик)</span>
@@ -935,7 +935,7 @@
                     </div>
 
                     <!-- Sound Alerts Mode -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="soundMode">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.sound_mode">Звуковые сигналы событий</span>
@@ -964,7 +964,7 @@
                     </div>
 
                     <!-- Sound Alerts Volume Slider -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="soundVolume">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.sound_volume">Громкость звука</span>
@@ -984,7 +984,7 @@
                     </div>
 
                     <!-- Sound Details Drawer Toggle -->
-                    <div class="setting-row sound-details-toggle-row" id="row-sound-details-toggle">
+                    <div class="setting-row sound-details-toggle-row" id="row-sound-details-toggle" data-setting-key="soundDetails">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.sound_details_toggle">Детальная настройка звуков</span>
@@ -1012,7 +1012,7 @@
                     <div class="sound-details-drawer" id="sound-details-drawer" style="display: none;">
                       
                       <!-- Item 1: Phone Connect -->
-                      <div class="sound-detail-row">
+                      <div class="sound-detail-row" data-setting-key="soundVol_connect">
                         <div class="sound-detail-info">
                           <div class="sound-detail-label-row">
                             <span class="sound-detail-name" data-i18n="settings_modal.sound_phone_connect">Подключение телефона</span>
@@ -1038,7 +1038,7 @@
                       </div>
 
                       <!-- Item 2: Phone Disconnect -->
-                      <div class="sound-detail-row">
+                      <div class="sound-detail-row" data-setting-key="soundVol_disconnect">
                         <div class="sound-detail-info">
                           <div class="sound-detail-label-row">
                             <span class="sound-detail-name" data-i18n="settings_modal.sound_phone_disconnect">Отключение телефона</span>
@@ -1064,7 +1064,7 @@
                       </div>
 
                       <!-- Item 3: DSU Emulator Connected -->
-                      <div class="sound-detail-row">
+                      <div class="sound-detail-row" data-setting-key="soundVol_dsu">
                         <div class="sound-detail-info">
                           <div class="sound-detail-label-row">
                             <span class="sound-detail-name" data-i18n="settings_modal.sound_dsu_connect">Клиент эмулятора (DSU)</span>
@@ -1090,7 +1090,7 @@
                       </div>
 
                       <!-- Item 4: Orientation Recenter -->
-                      <div class="sound-detail-row">
+                      <div class="sound-detail-row" data-setting-key="soundVol_recenter">
                         <div class="sound-detail-info">
                           <div class="sound-detail-label-row">
                             <span class="sound-detail-name" data-i18n="settings_modal.sound_recenter">Сброс ориентации (Recenter)</span>
@@ -1116,7 +1116,7 @@
                       </div>
 
                       <!-- Item 5: Bench Goal Hit -->
-                      <div class="sound-detail-row">
+                      <div class="sound-detail-row" data-setting-key="soundVol_goal">
                         <div class="sound-detail-info">
                           <div class="sound-detail-label-row">
                             <span class="sound-detail-name" data-i18n="settings_modal.sound_bench_goal">Стенд: Попадание в цель</span>
@@ -1142,7 +1142,7 @@
                       </div>
 
                       <!-- Item 6: Bench Platform Defeat -->
-                      <div class="sound-detail-row">
+                      <div class="sound-detail-row" data-setting-key="soundVol_defeat">
                         <div class="sound-detail-info">
                           <div class="sound-detail-label-row">
                             <span class="sound-detail-name" data-i18n="settings_modal.sound_bench_defeat">Стенд: Падение шара</span>
@@ -1176,7 +1176,7 @@
                   <div class="settings-section-header" data-i18n="settings_modal.group_hotkeys">Горячие клавиши (Windows)</div>
                   <div class="settings-grouped-card">
                     <!-- Recenter Hotkey Row -->
-                    <div class="setting-row" id="row-hotkey-recenter">
+                    <div class="setting-row" id="row-hotkey-recenter" data-setting-key="hotkeyRecenter">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.hotkey_recenter">Центровка прицела (Recenter)</span>
@@ -1223,7 +1223,7 @@
                   <div class="settings-section-header" data-i18n="settings_modal.group_appearance">Интерфейс и оформление</div>
                   <div class="settings-grouped-card">
                     <!-- Theme -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="theme">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.theme">Тема оформления</span>
@@ -1245,7 +1245,7 @@
                     </div>
 
                     <!-- Language -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="lang">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.language">Язык интерфейса</span>
@@ -1267,7 +1267,7 @@
                     </div>
 
                     <!-- Global Font & Interface Scale -->
-                    <div class="setting-row">
+                    <div class="setting-row" data-setting-key="fontScale">
                       <div class="setting-info">
                         <div class="setting-label-row">
                           <span class="setting-label" data-i18n="settings_modal.font_scale">Масштаб интерфейса и шрифта</span>
@@ -1506,10 +1506,12 @@
             <div class="settings-footer-row">
               <button type="button" class="btn-apple-secondary btn-settings-reset" id="btn-settings-reset" data-i18n="settings_modal.btn_reset" data-i18n-tip="settings_modal.btn_reset_tip">Сбросить по умолчанию</button>
               <div class="settings-footer-right">
-                <div class="settings-save-notice" data-i18n="settings_modal.save_notice">При сохранении веб-серверы перезапустятся, страница обновится</div>
+                <div class="settings-autosave-status saved" id="settings-autosave-status">
+                  <span class="autosave-dot"></span>
+                  <span class="autosave-label" id="settings-autosave-label" data-i18n="settings_modal.saved_auto">Все изменения сохранены</span>
+                </div>
                 <div class="settings-footer-actions">
-                  <button type="button" class="btn-apple-secondary" id="btn-settings-close" data-i18n="settings_modal.btn_cancel">Отмена</button>
-                  <button type="button" class="btn-apple-primary" id="btn-settings-save" data-i18n="settings_modal.btn_save">Сохранить</button>
+                  <button type="button" class="btn-apple-primary btn-settings-done" id="btn-settings-close" data-i18n="settings_modal.btn_done">Готово</button>
                 </div>
               </div>
             </div>
@@ -5936,6 +5938,36 @@
     hotkeyRecenterKey: 'Ctrl+Shift+R',
     isRecordingHotkey: false,
     hotkeyKeyDownHandler: null,
+    autoSaveTimer: null,
+
+    DEFAULTS: {
+      dsuPort: 26760,
+      dsuMac: '00:13:37:00:00:01',
+      httpPort: 8080,
+      httpsPort: 8443,
+      gyroSmoothing: 0.50,
+      gyroDeadband: 0.10,
+      gyroSensitivity: 1.00,
+      stillnessHint: true,
+      disconnectAlert: true,
+      silenceDisconnect: true,
+      closeAction: 'ask',
+      soundMode: 'cute',
+      soundVolume: 1,
+      soundVolumes: {
+        connect: 1,
+        disconnect: 1,
+        dsu: 1,
+        recenter: 1,
+        goal: 1,
+        defeat: 1
+      },
+      hotkeyRecenterEnabled: true,
+      hotkeyRecenterKey: 'Ctrl+Shift+R',
+      theme: 'dark',
+      lang: 'ru',
+      fontScale: 1.00
+    },
 
     async init() {
       if (this.initialized) return;
@@ -5949,10 +5981,14 @@
       document.getElementById('btn-hotkey-clear')?.addEventListener('click', () => {
         this.hotkeyRecenterKey = '';
         this.renderHotkeyBadge('');
+        this.updateModifiedIndicators();
+        this.autoSave(true);
       });
 
       document.getElementById('setting-hotkey-recenter-enabled')?.addEventListener('change', (e) => {
         document.getElementById('apple-hotkey-control')?.classList.toggle('disabled', !e.target.checked);
+        this.updateModifiedIndicators();
+        this.autoSave(true);
       });
 
       // Header button toggle
@@ -5960,7 +5996,7 @@
         this.toggle();
       });
 
-      // Close / Cancel button
+      // Close / Done button
       document.getElementById('btn-settings-close')?.addEventListener('click', () => {
         this.close();
       });
@@ -5970,37 +6006,35 @@
         this.resetToDefaults();
       });
 
-      // Save button
-      document.getElementById('btn-settings-save')?.addEventListener('click', async () => {
-        await this.save();
-      });
-
       // Preview sound button
       document.getElementById('btn-sound-preview')?.addEventListener('click', () => {
         SoundManager.preview();
       });
 
-      // Sound volume slider live preview
+      // Sound volume slider live preview & auto-save
       const volSlider = document.getElementById('setting-sound-volume');
       const volBadge = document.getElementById('setting-sound-vol-badge');
       if (volSlider) {
         const updateVolUI = () => {
           const val = parseInt(volSlider.value, 10);
           if (volBadge) {
-            volBadge.textContent = (val === 0) ? '0 (Off)' : (val + 'x');
+            volBadge.textContent = (val === 0) ? (I18n.t('settings_modal.sound_off') || '0 (Off)') : (val + 'x');
           }
         };
         let previewDebounce = null;
         volSlider.addEventListener('input', () => {
           updateVolUI();
+          this.updateModifiedIndicators();
           if (previewDebounce) clearTimeout(previewDebounce);
           previewDebounce = setTimeout(() => {
             SoundManager.preview();
           }, 80);
+          this.autoSave(false);
         });
         volSlider.addEventListener('change', () => {
           updateVolUI();
           SoundManager.preview();
+          this.autoSave(true);
         });
       }
 
@@ -6061,14 +6095,17 @@
         let sliderDebounce = null;
         slider.addEventListener('input', () => {
           updateSoundSliderUI(false);
+          this.updateModifiedIndicators();
           if (sliderDebounce) clearTimeout(sliderDebounce);
           sliderDebounce = setTimeout(() => {
             updateSoundSliderUI(true);
           }, 80);
+          this.autoSave(false);
         });
 
         slider.addEventListener('change', () => {
           updateSoundSliderUI(true);
+          this.autoSave(true);
         });
       });
 
@@ -6088,21 +6125,35 @@
         btn.addEventListener('click', () => {
           document.querySelectorAll('#setting-theme-segmented .settings-seg-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
+          const val = btn.getAttribute('data-val');
+          ThemeManager.apply(val, true);
+          this.autoSave(true);
         });
       });
 
       // Language segmented control clicks
       document.querySelectorAll('#setting-lang-segmented .settings-seg-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', async () => {
           document.querySelectorAll('#setting-lang-segmented .settings-seg-btn').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
+          const val = btn.getAttribute('data-val');
+          await I18n.setLanguage(val);
+          this.autoSave(true);
         });
       });
 
-      // Clear input error on typing
+      // Port inputs
       ['setting-dsu-port', 'setting-http-port', 'setting-https-port'].forEach(id => {
-        document.getElementById(id)?.addEventListener('input', (e) => {
-          e.target.classList.remove('error');
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', () => {
+          el.classList.remove('error');
+          this.updateModifiedIndicators();
+          this.autoSave(false);
+        });
+        el.addEventListener('change', () => {
+          this.updateModifiedIndicators();
+          this.autoSave(true);
         });
       });
 
@@ -6124,6 +6175,8 @@
           if (macInput) macInput.value = newMac;
           showToast(I18n.t('settings_modal.dsu_mac_regen_success') || 'MAC-адрес успешно обновлен');
           setTimeout(() => btn?.classList.remove('spinning'), 500);
+          this.updateModifiedIndicators();
+          this.autoSave(true);
         } catch (err) {
           btn?.classList.remove('spinning');
           console.error('Failed to regenerate MAC:', err);
@@ -6141,6 +6194,10 @@
           if (sensNumInput) sensNumInput.value = val.toFixed(2);
           if (sensBadge) sensBadge.textContent = val.toFixed(2) + 'x';
           this.syncLiveFilter();
+          this.autoSave(false);
+        });
+        sensSlider.addEventListener('change', () => {
+          this.autoSave(true);
         });
       }
 
@@ -6154,6 +6211,7 @@
           }
           if (sensBadge) sensBadge.textContent = val.toFixed(2) + 'x';
           this.syncLiveFilter();
+          this.autoSave(false);
         };
         sensNumInput.addEventListener('input', handleManualSens);
         sensNumInput.addEventListener('change', (e) => {
@@ -6162,6 +6220,7 @@
           if (val > 10.00) val = 10.00;
           e.target.value = val.toFixed(2);
           handleManualSens(e);
+          this.autoSave(true);
         });
       }
 
@@ -6169,7 +6228,25 @@
       ['setting-gyro-smoothing', 'setting-gyro-deadband'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', () => {
           this.syncLiveFilter();
+          this.autoSave(true);
         });
+      });
+
+      // Checkbox toggles
+      ['setting-stillness-hint', 'setting-disconnect-alert', 'setting-silence-disconnect'].forEach(id => {
+        document.getElementById(id)?.addEventListener('change', () => {
+          this.autoSave(true);
+        });
+      });
+
+      // Close action select
+      document.getElementById('setting-close-action')?.addEventListener('change', () => {
+        this.autoSave(true);
+      });
+
+      // Sound mode select
+      document.getElementById('setting-sound-mode')?.addEventListener('change', () => {
+        this.autoSave(true);
       });
 
       // Global font & UI scale slider live preview
@@ -6180,6 +6257,12 @@
           const val = parseFloat(e.target.value || '1.00');
           if (fontScaleBadge) fontScaleBadge.textContent = val.toFixed(2) + 'x';
           FontScaleManager.apply(val, false, true);
+          this.autoSave(false);
+        });
+        fontScaleSlider.addEventListener('change', (e) => {
+          const val = parseFloat(e.target.value || '1.00');
+          FontScaleManager.apply(val, true, true);
+          this.autoSave(true);
         });
       }
 
@@ -6373,6 +6456,10 @@
       if (labelEl) labelEl.style.display = 'none';
 
       this.renderHotkeyBadge(this.hotkeyRecenterKey);
+      if (!cancelled) {
+        this.updateModifiedIndicators();
+        this.autoSave(true);
+      }
     },
 
     syncLiveFilter() {
@@ -6719,24 +6806,268 @@
       if (typeof AppleSelect !== 'undefined') {
         AppleSelect.refreshAll();
       }
+      this.updateModifiedIndicators();
+      this.setSaveStatus('saved');
+    },
+
+    setSaveStatus(status) {
+      const el = document.getElementById('settings-autosave-status');
+      const label = document.getElementById('settings-autosave-label');
+      if (!el || !label) return;
+
+      if (status === 'saving') {
+        el.className = 'settings-autosave-status saving';
+        label.setAttribute('data-i18n', 'settings_modal.saving');
+        label.textContent = I18n.t('settings_modal.saving') || 'Сохранение...';
+      } else {
+        el.className = 'settings-autosave-status saved';
+        label.setAttribute('data-i18n', 'settings_modal.saved_auto');
+        label.textContent = I18n.t('settings_modal.saved_auto') || 'Все изменения сохранены';
+      }
+    },
+
+    updateModifiedIndicators() {
+      const dsuEl = document.getElementById('setting-dsu-port');
+      const dsuMacEl = document.getElementById('setting-dsu-mac');
+      const httpEl = document.getElementById('setting-http-port');
+      const httpsEl = document.getElementById('setting-https-port');
+
+      const smoothingSelect = document.getElementById('setting-gyro-smoothing');
+      const deadbandSelect = document.getElementById('setting-gyro-deadband');
+      const sensInput = document.getElementById('setting-gyro-sens-input');
+      const sensSlider = document.getElementById('setting-gyro-sensitivity');
+
+      const stillnessCheckbox = document.getElementById('setting-stillness-hint');
+      const disconnectCheckbox = document.getElementById('setting-disconnect-alert');
+      const silenceCheckbox = document.getElementById('setting-silence-disconnect');
+      const closeActionSelect = document.getElementById('setting-close-action');
+      const soundModeSelect = document.getElementById('setting-sound-mode');
+      const soundVolSlider = document.getElementById('setting-sound-volume');
+
+      const hkToggle = document.getElementById('setting-hotkey-recenter-enabled');
+      const fontScaleSlider = document.getElementById('setting-font-scale');
+
+      const activeTheme = document.querySelector('#setting-theme-segmented .settings-seg-btn.active')?.getAttribute('data-val') || ThemeManager.theme || 'dark';
+      const activeLang = document.querySelector('#setting-lang-segmented .settings-seg-btn.active')?.getAttribute('data-val') || I18n.currentLang || 'ru';
+
+      const setModified = (key, isModified) => {
+        const el = document.querySelector(`[data-setting-key="${key}"]`);
+        if (el) {
+          el.classList.toggle('is-modified', !!isModified);
+        }
+      };
+
+      // 1. DSU Port
+      const dsuVal = parseInt(dsuEl?.value || '26760', 10);
+      setModified('dsuPort', dsuVal !== this.DEFAULTS.dsuPort);
+
+      // 2. DSU MAC
+      const macVal = (dsuMacEl?.value || '').trim().toUpperCase();
+      setModified('dsuMac', macVal !== '' && macVal !== this.DEFAULTS.dsuMac.toUpperCase());
+
+      // 3. HTTP Port
+      const httpVal = parseInt(httpEl?.value || '8080', 10);
+      setModified('httpPort', httpVal !== this.DEFAULTS.httpPort);
+
+      // 4. HTTPS Port
+      const httpsVal = parseInt(httpsEl?.value || '8443', 10);
+      setModified('httpsPort', httpsVal !== this.DEFAULTS.httpsPort);
+
+      // 5. Gyro Smoothing
+      const smVal = parseFloat(smoothingSelect?.value || '0.50');
+      setModified('gyroSmoothing', Math.abs(smVal - this.DEFAULTS.gyroSmoothing) > 0.01);
+
+      // 6. Gyro Deadband
+      const dbVal = parseFloat(deadbandSelect?.value || '0.10');
+      setModified('gyroDeadband', Math.abs(dbVal - this.DEFAULTS.gyroDeadband) > 0.01);
+
+      // 7. Gyro Sensitivity
+      const sensVal = parseFloat(sensInput?.value || sensSlider?.value || '1.00');
+      setModified('gyroSensitivity', Math.abs(sensVal - this.DEFAULTS.gyroSensitivity) > 0.01);
+
+      // 8. Stillness Hint
+      setModified('stillnessHint', !!stillnessCheckbox?.checked !== this.DEFAULTS.stillnessHint);
+
+      // 9. Disconnect Alert
+      setModified('disconnectAlert', !!disconnectCheckbox?.checked !== this.DEFAULTS.disconnectAlert);
+
+      // 10. Silence Disconnect
+      setModified('silenceDisconnect', !!silenceCheckbox?.checked !== this.DEFAULTS.silenceDisconnect);
+
+      // 11. Close Action
+      setModified('closeAction', (closeActionSelect?.value || 'ask') !== this.DEFAULTS.closeAction);
+
+      // 12. Sound Mode
+      setModified('soundMode', (soundModeSelect?.value || 'cute') !== this.DEFAULTS.soundMode);
+
+      // 13. Sound Volume
+      const volVal = parseInt(soundVolSlider?.value || '1', 10);
+      setModified('soundVolume', volVal !== this.DEFAULTS.soundVolume);
+
+      // 14. Individual Sound Volumes & Sound Details Toggle
+      let anySoundModified = false;
+      ['connect', 'disconnect', 'dsu', 'recenter', 'goal', 'defeat'].forEach(k => {
+        const slider = document.getElementById(`setting-sound-vol-${k}`);
+        const v = parseInt(slider?.value || '1', 10);
+        const mod = v !== 1;
+        setModified(`soundVol_${k}`, mod);
+        if (mod) anySoundModified = true;
+      });
+      setModified('soundDetails', anySoundModified);
+
+      // 15. Global Hotkey Recenter
+      const hkEnabled = !!hkToggle?.checked;
+      const hkKey = (this.hotkeyRecenterKey || '').trim();
+      const hkModified = (hkEnabled !== this.DEFAULTS.hotkeyRecenterEnabled) || (hkKey !== this.DEFAULTS.hotkeyRecenterKey);
+      setModified('hotkeyRecenter', hkModified);
+
+      // 16. Theme
+      setModified('theme', activeTheme !== this.DEFAULTS.theme);
+
+      // 17. Language
+      setModified('lang', activeLang !== this.DEFAULTS.lang);
+
+      // 18. Font Scale
+      const fsVal = parseFloat(fontScaleSlider?.value || '1.00');
+      setModified('fontScale', Math.abs(fsVal - this.DEFAULTS.fontScale) > 0.01);
+    },
+
+    collectPayload() {
+      const dsuEl = document.getElementById('setting-dsu-port');
+      const httpEl = document.getElementById('setting-http-port');
+      const httpsEl = document.getElementById('setting-https-port');
+
+      const dsuPort = parseInt(dsuEl?.value || '0', 10);
+      const httpPort = parseInt(httpEl?.value || '0', 10);
+      const httpsPort = parseInt(httpsEl?.value || '0', 10);
+
+      let hasPortError = false;
+      if (isNaN(dsuPort) || dsuPort < 1024 || dsuPort > 65535) {
+        dsuEl?.classList.add('error');
+        hasPortError = true;
+      }
+      if (isNaN(httpPort) || httpPort < 1024 || httpPort > 65535) {
+        httpEl?.classList.add('error');
+        hasPortError = true;
+      }
+      if (isNaN(httpsPort) || httpsPort < 1024 || httpsPort > 65535) {
+        httpsEl?.classList.add('error');
+        hasPortError = true;
+      }
+      if (dsuPort === httpPort || dsuPort === httpsPort || httpPort === httpsPort) {
+        hasPortError = true;
+      }
+
+      if (hasPortError) return null;
+
+      const gyroSmoothing = parseFloat(document.getElementById('setting-gyro-smoothing')?.value || '0.50');
+      const gyroDeadband = parseFloat(document.getElementById('setting-gyro-deadband')?.value || '0.10');
+      const gyroSensInput = document.getElementById('setting-gyro-sens-input');
+      const gyroSensSlider = document.getElementById('setting-gyro-sensitivity');
+      let gyroSensitivity = parseFloat(gyroSensInput?.value || gyroSensSlider?.value || '1.00');
+      if (isNaN(gyroSensitivity) || gyroSensitivity <= 0) gyroSensitivity = 1.00;
+
+      const stillnessHint = !!document.getElementById('setting-stillness-hint')?.checked;
+      const disconnectAlert = !!document.getElementById('setting-disconnect-alert')?.checked;
+      const silenceDisconnect = !!document.getElementById('setting-silence-disconnect')?.checked;
+      const closeAction = document.getElementById('setting-close-action')?.value || 'ask';
+      const soundMode = document.getElementById('setting-sound-mode')?.value || 'cute';
+      const soundVolume = parseInt(document.getElementById('setting-sound-volume')?.value || '1', 10);
+      const fontScale = parseFloat(document.getElementById('setting-font-scale')?.value || '1.00');
+      const selectedTheme = document.querySelector('#setting-theme-segmented .settings-seg-btn.active')?.getAttribute('data-val') || ThemeManager.theme || 'dark';
+      const selectedLang = document.querySelector('#setting-lang-segmented .settings-seg-btn.active')?.getAttribute('data-val') || I18n.currentLang || 'ru';
+      const dsuMac = (document.getElementById('setting-dsu-mac')?.value || '00:13:37:00:00:01').trim();
+
+      const soundVolumes = {};
+      ['connect', 'disconnect', 'dsu', 'recenter', 'goal', 'defeat'].forEach(key => {
+        const slider = document.getElementById(`setting-sound-vol-${key}`);
+        const val = parseInt(slider?.value || '1', 10);
+        soundVolumes[key] = isNaN(val) ? 1 : val;
+      });
+
+      return {
+        theme: selectedTheme,
+        lang: selectedLang,
+        fontScale: (isNaN(fontScale) || fontScale <= 0) ? 1.00 : fontScale,
+        activeSlot: (AppState.lastState && AppState.lastState.activeSlot >= 0) ? AppState.lastState.activeSlot : 0,
+        firstLaunchDone: true,
+        hideAuthor: false,
+        dsuPort: dsuPort,
+        dsuMac: dsuMac,
+        httpPort: httpPort,
+        httpsPort: httpsPort,
+        gyroDeadzone: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
+        gyroSmoothing: isNaN(gyroSmoothing) ? 0.50 : gyroSmoothing,
+        gyroDeadband: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
+        gyroSensitivity: gyroSensitivity,
+        stillnessHint: stillnessHint,
+        disconnectAlert: disconnectAlert,
+        silenceDisconnect: silenceDisconnect,
+        closeAction: closeAction,
+        minimizeToTray: closeAction === 'minimize',
+        soundMode: soundMode,
+        soundVolume: isNaN(soundVolume) ? 1 : soundVolume,
+        soundVolumes: soundVolumes,
+        hotkeyRecenterEnabled: !!document.getElementById('setting-hotkey-recenter-enabled')?.checked,
+        hotkeyRecenterKey: this.hotkeyRecenterKey || 'Ctrl+Shift+R'
+      };
+    },
+
+    autoSave(immediate = false) {
+      this.updateModifiedIndicators();
+
+      if (this.autoSaveTimer) {
+        clearTimeout(this.autoSaveTimer);
+        this.autoSaveTimer = null;
+      }
+
+      const doSave = async () => {
+        const payload = this.collectPayload();
+        if (!payload) return;
+
+        this.setSaveStatus('saving');
+        try {
+          if (window.go?.main?.App?.SaveAppSettings) {
+            await window.go.main.App.SaveAppSettings(payload);
+          }
+          this.currentSettings = payload;
+          SoundManager.soundVolumes = payload.soundVolumes;
+          this.setSaveStatus('saved');
+        } catch (err) {
+          console.error('AutoSave error:', err);
+          this.setSaveStatus('saved');
+        }
+      };
+
+      if (immediate) {
+        doSave();
+      } else {
+        this.setSaveStatus('saving');
+        this.autoSaveTimer = setTimeout(doSave, 380);
+      }
     },
 
     resetToDefaults() {
       const dsuInput = document.getElementById('setting-dsu-port');
       if (dsuInput) {
-        dsuInput.value = 26760;
+        dsuInput.value = this.DEFAULTS.dsuPort;
         dsuInput.classList.remove('error');
+      }
+
+      const dsuMacInput = document.getElementById('setting-dsu-mac');
+      if (dsuMacInput) {
+        dsuMacInput.value = this.DEFAULTS.dsuMac;
       }
 
       const httpInput = document.getElementById('setting-http-port');
       if (httpInput) {
-        httpInput.value = 8080;
+        httpInput.value = this.DEFAULTS.httpPort;
         httpInput.classList.remove('error');
       }
 
       const httpsInput = document.getElementById('setting-https-port');
       if (httpsInput) {
-        httpsInput.value = 8443;
+        httpsInput.value = this.DEFAULTS.httpsPort;
         httpsInput.classList.remove('error');
       }
 
@@ -6817,134 +7148,26 @@
       if (typeof AppleSelect !== 'undefined') {
         AppleSelect.refreshAll();
       }
+
+      this.updateModifiedIndicators();
+      this.autoSave(true);
     },
 
     async save() {
-      const dsuEl = document.getElementById('setting-dsu-port');
-      const httpEl = document.getElementById('setting-http-port');
-      const httpsEl = document.getElementById('setting-https-port');
-
-      const dsuPort = parseInt(dsuEl?.value || '0', 10);
-      const httpPort = parseInt(httpEl?.value || '0', 10);
-      const httpsPort = parseInt(httpsEl?.value || '0', 10);
-
-      // Validate port ranges (1024 - 65535)
-      let hasRangeError = false;
-      if (isNaN(dsuPort) || dsuPort < 1024 || dsuPort > 65535) {
-        dsuEl?.classList.add('error');
-        hasRangeError = true;
-      }
-      if (isNaN(httpPort) || httpPort < 1024 || httpPort > 65535) {
-        httpEl?.classList.add('error');
-        hasRangeError = true;
-      }
-      if (isNaN(httpsPort) || httpsPort < 1024 || httpsPort > 65535) {
-        httpsEl?.classList.add('error');
-        hasRangeError = true;
-      }
-
-      if (hasRangeError) {
-        showToast(I18n.t('settings_modal.err_port_range') || 'Порт должен быть в диапазоне от 1024 до 65535');
-        return;
-      }
-
-      // Validate ports must be distinct
-      if (dsuPort === httpPort || dsuPort === httpsPort || httpPort === httpsPort) {
-        if (dsuPort === httpPort) {
-          dsuEl?.classList.add('error');
-          httpEl?.classList.add('error');
-        }
-        if (dsuPort === httpsPort) {
-          dsuEl?.classList.add('error');
-          httpsEl?.classList.add('error');
-        }
-        if (httpPort === httpsPort) {
-          httpEl?.classList.add('error');
-          httpsEl?.classList.add('error');
-        }
-        showToast(I18n.t('settings_modal.err_ports_duplicate') || 'Порты DSU, HTTP и HTTPS не должны совпадать');
-        return;
-      }
-
-      const gyroSmoothing = parseFloat(document.getElementById('setting-gyro-smoothing')?.value || '0.50');
-      const gyroDeadband = parseFloat(document.getElementById('setting-gyro-deadband')?.value || '0.10');
-      const gyroSensInput = document.getElementById('setting-gyro-sens-input');
-      const gyroSensSlider = document.getElementById('setting-gyro-sensitivity');
-      const gyroSensitivity = parseFloat(gyroSensInput?.value || gyroSensSlider?.value || '1.00');
-      const stillnessHint = !!document.getElementById('setting-stillness-hint')?.checked;
-      const disconnectAlert = !!document.getElementById('setting-disconnect-alert')?.checked;
-      const silenceDisconnect = !!document.getElementById('setting-silence-disconnect')?.checked;
-      const soundMode = document.getElementById('setting-sound-mode')?.value || 'cute';
-      const soundVolume = parseInt(document.getElementById('setting-sound-volume')?.value || '1', 10);
-      const fontScale = parseFloat(document.getElementById('setting-font-scale')?.value || '1.00');
-      const selectedTheme = document.querySelector('#setting-theme-segmented .settings-seg-btn.active')?.getAttribute('data-val') || ThemeManager.theme || 'dark';
-      const selectedLang = document.querySelector('#setting-lang-segmented .settings-seg-btn.active')?.getAttribute('data-val') || I18n.currentLang || 'ru';
-
-      const dsuMac = document.getElementById('setting-dsu-mac')?.value?.trim() || '';
-
-      const soundVolumes = {};
-      ['connect', 'disconnect', 'dsu', 'recenter', 'goal', 'defeat'].forEach(key => {
-        const slider = document.getElementById(`setting-sound-vol-${key}`);
-        const val = parseInt(slider?.value || '1', 10);
-        soundVolumes[key] = isNaN(val) ? 1 : val;
-      });
-      SoundManager.soundVolumes = soundVolumes;
-
-      const payload = {
-        theme: selectedTheme,
-        lang: selectedLang,
-        fontScale: (isNaN(fontScale) || fontScale <= 0) ? 1.00 : fontScale,
-        activeSlot: (AppState.lastState && AppState.lastState.activeSlot >= 0) ? AppState.lastState.activeSlot : 0,
-        firstLaunchDone: true,
-        hideAuthor: false,
-        dsuPort: dsuPort,
-        dsuMac: dsuMac,
-        httpPort: httpPort,
-        httpsPort: httpsPort,
-        gyroDeadzone: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
-        gyroSmoothing: isNaN(gyroSmoothing) ? 0.50 : gyroSmoothing,
-        gyroDeadband: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
-        gyroSensitivity: isNaN(gyroSensitivity) ? 1.00 : gyroSensitivity,
-        stillnessHint: stillnessHint,
-        disconnectAlert: disconnectAlert,
-        silenceDisconnect: silenceDisconnect,
-        closeAction: document.getElementById('setting-close-action')?.value || 'ask',
-        minimizeToTray: document.getElementById('setting-close-action')?.value === 'minimize',
-        soundMode: soundMode,
-        soundVolume: isNaN(soundVolume) ? 1 : soundVolume,
-        soundVolumes: soundVolumes,
-        hotkeyRecenterEnabled: !!document.getElementById('setting-hotkey-recenter-enabled')?.checked,
-        hotkeyRecenterKey: this.hotkeyRecenterKey || 'Ctrl+Shift+R'
-      };
-
-      try {
-        if (window.go?.main?.App?.SaveAppSettings) {
-          await window.go.main.App.SaveAppSettings(payload);
-        }
-        this.currentSettings = payload;
-        FontScaleManager.apply(payload.fontScale, true);
-
-        // Apply theme if changed
-        if (ThemeManager.theme !== selectedTheme) {
-          ThemeManager.apply(selectedTheme, true);
-        }
-
-        // Apply language if changed
-        if (I18n.currentLang !== selectedLang) {
-          await I18n.setLanguage(selectedLang);
-        }
-
-        showToast(I18n.t('settings_modal.saved_toast') || 'Настройки успешно сохранены!');
-        setTimeout(() => {
-          window.location.reload();
-        }, 450);
-      } catch (err) {
-        console.error('SaveAppSettings error:', err);
-        showToast((I18n.t('stats.stats_modal_save_err') || 'Ошибка сохранения: ') + err);
-      }
+      await this.autoSave(true);
     },
 
     close(renderState = true) {
+      if (this.autoSaveTimer) {
+        clearTimeout(this.autoSaveTimer);
+        this.autoSaveTimer = null;
+        const payload = this.collectPayload();
+        if (payload && window.go?.main?.App?.SaveAppSettings) {
+          window.go.main.App.SaveAppSettings(payload);
+          this.currentSettings = payload;
+        }
+      }
+
       this.isOpen = false;
       if (typeof PlatformGame !== 'undefined' && PlatformGame.isFullscreen) {
         PlatformGame.setFullscreen(false);
@@ -6952,9 +7175,6 @@
       if (typeof AimGame !== 'undefined' && AimGame.isFullscreen) {
         AimGame.setFullscreen(false);
       }
-      // Revert live preview font scale if closed without saving
-      const savedScale = (this.currentSettings && typeof this.currentSettings.fontScale === 'number') ? this.currentSettings.fontScale : (this.initialFontScale || 1.0);
-      FontScaleManager.apply(savedScale, true, true);
 
       TuningBench.stop();
       if (window.go?.main?.App?.SetTuningActive) {

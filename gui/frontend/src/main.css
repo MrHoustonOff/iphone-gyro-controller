@@ -4382,6 +4382,7 @@ em {
 }
 
 .setting-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4390,6 +4391,33 @@ em {
   border-bottom: 1px solid var(--border);
   min-height: 52px;
   transition: background var(--transition-fast);
+}
+
+/* Modified setting indicator dot */
+.setting-row::before {
+  content: '';
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--apple-blue, #0A84FF);
+  box-shadow: 0 0 6px rgba(10, 132, 255, 0.6);
+  transform: translateY(-50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  z-index: 2;
+}
+
+.setting-row.is-modified::before {
+  transform: translateY(-50%) scale(1);
+  opacity: 1;
+}
+
+[data-theme="light"] .setting-row::before {
+  box-shadow: 0 0 5px rgba(0, 113, 227, 0.5);
 }
 
 .setting-row:last-child {
@@ -4908,17 +4936,54 @@ em {
 
 .settings-footer-right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
 }
 
-.settings-save-notice {
-  font-size: 11.5px;
+.settings-autosave-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 500;
   color: var(--text-secondary);
-  text-align: right;
-  letter-spacing: -0.01em;
-  opacity: 0.85;
+  transition: color 0.2s ease, opacity 0.2s ease;
+  user-select: none;
+}
+
+.settings-autosave-status .autosave-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #34C759;
+  box-shadow: 0 0 5px rgba(52, 199, 89, 0.55);
+  flex-shrink: 0;
+  transition: background-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+}
+
+.settings-autosave-status.saving .autosave-dot {
+  background-color: #FF9F0A;
+  box-shadow: 0 0 6px rgba(255, 159, 10, 0.7);
+  animation: autosavePulse 1.2s infinite alternate ease-in-out;
+}
+
+.settings-autosave-status.saving {
+  color: #FF9F0A;
+}
+
+.settings-autosave-status.saved .autosave-dot {
+  background-color: #34C759;
+  box-shadow: 0 0 5px rgba(52, 199, 89, 0.55);
+}
+
+.settings-autosave-status.saved {
+  color: var(--text-secondary);
+}
+
+@keyframes autosavePulse {
+  0% { transform: scale(0.85); opacity: 0.7; }
+  100% { transform: scale(1.2); opacity: 1; }
 }
 
 .settings-footer-actions {
@@ -4927,13 +4992,16 @@ em {
   gap: 10px;
 }
 
-.settings-footer-actions .btn-apple-secondary,
+.settings-footer-actions .btn-settings-done,
 .settings-footer-actions .btn-apple-primary {
-  min-height: 42px;
-  padding: 10px 22px;
-  font-size: 14px;
+  min-height: 40px;
+  padding: 8px 24px;
+  font-size: 13.5px;
+  font-weight: 600;
   max-width: none;
   width: auto;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
 }
 
 /* Floating Apple HIG Tooltip for Settings */
@@ -7191,6 +7259,7 @@ em {
 }
 
 .sound-detail-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -7198,6 +7267,32 @@ em {
   border-bottom: 1px solid rgba(255, 255, 255, 0.04);
   gap: 16px;
   transition: background-color 0.15s ease;
+}
+
+.sound-detail-row::before {
+  content: '';
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--apple-blue, #0A84FF);
+  box-shadow: 0 0 6px rgba(10, 132, 255, 0.6);
+  transform: translateY(-50%) scale(0);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  z-index: 2;
+}
+
+.sound-detail-row.is-modified::before {
+  transform: translateY(-50%) scale(1);
+  opacity: 1;
+}
+
+[data-theme="light"] .sound-detail-row::before {
+  box-shadow: 0 0 5px rgba(0, 113, 227, 0.5);
 }
 
 [data-theme="light"] .sound-detail-row {
