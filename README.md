@@ -48,7 +48,7 @@ GyroBridge includes a dedicated real-time 3D telemetry window to verify sensor r
 Click the **Settings** button in the header to access advanced options:
 - **Interactive Test Bench**: Live multi-axis oscilloscope, 3D target viewfinder, and apparatus tilt mini-bench to test response and filters before gaming.
 - **Custom Ports**: Modify Cemuhook DSU (`26760`), HTTP pairing (`8080`), and HTTPS controller (`8443`) ports with real-time collision checks.
-- **Gyro Deadzone & 1-Euro Filter**: Filter out resting sensor micro-jitters with customizable noise deadzone levels and adaptive smoothing.
+- **Gyro Deadband & Sensitivity**: Silence resting sensor micro-jitter with a soft deadband and scale gyro response. Motion itself is sent unsmoothed and drift-corrected (see [Motion Pipeline](docs/motion-pipeline.md)).
 - **Global UI Scaling**: Scale the interface and fonts (`0.80x` - `1.40x`) with desktop shortcuts (`Ctrl +`, `Ctrl -`, `Ctrl 0`).
 - **Audio Feedback**: Choose between cute synthesized celesta chimes, classic Windows system sounds, or silent mode.
 - **Appearance**: Switch between Apple-inspired dark and light interfaces.

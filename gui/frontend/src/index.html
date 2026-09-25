@@ -916,31 +916,6 @@
                       <span data-i18n="settings_modal.filter_live_hint">Все параметры сглаживания применяются автоматически на лету. Лучше всего подбирать их прямо во время прицеливания в игре.</span>
                     </div>
 
-                    <!-- Gyro 1-Euro Aim Smoothing -->
-                    <div class="setting-row" data-setting-key="gyroSmoothing">
-                      <div class="setting-info">
-                        <div class="setting-label-row">
-                          <span class="setting-label" data-i18n="settings_modal.gyro_smoothing">Сглаживание прицеливания (1-Euro)</span>
-                          <button type="button" class="setting-infotip" data-i18n-tip="settings_modal.gyro_smoothing_tip" aria-label="Info">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                              <circle cx="12" cy="12" r="10"></circle>
-                              <line x1="12" y1="16" x2="12" y2="12"></line>
-                              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                      <div class="setting-control">
-                        <select id="setting-gyro-smoothing" class="setting-select">
-                          <option value="0.00" data-i18n="settings_modal.smoothing_off">Выключено (Сырой сигнал)</option>
-                          <option value="0.25" data-i18n="settings_modal.smoothing_light">Лёгкое (25%)</option>
-                          <option value="0.50" data-i18n="settings_modal.smoothing_balanced" selected>Сбалансированное (50% — Рекомендуется)</option>
-                          <option value="0.75" data-i18n="settings_modal.smoothing_high">Плавное (75%)</option>
-                          <option value="1.00" data-i18n="settings_modal.smoothing_max">Максимальное (100% — Кинематограф)</option>
-                        </select>
-                      </div>
-                    </div>
-
                     <!-- Tremor Deadband (Smoothstep) -->
                     <div class="setting-row" data-setting-key="gyroDeadband">
                       <div class="setting-info">
@@ -6108,7 +6083,6 @@
       dsuMac: '00:13:37:00:00:01',
       httpPort: 8080,
       httpsPort: 8443,
-      gyroSmoothing: 0.50,
       gyroDeadband: 0.10,
       gyroSensitivity: 1.00,
       stillnessHint: true,
@@ -6388,7 +6362,7 @@
       }
 
       // Gyro filtering selects live update
-      ['setting-gyro-smoothing', 'setting-gyro-deadband'].forEach(id => {
+      ['setting-gyro-deadband'].forEach(id => {
         document.getElementById(id)?.addEventListener('change', () => {
           this.syncLiveFilter();
           this.autoSave(true);
@@ -6626,13 +6600,12 @@
     },
 
     syncLiveFilter() {
-      const smoothing = parseFloat(document.getElementById('setting-gyro-smoothing')?.value || '0.50');
       const deadband = parseFloat(document.getElementById('setting-gyro-deadband')?.value || '0.10');
       const sensInput = document.getElementById('setting-gyro-sens-input');
       const sensSlider = document.getElementById('setting-gyro-sensitivity');
       const sens = parseFloat(sensInput?.value || sensSlider?.value || '1.00');
       if (window.go?.main?.App?.SetTuningFilterParams) {
-        window.go.main.App.SetTuningFilterParams(smoothing, deadband, sens);
+        window.go.main.App.SetTuningFilterParams(deadband, sens);
       }
     },
 
@@ -6828,7 +6801,6 @@
         httpPort: 8080,
         httpsPort: 8443,
         gyroDeadzone: 0.10,
-        gyroSmoothing: 0.50,
         gyroDeadband: 0.10,
         gyroSensitivity: 1.00,
         stillnessHint: true,
@@ -6858,23 +6830,6 @@
       if (httpsInput) {
         httpsInput.value = s.httpsPort || 8443;
         httpsInput.classList.remove('error');
-      }
-
-      // Gyro 1-Euro Aim Smoothing
-      const smoothingSelect = document.getElementById('setting-gyro-smoothing');
-      if (smoothingSelect) {
-        const smVal = (s.gyroSmoothing !== undefined) ? Number(s.gyroSmoothing).toFixed(2) : '0.50';
-        let matched = false;
-        for (const opt of smoothingSelect.options) {
-          if (Math.abs(parseFloat(opt.value) - parseFloat(smVal)) < 0.05) {
-            opt.selected = true;
-            matched = true;
-            break;
-          }
-        }
-        if (!matched && smoothingSelect.options.length > 0) {
-          smoothingSelect.value = '0.50';
-        }
       }
 
       // Gyro Tremor Deadband
@@ -7005,7 +6960,6 @@
       const httpEl = document.getElementById('setting-http-port');
       const httpsEl = document.getElementById('setting-https-port');
 
-      const smoothingSelect = document.getElementById('setting-gyro-smoothing');
       const deadbandSelect = document.getElementById('setting-gyro-deadband');
       const sensInput = document.getElementById('setting-gyro-sens-input');
       const sensSlider = document.getElementById('setting-gyro-sensitivity');
@@ -7045,10 +6999,6 @@
       // 4. HTTPS Port
       const httpsVal = parseInt(httpsEl?.value || '8443', 10);
       setModified('httpsPort', httpsVal !== this.DEFAULTS.httpsPort);
-
-      // 5. Gyro Smoothing
-      const smVal = parseFloat(smoothingSelect?.value || '0.50');
-      setModified('gyroSmoothing', Math.abs(smVal - this.DEFAULTS.gyroSmoothing) > 0.01);
 
       // 6. Gyro Deadband
       const dbVal = parseFloat(deadbandSelect?.value || '0.10');
@@ -7133,7 +7083,6 @@
 
       if (hasPortError) return null;
 
-      const gyroSmoothing = parseFloat(document.getElementById('setting-gyro-smoothing')?.value || '0.50');
       const gyroDeadband = parseFloat(document.getElementById('setting-gyro-deadband')?.value || '0.10');
       const gyroSensInput = document.getElementById('setting-gyro-sens-input');
       const gyroSensSlider = document.getElementById('setting-gyro-sensitivity');
@@ -7170,7 +7119,6 @@
         httpPort: httpPort,
         httpsPort: httpsPort,
         gyroDeadzone: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
-        gyroSmoothing: isNaN(gyroSmoothing) ? 0.50 : gyroSmoothing,
         gyroDeadband: isNaN(gyroDeadband) ? 0.10 : gyroDeadband,
         gyroSensitivity: gyroSensitivity,
         stillnessHint: stillnessHint,
@@ -7242,11 +7190,6 @@
       if (httpsInput) {
         httpsInput.value = this.DEFAULTS.httpsPort;
         httpsInput.classList.remove('error');
-      }
-
-      const smoothingSelect = document.getElementById('setting-gyro-smoothing');
-      if (smoothingSelect) {
-        smoothingSelect.value = '0.50';
       }
 
       const deadbandSelect = document.getElementById('setting-gyro-deadband');

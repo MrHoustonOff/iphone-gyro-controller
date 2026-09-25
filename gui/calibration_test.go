@@ -376,30 +376,6 @@ func TestPadTest_Convergence(t *testing.T) {
 	}
 }
 
-func TestComputeAccMatrix(t *testing.T) {
-	// 1. Phone flat on table, screen up: calGravity = [0, 0, -1.0]
-	// Cemuhook DSU resting gravity is along -AccY: [0, -1.0, 0]
-	m1 := computeAccMatrix([3]float64{0, 0, -1.0})
-	ax1, ay1, az1 := applyMatrix(m1, 0, 0, -1.0)
-	if math.Abs(ax1) > 1e-4 || math.Abs(ay1+1.0) > 1e-4 || math.Abs(az1) > 1e-4 {
-		t.Fatalf("Case 1 (screen up) failed: got (%f, %f, %f), expected (0, -1, 0)", ax1, ay1, az1)
-	}
-
-	// 2. Phone flat on table, screen down: calGravity = [0, 0, +1.0]
-	m2 := computeAccMatrix([3]float64{0, 0, 1.0})
-	ax2, ay2, az2 := applyMatrix(m2, 0, 0, 1.0)
-	if math.Abs(ax2) > 1e-4 || math.Abs(ay2+1.0) > 1e-4 || math.Abs(az2) > 1e-4 {
-		t.Fatalf("Case 2 (screen down) failed: got (%f, %f, %f), expected (0, -1, 0)", ax2, ay2, az2)
-	}
-
-	// 3. Uninitialized / zero calGravity
-	m3 := computeAccMatrix([3]float64{0, 0, 0})
-	ax3, ay3, az3 := applyMatrix(m3, 0, 0, -1.0)
-	if math.Abs(ax3) > 1e-4 || math.Abs(ay3+1.0) > 1e-4 || math.Abs(az3) > 1e-4 {
-		t.Fatalf("Case 3 (zero) failed: got (%f, %f, %f), expected (0, -1, 0)", ax3, ay3, az3)
-	}
-}
-
 func TestLandscapeCalibration_YawAndPadTest(t *testing.T) {
 	app := &App{}
 
@@ -428,12 +404,6 @@ func TestLandscapeCalibration_YawAndPadTest(t *testing.T) {
 		t.Fatalf("RotY must be POSITIVE for clockwise turn in landscape, got %f", ry)
 	}
 
-	// Verify Accelerometer when resting on desk: calGravity = [0, 0, -1.0]
-	accMat := computeAccMatrix([3]float64{0.01, 0.04, -1.00})
-	ax, ay, az := applyMatrix(accMat, 0.01, 0.04, -1.00)
-	if math.Abs(ax) > 0.05 || math.Abs(ay+1.0) > 0.05 || math.Abs(az) > 0.05 {
-		t.Fatalf("Resting gravity not on AccY: got (%f, %f, %f)", ax, ay, az)
-	}
 }
 
 func TestProfileSlots6_And_SettingsPersistence(t *testing.T) {

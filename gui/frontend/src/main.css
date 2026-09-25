@@ -5082,9 +5082,6 @@ em {
 }
 
 /* Specific trigger sizing in settings */
-#select-trigger-setting-gyro-smoothing {
-  min-width: 235px;
-}
 
 #select-trigger-setting-gyro-deadband {
   min-width: 175px;

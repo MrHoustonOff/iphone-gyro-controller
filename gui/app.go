@@ -24,7 +24,6 @@ import (
 
 	"gyrobridge/pkg/ca"
 	"gyrobridge/pkg/dsu"
-	"gyrobridge/pkg/filter"
 	"gyrobridge/pkg/i18n"
 	"gyrobridge/pkg/pairing"
 	"gyrobridge/pkg/server"
@@ -234,8 +233,6 @@ type App struct {
 	soundVolumes        map[string]int
 	lastSensorChangeTs  atomic.Int64
 	// Adaptive 1-Euro DSU filter and dynamic response parameters
-	gyroFilter          *filter.Vector3OneEuroFilter
-	gyroSmoothingBits   atomic.Uint64 // float64 (0.0 to 1.0, default 0.50)
 	gyroDeadbandBits    atomic.Uint64 // float64 (deg/s, default 0.10)
 	gyroSensitivityBits atomic.Uint64 // float64 (multiplier, default 1.00)
 	tuningActive        atomic.Bool
@@ -275,7 +272,6 @@ type AppSettings struct {
 	SoundMode             string         `json:"soundMode"`
 	SoundVolume           int            `json:"soundVolume"`
 	SoundVolumes          map[string]int `json:"soundVolumes,omitempty"`
-	GyroSmoothing         float64        `json:"gyroSmoothing"`
 	GyroDeadband          float64 `json:"gyroDeadband"`
 	GyroSensitivity       float64 `json:"gyroSensitivity"`
 	MinimizeToTray        bool    `json:"minimizeToTray"`
@@ -335,52 +331,6 @@ func defaultMatrix3x3() [3][3]float64 {
 		{0, 1, 0},
 		{0, 0, -1},
 	}
-}
-
-// computeAccMatrix builds the accelerometer alignment matrix so that resting gravity
-// is guaranteed to map exactly to AccY = -|g|, with AccX = 0 and AccZ = 0 in Cemuhook DSU.
-// In Cemuhook DSU / PadTest, the vertical axis of the gamepad is Y (Green axis pointing UP).
-// When the controller is resting flat on a table, gravity points down along -AccY.
-func computeAccMatrix(calGravity [3]float64) [3][3]float64 {
-	gx, gy, gz := calGravity[0], calGravity[1], calGravity[2]
-	gNorm := math.Sqrt(gx*gx + gy*gy + gz*gz)
-	if gNorm < 0.3 {
-		// Default: phone sitting flat on table, screen up -> Phone Acc = [0, 0, -1.0]
-		// Maps Phone Z to AccY so resting gravity lands on AccY = -1.0g
-		return [3][3]float64{
-			{1, 0, 0},
-			{0, 0, 1},
-			{0, -1, 0},
-		}
-	}
-
-	// Unit resting gravity vector pointing down in phone frame
-	uG := [3]float64{gx / gNorm, gy / gNorm, gz / gNorm}
-
-	// In Cemuhook DSU, resting gravity points along -AccY (Row 1).
-	// We want Row 1 = -uG so that Row 1 · uG = -1.0
-	row1 := [3]float64{-uG[0], -uG[1], -uG[2]}
-
-	// Pick a reference direction for Row 0 (lateral X axis, pitch) orthogonal to row1
-	ref := [3]float64{1, 0, 0}
-	if math.Abs(uG[0]) > 0.8 {
-		ref = [3]float64{0, 0, 1}
-	}
-
-	// Gram-Schmidt for Row 0: ref - (ref · row1) * row1
-	dot := ref[0]*row1[0] + ref[1]*row1[1] + ref[2]*row1[2]
-	row0 := [3]float64{ref[0] - dot*row1[0], ref[1] - dot*row1[1], ref[2] - dot*row1[2]}
-	r0Norm := math.Sqrt(row0[0]*row0[0] + row0[1]*row0[1] + row0[2]*row0[2])
-	row0 = [3]float64{row0[0] / r0Norm, row0[1] / r0Norm, row0[2] / r0Norm}
-
-	// Row 2 = row0 x row1 (Z axis, longitudinal, roll)
-	row2 := [3]float64{
-		row0[1]*row1[2] - row0[2]*row1[1],
-		row0[2]*row1[0] - row0[0]*row1[2],
-		row0[0]*row1[1] - row0[1]*row1[0],
-	}
-
-	return [3][3]float64{row0, row1, row2}
 }
 
 // applyMatrix multiplies a 3x3 matrix by a column vector [x, y, z]
@@ -564,12 +514,10 @@ func NewApp() *App {
 		profilesDir:  profilesDir,
 		calStepLogs:  make(map[int]StepCaptureLog),
 		ahrs:         NewMadgwickAHRS(0.0), // Pure gyro integration with stationary deadband
-		gyroFilter:   filter.NewVector3OneEuroFilter(1.7, 0.015, 1.0),
 		currentTheme: "dark",
 		currentLang:  "ru",
 	}
 	app.gyroDeadzoneBits.Store(math.Float64bits(0.20))
-	app.gyroSmoothingBits.Store(math.Float64bits(0.50))
 	app.gyroDeadbandBits.Store(math.Float64bits(0.10))
 	app.gyroSensitivityBits.Store(math.Float64bits(1.00))
 	app.fontScaleBits.Store(math.Float64bits(1.00))
@@ -601,7 +549,6 @@ func NewApp() *App {
 
 	// Load persisted settings and profiles
 	app.loadSettings()
-	app.updateFilterParams()
 	app.rebuildURLsAndQRCodes()
 	app.loadProfiles()
 	app.logEvent("INFO", "GyroBridge initialized: IP=%s, Theme=%s, Lang=%s, DSU=%d, HTTP=%d, HTTPS=%d", primaryIP, app.currentTheme, app.currentLang, app.dsuPort, app.httpPort, app.httpsPort)
@@ -740,7 +687,6 @@ func (a *App) loadSettings() {
 		SoundMode         string         `json:"soundMode"`
 		SoundVolume       *int           `json:"soundVolume"`
 		SoundVolumes      map[string]int `json:"soundVolumes,omitempty"`
-		GyroSmoothing     *float64       `json:"gyroSmoothing,omitempty"`
 		GyroDeadband      *float64 `json:"gyroDeadband,omitempty"`
 		GyroSensitivity   *float64 `json:"gyroSensitivity,omitempty"`
 		FontScale         *float64 `json:"fontScale,omitempty"`
@@ -817,11 +763,6 @@ func (a *App) loadSettings() {
 	} else {
 		a.setSoundVolumes(defaultSoundVolumes())
 	}
-	if s.GyroSmoothing != nil {
-		a.gyroSmoothingBits.Store(math.Float64bits(*s.GyroSmoothing))
-	} else {
-		a.gyroSmoothingBits.Store(math.Float64bits(0.50))
-	}
 	if s.GyroDeadband != nil {
 		a.gyroDeadbandBits.Store(math.Float64bits(*s.GyroDeadband))
 	} else if s.GyroDeadzone > 0 {
@@ -867,7 +808,6 @@ func (a *App) loadSettings() {
 		a.inputMode = "phone"
 	}
 	a.inputModeMu.Unlock()
-	a.updateFilterParams()
 }
 
 // saveSettings persists theme, language, activeSlot, and preferences to settings.json
@@ -914,7 +854,6 @@ func (a *App) saveSettings() {
 		soundM = "cute"
 	}
 
-	smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
 	deadband := math.Float64frombits(a.gyroDeadbandBits.Load())
 	sensitivity := math.Float64frombits(a.gyroSensitivityBits.Load())
 	if sensitivity <= 0 {
@@ -956,7 +895,6 @@ func (a *App) saveSettings() {
 		SoundMode:         soundM,
 		SoundVolume:       vol,
 		SoundVolumes:      a.getSoundVolumes(),
-		GyroSmoothing:     smoothing,
 		GyroDeadband:      deadband,
 		GyroSensitivity:   sensitivity,
 		MinimizeToTray:        a.GetCloseAction() == "minimize",
@@ -971,23 +909,6 @@ func (a *App) saveSettings() {
 		return
 	}
 	_ = os.WriteFile(path, data, 0644)
-}
-
-func (a *App) updateFilterParams() {
-	if a.gyroFilter == nil {
-		return
-	}
-	smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
-	if smoothing <= 0 {
-		return
-	}
-	// Dynamic 1-Euro tuning: minCutoff from 3.0 Hz down to 0.4 Hz
-	minCutoff := 3.0 - smoothing*2.6
-	if minCutoff < 0.2 {
-		minCutoff = 0.2
-	}
-	beta := 0.005 + (1.0-smoothing)*0.025
-	a.gyroFilter.SetParams(minCutoff, beta, 1.0)
 }
 
 // loadProfiles reads profiles.json from disk
@@ -1168,7 +1089,7 @@ func (a *App) shouldMinimizeToTray() bool {
 	return a.GetCloseAction() == "minimize"
 }
 
-// getActiveProfileName returns a human-readable label for the currently active profile or filter.
+// getActiveProfileName returns a human-readable label for the currently active profile.
 func (a *App) getActiveProfileName() string {
 	a.profilesMu.RLock()
 	defer a.profilesMu.RUnlock()
@@ -1182,8 +1103,7 @@ func (a *App) getActiveProfileName() string {
 		}
 		return fmt.Sprintf("Slot %d", a.activeSlot+1)
 	}
-	smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
-	return fmt.Sprintf("1-Euro (%.0f%%)", smoothing*100)
+	return ""
 }
 
 // bindDSUCallbacks hooks connection lifecycle events from the DSU UDP server.
@@ -1273,7 +1193,6 @@ func (a *App) startup(ctx context.Context) {
 		stillSumGx    float64
 		stillSumGy    float64
 		stillSumGz    float64
-		wasStationary bool // true = previous frame was below deadband (for one-shot filter reset)
 	)
 	align := newSensorAligner(a.profilesDir)
 	anchor := newAttitudeAnchor()
@@ -1457,7 +1376,6 @@ func (a *App) startup(ctx context.Context) {
 			deadband = math.Float64frombits(a.gyroDeadzoneBits.Load())
 		}
 		gyroDeadband := deadband
-		_ = math.Float64frombits(a.gyroSmoothingBits.Load())
 		sens := math.Float64frombits(a.gyroSensitivityBits.Load())
 		if sens <= 0 {
 			sens = 1.00
@@ -1488,18 +1406,9 @@ func (a *App) startup(ctx context.Context) {
 			dsuRz = rawDsuRz * scale
 		}
 
-		// Send deadbanded-but-unfiltered angular rates directly to DSU.
+		// DSU gets deadbanded but unsmoothed rates: any low-pass on angular velocity adds
+		// lag that clients integrate into overshoot.
 		isStationary := gyroDeadband > 0 && gyroSpeed < gyroDeadband
-		if a.gyroFilter != nil {
-			if isStationary {
-				if !wasStationary {
-					a.gyroFilter.Reset()
-				}
-			} else {
-				a.gyroFilter.Filter(float64(dsuRx), float64(dsuRy), float64(dsuRz), startPipe)
-			}
-		}
-		wasStationary = isStationary
 
 		// Apply sensitivity multiplier
 		if sens != 1.0 {
@@ -1652,8 +1561,6 @@ func (a *App) startup(ctx context.Context) {
 	srv.OnClientDisconnect = func(remoteAddr string) {
 		disconnectMu.Lock()
 		defer disconnectMu.Unlock()
-
-		a.ResetGyroFilter()
 
 		_, clients, _ := srv.PacketStats()
 		if clients > 0 {
@@ -2654,7 +2561,6 @@ func (a *App) GetAppSettings() AppSettings {
 		soundM = "cute"
 	}
 
-	smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
 	deadband := math.Float64frombits(a.gyroDeadbandBits.Load())
 	sensitivity := math.Float64frombits(a.gyroSensitivityBits.Load())
 	if sensitivity <= 0 {
@@ -2689,7 +2595,6 @@ func (a *App) GetAppSettings() AppSettings {
 		SoundMode:         soundM,
 		SoundVolume:       vol,
 		SoundVolumes:      a.getSoundVolumes(),
-		GyroSmoothing:     smoothing,
 		GyroDeadband:      deadband,
 		GyroSensitivity:   sensitivity,
 		MinimizeToTray:        a.GetCloseAction() == "minimize",
@@ -2754,16 +2659,12 @@ func (a *App) SaveAppSettings(s AppSettings) (map[string]any, error) {
 	if s.GyroDeadzone >= 0 {
 		a.gyroDeadzoneBits.Store(math.Float64bits(s.GyroDeadzone))
 	}
-	if s.GyroSmoothing >= 0 && s.GyroSmoothing <= 1.0 {
-		a.gyroSmoothingBits.Store(math.Float64bits(s.GyroSmoothing))
-	}
 	if s.GyroDeadband >= 0 && s.GyroDeadband <= 1.0 {
 		a.gyroDeadbandBits.Store(math.Float64bits(s.GyroDeadband))
 	}
 	if s.GyroSensitivity >= 0.25 && s.GyroSensitivity <= 3.0 {
 		a.gyroSensitivityBits.Store(math.Float64bits(s.GyroSensitivity))
 	}
-	a.updateFilterParams()
 
 	a.stillnessHint.Store(s.StillnessHint)
 	a.disconnectAlert.Store(s.DisconnectAlert)
@@ -2838,25 +2739,14 @@ func (a *App) SetTuningActive(active bool) {
 }
 
 // SetTuningFilterParams dynamically updates filter parameters for live bench previewing without saving
-func (a *App) SetTuningFilterParams(smoothing, deadband, sensitivity float64) {
-	if smoothing >= 0 && smoothing <= 1.0 {
-		a.gyroSmoothingBits.Store(math.Float64bits(smoothing))
-	}
+func (a *App) SetTuningFilterParams(deadband, sensitivity float64) {
 	if deadband >= 0 && deadband <= 1.0 {
 		a.gyroDeadbandBits.Store(math.Float64bits(deadband))
 	}
 	if sensitivity >= 0.25 && sensitivity <= 3.0 {
 		a.gyroSensitivityBits.Store(math.Float64bits(sensitivity))
 	}
-	a.updateFilterParams()
 	a.saveSettings()
-}
-
-// ResetGyroFilter zeroes filter history
-func (a *App) ResetGyroFilter() {
-	if a.gyroFilter != nil {
-		a.gyroFilter.Reset()
-	}
 }
 
 // GetInputMode returns the active input mode ("phone" or "usb").

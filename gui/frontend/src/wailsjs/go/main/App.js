@@ -102,10 +102,6 @@ export function ResetAHRS() {
   return window['go']['main']['App']['ResetAHRS']();
 }
 
-export function ResetGyroFilter() {
-  return window['go']['main']['App']['ResetGyroFilter']();
-}
-
 export function SaveAppSettings(arg1) {
   return window['go']['main']['App']['SaveAppSettings'](arg1);
 }
@@ -146,8 +142,8 @@ export function SetTuningActive(arg1) {
   return window['go']['main']['App']['SetTuningActive'](arg1);
 }
 
-export function SetTuningFilterParams(arg1, arg2, arg3) {
-  return window['go']['main']['App']['SetTuningFilterParams'](arg1, arg2, arg3);
+export function SetTuningFilterParams(arg1, arg2) {
+  return window['go']['main']['App']['SetTuningFilterParams'](arg1, arg2);
 }
 
 export function SetWindowTheme(arg1) {

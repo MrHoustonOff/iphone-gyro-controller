@@ -43,7 +43,6 @@ export namespace main {
 	    soundMode: string;
 	    soundVolume: number;
 	    soundVolumes?: Record<string, number>;
-	    gyroSmoothing: number;
 	    gyroDeadband: number;
 	    gyroSensitivity: number;
 	    minimizeToTray: boolean;
@@ -75,7 +74,6 @@ export namespace main {
 	        this.soundMode = source["soundMode"];
 	        this.soundVolume = source["soundVolume"];
 	        this.soundVolumes = source["soundVolumes"];
-	        this.gyroSmoothing = source["gyroSmoothing"];
 	        this.gyroDeadband = source["gyroDeadband"];
 	        this.gyroSensitivity = source["gyroSensitivity"];
 	        this.minimizeToTray = source["minimizeToTray"];

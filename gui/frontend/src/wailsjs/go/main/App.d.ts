@@ -52,8 +52,6 @@ export function RegenerateDSUMAC():Promise<string>;
 
 export function ResetAHRS():Promise<void>;
 
-export function ResetGyroFilter():Promise<void>;
-
 export function SaveAppSettings(arg1:main.AppSettings):Promise<Record<string, any>>;
 
 export function SaveProfile(arg1:number,arg2:string,arg3:string,arg4:string,arg5:any):Promise<string>;
@@ -74,7 +72,7 @@ export function SetTheme(arg1:string):Promise<void>;
 
 export function SetTuningActive(arg1:boolean):Promise<void>;
 
-export function SetTuningFilterParams(arg1:number,arg2:number,arg3:number):Promise<void>;
+export function SetTuningFilterParams(arg1:number,arg2:number):Promise<void>;
 
 export function SetWindowTheme(arg1:string):Promise<void>;
 
