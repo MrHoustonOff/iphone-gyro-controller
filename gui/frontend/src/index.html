@@ -7635,7 +7635,6 @@
     startTime: 0,
     rafId: null,
     latestGyroSpeed: 0,
-    lastConnectPopupTs: 0,
 
     // Called on live high-rate sensor frames to track stillness speed (deg/s)
     onFrame(frame) {
@@ -7861,22 +7860,6 @@
       }, 550);
     },
 
-    // When phone connects or reconnects: show centered recentering modal on main screen
-    onDeviceConnected() {
-      // NEVER show during active calibration
-      if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) return;
-      // Do not interrupt setup/settings wizards
-      if (typeof SetupWizard !== 'undefined' && SetupWizard.isOpen) return;
-      if (typeof SettingsManager !== 'undefined' && SettingsManager.isOpen) return;
-      if (typeof WelcomeManager !== 'undefined' && WelcomeManager.isOpen) return;
-      if (typeof HelpManager !== 'undefined' && HelpManager.isOpen) return;
-
-      const now = Date.now();
-      if (now - this.lastConnectPopupTs < 4000) return;
-      this.lastConnectPopupTs = now;
-
-      this.open();
-    },
 
     init() {
       // Main screen button
@@ -10104,9 +10087,6 @@
         if (!isOffline) {
           this._reconnectCooldownTs = Date.now();
           this._stillnessStart = 0;
-          if (typeof RecenterManager !== 'undefined') {
-            RecenterManager.onDeviceConnected();
-          }
         }
         if (isOffline) {
           if (!SetupWizard?.isOpen && !HelpManager?.isOpen && !SettingsManager?.isOpen && !WelcomeManager?.isOpen) {
@@ -10385,8 +10365,6 @@
           AppState._stillnessStart = 0;
           if (typeof CalibrationWizard !== 'undefined' && CalibrationWizard.isOpen) {
             CalibrationWizard.hideDisconnectAlert();
-          } else if (typeof RecenterManager !== 'undefined') {
-            RecenterManager.onDeviceConnected();
           }
         });
         window.runtime.EventsOn('device:disconnected', () => {

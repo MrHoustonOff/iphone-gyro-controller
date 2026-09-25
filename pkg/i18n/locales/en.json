@@ -425,7 +425,7 @@
     "sound_dsu_connect_desc": "Emulator subscribed to motion feed",
     "sound_dsu_connect_tip": "Triggers when an emulator (Cemu, Yuzu, Ryujinx, Dolphin, etc.) subscribes to Cemuhook DSU port 26760.",
     "sound_recenter": "Orientation Reset (Recenter)",
-    "sound_recenter_desc": "Neutral angle locked for aim & 3D view",
+    "sound_recenter_desc": "Neutral of the in-app 3D view locked",
     "sound_recenter_tip": "Triggers when orientation is recentered via global hotkey, Spacebar, or recenter modal confirm button.",
     "sound_bench_goal": "Bench: Target Hit / Goal",
     "sound_bench_goal_desc": "Triumph fanfare on hit or hole entry",
@@ -448,9 +448,9 @@
     "font_scale_hotkeys": "Ctrl + / Ctrl - (zoom) • Ctrl 0 (reset)",
     "font_scale_hud": "Scale",
     "group_hotkeys": "Global Hotkeys (Windows)",
-    "hotkey_recenter": "Recenter Virtual Orientation",
-    "hotkey_recenter_desc": "Global shortcut to reset gyro orientation directly inside games",
-    "hotkey_recenter_tip": "Global Windows shortcut (RegisterHotKey). Works inside any active window or full-screen game (Cemu, RPCS3, Yuzu, etc.), instantly resetting virtual orientation back to neutral baseline.",
+    "hotkey_recenter": "Recenter 3D View",
+    "hotkey_recenter_desc": "Global shortcut to reset the in-app 3D view neutral",
+    "hotkey_recenter_tip": "Global Windows shortcut (RegisterHotKey), works from any window. Resets only GyroBridge's own 3D view; games are unaffected: DSU has no recenter command, use the game's own recenter instead.",
     "hotkey_record_prompt": "Press shortcut keys...",
     "hotkey_record_modifier_req": "Press a key with Ctrl, Alt, or Shift",
     "hotkey_clear_tip": "Clear shortcut",
@@ -514,7 +514,7 @@
     "btn_action_holding": "Locking...",
     "btn_retry": "Retry",
     "btn_cancel": "Cancel",
-    "toast_hotkey": "🎯 Aim Recentered (Hotkey)"
+    "toast_hotkey": "🎯 3D view recentered (Hotkey)"
   },
   "mode": {
     "phone": "Smartphone",
