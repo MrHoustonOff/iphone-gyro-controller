@@ -16,9 +16,10 @@ import (
 	"gyrobridge/pkg/ca"
 )
 
-// MotionFrame represents telemetry received from mobile device sensors (46-byte binary payload).
+// MotionFrame represents telemetry received from mobile device sensors (50-byte or 46-byte binary payload).
 type MotionFrame struct {
-	Timestamp uint32  `json:"ts"`
+	Timestamp   uint32  `json:"ts"`
+	TimestampUs uint64  `json:"ts_us,omitempty"`
 	// Angular velocity in °/s for Cemuhook DSU
 	RotX float32 `json:"rx"`
 	RotY float32 `json:"ry"`
@@ -468,7 +469,42 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) parseFrame(msgType int, data []byte) (MotionFrame, bool) {
-	// Fast binary decoding (46 bytes: uint32 ts, 3x float32 rotRate, 4x float32 quat, 3x float32 accel, uint16 buttons)
+	// Fast binary decoding for 50-byte layout (uint64 ts_us, 3x float32 rotRate, 4x float32 quat, 3x float32 accel, uint16 buttons)
+	if msgType == websocket.BinaryMessage && len(data) >= 50 {
+		tsUs := binary.LittleEndian.Uint64(data[0:8])
+		rx := math.Float32frombits(binary.LittleEndian.Uint32(data[8:12]))
+		ry := math.Float32frombits(binary.LittleEndian.Uint32(data[12:16]))
+		rz := math.Float32frombits(binary.LittleEndian.Uint32(data[16:20]))
+
+		qx := math.Float32frombits(binary.LittleEndian.Uint32(data[20:24]))
+		qy := math.Float32frombits(binary.LittleEndian.Uint32(data[24:28]))
+		qz := math.Float32frombits(binary.LittleEndian.Uint32(data[28:32]))
+		qw := math.Float32frombits(binary.LittleEndian.Uint32(data[32:36]))
+
+		ax := math.Float32frombits(binary.LittleEndian.Uint32(data[36:40]))
+		ay := math.Float32frombits(binary.LittleEndian.Uint32(data[40:44]))
+		az := math.Float32frombits(binary.LittleEndian.Uint32(data[44:48]))
+
+		buttons := binary.LittleEndian.Uint16(data[48:50])
+
+		return MotionFrame{
+			Timestamp:   uint32(tsUs / 1000),
+			TimestampUs: tsUs,
+			RotX:        rx,
+			RotY:        ry,
+			RotZ:        rz,
+			Qx:          qx,
+			Qy:          qy,
+			Qz:          qz,
+			Qw:          qw,
+			AccX:        ax,
+			AccY:        ay,
+			AccZ:        az,
+			Buttons:     buttons,
+		}, true
+	}
+
+	// Legacy binary decoding (46 bytes: uint32 ts_ms, 3x float32 rotRate, 4x float32 quat, 3x float32 accel, uint16 buttons)
 	if msgType == websocket.BinaryMessage && len(data) >= 46 {
 		ts := binary.LittleEndian.Uint32(data[0:4])
 		rx := math.Float32frombits(binary.LittleEndian.Uint32(data[4:8]))
@@ -487,24 +523,28 @@ func (s *Server) parseFrame(msgType int, data []byte) (MotionFrame, bool) {
 		buttons := binary.LittleEndian.Uint16(data[44:46])
 
 		return MotionFrame{
-			Timestamp: ts,
-			RotX:      rx,
-			RotY:      ry,
-			RotZ:      rz,
-			Qx:        qx,
-			Qy:        qy,
-			Qz:        qz,
-			Qw:        qw,
-			AccX:      ax,
-			AccY:      ay,
-			AccZ:      az,
-			Buttons:   buttons,
+			Timestamp:   ts,
+			TimestampUs: uint64(ts) * 1000,
+			RotX:        rx,
+			RotY:        ry,
+			RotZ:        rz,
+			Qx:          qx,
+			Qy:          qy,
+			Qz:          qz,
+			Qw:          qw,
+			AccX:        ax,
+			AccY:        ay,
+			AccZ:        az,
+			Buttons:     buttons,
 		}, true
 	}
 
 	// JSON fallback
 	var frame MotionFrame
 	if err := json.Unmarshal(data, &frame); err == nil {
+		if frame.TimestampUs == 0 && frame.Timestamp > 0 {
+			frame.TimestampUs = uint64(frame.Timestamp) * 1000
+		}
 		return frame, true
 	}
 

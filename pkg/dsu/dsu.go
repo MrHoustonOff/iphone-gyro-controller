@@ -62,6 +62,9 @@ type Server struct {
 	stopChan chan struct{}
 	running  atomic.Bool
 
+	timeMu         sync.Mutex
+	currentDsuTsUs uint64
+
 	// Lifecycle event hooks for clean, non-spammy logging
 	OnClientConnect    func(addr *net.UDPAddr)
 	OnClientDisconnect func(addr *net.UDPAddr)
@@ -247,8 +250,8 @@ func (s *Server) fillPadDataPacket(buf []byte, packetNum uint32, frame server.Mo
 	p[22] = 128 // Right Stick X
 	p[23] = 128 // Right Stick Y
 
-	// Timestamp in microseconds (offset 48..56)
-	micros := uint64(time.Now().UnixNano() / 1000)
+	// Strictly monotonic timestamp in microseconds (offset 48..56)
+	micros := s.nextTimestampUs()
 	binary.LittleEndian.PutUint64(p[48:56], micros)
 
 	// Accelerometer in g: AccX, AccY, AccZ (offsets 56..68)
@@ -271,6 +274,21 @@ func (s *Server) BuildPadDataPacket(packetNum uint32, frame server.MotionFrame) 
 	buf := make([]byte, 100)
 	s.fillPadDataPacket(buf, packetNum, frame)
 	return buf
+}
+
+// nextTimestampUs generates a strictly monotonic microsecond timestamp for Cemuhook DSU
+// based on host wall clock, guaranteeing ts > last_ts and smooth deltaTime in Cemu.
+func (s *Server) nextTimestampUs() uint64 {
+	s.timeMu.Lock()
+	defer s.timeMu.Unlock()
+
+	nowUs := uint64(time.Now().UnixNano() / 1000)
+	if nowUs <= s.currentDsuTsUs {
+		s.currentDsuTsUs++
+	} else {
+		s.currentDsuTsUs = nowUs
+	}
+	return s.currentDsuTsUs
 }
 
 // LastMotionFrame returns the latest received telemetry frame.
@@ -347,6 +365,7 @@ func (s *Server) sendLatestPadDataTo(remoteAddr *net.UDPAddr) {
 	if frame.AccX == 0 && frame.AccY == 0 && frame.AccZ == 0 {
 		frame.AccY = -1.0
 	}
+	frame.TimestampUs = 0
 
 	packetNum := atomic.AddUint32(&s.packetCounter, 1)
 
@@ -394,6 +413,7 @@ func (s *Server) heartbeatLoop() {
 			idleFrame.RotX = 0
 			idleFrame.RotY = 0
 			idleFrame.RotZ = 0
+			idleFrame.TimestampUs = 0
 			if idleFrame.AccX == 0 && idleFrame.AccY == 0 && idleFrame.AccZ == 0 {
 				idleFrame.AccY = -1.0
 			}

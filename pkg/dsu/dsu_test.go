@@ -293,4 +293,20 @@ func TestDSU_IdleHeartbeat(t *testing.T) {
 	}
 }
 
+func TestDSU_StrictlyMonotonicTimestamping(t *testing.T) {
+	srv := NewServer(0)
+
+	// Send rapid bursts of packets and verify strict monotonicity (ts > last_ts)
+	var lastTs uint64
+	for i := uint32(1); i <= 100; i++ {
+		pkt := srv.BuildPadDataPacket(i, server.MotionFrame{RotX: 1.0})
+		ts := binary.LittleEndian.Uint64(pkt[68:76]) // offset 20 + 48 = 68
+		if ts <= lastTs {
+			t.Fatalf("packet %d timestamp not strictly monotonic: got %d <= last %d", i, ts, lastTs)
+		}
+		lastTs = ts
+	}
+}
+
+
 
