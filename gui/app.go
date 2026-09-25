@@ -1273,7 +1273,9 @@ func (a *App) startup(ctx context.Context) {
 		stillSumGx    float64
 		stillSumGy    float64
 		stillSumGz    float64
+		wasStationary bool // true = previous frame was below deadband (for one-shot filter reset)
 	)
+	align := newSensorAligner(a.profilesDir)
 
 	// 3. Web & Telemetry Server (HTTP / HTTPS)
 	var srv *server.Server
@@ -1402,36 +1404,43 @@ func (a *App) startup(ctx context.Context) {
 		// Subtract gyro zero-bias before applying calibration matrix M (§1, §2 of spec)
 		a.biasMu.RLock()
 		bx, by, bz := a.gyroBias[0], a.gyroBias[1], a.gyroBias[2]
+		calGravity := a.calGravity
 		a.biasMu.RUnlock()
 
 		rawRx := float64(frame.RotX) - bx
 		rawRy := float64(frame.RotY) - by
 		rawRz := float64(frame.RotZ) - bz
+		rawAcc := [3]float64{float64(frame.AccX), float64(frame.AccY), float64(frame.AccZ)}
 
-		// Apply matrix to rotation rate and acceleration
+		// Gyro goes through the gesture calibration matrix; the accelerometer goes through
+		// a matrix derived from it plus the learned gyro↔accel axis relation, so PadTest's
+		// Madgwick sees a gravity vector that agrees with the gyro (see sensoralign.go).
+		align.Feed([3]float64{rawRx, rawRy, rawRz}, rawAcc, frame.TimestampUs)
+		sf, _ := align.Frame()
+		accMat, yawSign := buildOutputMapping(mat, sf, calGravity)
+
 		rx, ry, rz := applyMatrix(mat, rawRx, rawRy, rawRz)
-		accMat := computeAccMatrix(a.calGravity)
-		ax, ay, az := applyMatrix(accMat, float64(frame.AccX), float64(frame.AccY), float64(frame.AccZ))
+		ry *= yawSign
+		ax, ay, az := applyMatrix(accMat, rawAcc[0], rawAcc[1], rawAcc[2])
 
 		gyroSpeed := math.Sqrt(rx*rx + ry*ry + rz*rz)
 
 		// 1. Gyroscope deadband with soft-knee attenuation.
 		// Electronic MEMS sensor noise is ~0.05-0.15 deg/s on desk.
 		// Deadband completely eliminates stationary gyro trembling in PadTest and games.
-		// For movements above deadband, a linear soft ramp ensures smooth, zero-cliff analog feel.
 		deadband := math.Float64frombits(a.gyroDeadbandBits.Load())
 		if deadband <= 0 && a.gyroDeadzoneBits.Load() > 0 {
 			deadband = math.Float64frombits(a.gyroDeadzoneBits.Load())
 		}
 		gyroDeadband := deadband
-		smoothing := math.Float64frombits(a.gyroSmoothingBits.Load())
+		_ = math.Float64frombits(a.gyroSmoothingBits.Load())
 		sens := math.Float64frombits(a.gyroSensitivityBits.Load())
 		if sens <= 0 {
 			sens = 1.00
 		}
 
 		rawDsuRx := float32(rx)
-		rawDsuRy := -float32(ry) // Cemuhook DSU protocol convention (nose right / clockwise is negative)
+		rawDsuRy := dsuYawSign * float32(ry) // see dsuYawSign / dsuAccSign in sensoralign.go
 		rawDsuRz := float32(rz)
 
 		var ahrsRx, ahrsRy, ahrsRz float32
@@ -1455,13 +1464,18 @@ func (a *App) startup(ctx context.Context) {
 			dsuRz = rawDsuRz * scale
 		}
 
-		// Apply 1-Euro adaptive smoothing if configured
-		if smoothing > 0 && a.gyroFilter != nil {
-			filtRx, filtRy, filtRz := a.gyroFilter.Filter(float64(dsuRx), float64(dsuRy), float64(dsuRz), startPipe)
-			dsuRx = float32(filtRx)
-			dsuRy = float32(filtRy)
-			dsuRz = float32(filtRz)
+		// Send deadbanded-but-unfiltered angular rates directly to DSU.
+		isStationary := gyroDeadband > 0 && gyroSpeed < gyroDeadband
+		if a.gyroFilter != nil {
+			if isStationary {
+				if !wasStationary {
+					a.gyroFilter.Reset()
+				}
+			} else {
+				a.gyroFilter.Filter(float64(dsuRx), float64(dsuRy), float64(dsuRz), startPipe)
+			}
 		}
+		wasStationary = isStationary
 
 		// Apply sensitivity multiplier
 		if sens != 1.0 {
@@ -1470,41 +1484,27 @@ func (a *App) startup(ctx context.Context) {
 			dsuRz *= float32(sens)
 		}
 
-		// 2. Accelerometer filtering and stationary table lock.
-		// PadTest's Madgwick AHRS normalizes the error vector (2*beta*s/|s| = 11.5 deg/s step),
-		// meaning even tiny 0.003g electrical noise causes violent 60 Hz limit-cycle shaking.
-		// When the phone is resting on the table in neutral (gyroSpeed < 0.25 and Acc ≈ [0, -1, 0]),
-		// we lock Acc exactly to [0, -1.0, 0] which cancels the gradient error to 0.000000.
-		// When moving or held in hands, we apply an exponential moving average (EMA) low-pass filter
-		// to eliminate 60 Hz electrical noise while tracking true gravity smoothly.
+		// 2. Accelerometer filtering.
+		// Eliminate 60 Hz electrical noise using an adaptive low-pass filter:
+		// When stationary: alpha = 0.04 for rock-solid stability and zero trembling in PadTest.
+		// When moving: alpha = 0.35 for responsive gravity tracking with minimal lag.
+		// Never artificially force [0, -1, 0] which ruined tilted holding angles.
 		if !accFilterInit {
 			accFiltered = [3]float64{ax, ay, az}
 			accFilterInit = true
 		}
 
-		isRestingOnTable := gyroSpeed < gyroDeadband &&
-			math.Abs(ax) < 0.06 &&
-			math.Abs(ay+1.0) < 0.08 &&
-			math.Abs(az) < 0.06
-
-		var finalAx, finalAy, finalAz float32
-		if isRestingOnTable {
-			finalAx = 0.0
-			finalAy = -1.0
-			finalAz = 0.0
-			accFiltered = [3]float64{0.0, -1.0, 0.0}
-		} else {
-			alpha := 0.20
-			if gyroSpeed < gyroDeadband {
-				alpha = 0.05
-			}
-			accFiltered[0] += alpha * (ax - accFiltered[0])
-			accFiltered[1] += alpha * (ay - accFiltered[1])
-			accFiltered[2] += alpha * (az - accFiltered[2])
-			finalAx = float32(accFiltered[0])
-			finalAy = float32(accFiltered[1])
-			finalAz = float32(accFiltered[2])
+		alpha := 0.35
+		if isStationary {
+			alpha = 0.04
 		}
+		accFiltered[0] += alpha * (ax - accFiltered[0])
+		accFiltered[1] += alpha * (ay - accFiltered[1])
+		accFiltered[2] += alpha * (az - accFiltered[2])
+
+		finalAx := float32(accFiltered[0])
+		finalAy := float32(accFiltered[1])
+		finalAz := float32(accFiltered[2])
 
 		corrected := frame
 		corrected.RotX = ahrsRx
@@ -1571,9 +1571,9 @@ func (a *App) startup(ctx context.Context) {
 			dsuFrame.RotX = dsuRx
 			dsuFrame.RotY = dsuRy
 			dsuFrame.RotZ = dsuRz
-			dsuFrame.AccX = finalAx
-			dsuFrame.AccY = finalAy
-			dsuFrame.AccZ = finalAz
+			dsuFrame.AccX = dsuAccSign[0] * finalAx
+			dsuFrame.AccY = dsuAccSign[1] * finalAy
+			dsuFrame.AccZ = dsuAccSign[2] * finalAz
 			a.dsuSrv.SendMotion(dsuFrame)
 		}
 
