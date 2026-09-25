@@ -1559,7 +1559,9 @@ function onOrientation(e) {
   curGamma = e.gamma || 0;
 
   // Convert device orientation to unit quaternion
-  const a = ((curAlpha - zeroYawOffset + 360) % 360) * DEG2RAD_HALF;
+  // Raw alpha (no recenter offset): the server's drift anchor needs a reference
+  // without artificial jumps.
+  const a = curAlpha * DEG2RAD_HALF;
   const b = curBeta  * DEG2RAD_HALF;
   const c = curGamma * DEG2RAD_HALF;
 
@@ -1567,10 +1569,13 @@ function onOrientation(e) {
   const cB = Math.cos(b), sB = Math.sin(b);
   const cC = Math.cos(c), sC = Math.sin(c);
 
-  outQw = cA * cB * cC + sA * sB * sC;
-  outQx = cA * sB * cC + sA * cB * sC;
-  outQy = -sA * sB * cC + cA * cB * sC;
-  outQz = sA * cB * cC - cA * sB * sC;
+  // W3C DeviceOrientation: R = Rz(alpha) · Rx(beta) · Ry(gamma), device → world.
+  // iOS computes this attitude internally at a high rate, so the server uses it
+  // to keep the 60 Hz gyro integration from drifting (gui/attitudeanchor.go).
+  outQw = cA * cB * cC - sA * sB * sC;
+  outQx = cA * sB * cC - sA * cB * sC;
+  outQy = cA * cB * sC + sA * sB * cC;
+  outQz = sA * cB * cC + cA * sB * sC;
 
   if (outQw < 0) {
     outQx = -outQx; outQy = -outQy; outQz = -outQz; outQw = -outQw;
@@ -1636,19 +1641,35 @@ function onMotion(e) {
   const gyr = readRawGyro(e);
   const acc = readRawAccel(e);
 
-  dsuPitch = gyr.x;
-  dsuYaw   = gyr.y;
-  dsuRoll  = gyr.z;
+  // Frames skipped while the socket is busy must not lose rotation: accumulate
+  // angle (rate × dt) and send the average rate over the whole unsent interval.
+  const now = performance.now();
+  const dt = rotAccumPrevTs ? Math.min(Math.max((now - rotAccumPrevTs) / 1000, 0.001), 0.1) : 1 / 60;
+  rotAccumPrevTs = now;
+  if (rotAccumDt > 0.5) { rotAccum = { x: 0, y: 0, z: 0 }; rotAccumDt = 0; } // long stall: start over
+  rotAccum.x += gyr.x * dt;
+  rotAccum.y += gyr.y * dt;
+  rotAccum.z += gyr.z * dt;
+  rotAccumDt += dt;
+
+  dsuPitch = rotAccum.x / rotAccumDt;
+  dsuYaw   = rotAccum.y / rotAccumDt;
+  dsuRoll  = rotAccum.z / rotAccumDt;
 
   dsuAccX = acc.x;
   dsuAccY = acc.y;
   dsuAccZ = acc.z;
 
-  sendFrame();
+  if (sendFrame()) {
+    rotAccum = { x: 0, y: 0, z: 0 };
+    rotAccumDt = 0;
+  }
 }
 
+let rotAccum = { x: 0, y: 0, z: 0 }, rotAccumDt = 0, rotAccumPrevTs = 0;
+
 function sendFrame() {
-  if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) return;
+  if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN || ws.bufferedAmount > 0) return false;
 
   binView.setUint32(0,  (Date.now() & 0xFFFFFFFF) >>> 0, true);
   binView.setFloat32(4,  dsuPitch, true); // Pitch (RotX)
@@ -1665,6 +1686,7 @@ function sendFrame() {
 
   ws.send(binBuffer);
   packetCount++;
+  return true;
 }
 
 // Client idle heartbeat: keep connection alive even when phone is still on table

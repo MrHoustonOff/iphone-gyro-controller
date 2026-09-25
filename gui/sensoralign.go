@@ -307,3 +307,11 @@ func angleDeg(a, b [3]float64) float64 {
 	d := (a[0]*b[0] + a[1]*b[1] + a[2]*b[2]) / (norm3(a)*norm3(b) + 1e-12)
 	return math.Acos(math.Max(-1, math.Min(1, d))) * 180 / math.Pi
 }
+
+func transpose3(m [3][3]float64) [3][3]float64 {
+	return [3][3]float64{
+		{m[0][0], m[1][0], m[2][0]},
+		{m[0][1], m[1][1], m[2][1]},
+		{m[0][2], m[1][2], m[2][2]},
+	}
+}

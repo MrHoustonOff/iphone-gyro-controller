@@ -1276,6 +1276,8 @@ func (a *App) startup(ctx context.Context) {
 		wasStationary bool // true = previous frame was below deadband (for one-shot filter reset)
 	)
 	align := newSensorAligner(a.profilesDir)
+	anchor := newAttitudeAnchor()
+	var prevAnchorTsUs uint64
 
 	// 3. Web & Telemetry Server (HTTP / HTTPS)
 	var srv *server.Server
@@ -1416,8 +1418,30 @@ func (a *App) startup(ctx context.Context) {
 		// a matrix derived from it plus the learned gyro↔accel axis relation, so PadTest's
 		// Madgwick sees a gravity vector that agrees with the gyro (see sensoralign.go).
 		align.Feed([3]float64{rawRx, rawRy, rawRz}, rawAcc, frame.TimestampUs)
-		sf, _ := align.Frame()
+		sf, sfKnown := align.Frame()
 		accMat, yawSign := buildOutputMapping(mat, sf, calGravity)
+
+		// Pull the integrated angle onto the phone's own attitude (see attitudeanchor.go).
+		anchorDt := anchorDefaultDtSec
+		if prevAnchorTsUs > 0 && frame.TimestampUs > prevAnchorTsUs {
+			if d := float64(frame.TimestampUs-prevAnchorTsUs) / 1e6; d >= 0.004 && d <= 0.1 {
+				anchorDt = d
+			} else if d > 1.0 {
+				anchor.Reset() // reconnect / page reload: attitude reference restarted
+			}
+		} else if frame.TimestampUs < prevAnchorTsUs {
+			anchor.Reset()
+		}
+		prevAnchorTsUs = frame.TimestampUs
+		if sfKnown {
+			pk := [3]float64{rawRx * alignDegToRad, rawRy * alignDegToRad, rawRz * alignDegToRad}
+			dev := mulVec3(transpose3(sf.Q), pk)
+			ref := quat{float64(frame.Qw), float64(frame.Qx), float64(frame.Qy), float64(frame.Qz)}
+			corr := mulVec3(sf.Q, anchor.Correction(dev, ref, anchorDt))
+			rawRx += corr[0] / alignDegToRad
+			rawRy += corr[1] / alignDegToRad
+			rawRz += corr[2] / alignDegToRad
+		}
 
 		rx, ry, rz := applyMatrix(mat, rawRx, rawRy, rawRz)
 		ry *= yawSign
