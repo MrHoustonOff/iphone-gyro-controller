@@ -51,6 +51,11 @@ type Profile struct {
 	Device string        `json:"device"` // device name e.g. "Unknown"
 	Icon   string        `json:"icon"`   // "default", "vertical", "horizontal"
 	Matrix [3][3]float64 `json:"matrix"` // signed permutation matrix
+	// Gravity at the calibration rest pose, in raw phone axes. Per profile because the
+	// gravity sign differs between platforms (iOS reads -1g flat, Android +1g).
+	CalGravity [3]float64 `json:"calGravity,omitempty"`
+	// Learned gyro↔accel axis relation of the device used with this profile.
+	SensorFrame *sensorFrame `json:"sensorFrame,omitempty"`
 	Active bool          `json:"active"` // is this the currently applied profile?
 }
 
@@ -171,6 +176,8 @@ type App struct {
 	captureBuffer []captureSample
 	calVectors    [3][3]float64
 	calGravity    [3]float64 // captured gravity unit vector from step 0 rest
+	calGravityFresh bool // set by the rest step, consumed by the next SaveProfile
+	align            *sensorAligner // gyro↔accel axis learner (frame stored per profile)
 	// Gyroscope stationary zero-bias correction (§2 of spec)
 	biasMu        sync.RWMutex
 	gyroBias      [3]float64
@@ -992,6 +999,10 @@ func (a *App) loadProfiles() {
 	if math.Sqrt(stored.CalGravity[0]*stored.CalGravity[0]+stored.CalGravity[1]*stored.CalGravity[1]+stored.CalGravity[2]*stored.CalGravity[2]) > 0.3 {
 		a.calGravity = stored.CalGravity
 	}
+	// profilesMu is held here: read the active profile's gravity directly.
+	if a.activeSlot >= 0 && a.activeSlot < len(a.profiles) && norm3(a.profiles[a.activeSlot].CalGravity) > 0.3 {
+		a.calGravity = a.profiles[a.activeSlot].CalGravity
+	}
 }
 
 // saveProfiles writes profiles.json to disk with schemaVersion 2
@@ -1195,6 +1206,8 @@ func (a *App) startup(ctx context.Context) {
 		stillSumGz    float64
 	)
 	align := newSensorAligner(a.profilesDir)
+	a.align = align
+	a.initProfileSensorFrame()
 	anchor := newAttitudeAnchor()
 	var prevAnchorTsUs uint64
 
@@ -2150,13 +2163,22 @@ func (a *App) SaveProfile(slot int, name string, device string, icon string, mat
 	}
 
 	a.profilesMu.Lock()
+	gravity := a.profiles[slot].CalGravity
+	a.biasMu.Lock()
+	if a.calGravityFresh {
+		gravity = a.calGravity
+		a.calGravityFresh = false
+	}
+	a.biasMu.Unlock()
 	a.profiles[slot] = Profile{
 		Slot:   slot,
 		Name:   name,
 		Device: device,
 		Icon:   icon,
 		Matrix: matrix,
-		Active: (slot == a.activeSlot),
+		Active:     (slot == a.activeSlot),
+		CalGravity: gravity,
+		SensorFrame: a.profiles[slot].SensorFrame,
 	}
 	a.profilesMu.Unlock()
 
@@ -2165,6 +2187,7 @@ func (a *App) SaveProfile(slot int, name string, device string, icon string, mat
 		a.matrixMu.Lock()
 		a.activeMatrix = matrix
 		a.matrixMu.Unlock()
+		a.applyProfileGravity(slot)
 		if a.ahrs != nil {
 			a.ahrs.Reset()
 		}
@@ -2173,6 +2196,67 @@ func (a *App) SaveProfile(slot int, name string, device string, icon string, mat
 	a.saveProfiles()
 	a.emitStateChange()
 	return "ok"
+}
+
+// applyProfileGravity makes the profile's own rest gravity the live reference. Profiles
+// calibrated before gravity was stored per profile keep the global value.
+func (a *App) applyProfileGravity(slot int) {
+	if slot < 0 || slot >= len(a.profiles) {
+		return
+	}
+	a.profilesMu.RLock()
+	g := a.profiles[slot].CalGravity
+	a.profilesMu.RUnlock()
+	if norm3(g) > 0.3 {
+		a.biasMu.Lock()
+		a.calGravity = g
+		a.biasMu.Unlock()
+	}
+}
+
+// applyProfileSensorFrame loads the profile's learned axis relation into the aligner.
+// Without one the aligner relearns from a few tilts and stores the result there.
+func (a *App) applyProfileSensorFrame(slot int) {
+	if a.align == nil {
+		return
+	}
+	var f *sensorFrame
+	a.profilesMu.RLock()
+	if slot >= 0 && slot < len(a.profiles) {
+		f = a.profiles[slot].SensorFrame
+	}
+	a.profilesMu.RUnlock()
+	if f != nil {
+		a.align.SetFrame(*f, true)
+	} else {
+		a.align.SetFrame(sensorFrame{}, false)
+	}
+}
+
+// initProfileSensorFrame hooks the aligner to the active profile. A frame learned by
+// older builds (global sensor_frame.json) is migrated into the active profile once.
+func (a *App) initProfileSensorFrame() {
+	legacy, legacyKnown := a.align.Frame()
+	a.align.onLearn = func(f sensorFrame) {
+		a.profilesMu.Lock()
+		if a.activeSlot >= 0 && a.activeSlot < len(a.profiles) {
+			cp := f
+			a.profiles[a.activeSlot].SensorFrame = &cp
+		}
+		a.profilesMu.Unlock()
+		go a.saveProfiles()
+	}
+	a.profilesMu.Lock()
+	migrate := legacyKnown && a.activeSlot >= 0 && a.activeSlot < len(a.profiles) && a.profiles[a.activeSlot].SensorFrame == nil
+	if migrate {
+		a.profiles[a.activeSlot].SensorFrame = &legacy
+	}
+	slot := a.activeSlot
+	a.profilesMu.Unlock()
+	if migrate {
+		a.saveProfiles()
+	}
+	a.applyProfileSensorFrame(slot)
 }
 
 // SetActiveProfile selects the profile at the given slot (-1 = identity/none)
@@ -2202,6 +2286,8 @@ func (a *App) SetActiveProfile(slot int) string {
 		a.activeMatrix = defaultMatrix3x3()
 	}
 	a.matrixMu.Unlock()
+	a.applyProfileGravity(slot)
+	a.applyProfileSensorFrame(slot)
 
 	if a.ahrs != nil {
 		a.ahrs.Reset()
@@ -3023,6 +3109,7 @@ func (a *App) StopCapture(step int) CaptureResult {
 		gNorm := math.Sqrt(gX*gX + gY*gY + gZ*gZ)
 		if gNorm > 0.4 {
 			a.calGravity = [3]float64{gX / gNorm, gY / gNorm, gZ / gNorm}
+			a.calGravityFresh = true
 		}
 
 		res := CaptureResult{
