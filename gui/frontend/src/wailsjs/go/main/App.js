@@ -22,6 +22,10 @@ export function GetAppSettings() {
   return window['go']['main']['App']['GetAppSettings']();
 }
 
+export function GetAxisAlignStatus() {
+  return window['go']['main']['App']['GetAxisAlignStatus']();
+}
+
 export function GetCloseAction() {
   return window['go']['main']['App']['GetCloseAction']();
 }
@@ -152,6 +156,10 @@ export function SetWindowTheme(arg1) {
 
 export function ShowWindow() {
   return window['go']['main']['App']['ShowWindow']();
+}
+
+export function StartAxisAlign(arg1) {
+  return window['go']['main']['App']['StartAxisAlign'](arg1);
 }
 
 export function StartCapture() {

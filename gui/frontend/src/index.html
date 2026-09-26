@@ -1809,6 +1809,11 @@
           <div class="cal-step-connector"></div>
           <div class="cal-step-pill" id="step-pill-3">
             <span class="step-num">4</span>
+            <span class="step-name" data-i18n="calibration.step_pill_align">Оси</span>
+          </div>
+          <div class="cal-step-connector"></div>
+          <div class="cal-step-pill" id="step-pill-4">
+            <span class="step-num">5</span>
             <span class="step-name" data-i18n="calibration.step_pill_confirm">Проверка</span>
           </div>
         </div>
@@ -8240,6 +8245,43 @@
             } else if (demoStep === 2) {
               // Step 2: Bank sideways (Roll / "Самолётик")
               gamepadGroup.quaternion.setFromEuler(new THREE.Euler(0, 0, -0.45 * ease, 'XYZ'));
+            } else if (demoStep === 3) {
+              // Step 3: Axis alignment — smooth hold-to-hold tumble through combined
+              // pitch+yaw+roll, pausing briefly at each hold, looping forever.
+              //
+              // Pure nod/bank (pitch+roll only, no yaw/twist) was tried first and is a
+              // real dead end, not just a style choice: tilting about axes confined to
+              // a single plane leaves the accelerometer's third axis mathematically
+              // undetermined — d(gravity)/dt = h·(ω×g) can't observe it, so the
+              // physics in sensoralign.go ties forever between two candidate mappings
+              // and never locks (reproduced in gui/sensoralign_test.go-style
+              // simulation: pure pitch/roll motion never converges; the same motion
+              // with a twist mixed in locks almost immediately). So every hold below
+              // combines pitch, yaw AND roll — never a pure single-axis tilt — and the
+              // model interpolates directly hold→hold (no snap back through a common
+              // "flat" pose) so the transition itself stays a single smooth motion.
+              const holds = [
+                [ 0.00,  0.00,  0.00],
+                [-0.35,  0.24,  0.14],
+                [ 0.18, -0.30, -0.28],
+                [ 0.30,  0.16,  0.26],
+                [-0.20, -0.26,  0.11],
+                [ 0.12,  0.32, -0.22]
+              ];
+              const holdTime = 0.9, moveTime = 1.1, legTime = holdTime + moveTime;
+              const cycle = holds.length * legTime;
+              const t = animTime % cycle;
+              const leg = Math.floor(t / legTime);
+              const legT = (t % legTime) / legTime;
+              const moveFrac = moveTime / legTime;
+              const u = Math.min(1, legT / moveFrac); // 0..1 during the move phase, pinned at 1 during hold
+              const ease = u * u * (3 - 2 * u);
+              const from = holds[leg];
+              const to = holds[(leg + 1) % holds.length];
+              const px = from[0] + (to[0] - from[0]) * ease;
+              const py = from[1] + (to[1] - from[1]) * ease;
+              const rz = from[2] + (to[2] - from[2]) * ease;
+              gamepadGroup.quaternion.setFromEuler(new THREE.Euler(px, py, rz, 'XYZ'));
             }
           }
         } else {
@@ -8378,8 +8420,19 @@
         btnKey: 'calibration.step2_btn',
         durationMs: 2400,
         isRest: false
+      },
+      {
+        titleKey: 'calibration.step3_title',
+        descKey: 'calibration.step3_desc',
+        captionKey: 'calibration.step3_caption',
+        btnKey: 'calibration.step3_btn',
+        isAxisAlign: true
       }
     ],
+
+    // Polling handle for the axis-alignment step (GetAxisAlignStatus)
+    axisAlignInterval: null,
+    axisAlignKnown: false,
 
     getConnectedDevice() {
       const st = (typeof AppState !== 'undefined' && AppState.lastState) ? AppState.lastState : null;
@@ -8506,6 +8559,7 @@
       const overlay = document.getElementById('cal-overlay');
       if (overlay) overlay.style.display = 'none';
       this._resetCaptureTimer();
+      this._stopAxisAlignPoll();
       ['cal-3d-canvas', 'cal-3d-canvas-confirm', 'cal-3d-canvas-manual'].forEach(id => Scene3D.destroy(id));
       this.currentScreen = 'slots';
       if (window.go?.main?.App) {
@@ -8525,12 +8579,12 @@
         this._updateStepUI();
         Scene3D.mount('cal-3d-canvas', { mode: 'demo', demoStep: this.captureStep });
       } else if (screen === 'confirm') {
-        for (let i = 0; i < 4; i++) {
+        for (let i = 0; i < 5; i++) {
           const pill = document.getElementById(`step-pill-${i}`);
           if (pill) {
             pill.classList.remove('active', 'completed');
-            if (i < 3) pill.classList.add('completed');
-            else if (i === 3) pill.classList.add('active');
+            if (i < 4) pill.classList.add('completed');
+            else if (i === 4) pill.classList.add('active');
           }
         }
         this._renderConfirmDetails();
@@ -8614,6 +8668,14 @@
       this.captureStep = 0;
       this.capturedVectors = [];
       this.lockedAxes = {};
+      this.axisAlignKnown = false;
+      this._stopAxisAlignPoll();
+      // Calibrating means recalibrating: never trust a mapping learned in a previous
+      // session for this slot. Forget it immediately so step 4 always re-earns it from
+      // scratch instead of silently reusing (possibly stale/wrong) old data.
+      if (window.go?.main?.App) {
+        window.go.main.App.StartAxisAlign(true).catch(() => {});
+      }
       this.showScreen('capture');
       this.updateTelemetry(AppState.lastState);
     },
@@ -8621,9 +8683,10 @@
     _updateStepUI() {
       const cfg = this.STEPS_CONFIG[this.captureStep];
       if (!cfg) return;
+      this._stopAxisAlignPoll();
 
-      // 1. Progress Pills (4 total: Rest, Pitch, Roll, Confirm)
-      for (let i = 0; i < 4; i++) {
+      // 1. Progress Pills (5 total: Rest, Pitch, Roll, Align, Confirm)
+      for (let i = 0; i < 5; i++) {
         const pill = document.getElementById(`step-pill-${i}`);
         if (pill) {
           pill.classList.remove('active', 'completed');
@@ -8656,14 +8719,23 @@
           btnForward.textContent = I18n.t('calibration.btn_next') || 'Далее →';
           btnForward.disabled = !this.capturedVectors[1];
         } else if (this.captureStep === 2) {
-          btnForward.textContent = I18n.t('calibration.btn_to_confirm') || 'Перейти к проверке →';
+          btnForward.textContent = I18n.t('calibration.btn_next') || 'Далее →';
           btnForward.disabled = !(this.builtMatrix || this.capturedVectors[2]);
+        } else if (this.captureStep === 3) {
+          btnForward.textContent = I18n.t('calibration.btn_to_confirm') || 'Перейти к проверке →';
+          btnForward.disabled = !this.axisAlignKnown;
         }
       }
 
       // 5. Update 3D scene demo
       const s = Scene3D.get('cal-3d-canvas');
       if (s) s.setMode('demo', this.captureStep);
+
+      // 6. The axis-alignment step has its own live-polling flow instead of a
+      // fixed-duration capture (see startAxisAlignSequence / _pollAxisAlign).
+      if (cfg.isAxisAlign) {
+        this._enterAxisAlignStep();
+      }
     },
 
     _showPhase(phase) {
@@ -9028,12 +9100,161 @@
       }
     },
 
+    // ── Step 3: Explicit accelerometer↔gyro axis alignment ─────────────────────
+    // Unlike steps 0-2 (fixed-duration buffered capture), this step polls the live
+    // physics-based aligner (gui/sensoralign.go) while the user keeps tilting the
+    // phone, and reports success the moment it locks a confident mapping.
+
+    async _enterAxisAlignStep() {
+      this._stopAxisAlignPoll();
+      let status = { known: false, pairs: 0, minPairs: 6, mapping: [] };
+      if (window.go?.main?.App) {
+        try { status = await window.go.main.App.GetAxisAlignStatus(); } catch (e) {}
+      }
+      this.axisAlignKnown = !!status.known;
+      const btnForward = document.getElementById('cal-capture-forward');
+      if (btnForward && this.captureStep === 3) btnForward.disabled = !this.axisAlignKnown;
+
+      if (status.known) {
+        this._showAxisAlignResult(true, status, /*alreadyKnown=*/true);
+      }
+    },
+
+    async startAxisAlignSequence() {
+      if (this.isCapturing) return;
+      this.isCapturing = true;
+
+      const btnStart = document.getElementById('btn-start-capture');
+      const btnText = document.getElementById('btn-capture-text');
+      const timerContainer = document.getElementById('cal-timer-container');
+      const statusText = document.getElementById('cal-status-text');
+      const statusDot = document.getElementById('cal-status-dot');
+      const speedBadge = document.getElementById('cal-speed-badge');
+      const progressBar = document.getElementById('cal-progress-bar');
+      const timerCountdown = document.getElementById('cal-timer-countdown');
+
+      if (btnStart) {
+        btnStart.classList.add('recording');
+        btnStart.disabled = true;
+      }
+      if (btnText) btnText.textContent = I18n.t('calibration.align_recording_btn') || 'ОПРЕДЕЛЕНИЕ ОСЕЙ...';
+      if (statusText) statusText.textContent = I18n.t('calibration.align_status_recording') || 'Наклоняйте телефон в разные стороны и замирайте между наклонами';
+      if (statusDot) statusDot.className = 'status-pulse-dot active';
+      if (timerContainer) timerContainer.style.display = 'block';
+      if (speedBadge) speedBadge.style.display = 'inline-block';
+      if (progressBar) progressBar.style.width = '0%';
+
+      // Forget any prior, possibly-wrong mapping only on an explicit redo (Retry);
+      // a fresh profile has nothing to forget, so this is always safe here.
+      if (window.go?.main?.App) {
+        await window.go.main.App.StartAxisAlign(true);
+      }
+
+      const startTime = Date.now();
+      const timeoutMs = 20000;
+
+      this.axisAlignInterval = setInterval(async () => {
+        if (!window.go?.main?.App) return;
+        let status;
+        try { status = await window.go.main.App.GetAxisAlignStatus(); } catch (e) { return; }
+        if (!this.isCapturing) return;
+
+        const pct = Math.min(100, Math.round((status.pairs / Math.max(1, status.minPairs)) * 100));
+        if (progressBar) progressBar.style.width = `${pct}%`;
+        if (timerCountdown) timerCountdown.textContent = `${status.pairs}/${status.minPairs}`;
+
+        if (AppState.lastState) {
+          const rx = AppState.lastState.rawRotX || 0;
+          const ry = AppState.lastState.rawRotY || 0;
+          const rz = AppState.lastState.rawRotZ || 0;
+          const speed = Math.sqrt(rx*rx + ry*ry + rz*rz);
+          if (speedBadge) speedBadge.textContent = `${Math.round(speed)}°/с`;
+        }
+
+        if (status.known) {
+          this._stopAxisAlignPoll();
+          this.isCapturing = false;
+          this.axisAlignKnown = true;
+          this._showAxisAlignResult(true, status, false);
+          return;
+        }
+
+        if (Date.now() - startTime >= timeoutMs) {
+          this._stopAxisAlignPoll();
+          this.isCapturing = false;
+          this._showAxisAlignResult(false, status, false);
+        }
+      }, 200);
+    },
+
+    _stopAxisAlignPoll() {
+      if (this.axisAlignInterval) {
+        clearInterval(this.axisAlignInterval);
+        this.axisAlignInterval = null;
+      }
+    },
+
+    _showAxisAlignResult(success, status, alreadyKnown) {
+      const resultIcon = document.getElementById('result-icon');
+      const resultTitle = document.getElementById('result-title');
+      const resultSubtext = document.getElementById('result-subtext');
+      const btnNext = document.getElementById('btn-next-step');
+      const btnRetry = document.getElementById('btn-retry-step');
+      const btnForward = document.getElementById('cal-capture-forward');
+
+      if (success) {
+        if (resultIcon) {
+          resultIcon.textContent = '✓';
+          resultIcon.className = 'result-badge-icon success';
+        }
+        if (resultTitle) {
+          resultTitle.textContent = alreadyKnown
+            ? (I18n.t('calibration.align_already_title') || 'Оси уже определены')
+            : (I18n.t('calibration.align_success_title') || 'Оси определены!');
+        }
+        if (resultSubtext) {
+          const mapping = (status.mapping || []).join(', ');
+          const tmpl = alreadyKnown
+            ? (I18n.t('calibration.align_already_desc') || 'Сохранено ранее: **{mapping}**')
+            : (I18n.t('calibration.align_success_desc') || 'Акселерометр совмещён с гироскопом: **{mapping}**');
+          resultSubtext.innerHTML = renderMarkdown(tmpl.replace('{mapping}', mapping));
+        }
+        if (btnNext) {
+          btnNext.style.display = 'inline-flex';
+          btnNext.textContent = I18n.t('calibration.btn_to_confirm') || 'Перейти к проверке →';
+        }
+        if (btnForward) {
+          btnForward.style.display = 'inline-flex';
+          btnForward.textContent = I18n.t('calibration.btn_to_confirm') || 'Перейти к проверке →';
+          btnForward.disabled = false;
+        }
+        if (btnRetry) {
+          btnRetry.textContent = I18n.t('calibration.btn_recalibrate_align') || 'Определить заново';
+        }
+      } else {
+        if (resultIcon) {
+          resultIcon.textContent = '!';
+          resultIcon.className = 'result-badge-icon error';
+        }
+        if (resultTitle) {
+          resultTitle.textContent = I18n.t('calibration.align_fail_title') || 'Не удалось определить оси';
+        }
+        if (resultSubtext) {
+          resultSubtext.innerHTML = renderMarkdown(I18n.t('calibration.align_fail_desc') ||
+            'Слишком мало уверенных наклонов. Наклоняйте телефон более резко в разные стороны (вперёд, вбок, по диагонали) и на секунду замирайте между наклонами.');
+        }
+        if (btnNext) btnNext.style.display = 'none';
+        if (btnRetry) btnRetry.textContent = I18n.t('calibration.btn_retry') || 'Повторить';
+      }
+      this._showPhase('result');
+    },
+
     nextStep() {
       if (this.isTransitioning) return;
       this.isTransitioning = true;
       setTimeout(() => { this.isTransitioning = false; }, 300);
 
-      if (this.captureStep < 2) {
+      if (this.captureStep < 3) {
         this.captureStep++;
         this._updateStepUI();
       } else {
@@ -9284,6 +9505,13 @@
           }
         }
         this.builtMatrix = null;
+      } else if (this.captureStep === 3) {
+        // Axis alignment: forget the wrong guess and start a fresh determination
+        this.axisAlignKnown = false;
+        this._stopAxisAlignPoll();
+        if (window.go?.main?.App) {
+          window.go.main.App.StartAxisAlign(true).catch(() => {});
+        }
       }
 
       // 3. Reset step pill: active, remove completed
@@ -9337,7 +9565,11 @@
 
       // Start Capture button
       document.getElementById('btn-start-capture')?.addEventListener('click', () => {
-        this.startCaptureSequence();
+        if (this.STEPS_CONFIG[this.captureStep]?.isAxisAlign) {
+          this.startAxisAlignSequence();
+        } else {
+          this.startCaptureSequence();
+        }
       });
 
       // Retry step
@@ -9354,6 +9586,7 @@
       document.getElementById('cal-capture-back')?.addEventListener('click', () => {
         if (this.isTransitioning) return;
         this._resetCaptureTimer();
+        this._stopAxisAlignPoll();
         if (this.captureStep > 0) {
           this.captureStep--;
           this._updateStepUI();
@@ -9365,24 +9598,24 @@
       // Capture forward: navigates to next step or confirm screen
       document.getElementById('cal-capture-forward')?.addEventListener('click', () => {
         if (this.isTransitioning) return;
-        if (this.captureStep < 2) {
+        if (this.captureStep === 2 && !this.builtMatrix && this.capturedVectors[1] && this.capturedVectors[2]) {
+          if (window.go?.main?.App) {
+            window.go.main.App.ValidateCalibration(this.capturedVectors[1], this.capturedVectors[2]).then(valRes => {
+              if (valRes.success) this.builtMatrix = valRes.matrix;
+              this.nextStep();
+            });
+            return;
+          }
+        }
+        if (this.captureStep < 3) {
           this.nextStep();
         } else {
-          if (!this.builtMatrix && this.capturedVectors[1] && this.capturedVectors[2]) {
-            if (window.go?.main?.App) {
-              window.go.main.App.ValidateCalibration(this.capturedVectors[1], this.capturedVectors[2]).then(valRes => {
-                if (valRes.success) this.builtMatrix = valRes.matrix;
-                this.showScreen('confirm');
-              });
-              return;
-            }
-          }
           this.showScreen('confirm');
         }
       });
 
       // Step pills click navigation
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 5; i++) {
         const pill = document.getElementById(`step-pill-${i}`);
         if (!pill) continue;
         pill.addEventListener('click', () => {
@@ -9400,6 +9633,11 @@
               this.showScreen('capture');
             }
           } else if (i === 3) {
+            if (this.builtMatrix || (this.capturedVectors[1] && this.capturedVectors[2])) {
+              this.captureStep = 3;
+              this.showScreen('capture');
+            }
+          } else if (i === 4) {
             if (this.builtMatrix || (this.capturedVectors[1] && this.capturedVectors[2])) {
               this.showScreen('confirm');
             }

@@ -56,14 +56,14 @@ type Profile struct {
 	CalGravity [3]float64 `json:"calGravity,omitempty"`
 	// Learned gyro↔accel axis relation of the device used with this profile.
 	SensorFrame *sensorFrame `json:"sensorFrame,omitempty"`
-	Active bool          `json:"active"` // is this the currently applied profile?
+	Active      bool         `json:"active"` // is this the currently applied profile?
 }
 
 // AppState represents the live state of Gyro Bridge
 type AppState struct {
-	Status        string  `json:"status"`        // "offline", "online", "paused"
+	Status        string  `json:"status"` // "offline", "online", "paused"
 	IsPaused      bool    `json:"isPaused"`
-	DeviceName    string  `json:"deviceName"`    // e.g. "Controller"
+	DeviceName    string  `json:"deviceName"` // e.g. "Controller"
 	Hz            float64 `json:"hz"`
 	PingMs        int     `json:"pingMs"`
 	ConnectedTime string  `json:"connectedTime"` // "00:07:32"
@@ -73,30 +73,30 @@ type AppState struct {
 	IP            string  `json:"ip"`
 	GamepadURL    string  `json:"gamepadUrl"`
 	SetupURL      string  `json:"setupUrl"`
-	QRCode        string  `json:"qrCode"`        // Base64 data URI
-	SetupQRCode   string  `json:"setupQrCode"`   // Base64 data URI for iOS profile
+	QRCode        string  `json:"qrCode"`      // Base64 data URI
+	SetupQRCode   string  `json:"setupQrCode"` // Base64 data URI for iOS profile
 	// Raw sensor data for calibration wizard (live, latest sample)
-	RawRotX       float64 `json:"rawRotX"` // Angular velocity X in °/s
-	RawRotY       float64 `json:"rawRotY"` // Angular velocity Y in °/s
-	RawRotZ       float64 `json:"rawRotZ"` // Angular velocity Z in °/s
-	RawAccX       float64 `json:"rawAccX"` // Acceleration X in g
-	RawAccY       float64 `json:"rawAccY"` // Acceleration Y in g
-	RawAccZ       float64 `json:"rawAccZ"` // Acceleration Z in g
+	RawRotX float64 `json:"rawRotX"` // Angular velocity X in °/s
+	RawRotY float64 `json:"rawRotY"` // Angular velocity Y in °/s
+	RawRotZ float64 `json:"rawRotZ"` // Angular velocity Z in °/s
+	RawAccX float64 `json:"rawAccX"` // Acceleration X in g
+	RawAccY float64 `json:"rawAccY"` // Acceleration Y in g
+	RawAccZ float64 `json:"rawAccZ"` // Acceleration Z in g
 	// Raw sensor orientation quaternion (live, latest sample from device)
-	Qx            float64 `json:"qx"`
-	Qy            float64 `json:"qy"`
-	Qz            float64 `json:"qz"`
-	Qw            float64 `json:"qw"`
+	Qx float64 `json:"qx"`
+	Qy float64 `json:"qy"`
+	Qz float64 `json:"qz"`
+	Qw float64 `json:"qw"`
 	// Profile system
-	Profiles      []Profile    `json:"profiles"`
-	ActiveSlot    int          `json:"activeSlot"`   // -1 = none (identity matrix)
-	ActiveMatrix  [3][3]float64 `json:"activeMatrix"` // currently applied calibration matrix (or preview during wizard)
+	Profiles     []Profile     `json:"profiles"`
+	ActiveSlot   int           `json:"activeSlot"`   // -1 = none (identity matrix)
+	ActiveMatrix [3][3]float64 `json:"activeMatrix"` // currently applied calibration matrix (or preview during wizard)
 	// Madgwick AHRS quaternion computed from calibrated gyro/accel (matching PadTest conventions).
 	// Use these (not raw Qx/Qy/Qz/Qw) for 3D rendering.
 	// Q0=w, Q1=x, Q2=y, Q3=z. Apply PadTest negate to get display: (-Q1, -Q2, Q3, Q0).
-	AhrsQ0 float64 `json:"ahrsQ0"`
-	AhrsQ1 float64 `json:"ahrsQ1"`
-	AhrsQ2 float64 `json:"ahrsQ2"`
+	AhrsQ0        float64          `json:"ahrsQ0"`
+	AhrsQ1        float64          `json:"ahrsQ1"`
+	AhrsQ2        float64          `json:"ahrsQ2"`
 	AhrsQ3        float64          `json:"ahrsQ3"`
 	FirstLaunch   bool             `json:"firstLaunch"`
 	HideAuthor    bool             `json:"hideAuthor"`
@@ -114,13 +114,13 @@ type captureSample struct {
 // CaptureResult represents the computed result of a calibration gesture
 type CaptureResult struct {
 	Success     bool       `json:"success"`
-	AxisIdx     int        `json:"axisIdx"`     // 0=X, 1=Y, 2=Z
-	Sign        float64    `json:"sign"`        // +1.0 or -1.0
-	AxisName    string     `json:"axisName"`    // "+X", "-Y", etc.
-	Confidence  float64    `json:"confidence"`  // 0.0 to 1.0
+	AxisIdx     int        `json:"axisIdx"`    // 0=X, 1=Y, 2=Z
+	Sign        float64    `json:"sign"`       // +1.0 or -1.0
+	AxisName    string     `json:"axisName"`   // "+X", "-Y", etc.
+	Confidence  float64    `json:"confidence"` // 0.0 to 1.0
 	SampleCount int        `json:"sampleCount"`
-	PeakSpeed   float64    `json:"peakSpeed"`   // peak speed in °/s
-	Vector      [3]float64 `json:"vector"`      // Normalized 3D direction vector
+	PeakSpeed   float64    `json:"peakSpeed"` // peak speed in °/s
+	Vector      [3]float64 `json:"vector"`    // Normalized 3D direction vector
 	ErrorCode   string     `json:"errorCode"`
 	ErrorMsg    string     `json:"errorMsg"`
 }
@@ -137,18 +137,29 @@ type ValidationResult struct {
 	RollAxis  string        `json:"rollAxis"`
 }
 
+// AxisAlignStatus reports the live state of the accelerometer↔gyro axis relation
+// (gui/sensoralign.go) for the explicit "determine axes" wizard step: how many
+// informative still-tilt-still pairs have been scored, and whether physics has
+// locked a confident mapping yet.
+type AxisAlignStatus struct {
+	Known    bool      `json:"known"`
+	Pairs    int       `json:"pairs"`
+	MinPairs int       `json:"minPairs"`
+	Mapping  [3]string `json:"mapping"` // e.g. ["+Y", "+Z", "+X"]
+}
+
 // App struct manages desktop backend and GyroBridge services
 type App struct {
-	ctx         context.Context
-	i18nMgr     *i18n.Manager
-	srv         *server.Server
-	dsuSrv      *dsu.Server
-	caMgr       *ca.CertificateManager
-	isPaused    atomic.Bool
-	hasClient   atomic.Bool
-	curPitch    atomic.Uint64
-	curRoll     atomic.Uint64
-	curYaw      atomic.Uint64
+	ctx       context.Context
+	i18nMgr   *i18n.Manager
+	srv       *server.Server
+	dsuSrv    *dsu.Server
+	caMgr     *ca.CertificateManager
+	isPaused  atomic.Bool
+	hasClient atomic.Bool
+	curPitch  atomic.Uint64
+	curRoll   atomic.Uint64
+	curYaw    atomic.Uint64
 	// Raw latest gyro/accel (stored as float64 bits for atomic access)
 	curRotX     atomic.Uint64
 	curRotY     atomic.Uint64
@@ -171,21 +182,21 @@ type App struct {
 	toggleMu    sync.Mutex
 	lastToggle  time.Time
 	// Calibration capture buffer (buffered directly at 60 Hz from WebSocket)
-	isCapturing   atomic.Bool
-	captureMu     sync.Mutex
-	captureBuffer []captureSample
-	calVectors    [3][3]float64
-	calGravity    [3]float64 // captured gravity unit vector from step 0 rest
-	calGravityFresh bool // set by the rest step, consumed by the next SaveProfile
-	align            *sensorAligner // gyro↔accel axis learner (frame stored per profile)
+	isCapturing     atomic.Bool
+	captureMu       sync.Mutex
+	captureBuffer   []captureSample
+	calVectors      [3][3]float64
+	calGravity      [3]float64     // captured gravity unit vector from step 0 rest
+	calGravityFresh bool           // set by the rest step, consumed by the next SaveProfile
+	align           *sensorAligner // gyro↔accel axis learner (frame stored per profile)
 	// Gyroscope stationary zero-bias correction (§2 of spec)
-	biasMu        sync.RWMutex
-	gyroBias      [3]float64
+	biasMu   sync.RWMutex
+	gyroBias [3]float64
 	// Profile system
-	profilesMu   sync.RWMutex
-	profiles     [6]Profile // exactly 6 slots, always
-	activeSlot   int        // -1 = identity/none
-	profilesDir  string
+	profilesMu  sync.RWMutex
+	profiles    [6]Profile // exactly 6 slots, always
+	activeSlot  int        // -1 = identity/none
+	profilesDir string
 	// Active calibration matrix (applied to frames before DSU forwarding)
 	matrixMu     sync.RWMutex
 	activeMatrix [3][3]float64 // identity by default
@@ -225,20 +236,20 @@ type App struct {
 	stopResmon   func()
 	lastResStats atomic.Pointer[map[string]any]
 	// Advanced configuration settings
-	dsuPort          int
-	dsuMAC           string
-	dsuMACMu         sync.RWMutex
-	httpPort         int
-	httpsPort           int
-	gyroDeadzoneBits    atomic.Uint64
-	stillnessHint       atomic.Bool
-	disconnectAlert     atomic.Bool
-	silenceDisconnect   atomic.Bool
-	soundMode           string
-	soundVolume         atomic.Int32
-	soundVolumesMu      sync.RWMutex
-	soundVolumes        map[string]int
-	lastSensorChangeTs  atomic.Int64
+	dsuPort            int
+	dsuMAC             string
+	dsuMACMu           sync.RWMutex
+	httpPort           int
+	httpsPort          int
+	gyroDeadzoneBits   atomic.Uint64
+	stillnessHint      atomic.Bool
+	disconnectAlert    atomic.Bool
+	silenceDisconnect  atomic.Bool
+	soundMode          string
+	soundVolume        atomic.Int32
+	soundVolumesMu     sync.RWMutex
+	soundVolumes       map[string]int
+	lastSensorChangeTs atomic.Int64
 	// Adaptive 1-Euro DSU filter and dynamic response parameters
 	gyroDeadbandBits    atomic.Uint64 // float64 (deg/s, default 0.10)
 	gyroSensitivityBits atomic.Uint64 // float64 (multiplier, default 1.00)
@@ -246,11 +257,11 @@ type App struct {
 	lastTuningEmit      atomic.Int64
 	fontScaleBits       atomic.Uint64
 	// System Tray & Window Lifecycle
-	minimizeToTray      atomic.Bool
-	closeActionMu       sync.RWMutex
-	closeAction         string // "ask", "minimize", "quit"
-	quitting            atomic.Bool
-	trayMgr             *TrayManager
+	minimizeToTray atomic.Bool
+	closeActionMu  sync.RWMutex
+	closeAction    string // "ask", "minimize", "quit"
+	quitting       atomic.Bool
+	trayMgr        *TrayManager
 	// Global Windows Hotkeys
 	hotkeyRecenterEnabled atomic.Bool
 	hotkeyRecenterKeyMu   sync.RWMutex
@@ -262,30 +273,30 @@ type App struct {
 
 // AppSettings holds configurable parameters exposed in the settings window
 type AppSettings struct {
-	Theme                 string  `json:"theme"`
-	Lang                  string  `json:"lang"`
-	FontScale             float64 `json:"fontScale"`
-	ActiveSlot            int     `json:"activeSlot"`
-	FirstLaunchDone       bool    `json:"firstLaunchDone"`
-	HideAuthor            bool    `json:"hideAuthor"`
-	DSUPort               int     `json:"dsuPort"`
-	DSUMAC                string  `json:"dsuMac"`
-	HTTPPort              int     `json:"httpPort"`
-	HTTPSPort             int     `json:"httpsPort"`
-	GyroDeadzone          float64 `json:"gyroDeadzone"`
-	StillnessHint         bool    `json:"stillnessHint"`
-	DisconnectAlert       bool    `json:"disconnectAlert"`
-	SilenceDisconnect     bool    `json:"silenceDisconnect"`
+	Theme                 string         `json:"theme"`
+	Lang                  string         `json:"lang"`
+	FontScale             float64        `json:"fontScale"`
+	ActiveSlot            int            `json:"activeSlot"`
+	FirstLaunchDone       bool           `json:"firstLaunchDone"`
+	HideAuthor            bool           `json:"hideAuthor"`
+	DSUPort               int            `json:"dsuPort"`
+	DSUMAC                string         `json:"dsuMac"`
+	HTTPPort              int            `json:"httpPort"`
+	HTTPSPort             int            `json:"httpsPort"`
+	GyroDeadzone          float64        `json:"gyroDeadzone"`
+	StillnessHint         bool           `json:"stillnessHint"`
+	DisconnectAlert       bool           `json:"disconnectAlert"`
+	SilenceDisconnect     bool           `json:"silenceDisconnect"`
 	SoundMode             string         `json:"soundMode"`
 	SoundVolume           int            `json:"soundVolume"`
 	SoundVolumes          map[string]int `json:"soundVolumes,omitempty"`
-	GyroDeadband          float64 `json:"gyroDeadband"`
-	GyroSensitivity       float64 `json:"gyroSensitivity"`
-	MinimizeToTray        bool    `json:"minimizeToTray"`
-	CloseAction           string  `json:"closeAction"`
-	HotkeyRecenterEnabled bool    `json:"hotkeyRecenterEnabled"`
-	HotkeyRecenterKey     string  `json:"hotkeyRecenterKey"`
-	InputMode             string  `json:"inputMode,omitempty"`
+	GyroDeadband          float64        `json:"gyroDeadband"`
+	GyroSensitivity       float64        `json:"gyroSensitivity"`
+	MinimizeToTray        bool           `json:"minimizeToTray"`
+	CloseAction           string         `json:"closeAction"`
+	HotkeyRecenterEnabled bool           `json:"hotkeyRecenterEnabled"`
+	HotkeyRecenterKey     string         `json:"hotkeyRecenterKey"`
+	InputMode             string         `json:"inputMode,omitempty"`
 }
 
 // TuningFrame conveys simultaneous raw and filtered telemetry to the frontend tuning bench
@@ -678,30 +689,30 @@ func (a *App) loadSettings() {
 		return
 	}
 	var s struct {
-		Theme             string   `json:"theme"`
-		Lang              string   `json:"lang"`
-		ActiveSlot        int      `json:"activeSlot"`
-		FirstLaunchDone   bool     `json:"firstLaunchDone"`
-		HideAuthor        bool     `json:"hideAuthor"`
-		DSUPort           int      `json:"dsuPort"`
-		DSUMAC            string   `json:"dsuMac"`
-		HTTPPort          int      `json:"httpPort"`
-		HTTPSPort         int      `json:"httpsPort"`
-		GyroDeadzone      float64  `json:"gyroDeadzone"`
-		StillnessHint     *bool    `json:"stillnessHint"`
-		DisconnectAlert   *bool    `json:"disconnectAlert"`
-		SilenceDisconnect *bool    `json:"silenceDisconnect"`
-		SoundMode         string         `json:"soundMode"`
-		SoundVolume       *int           `json:"soundVolume"`
-		SoundVolumes      map[string]int `json:"soundVolumes,omitempty"`
-		GyroDeadband      *float64 `json:"gyroDeadband,omitempty"`
-		GyroSensitivity   *float64 `json:"gyroSensitivity,omitempty"`
-		FontScale         *float64 `json:"fontScale,omitempty"`
-		MinimizeToTray        *bool    `json:"minimizeToTray,omitempty"`
-		CloseAction           string   `json:"closeAction,omitempty"`
-		HotkeyRecenterEnabled *bool    `json:"hotkeyRecenterEnabled,omitempty"`
-		HotkeyRecenterKey     string   `json:"hotkeyRecenterKey,omitempty"`
-		InputMode             string   `json:"inputMode,omitempty"`
+		Theme                 string         `json:"theme"`
+		Lang                  string         `json:"lang"`
+		ActiveSlot            int            `json:"activeSlot"`
+		FirstLaunchDone       bool           `json:"firstLaunchDone"`
+		HideAuthor            bool           `json:"hideAuthor"`
+		DSUPort               int            `json:"dsuPort"`
+		DSUMAC                string         `json:"dsuMac"`
+		HTTPPort              int            `json:"httpPort"`
+		HTTPSPort             int            `json:"httpsPort"`
+		GyroDeadzone          float64        `json:"gyroDeadzone"`
+		StillnessHint         *bool          `json:"stillnessHint"`
+		DisconnectAlert       *bool          `json:"disconnectAlert"`
+		SilenceDisconnect     *bool          `json:"silenceDisconnect"`
+		SoundMode             string         `json:"soundMode"`
+		SoundVolume           *int           `json:"soundVolume"`
+		SoundVolumes          map[string]int `json:"soundVolumes,omitempty"`
+		GyroDeadband          *float64       `json:"gyroDeadband,omitempty"`
+		GyroSensitivity       *float64       `json:"gyroSensitivity,omitempty"`
+		FontScale             *float64       `json:"fontScale,omitempty"`
+		MinimizeToTray        *bool          `json:"minimizeToTray,omitempty"`
+		CloseAction           string         `json:"closeAction,omitempty"`
+		HotkeyRecenterEnabled *bool          `json:"hotkeyRecenterEnabled,omitempty"`
+		HotkeyRecenterKey     string         `json:"hotkeyRecenterKey,omitempty"`
+		InputMode             string         `json:"inputMode,omitempty"`
 	}
 	if err := json.Unmarshal(data, &s); err != nil {
 		return
@@ -885,25 +896,25 @@ func (a *App) saveSettings() {
 	}
 
 	s := AppSettings{
-		Theme:             theme,
-		Lang:              lang,
-		FontScale:         fontScale,
-		ActiveSlot:        slot,
-		FirstLaunchDone:   firstLaunchDone,
-		HideAuthor:        hideAuthor,
-		DSUPort:           dsuP,
-		DSUMAC:            dsuMacStr,
-		HTTPPort:          httpP,
-		HTTPSPort:         httpsP,
-		GyroDeadzone:      deadzone,
-		StillnessHint:     a.stillnessHint.Load(),
-		DisconnectAlert:   a.disconnectAlert.Load(),
-		SilenceDisconnect: a.silenceDisconnect.Load(),
-		SoundMode:         soundM,
-		SoundVolume:       vol,
-		SoundVolumes:      a.getSoundVolumes(),
-		GyroDeadband:      deadband,
-		GyroSensitivity:   sensitivity,
+		Theme:                 theme,
+		Lang:                  lang,
+		FontScale:             fontScale,
+		ActiveSlot:            slot,
+		FirstLaunchDone:       firstLaunchDone,
+		HideAuthor:            hideAuthor,
+		DSUPort:               dsuP,
+		DSUMAC:                dsuMacStr,
+		HTTPPort:              httpP,
+		HTTPSPort:             httpsP,
+		GyroDeadzone:          deadzone,
+		StillnessHint:         a.stillnessHint.Load(),
+		DisconnectAlert:       a.disconnectAlert.Load(),
+		SilenceDisconnect:     a.silenceDisconnect.Load(),
+		SoundMode:             soundM,
+		SoundVolume:           vol,
+		SoundVolumes:          a.getSoundVolumes(),
+		GyroDeadband:          deadband,
+		GyroSensitivity:       sensitivity,
 		MinimizeToTray:        a.GetCloseAction() == "minimize",
 		CloseAction:           a.GetCloseAction(),
 		HotkeyRecenterEnabled: a.hotkeyRecenterEnabled.Load(),
@@ -1619,6 +1630,9 @@ func (a *App) startup(ctx context.Context) {
 		if device != "" {
 			a.deviceName.Store(device)
 			a.emitStateChange()
+			if device == "iPhone" || device == "iPad" {
+				a.align.SeedGuess(iosSensorFrame())
+			}
 		}
 	}
 
@@ -2100,9 +2114,19 @@ func (a *App) GetState() AppState {
 		AhrsQ3:        math.Float64frombits(a.curAhrsQ3.Load()),
 		FirstLaunch:   !a.firstLaunchDone,
 		HideAuthor:    a.hideAuthor,
-		DsuClients:    func() int { if a.dsuSrv != nil { return a.dsuSrv.ActiveClientCount() }; return 0 }(),
-		DsuClientList: func() []dsu.ClientInfo { if a.dsuSrv != nil { return a.dsuSrv.GetClientsInfo() }; return nil }(),
-		InputMode:     a.GetInputMode(),
+		DsuClients: func() int {
+			if a.dsuSrv != nil {
+				return a.dsuSrv.ActiveClientCount()
+			}
+			return 0
+		}(),
+		DsuClientList: func() []dsu.ClientInfo {
+			if a.dsuSrv != nil {
+				return a.dsuSrv.GetClientsInfo()
+			}
+			return nil
+		}(),
+		InputMode: a.GetInputMode(),
 	}
 }
 
@@ -2171,13 +2195,13 @@ func (a *App) SaveProfile(slot int, name string, device string, icon string, mat
 	}
 	a.biasMu.Unlock()
 	a.profiles[slot] = Profile{
-		Slot:   slot,
-		Name:   name,
-		Device: device,
-		Icon:   icon,
-		Matrix: matrix,
-		Active:     (slot == a.activeSlot),
-		CalGravity: gravity,
+		Slot:        slot,
+		Name:        name,
+		Device:      device,
+		Icon:        icon,
+		Matrix:      matrix,
+		Active:      (slot == a.activeSlot),
+		CalGravity:  gravity,
 		SensorFrame: a.profiles[slot].SensorFrame,
 	}
 	a.profilesMu.Unlock()
@@ -2354,34 +2378,34 @@ func (a *App) TriggerRecenterFromHotkey() {
 }
 
 type liveDebugMsg struct {
-	DeviceConnected bool    `json:"device_connected"`
-	Q0              float32 `json:"q0"`
-	Q1              float32 `json:"q1"`
-	Q2              float32 `json:"q2"`
-	Q3              float32 `json:"q3"`
-	Seq             uint64  `json:"seq,omitempty"`
-	Timestamp       uint32  `json:"ts,omitempty"`
-	RecvTs          int64   `json:"recv_ts,omitempty"`
-	SendTs          int64   `json:"send_ts,omitempty"`
-	RawGx           float32 `json:"raw_gx,omitempty"`
-	RawGy           float32 `json:"raw_gy,omitempty"`
-	RawGz           float32 `json:"raw_gz,omitempty"`
-	RawAx           float32 `json:"raw_ax,omitempty"`
-	RawAy           float32 `json:"raw_ay,omitempty"`
-	RawAz           float32 `json:"raw_az,omitempty"`
-	OutGx           float32 `json:"out_gx,omitempty"`
-	OutGy           float32 `json:"out_gy,omitempty"`
-	OutGz           float32 `json:"out_gz,omitempty"`
-	OutAx           float32 `json:"out_ax,omitempty"`
-	OutAy           float32 `json:"out_ay,omitempty"`
-	OutAz           float32 `json:"out_az,omitempty"`
-	StickLx         float32 `json:"stick_lx,omitempty"`
-	StickLy         float32 `json:"stick_ly,omitempty"`
-	InHz            float64 `json:"in_hz,omitempty"`
-	OutHz           float64 `json:"out_hz,omitempty"`
-	PipeMs          float64 `json:"pipe_ms,omitempty"`
-	DsuClients    int              `json:"dsu_clients"`
-	DsuClientList []dsu.ClientInfo `json:"dsu_client_list,omitempty"`
+	DeviceConnected bool             `json:"device_connected"`
+	Q0              float32          `json:"q0"`
+	Q1              float32          `json:"q1"`
+	Q2              float32          `json:"q2"`
+	Q3              float32          `json:"q3"`
+	Seq             uint64           `json:"seq,omitempty"`
+	Timestamp       uint32           `json:"ts,omitempty"`
+	RecvTs          int64            `json:"recv_ts,omitempty"`
+	SendTs          int64            `json:"send_ts,omitempty"`
+	RawGx           float32          `json:"raw_gx,omitempty"`
+	RawGy           float32          `json:"raw_gy,omitempty"`
+	RawGz           float32          `json:"raw_gz,omitempty"`
+	RawAx           float32          `json:"raw_ax,omitempty"`
+	RawAy           float32          `json:"raw_ay,omitempty"`
+	RawAz           float32          `json:"raw_az,omitempty"`
+	OutGx           float32          `json:"out_gx,omitempty"`
+	OutGy           float32          `json:"out_gy,omitempty"`
+	OutGz           float32          `json:"out_gz,omitempty"`
+	OutAx           float32          `json:"out_ax,omitempty"`
+	OutAy           float32          `json:"out_ay,omitempty"`
+	OutAz           float32          `json:"out_az,omitempty"`
+	StickLx         float32          `json:"stick_lx,omitempty"`
+	StickLy         float32          `json:"stick_ly,omitempty"`
+	InHz            float64          `json:"in_hz,omitempty"`
+	OutHz           float64          `json:"out_hz,omitempty"`
+	PipeMs          float64          `json:"pipe_ms,omitempty"`
+	DsuClients      int              `json:"dsu_clients"`
+	DsuClientList   []dsu.ClientInfo `json:"dsu_client_list,omitempty"`
 }
 
 func (a *App) broadcastLiveDebug(q0, q1, q2, q3 float32, extras ...liveDebugMsg) {
@@ -2664,25 +2688,25 @@ func (a *App) GetAppSettings() AppSettings {
 	}
 
 	return AppSettings{
-		Theme:             theme,
-		Lang:              lang,
-		FontScale:         fontScale,
-		ActiveSlot:        slot,
-		FirstLaunchDone:   firstLaunch,
-		HideAuthor:        hideAuthor,
-		DSUPort:           dsuP,
-		DSUMAC:            a.getDSUMAC(),
-		HTTPPort:          httpP,
-		HTTPSPort:         httpsP,
-		GyroDeadzone:      deadzone,
-		StillnessHint:     a.stillnessHint.Load(),
-		DisconnectAlert:   a.disconnectAlert.Load(),
-		SilenceDisconnect: a.silenceDisconnect.Load(),
-		SoundMode:         soundM,
-		SoundVolume:       vol,
-		SoundVolumes:      a.getSoundVolumes(),
-		GyroDeadband:      deadband,
-		GyroSensitivity:   sensitivity,
+		Theme:                 theme,
+		Lang:                  lang,
+		FontScale:             fontScale,
+		ActiveSlot:            slot,
+		FirstLaunchDone:       firstLaunch,
+		HideAuthor:            hideAuthor,
+		DSUPort:               dsuP,
+		DSUMAC:                a.getDSUMAC(),
+		HTTPPort:              httpP,
+		HTTPSPort:             httpsP,
+		GyroDeadzone:          deadzone,
+		StillnessHint:         a.stillnessHint.Load(),
+		DisconnectAlert:       a.disconnectAlert.Load(),
+		SilenceDisconnect:     a.silenceDisconnect.Load(),
+		SoundMode:             soundM,
+		SoundVolume:           vol,
+		SoundVolumes:          a.getSoundVolumes(),
+		GyroDeadband:          deadband,
+		GyroSensitivity:       sensitivity,
 		MinimizeToTray:        a.GetCloseAction() == "minimize",
 		CloseAction:           a.GetCloseAction(),
 		HotkeyRecenterEnabled: a.hotkeyRecenterEnabled.Load(),
@@ -3352,7 +3376,7 @@ func (a *App) ValidateCalibration(pitch, roll [3]float64) ValidationResult {
 	}
 
 	pitchRow := snap(norm(pitch))
-	rollRow  := snap(norm(roll))
+	rollRow := snap(norm(roll))
 
 	idxP := getAxisIdx(pitchRow)
 	idxR := getAxisIdx(rollRow)
@@ -3426,6 +3450,34 @@ func (a *App) ValidateCalibration(pitch, roll [3]float64) ValidationResult {
 	a.calValResult = res
 	a.calLogMu.Unlock()
 	return res
+}
+
+// StartAxisAlign begins (or restarts) the explicit "determine axes" wizard step:
+// it clears any partially-collected physics evidence so the live progress readout
+// (GetAxisAlignStatus) starts from zero. The already-learned/seeded mapping keeps
+// driving DSU output the whole time, so accelerometer axes never regress to identity
+// while the user is redoing this step. Pass forgetKnown=true to force a full re-learn
+// (e.g. a "recalibrate axes" button on an already-known profile); false just takes a
+// fresh confidence reading without discarding a mapping that already works.
+func (a *App) StartAxisAlign(forgetKnown bool) {
+	if a.align != nil {
+		a.align.Reset(forgetKnown)
+	}
+}
+
+// GetAxisAlignStatus reports live progress of the accelerometer↔gyro axis relation
+// so the wizard can show "N of M tilts" and detect the moment physics locks a mapping.
+func (a *App) GetAxisAlignStatus() AxisAlignStatus {
+	if a.align == nil {
+		return AxisAlignStatus{}
+	}
+	pairs, minPairs, known := a.align.Progress()
+	return AxisAlignStatus{
+		Known:    known,
+		Pairs:    pairs,
+		MinPairs: minPairs,
+		Mapping:  a.align.AxisMapping(),
+	}
 }
 
 func det3x3(m [3][3]float64) float64 {
@@ -3561,4 +3613,3 @@ func (a *App) GetResourceStats() map[string]any {
 		"ramPercent": 0.0,
 	}
 }
-

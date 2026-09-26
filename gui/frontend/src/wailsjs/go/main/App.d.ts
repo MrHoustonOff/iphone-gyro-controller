@@ -12,6 +12,8 @@ export function CopyLast20Frames():Promise<string>;
 
 export function GetAppSettings():Promise<main.AppSettings>;
 
+export function GetAxisAlignStatus():Promise<main.AxisAlignStatus>;
+
 export function GetCloseAction():Promise<string>;
 
 export function GetDSUStatus():Promise<Record<string, any>>;
@@ -77,6 +79,8 @@ export function SetTuningFilterParams(arg1:number,arg2:number):Promise<void>;
 export function SetWindowTheme(arg1:string):Promise<void>;
 
 export function ShowWindow():Promise<void>;
+
+export function StartAxisAlign(arg1:boolean):Promise<void>;
 
 export function StartCapture():Promise<void>;
 

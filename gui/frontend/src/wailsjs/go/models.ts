@@ -241,6 +241,24 @@ export namespace main {
 		    return a;
 		}
 	}
+	export class AxisAlignStatus {
+	    known: boolean;
+	    pairs: number;
+	    minPairs: number;
+	    mapping: string[];
+	
+	    static createFrom(source: any = {}) {
+	        return new AxisAlignStatus(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.known = source["known"];
+	        this.pairs = source["pairs"];
+	        this.minPairs = source["minPairs"];
+	        this.mapping = source["mapping"];
+	    }
+	}
 	export class CaptureResult {
 	    success: boolean;
 	    axisIdx: number;

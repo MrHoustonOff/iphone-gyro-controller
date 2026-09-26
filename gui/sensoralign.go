@@ -192,6 +192,56 @@ func (s *sensorAligner) saveLocked() {
 	}
 }
 
+// iosSensorFrame is the axis relation iOS Safari has been observed to use for every
+// device tested so far (see docs/motion-pipeline.md §3): rotationRate reports
+// (beta, gamma, alpha) = (devY, devZ, devX), so a_pk = Q · acc_raw with
+// Q = [[0,1,0],[0,0,1],[1,0,0]], h = -1.
+func iosSensorFrame() sensorFrame {
+	return sensorFrame{Q: [3][3]float64{{0, 1, 0}, {0, 0, 1}, {1, 0, 0}}, H: -1}
+}
+
+// SeedGuess sets the working hypothesis used for the accelerometer mapping before any
+// physics evidence has been collected, so a brand-new profile doesn't ship a wrong
+// gravity axis (identity) while it waits for the 6+ still-tilt-still pairs the real
+// alignment learning needs. It never overwrites a mapping already learned or loaded
+// from a profile (known == true) and never marks the guess as "known": the physics
+// scoring in scorePairLocked/decideLocked keeps running and will correct a wrong
+// guess exactly like it would correct the identity default.
+func (s *sensorAligner) SeedGuess(f sensorFrame) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.known {
+		s.cur = f
+	}
+}
+
+// Reset clears accumulated still-tilt-still evidence so a fresh confidence readout can
+// be taken (used by the explicit "determine axes" wizard step). When forgetKnown is
+// true, the current mapping is also marked unconfirmed so the wizard step must
+// re-earn it from scratch; cur is left untouched either way so accelerometer output
+// never regresses to identity mid-reset.
+func (s *sensorAligner) Reset(forgetKnown bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range s.errSum {
+		s.errSum[i] = 0
+	}
+	s.pairs = 0
+	s.anchored = false
+	if forgetKnown {
+		s.known = false
+	}
+}
+
+// Progress reports how many informative still-tilt-still pairs have been scored since
+// the last Reset/lock, and how many are required to decide. Used by the wizard to show
+// a live "N of M tilts" readout during the explicit axis-alignment step.
+func (s *sensorAligner) Progress() (pairs, minPairs int, known bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.pairs, alignMinPairs, s.known
+}
+
 // SetFrame switches to another device's mapping (profile change) and drops any
 // half-collected evidence. known=false falls back to the W3C default and relearns.
 func (s *sensorAligner) SetFrame(f sensorFrame, known bool) {
@@ -205,6 +255,28 @@ func (s *sensorAligner) SetFrame(f sensorFrame, known bool) {
 		s.errSum[i] = 0
 	}
 	s.pairs, s.anchored = 0, false
+}
+
+// AxisMapping describes the current accelerometer→gyro axis relation as three signed
+// axis labels (packet X, Y, Z <- raw device axis), e.g. ["+Y", "+Z", "+X"] for the iOS
+// default. Used by the wizard to show the user what was actually determined.
+func (s *sensorAligner) AxisMapping() [3]string {
+	s.mu.Lock()
+	q := s.cur.Q
+	s.mu.Unlock()
+	axes := [3]string{"X", "Y", "Z"}
+	var out [3]string
+	for r := 0; r < 3; r++ {
+		out[r] = "?"
+		for c := 0; c < 3; c++ {
+			if q[r][c] > 0.5 {
+				out[r] = "+" + axes[c]
+			} else if q[r][c] < -0.5 {
+				out[r] = "-" + axes[c]
+			}
+		}
+	}
+	return out
 }
 
 // Frame returns the current mapping and whether it was learned (or loaded) rather than assumed.
